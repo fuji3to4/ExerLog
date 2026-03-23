@@ -98,6 +98,171 @@ button {
   color: #14213d;
 }
 
+.today-screen__date {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #31507d;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.today-screen__section {
+  display: grid;
+  gap: 1rem;
+}
+
+.today-screen__section-heading {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.today-screen__section-heading p {
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.today-screen__recommendations {
+  display: grid;
+  gap: 1rem;
+}
+
+.today-screen__primary-button,
+.recommendation-card__watch-link,
+.exercise-log-actions__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.85rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #14213d;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.today-screen__primary-button {
+  border: 0;
+}
+
+.condition-card__options {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.condition-card__options legend {
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.condition-card__option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d7dfeb;
+  border-radius: 0.9rem;
+  background: #f8fbff;
+}
+
+.condition-card__option input {
+  margin: 0;
+}
+
+.condition-card__note {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.condition-card__note textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid #c7d4e6;
+  border-radius: 0.9rem;
+  resize: vertical;
+  font: inherit;
+  color: inherit;
+  background: #ffffff;
+}
+
+.recommendation-card {
+  gap: 1rem;
+}
+
+.recommendation-card__header {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.recommendation-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.recommendation-card__meta div {
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: #f4f7fb;
+}
+
+.recommendation-card__meta dt {
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.recommendation-card__meta dd {
+  margin: 0;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.exercise-log-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.exercise-log-actions__buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.exercise-log-actions__button {
+  background: #e8eef8;
+  color: #14213d;
+  border-color: #c7d4e6;
+}
+
+.exercise-log-actions__button.is-selected {
+  background: #14213d;
+  color: #ffffff;
+  border-color: #14213d;
+}
+
+.exercise-log-actions__status {
+  margin: 0;
+  color: #4b5563;
+}
+
+.today-screen__library-card {
+  gap: 1rem;
+}
+
+@media (min-width: 480px) {
+  .recommendation-card__header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+}
+
 .bottom-nav {
   position: fixed;
   left: 50%;
