@@ -16,6 +16,7 @@ export function useTodayData(date: Date | string) {
   const [conditionLevel, setConditionLevel] = useState<ConditionLevel>("okay");
   const [note, setNote] = useState("");
   const [logResults, setLogResults] = useState<ExerciseLogState>({});
+  const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
   const hasConditionDraft = useRef(false);
   const hasNoteDraft = useRef(false);
 
@@ -46,6 +47,7 @@ export function useTodayData(date: Date | string) {
       setLogResults(
         Object.fromEntries(savedLogs.map((entry) => [entry.exerciseId, entry.result])) as ExerciseLogState,
       );
+      setHydratedDayKey(selectedDayKey);
     }
 
     void loadTodayData();
@@ -104,6 +106,7 @@ export function useTodayData(date: Date | string) {
   );
 
   return {
+    isHydrated: hydratedDayKey === dayKey,
     conditionLevel,
     note,
     recommendations,

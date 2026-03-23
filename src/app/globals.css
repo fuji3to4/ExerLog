@@ -256,10 +256,112 @@ button {
   gap: 1rem;
 }
 
+.library-filters,
+.library-filters__heading,
+.library-screen__results,
+.exercise-detail,
+.exercise-detail__header,
+.exercise-detail__heading,
+.exercise-detail__loading {
+  display: grid;
+  gap: 1rem;
+}
+
+.library-filters__grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.library-filters__field {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.library-filters__field input,
+.library-filters__field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.85rem 1rem;
+  border: 1px solid #c7d4e6;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+}
+
+.exercise-detail__header .today-screen__primary-button {
+  max-width: 12rem;
+}
+
+.history-calendar__header,
+.history-calendar__grid,
+.day-summary,
+.day-summary__section,
+.day-summary__list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.history-calendar__grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.history-calendar__day {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem;
+  border: 1px solid #c7d4e6;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  color: inherit;
+}
+
+.history-calendar__day.is-completed {
+  background: #dff3e6;
+  border-color: #8bc7a0;
+  font-weight: 700;
+}
+
+.history-calendar__day.is-selected {
+  border-color: #14213d;
+  box-shadow: inset 0 0 0 1px #14213d;
+}
+
+.history-calendar__day.is-outside-month {
+  opacity: 0.45;
+}
+
+.day-summary__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day-summary__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: #f4f7fb;
+}
+
+.day-summary__result {
+  font-weight: 700;
+}
+
 @media (min-width: 480px) {
   .recommendation-card__header {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: start;
+  }
+
+  .library-filters__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

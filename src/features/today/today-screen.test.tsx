@@ -26,7 +26,9 @@ test("saves a daily condition and logs an exercise from the home screen", async 
 
   render(<TodayScreen date="2026-03-23" />);
 
-  await user.click(screen.getByRole("radio", { name: /feeling good/i }));
+  expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
+
+  await user.click(await screen.findByRole("radio", { name: /feeling good/i }));
   await user.type(screen.getByRole("textbox", { name: /note/i }), "Neck feels better today");
   await user.click(screen.getByRole("button", { name: /save condition/i }));
 
@@ -59,19 +61,15 @@ test("hydrates an existing condition note and log state on first render", async 
 
   render(<TodayScreen date="2026-03-24" />);
 
+  expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
+  expect(screen.queryByRole("radio", { name: /okay/i })).not.toBeInTheDocument();
+
   const neckMobilityCard = await screen.findByRole("article", { name: "Neck Mobility" });
 
-  await waitFor(() => {
-    expect(screen.getByRole("radio", { name: /tired/i })).toBeChecked();
-    expect(screen.getByRole("textbox", { name: /note/i })).toHaveValue("Need a lighter day");
-  });
-
-  await waitFor(() => {
-    expect(within(neckMobilityCard).getByRole("button", { name: /partly/i })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-  });
+  expect(screen.getByRole("radio", { name: /tired/i })).toBeChecked();
+  expect(screen.getByRole("textbox", { name: /note/i })).toHaveValue("Need a lighter day");
+  expect(within(neckMobilityCard).getByRole("button", { name: /partly/i })).toHaveAttribute("aria-pressed", "true");
+  expect(within(neckMobilityCard).getByText("Saved: Partly")).toBeInTheDocument();
 });
 
 test("keeps recommendations short and stable for the selected day", async () => {

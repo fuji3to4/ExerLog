@@ -21,6 +21,7 @@ function formatDisplayDate(date: string) {
 
 export function TodayScreen({ date }: TodayScreenProps) {
   const {
+    isHydrated,
     conditionLevel,
     note,
     recommendations,
@@ -39,6 +40,13 @@ export function TodayScreen({ date }: TodayScreenProps) {
         <p>Save how you feel, then log today&apos;s recommended exercises with one tap.</p>
       </section>
 
+      {!isHydrated ? (
+        <section className="card today-screen__section" aria-live="polite">
+          <h2>Loading today&apos;s log...</h2>
+          <p>Checking your saved condition and exercise results for this day.</p>
+        </section>
+      ) : (
+        <>
       <DailyConditionCard
         conditionLevel={conditionLevel}
         note={note}
@@ -58,6 +66,7 @@ export function TodayScreen({ date }: TodayScreenProps) {
               key={exercise.id}
               exercise={exercise}
               result={logResults[exercise.id] ?? null}
+              watchHref={`/exercises/${exercise.id}`}
               onLog={(result) => void logExercise(exercise.id, result)}
             />
           ))}
@@ -73,6 +82,8 @@ export function TodayScreen({ date }: TodayScreenProps) {
           </Link>
         </div>
       </section>
+        </>
+      )}
     </>
   );
 }

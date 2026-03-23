@@ -10,6 +10,7 @@ vi.mock("@/features/today/components/today-screen", () => ({
 }));
 
 import HomePage from "./page";
+import { metadata } from "./layout";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -28,4 +29,9 @@ test("renders the today screen for the home route", () => {
   expect(screen.getByRole("link", { name: /library/i })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /history/i })).toBeInTheDocument();
   expect(todayScreenSpy).toHaveBeenCalled();
+});
+
+test("layout includes installable app metadata", () => {
+  expect(metadata.applicationName).toBe("Exercise Log");
+  expect(metadata.manifest).toBe("/manifest.webmanifest");
 });

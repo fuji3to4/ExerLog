@@ -6,12 +6,14 @@ import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
 type RecommendedExerciseCardProps = {
   exercise: ExerciseVideo;
   result: ExerciseLogResult | null;
+  watchHref: string;
   onLog: (result: ExerciseLogResult) => void;
 };
 
 export function RecommendedExerciseCard({
   exercise,
   result,
+  watchHref,
   onLog,
 }: RecommendedExerciseCardProps) {
   const headingId = `recommendation-${exercise.id}`;
@@ -24,7 +26,7 @@ export function RecommendedExerciseCard({
           <p>{exercise.description}</p>
         </div>
         <Link
-          href={`/exercises/${exercise.id}`}
+          href={watchHref}
           className="recommendation-card__watch-link"
           aria-label={`Watch ${exercise.title}`}
         >

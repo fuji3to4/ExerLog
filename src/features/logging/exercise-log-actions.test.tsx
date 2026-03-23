@@ -17,6 +17,7 @@ test("shows all shared logging actions and the current saved state", async () =>
   expect(didItButton).toHaveAttribute("aria-pressed", "false");
   expect(partlyButton).toHaveAttribute("aria-pressed", "true");
   expect(couldntButton).toHaveAttribute("aria-pressed", "false");
+  expect(screen.getByText("Saved: Partly")).toBeInTheDocument();
 
   await user.click(couldntButton);
 
