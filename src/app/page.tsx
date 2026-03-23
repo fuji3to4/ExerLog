@@ -10,12 +10,6 @@ export default function HomePage() {
       <section className="card">
         <h2>Quick start</h2>
         <p>Use the main tabs below to browse the exercise library or review past sessions.</p>
-        <div className="button-row">
-          <button type="button">Start log</button>
-          <button className="button-secondary" type="button">
-            Plan session
-          </button>
-        </div>
       </section>
     </AppShell>
   );

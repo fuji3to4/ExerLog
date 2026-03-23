@@ -1,5 +1,5 @@
 import path from "node:path";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   esbuild: {
@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    exclude: [...configDefaults.exclude, ".worktrees/**"],
     setupFiles: ["./vitest.setup.ts"],
   },
 });
