@@ -1,0 +1,19 @@
+import path from "node:path";
+import { configDefaults, defineConfig } from "vitest/config";
+
+export default defineConfig({
+  esbuild: {
+    jsx: "automatic",
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+    },
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    exclude: [...configDefaults.exclude, ".worktrees/**"],
+    setupFiles: ["./vitest.setup.ts"],
+  },
+});
