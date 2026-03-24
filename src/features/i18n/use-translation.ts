@@ -17,7 +17,7 @@ export function useTranslation() {
     
     if (replacements) {
       Object.entries(replacements).forEach(([placeholder, value]) => {
-        message = message.replace(`{${placeholder}}`, String(value));
+        message = message.replaceAll(`{${placeholder}}`, String(value));
       });
     }
     

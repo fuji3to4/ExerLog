@@ -25,7 +25,9 @@ async function seedTodayState() {
 }
 
 test("exercise detail page shows video, metadata, and logging actions", async () => {
-  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }));
+  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }), {
+    initialLanguage: "en",
+  });
 
   expect(screen.getByRole("link", { name: /watch video/i })).toHaveAttribute("href", expect.stringContaining("youtube"));
   expect(screen.getByText(/gentle seated mobility work/i)).toBeInTheDocument();
@@ -39,7 +41,9 @@ test("exercise detail logging persists the selected result", async () => {
   const todayKey = toDayKey(new Date());
   const user = userEvent.setup();
 
-  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }));
+  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }), {
+    initialLanguage: "en",
+  });
 
   await user.click(await screen.findByRole("button", { name: /did it/i }));
 
@@ -60,7 +64,9 @@ test("exercise detail logging persists the selected result", async () => {
 test("exercise detail hydrates an existing log state on first render", async () => {
   await seedTodayState();
 
-  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }));
+  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }), {
+    initialLanguage: "en",
+  });
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
   expect(await screen.findByText("Saved: Did it")).toBeInTheDocument();
