@@ -82,3 +82,10 @@ test("generateStaticParams returns all catalog exercise ids", () => {
     { exerciseId: "walk-in-place-10" },
   ]);
 });
+
+test("keeps imported content raw on the detail screen", async () => {
+  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }));
+
+  expect(screen.getByRole("heading", { name: "Neck Mobility" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /動画を見る/i })).toBeInTheDocument();
+});

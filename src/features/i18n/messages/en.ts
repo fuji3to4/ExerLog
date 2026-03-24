@@ -41,6 +41,10 @@ export const en = {
 
   // History screen
   history_heading: "History",
+  history_subheading: "Review your completed days and open a quick summary for the exercises and condition you logged.",
+  history_calendar_heading: "Calendar",
+  history_calendar_text: "Select a completed day to review your logged exercises and note.",
+  history_calendar_completed_label: "{date}, completed",
   history_day_summary_heading: "Day summary",
   history_day_summary_empty: "Select a day from the calendar to review what you logged.",
   history_exercises_heading: "Exercises",
@@ -90,4 +94,9 @@ export const en = {
   // Common actions
   action_watch: "Watch",
   action_watch_aria: "Watch {title}",
+  action_watch_video: "Watch video",
+
+  // Detail screen
+  detail_loading_heading: "Loading today's log...",
+  detail_loading_text: "Checking whether you already logged this exercise for today.",
 } as const;

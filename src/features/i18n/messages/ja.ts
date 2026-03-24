@@ -41,6 +41,10 @@ export const ja = {
 
   // History screen
   history_heading: "履歴",
+  history_subheading: "記録済みの日を振り返り、保存したエクササイズと体調の概要を確認しましょう。",
+  history_calendar_heading: "カレンダー",
+  history_calendar_text: "記録したエクササイズとメモを確認する日を選びましょう。",
+  history_calendar_completed_label: "{date}、実施済み",
   history_day_summary_heading: "1日のまとめ",
   history_day_summary_empty: "カレンダーから日を選択して、記録した内容を確認しましょう。",
   history_exercises_heading: "エクササイズ",
@@ -90,4 +94,9 @@ export const ja = {
   // Common actions
   action_watch: "見る",
   action_watch_aria: "{title}を見る",
+  action_watch_video: "動画を見る",
+
+  // Detail screen
+  detail_loading_heading: "今日のログを読み込み中...",
+  detail_loading_text: "この運動を今日すでに記録したかどうかを確認中です。",
 } as const;

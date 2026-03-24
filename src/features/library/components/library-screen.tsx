@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
+import { useTranslation } from "@/features/i18n/use-translation";
 
 import { LibraryFilters } from "./library-filters";
 
@@ -25,6 +26,7 @@ const initialFilters: LibraryFilterState = {
 
 export function LibraryScreen() {
   const [filters, setFilters] = useState<LibraryFilterState>(initialFilters);
+  const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
 
   const filteredExercises = useMemo(() => {
     const searchTerm = filters.search.trim().toLowerCase();
@@ -60,8 +62,8 @@ export function LibraryScreen() {
   return (
     <>
       <section className="card page-header">
-        <h1>Library</h1>
-        <p>Browse the full exercise catalog and open a detail page when you want the video and quick logging tools.</p>
+        <h1>{t("library_heading")}</h1>
+        <p>{t("library_subheading")}</p>
       </section>
 
       <LibraryFilters value={filters} onChange={setFilters} />
@@ -80,28 +82,28 @@ export function LibraryScreen() {
                 <Link
                   href={`/exercises/${exercise.id}`}
                   className="recommendation-card__watch-link"
-                  aria-label={`Watch ${exercise.title}`}
+                  aria-label={t("action_watch_aria", { title: exercise.title })}
                 >
-                  Watch
+                  {t("action_watch")}
                 </Link>
               </div>
 
               <dl className="recommendation-card__meta">
                 <div>
-                  <dt>Duration</dt>
-                  <dd>{exercise.durationMinutes} min</dd>
+                  <dt>{t("meta_duration")}</dt>
+                  <dd>{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
                 </div>
                 <div>
-                  <dt>Intensity</dt>
-                  <dd>{exercise.intensity}</dd>
+                  <dt>{t("meta_intensity")}</dt>
+                  <dd>{formatIntensity(exercise.intensity)}</dd>
                 </div>
                 <div>
-                  <dt>Body area</dt>
-                  <dd>{exercise.bodyArea.replace("-", " ")}</dd>
+                  <dt>{t("meta_body_area")}</dt>
+                  <dd>{formatBodyArea(exercise.bodyArea)}</dd>
                 </div>
                 <div>
-                  <dt>Purpose</dt>
-                  <dd>{exercise.purpose}</dd>
+                  <dt>{t("meta_purpose")}</dt>
+                  <dd>{formatPurpose(exercise.purpose)}</dd>
                 </div>
               </dl>
             </article>
