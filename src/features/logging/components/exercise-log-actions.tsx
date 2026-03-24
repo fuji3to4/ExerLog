@@ -1,36 +1,39 @@
+import { useTranslation } from "@/features/i18n/use-translation";
 import type { ExerciseLogResult } from "@/lib/types";
-
-const logActions: Array<{ label: string; value: ExerciseLogResult }> = [
-  { label: "Did it", value: "did" },
-  { label: "Partly", value: "partial" },
-  { label: "Couldn't", value: "could_not" },
-];
 
 type ExerciseLogActionsProps = {
   result: ExerciseLogResult | null;
   onLog: (result: ExerciseLogResult) => void;
 };
 
-function getSavedStateLabel(result: ExerciseLogResult | null) {
-  if (result === "did") {
-    return "Saved: Did it";
-  }
-
-  if (result === "partial") {
-    return "Saved: Partly";
-  }
-
-  if (result === "could_not") {
-    return "Saved: Couldn't";
-  }
-
-  return "Not logged yet";
-}
-
 export function ExerciseLogActions({ result, onLog }: ExerciseLogActionsProps) {
+  const { t } = useTranslation();
+
+  const logActions: Array<{ label: string; value: ExerciseLogResult }> = [
+    { label: t("result_did"), value: "did" },
+    { label: t("result_partial"), value: "partial" },
+    { label: t("result_couldnt"), value: "could_not" },
+  ];
+
+  function getSavedStateLabel(result: ExerciseLogResult | null) {
+    if (result === "did") {
+      return t("result_saved_did");
+    }
+
+    if (result === "partial") {
+      return t("result_saved_partial");
+    }
+
+    if (result === "could_not") {
+      return t("result_saved_couldnt");
+    }
+
+    return t("result_not_logged");
+  }
+
   return (
     <div className="exercise-log-actions">
-      <div className="exercise-log-actions__buttons" role="group" aria-label="Log exercise result">
+      <div className="exercise-log-actions__buttons" role="group" aria-label={t("result_group_label")}>
         {logActions.map((action) => (
           <button
             key={action.value}

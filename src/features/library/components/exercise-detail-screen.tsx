@@ -6,6 +6,7 @@ import { ExerciseLogActions } from "@/features/logging/components/exercise-log-a
 import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
+import { useTranslation } from "@/features/i18n/use-translation";
 
 type ExerciseDetailScreenProps = {
   exercise: ExerciseVideo;
@@ -14,6 +15,7 @@ type ExerciseDetailScreenProps = {
 export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
   const [result, setResult] = useState<ExerciseLogResult | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
 
   useEffect(() => {
     let isActive = true;
@@ -61,33 +63,33 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
           <p>{exercise.description}</p>
         </div>
         <a href={exercise.videoUrl} className="today-screen__primary-button" target="_blank" rel="noreferrer">
-          Watch video
+          {t("action_watch_video")}
         </a>
       </div>
 
       <dl className="recommendation-card__meta">
         <div>
-          <dt>Purpose</dt>
-          <dd>{exercise.purpose}</dd>
+          <dt>{t("meta_purpose")}</dt>
+          <dd>{formatPurpose(exercise.purpose)}</dd>
         </div>
         <div>
-          <dt>Duration</dt>
-          <dd>{exercise.durationMinutes} min</dd>
+          <dt>{t("meta_duration")}</dt>
+          <dd>{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
         </div>
         <div>
-          <dt>Intensity</dt>
-          <dd>{exercise.intensity}</dd>
+          <dt>{t("meta_intensity")}</dt>
+          <dd>{formatIntensity(exercise.intensity)}</dd>
         </div>
         <div>
-          <dt>Body area</dt>
-          <dd>{exercise.bodyArea.replace("-", " ")}</dd>
+          <dt>{t("meta_body_area")}</dt>
+          <dd>{formatBodyArea(exercise.bodyArea)}</dd>
         </div>
       </dl>
 
       {!isHydrated ? (
         <div className="exercise-detail__loading" aria-live="polite">
-          <h2>Loading today&apos;s log...</h2>
-          <p>Checking whether you already logged this exercise for today.</p>
+          <h2>{t("detail_loading_heading")}</h2>
+          <p>{t("detail_loading_text")}</p>
         </div>
       ) : (
         <ExerciseLogActions result={result} onLog={(nextResult) => void handleLog(nextResult)} />

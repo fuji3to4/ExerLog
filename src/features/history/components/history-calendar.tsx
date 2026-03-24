@@ -1,4 +1,5 @@
 import { buildMonthGrid } from "@/lib/date/month-grid";
+import { useTranslation } from "@/features/i18n/use-translation";
 
 type HistoryCalendarProps = {
   month: string;
@@ -7,23 +8,25 @@ type HistoryCalendarProps = {
   onSelectDate: (date: string) => void;
 };
 
-function formatCalendarLabel(date: string, completed: boolean) {
-  const label = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-  }).format(new Date(`${date}T00:00:00`));
-
-  return completed ? `${label}, completed` : label;
-}
-
 export function HistoryCalendar({ month, completedDays, selectedDate, onSelectDate }: HistoryCalendarProps) {
   const completedDaySet = new Set(completedDays);
+  const { language, t } = useTranslation();
+
+  function formatCalendarLabel(date: string, completed: boolean) {
+    const locale = language === "ja" ? "ja-JP" : "en-US";
+    const label = new Intl.DateTimeFormat(locale, {
+      month: "long",
+      day: "numeric",
+    }).format(new Date(`${date}T00:00:00`));
+
+    return completed ? t("history_calendar_completed_label", { date: label }) : label;
+  }
 
   return (
     <section className="card history-calendar">
       <div className="history-calendar__header">
-        <h2>Calendar</h2>
-        <p>Select a completed day to review your logged exercises and note.</p>
+        <h2>{t("history_calendar_heading")}</h2>
+        <p>{t("history_calendar_text")}</p>
       </div>
 
       <div className="history-calendar__grid">

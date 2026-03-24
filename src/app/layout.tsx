@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { LanguageProvider } from "@/features/i18n/language-provider";
 
 type RootLayoutProps = {
   children: ReactNode;
@@ -34,8 +35,22 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="ja" suppressHydrationWarning>
+      <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                var value = localStorage.getItem("exerlog-language");
+                var language = value === "en" ? "en" : "ja";
+                document.documentElement.lang = language;
+                document.documentElement.dataset.language = language;
+              })();
+            `,
+          }}
+        />
+        <LanguageProvider>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

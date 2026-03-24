@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderWithLanguage } from "@/test/render-with-language";
 import { BottomNav } from "./bottom-nav";
 
 test("marks the current destination as active", () => {
-  render(<BottomNav currentPath="/library" />);
+  renderWithLanguage(<BottomNav currentPath="/library" />);
 
-  expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("aria-current", "page");
-  expect(screen.getByRole("link", { name: /today/i })).not.toHaveAttribute("aria-current");
-  expect(screen.getByRole("link", { name: /history/i })).not.toHaveAttribute("aria-current");
+  expect(screen.getByRole("link", { name: /ライブラリ/i })).toHaveAttribute("aria-current", "page");
+  expect(screen.getByRole("link", { name: /今日/i })).not.toHaveAttribute("aria-current");
+  expect(screen.getByRole("link", { name: /履歴/i })).not.toHaveAttribute("aria-current");
 });

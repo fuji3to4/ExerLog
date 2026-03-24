@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "@/features/i18n/use-translation";
+
 type LibraryFiltersValue = {
   search: string;
   bodyArea: string;
@@ -17,38 +19,6 @@ type SelectOption = {
   label: string;
   value: string;
 };
-
-const bodyAreaOptions: SelectOption[] = [
-  { label: "All body areas", value: "" },
-  { label: "Upper body", value: "upper-body" },
-  { label: "Lower body", value: "lower-body" },
-  { label: "Full body", value: "full-body" },
-];
-
-const purposeOptions: SelectOption[] = [
-  { label: "All purposes", value: "" },
-  { label: "Warmup", value: "warmup" },
-  { label: "Mobility", value: "mobility" },
-  { label: "Strength", value: "strength" },
-  { label: "Recovery", value: "recovery" },
-  { label: "Endurance", value: "endurance" },
-];
-
-const durationOptions: SelectOption[] = [
-  { label: "Any duration", value: "" },
-  { label: "3 min", value: "3" },
-  { label: "4 min", value: "4" },
-  { label: "5 min", value: "5" },
-  { label: "6 min", value: "6" },
-  { label: "10 min", value: "10" },
-];
-
-const intensityOptions: SelectOption[] = [
-  { label: "Any intensity", value: "" },
-  { label: "Low", value: "low" },
-  { label: "Medium", value: "medium" },
-  { label: "High", value: "high" },
-];
 
 type FilterSelectProps = {
   label: string;
@@ -75,45 +45,79 @@ function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
 }
 
 export function LibraryFilters({ value, onChange }: LibraryFiltersProps) {
+  const { t } = useTranslation();
+
+  const bodyAreaOptions: SelectOption[] = [
+    { label: t("body_area_all"), value: "" },
+    { label: t("body_area_upper_body"), value: "upper-body" },
+    { label: t("body_area_lower_body"), value: "lower-body" },
+    { label: t("body_area_full_body"), value: "full-body" },
+  ];
+
+  const purposeOptions: SelectOption[] = [
+    { label: t("purpose_all"), value: "" },
+    { label: t("purpose_warmup"), value: "warmup" },
+    { label: t("purpose_mobility"), value: "mobility" },
+    { label: t("purpose_strength"), value: "strength" },
+    { label: t("purpose_recovery"), value: "recovery" },
+    { label: t("purpose_endurance"), value: "endurance" },
+  ];
+
+  const durationOptions: SelectOption[] = [
+    { label: t("duration_any"), value: "" },
+    { label: t("duration_minutes", { count: 3 }), value: "3" },
+    { label: t("duration_minutes", { count: 4 }), value: "4" },
+    { label: t("duration_minutes", { count: 5 }), value: "5" },
+    { label: t("duration_minutes", { count: 6 }), value: "6" },
+    { label: t("duration_minutes", { count: 10 }), value: "10" },
+  ];
+
+  const intensityOptions: SelectOption[] = [
+    { label: t("intensity_any"), value: "" },
+    { label: t("intensity_low"), value: "low" },
+    { label: t("intensity_medium"), value: "medium" },
+    { label: t("intensity_high"), value: "high" },
+  ];
+
   return (
     <section className="card library-filters">
       <div className="library-filters__heading">
-        <h2>Find an exercise</h2>
-        <p>Use a simple search or narrow the list with one or two filters.</p>
+        <h2>{t("library_filters_heading")}</h2>
+        <p>{t("library_filters_subheading")}</p>
       </div>
 
       <label className="library-filters__field" htmlFor="search-exercises">
-        <span>Search exercises</span>
+        <span>{t("library_search_label")}</span>
         <input
           id="search-exercises"
           type="search"
           value={value.search}
-          placeholder="Search by title or description"
+          placeholder={t("library_search_placeholder")}
           onChange={(event) => onChange({ ...value, search: event.target.value })}
         />
       </label>
 
       <div className="library-filters__grid">
         <FilterSelect
-          label="Body area"
+          label={t("meta_body_area")}
           value={value.bodyArea}
           options={bodyAreaOptions}
           onChange={(nextValue) => onChange({ ...value, bodyArea: nextValue })}
         />
         <FilterSelect
-          label="Purpose"
+          label={t("meta_purpose")}
           value={value.purpose}
           options={purposeOptions}
           onChange={(nextValue) => onChange({ ...value, purpose: nextValue })}
         />
         <FilterSelect
-          label="Duration"
+          label={t("meta_duration")}
           value={value.duration}
           options={durationOptions}
           onChange={(nextValue) => onChange({ ...value, duration: nextValue })}
         />
         <FilterSelect
-          label="Intensity"
+          label={t("meta_intensity")}
           value={value.intensity}
           options={intensityOptions}
           onChange={(nextValue) => onChange({ ...value, intensity: nextValue })}

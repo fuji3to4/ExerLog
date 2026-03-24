@@ -1,18 +1,23 @@
-import Link from "next/link";
+"use client";
 
-const destinations = [
-  { href: "/", label: "Today" },
-  { href: "/library", label: "Library" },
-  { href: "/history", label: "History" },
-];
+import Link from "next/link";
+import { useTranslation } from "@/features/i18n/use-translation";
 
 type BottomNavProps = {
   currentPath: string;
 };
 
 export function BottomNav({ currentPath }: BottomNavProps) {
+  const { messages } = useTranslation();
+
+  const destinations = [
+    { href: "/", label: messages.nav_today },
+    { href: "/library", label: messages.nav_library },
+    { href: "/history", label: messages.nav_history },
+  ];
+
   return (
-    <nav aria-label="Primary" className="bottom-nav">
+    <nav aria-label={messages.nav_aria_label} className="bottom-nav">
       {destinations.map((destination) => {
         const isActive = currentPath === destination.href;
 

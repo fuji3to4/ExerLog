@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { useTranslation } from "@/features/i18n/use-translation";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
 
@@ -16,6 +17,7 @@ export function RecommendedExerciseCard({
   watchHref,
   onLog,
 }: RecommendedExerciseCardProps) {
+  const { t, formatIntensity } = useTranslation();
   const headingId = `recommendation-${exercise.id}`;
 
   return (
@@ -28,20 +30,20 @@ export function RecommendedExerciseCard({
         <Link
           href={watchHref}
           className="recommendation-card__watch-link"
-          aria-label={`Watch ${exercise.title}`}
+          aria-label={t("action_watch_aria", { title: exercise.title })}
         >
-          Watch
+          {t("action_watch")}
         </Link>
       </div>
 
       <dl className="recommendation-card__meta">
         <div>
-          <dt>Duration</dt>
-          <dd>{exercise.durationMinutes} min</dd>
+          <dt>{t("meta_duration")}</dt>
+          <dd>{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
         </div>
         <div>
-          <dt>Intensity</dt>
-          <dd>{exercise.intensity}</dd>
+          <dt>{t("meta_intensity")}</dt>
+          <dd>{formatIntensity(exercise.intensity)}</dd>
         </div>
       </dl>
 

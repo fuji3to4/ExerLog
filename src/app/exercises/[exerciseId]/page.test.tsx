@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test } from "vitest";
 
 import { appDb } from "@/features/storage/app-db";
 import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
+import { renderWithLanguage } from "@/test/render-with-language";
 
 import ExerciseDetailPage, { generateStaticParams } from "./page";
 
@@ -24,7 +25,9 @@ async function seedTodayState() {
 }
 
 test("exercise detail page shows video, metadata, and logging actions", async () => {
-  render(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }));
+  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }), {
+    initialLanguage: "en",
+  });
 
   expect(screen.getByRole("link", { name: /watch video/i })).toHaveAttribute("href", expect.stringContaining("youtube"));
   expect(screen.getByText(/gentle seated mobility work/i)).toBeInTheDocument();
@@ -38,7 +41,9 @@ test("exercise detail logging persists the selected result", async () => {
   const todayKey = toDayKey(new Date());
   const user = userEvent.setup();
 
-  render(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }));
+  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }), {
+    initialLanguage: "en",
+  });
 
   await user.click(await screen.findByRole("button", { name: /did it/i }));
 
@@ -59,7 +64,9 @@ test("exercise detail logging persists the selected result", async () => {
 test("exercise detail hydrates an existing log state on first render", async () => {
   await seedTodayState();
 
-  render(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }));
+  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }), {
+    initialLanguage: "en",
+  });
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
   expect(await screen.findByText("Saved: Did it")).toBeInTheDocument();
@@ -74,4 +81,11 @@ test("generateStaticParams returns all catalog exercise ids", () => {
     { exerciseId: "breathing-reset-3" },
     { exerciseId: "walk-in-place-10" },
   ]);
+});
+
+test("keeps imported content raw on the detail screen", async () => {
+  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "neck-mobility-5" }) }));
+
+  expect(screen.getByRole("heading", { name: "Neck Mobility" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /動画を見る/i })).toBeInTheDocument();
 });

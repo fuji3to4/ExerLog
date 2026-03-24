@@ -1,12 +1,7 @@
 import type { ChangeEvent } from "react";
 
+import { useTranslation } from "@/features/i18n/use-translation";
 import type { ConditionLevel } from "@/lib/types";
-
-const conditionOptions: Array<{ label: string; value: ConditionLevel }> = [
-  { label: "Feeling good", value: "good" },
-  { label: "Okay", value: "okay" },
-  { label: "Tired", value: "tired" },
-];
 
 type DailyConditionCardProps = {
   conditionLevel: ConditionLevel;
@@ -23,15 +18,23 @@ export function DailyConditionCard({
   onNoteChange,
   onSave,
 }: DailyConditionCardProps) {
+  const { t } = useTranslation();
+
+  const conditionOptions: Array<{ label: string; value: ConditionLevel }> = [
+    { label: t("condition_good"), value: "good" },
+    { label: t("condition_okay"), value: "okay" },
+    { label: t("condition_tired"), value: "tired" },
+  ];
+
   return (
     <section className="card today-screen__section">
       <div className="today-screen__section-heading">
-        <h2>Daily condition</h2>
-        <p>Pick how you feel today, add a quick note, then save it for today&apos;s plan.</p>
+        <h2>{t("condition_heading")}</h2>
+        <p>{t("condition_subheading")}</p>
       </div>
 
       <fieldset className="condition-card__options">
-        <legend>How are you feeling?</legend>
+        <legend>{t("condition_legend")}</legend>
         {conditionOptions.map((option) => (
           <label key={option.value} className="condition-card__option">
             <input
@@ -47,17 +50,17 @@ export function DailyConditionCard({
       </fieldset>
 
       <label className="condition-card__note">
-        <span>Note</span>
+        <span>{t("condition_note_label")}</span>
         <textarea
           rows={4}
           value={note}
-          placeholder="Add anything worth remembering for today."
+          placeholder={t("condition_note_placeholder")}
           onChange={(event: ChangeEvent<HTMLTextAreaElement>) => onNoteChange(event.target.value)}
         />
       </label>
 
       <button type="button" className="today-screen__primary-button" onClick={() => void onSave()}>
-        Save condition
+        {t("condition_save_button")}
       </button>
     </section>
   );
