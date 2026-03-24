@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { useTranslation } from "@/features/i18n/use-translation";
+
 import { DaySummary } from "./day-summary";
 import { HistoryCalendar } from "./history-calendar";
 import { getHistoryDaySummary, listCompletedDaysInMonth, type HistoryDaySummary } from "../history-query";
@@ -14,6 +16,7 @@ export function HistoryScreen({ month }: HistoryScreenProps) {
   const [completedDays, setCompletedDays] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [summary, setSummary] = useState<HistoryDaySummary | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     let isActive = true;
@@ -41,11 +44,11 @@ export function HistoryScreen({ month }: HistoryScreenProps) {
   }
 
   return (
-    <>
-      <section className="card page-header">
-        <h1>History</h1>
-        <p>Review your completed days and open a quick summary for the exercises and condition you logged.</p>
-      </section>
+      <>
+        <section className="card page-header">
+        <h1>{t("history_heading")}</h1>
+        <p>{t("history_subheading")}</p>
+        </section>
 
       <HistoryCalendar
         month={month}
