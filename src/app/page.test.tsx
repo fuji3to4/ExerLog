@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { renderWithLanguage } from "@/test/render-with-language";
 
 const { todayScreenSpy } = vi.hoisted(() => ({
   todayScreenSpy: vi.fn(({ date }: { date: string }) => <section data-testid="today-screen">{date}</section>),
@@ -23,11 +24,11 @@ afterEach(() => {
 });
 
 test("renders the today screen for the home route", () => {
-  render(<HomePage />);
+  renderWithLanguage(<HomePage />);
 
   expect(screen.getByTestId("today-screen")).toHaveTextContent("2026-03-23");
-  expect(screen.getByRole("link", { name: /library/i })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /history/i })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /ライブラリ/i })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /履歴/i })).toBeInTheDocument();
   expect(todayScreenSpy).toHaveBeenCalled();
 });
 
