@@ -5,6 +5,7 @@ import { beforeEach, expect, test } from "vitest";
 import { getDailyCondition, saveDailyCondition } from "@/features/storage/daily-condition.repository";
 import { appDb } from "@/features/storage/app-db";
 import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { renderWithLanguage } from "@/test/render-with-language";
 
 import { TodayScreen } from "./components/today-screen";
 
@@ -24,7 +25,7 @@ async function seedLog(date: string, exerciseId: string, result: "did" | "partia
 test("saves a daily condition and logs an exercise from the home screen", async () => {
   const user = userEvent.setup();
 
-  render(<TodayScreen date="2026-03-23" />);
+  renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
 
@@ -59,7 +60,7 @@ test("hydrates an existing condition note and log state on first render", async 
   await seedCondition("2026-03-24", "tired", "Need a lighter day");
   await seedLog("2026-03-24", "neck-mobility-5", "partial");
 
-  render(<TodayScreen date="2026-03-24" />);
+  renderWithLanguage(<TodayScreen date="2026-03-24" />, { initialLanguage: "en" });
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
   expect(screen.queryByRole("radio", { name: /okay/i })).not.toBeInTheDocument();
@@ -73,7 +74,7 @@ test("hydrates an existing condition note and log state on first render", async 
 });
 
 test("keeps recommendations short and stable for the selected day", async () => {
-  const { rerender } = render(<TodayScreen date="2026-03-23" />);
+  const { rerender } = renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
 
   const pageHeader = screen.getByRole("heading", { name: /today/i, level: 1 });
 
@@ -95,7 +96,7 @@ test("edits an existing daily condition and updates recommendations", async () =
 
   await seedCondition("2026-03-24", "okay", "Start steady");
 
-  render(<TodayScreen date="2026-03-24" />);
+  renderWithLanguage(<TodayScreen date="2026-03-24" />, { initialLanguage: "en" });
 
   await waitFor(() => {
     expect(screen.getByRole("textbox", { name: /note/i })).toHaveValue("Start steady");
@@ -123,7 +124,7 @@ test("edits an existing daily condition and updates recommendations", async () =
 test("supports keyboard reachability for today controls", async () => {
   const user = userEvent.setup();
 
-  render(<TodayScreen date="2026-03-23" />);
+  renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
 
   const neckMobilityCard = await screen.findByRole("article", { name: "Neck Mobility" });
 
@@ -144,7 +145,7 @@ test("supports keyboard reachability for today controls", async () => {
 });
 
 test("shows watch and library links for the today screen", async () => {
-  render(<TodayScreen date="2026-03-23" />);
+  renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
 
   expect(await screen.findByRole("link", { name: /watch neck mobility/i })).toHaveAttribute(
     "href",
@@ -157,7 +158,7 @@ test("resets saved log state when the selected day changes", async () => {
   await seedLog("2026-03-23", "neck-mobility-5", "did");
   await seedCondition("2026-03-24", "tired", "");
 
-  const { rerender } = render(<TodayScreen date="2026-03-23" />);
+  const { rerender } = renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
 
   const firstDayCard = await screen.findByRole("article", { name: "Neck Mobility" });
   await waitFor(() => {
@@ -176,4 +177,33 @@ test("resets saved log state when the selected day changes", async () => {
       "false",
     );
   });
+});
+
+test("shows Japanese fixed UI by default while leaving exercise titles unchanged", async () => {
+  renderWithLanguage(<TodayScreen date="2026-03-23" />);
+
+  await waitFor(() => {
+    expect(screen.queryByText(/今日のログを読み込み中/i)).not.toBeInTheDocument();
+  });
+
+  expect(screen.getByRole("heading", { name: "今日" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /体調を保存/i })).toBeInTheDocument();
+  expect(screen.getByRole("article", { name: "Neck Mobility" })).toBeInTheDocument();
+  
+  const watchLink = screen.getAllByRole("link").find(link => 
+    link.getAttribute("aria-label")?.includes("Neck Mobility") && link.getAttribute("aria-label")?.includes("を見る")
+  );
+  expect(watchLink).toBeInTheDocument();
+});
+
+test("switches Today fixed UI to English without translating exercise content", async () => {
+  renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
+
+  await waitFor(() => {
+    expect(screen.queryByText(/loading today's log/i)).not.toBeInTheDocument();
+  });
+
+  expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /save condition/i })).toBeInTheDocument();
+  expect(screen.getByRole("article", { name: "Neck Mobility" })).toBeInTheDocument();
 });

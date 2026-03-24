@@ -75,14 +75,19 @@ export const en = {
 
   // Duration values
   duration_any: "Any duration",
-  duration_minutes: "{0} min",
+  duration_minutes: "{count} min",
 
   // Exercise logging results
   result_did: "Did it",
   result_partial: "Partly",
   result_couldnt: "Couldn't",
+  result_saved_did: "Saved: Did it",
+  result_saved_partial: "Saved: Partly",
+  result_saved_couldnt: "Saved: Couldn't",
+  result_not_logged: "Not logged yet",
+  result_group_label: "Log exercise result",
 
   // Common actions
   action_watch: "Watch",
-  action_watch_aria: "Watch {0}",
+  action_watch_aria: "Watch {title}",
 } as const;

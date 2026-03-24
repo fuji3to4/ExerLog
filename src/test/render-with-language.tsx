@@ -20,5 +20,10 @@ export function renderWithLanguage(
     window.localStorage.removeItem(LANGUAGE_STORAGE_KEY);
   }
 
-  return render(<LanguageProvider>{ui}</LanguageProvider>, options);
+  const result = render(<LanguageProvider>{ui}</LanguageProvider>, options);
+
+  return {
+    ...result,
+    rerender: (nextUi: ReactElement) => result.rerender(<LanguageProvider>{nextUi}</LanguageProvider>),
+  };
 }

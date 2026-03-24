@@ -75,14 +75,19 @@ export const ja = {
 
   // Duration values
   duration_any: "任意の時間",
-  duration_minutes: "{0}分",
+  duration_minutes: "{count}分",
 
   // Exercise logging results
   result_did: "できた",
   result_partial: "一部できた",
   result_couldnt: "できなかった",
+  result_saved_did: "保存済み: できた",
+  result_saved_partial: "保存済み: 一部できた",
+  result_saved_couldnt: "保存済み: できなかった",
+  result_not_logged: "未記録",
+  result_group_label: "運動結果を記録",
 
   // Common actions
   action_watch: "見る",
-  action_watch_aria: "{0}を見る",
+  action_watch_aria: "{title}を見る",
 } as const;

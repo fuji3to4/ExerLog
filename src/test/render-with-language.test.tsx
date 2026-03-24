@@ -15,3 +15,11 @@ test("seeds the initial language through document state and storage", () => {
   expect(screen.getByText("en")).toBeInTheDocument();
   expect(document.documentElement.dataset.language).toBe("en");
 });
+
+test("keeps the language provider active across rerenders", () => {
+  const { rerender } = renderWithLanguage(<Probe />, { initialLanguage: "en" });
+
+  rerender(<Probe />);
+
+  expect(screen.getByText("en")).toBeInTheDocument();
+});

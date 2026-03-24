@@ -12,10 +12,23 @@ export function useTranslation() {
 
   const { language, messages, setLanguage } = context;
 
+  function t(key: keyof typeof messages, replacements?: Record<string, string | number>): string {
+    let message = messages[key];
+    
+    if (replacements) {
+      Object.entries(replacements).forEach(([placeholder, value]) => {
+        message = message.replace(`{${placeholder}}`, String(value));
+      });
+    }
+    
+    return message;
+  }
+
   return {
     language,
     messages,
     setLanguage,
+    t,
     formatDate: (date: Date | string) => formatDate(date, language),
     formatIntensity: (intensity: string) => formatIntensity(intensity, language),
     formatBodyArea: (bodyArea: string) => formatBodyArea(bodyArea, language),
