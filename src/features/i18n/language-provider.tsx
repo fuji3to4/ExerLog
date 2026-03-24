@@ -3,7 +3,7 @@
 import { createContext, useCallback, useEffect, useState, type ReactNode } from "react";
 
 import type { Language } from "./language";
-import { DEFAULT_LANGUAGE, isLanguage, LANGUAGE_STORAGE_KEY, readStoredLanguage } from "./language";
+import { LANGUAGE_STORAGE_KEY, resolveInitialLanguage } from "./language";
 import { getMessages, type Messages } from "./messages";
 
 type LanguageContextValue = {
@@ -19,12 +19,7 @@ type LanguageProviderProps = {
 };
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
-  const [language, setLanguageState] = useState<Language>(() =>
-    typeof document !== "undefined" &&
-    (document.documentElement.dataset.language === "ja" || document.documentElement.dataset.language === "en")
-      ? (document.documentElement.dataset.language as Language)
-      : readStoredLanguage(),
-  );
+  const [language, setLanguageState] = useState<Language>(resolveInitialLanguage);
 
   const messages = getMessages(language);
 

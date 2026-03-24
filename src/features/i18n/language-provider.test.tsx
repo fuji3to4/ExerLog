@@ -27,3 +27,13 @@ test("uses persisted English and updates document lang", () => {
   expect(screen.getByText("en")).toBeInTheDocument();
   expect(document.documentElement.lang).toBe("en");
 });
+
+test("falls back to Japanese when persisted value is invalid", () => {
+  window.localStorage.setItem("exerlog-language", "fr");
+  render(
+    <LanguageProvider>
+      <Probe />
+    </LanguageProvider>,
+  );
+  expect(screen.getByText("ja")).toBeInTheDocument();
+});

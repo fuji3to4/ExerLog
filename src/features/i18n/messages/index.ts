@@ -2,7 +2,9 @@ import { en } from "./en";
 import { ja } from "./ja";
 import type { Language } from "../language";
 
-export type Messages = typeof en;
+export type Messages = {
+  [K in keyof typeof en]: string;
+};
 
 const messages: Record<Language, Messages> = {
   en,
