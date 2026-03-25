@@ -37,3 +37,7 @@ export function replaceAllExercises(exercises: ExerciseVideo[]): Promise<void> {
     await appDb.exercises.bulkAdd(exercises);
   });
 }
+
+export function clearAllExercises(): Promise<void> {
+  return appDb.exercises.clear();
+}

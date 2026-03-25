@@ -34,3 +34,7 @@ export function deleteExerciseLog(id: string): Promise<void> {
   return appDb.logs.delete(id);
 }
 
+export function clearAllExerciseLogs(): Promise<void> {
+  return appDb.logs.clear();
+}
+

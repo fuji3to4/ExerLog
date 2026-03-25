@@ -135,6 +135,14 @@ export const en = {
   settings_import_error: "Import failed: {error}",
   settings_export_logs: "Export exercise logs (CSV)",
   settings_export_conditions: "Export condition records (CSV)",
+  settings_delete_all_exercises: "Delete all exercises",
+  settings_delete_all_exercises_confirm: "Delete all {count} exercises? This cannot be undone.",
+  settings_delete_all_logs: "Delete all logs",
+  settings_delete_all_logs_confirm: "Delete all {count} log entries? This cannot be undone.",
+  settings_delete_confirm_btn: "Yes, delete all",
+  settings_delete_cancel_btn: "Cancel",
+  settings_delete_success_exercises: "All exercises deleted.",
+  settings_delete_success_logs: "All logs deleted.",
 
   // Common actions
   action_edit: "Edit",

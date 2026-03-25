@@ -1,12 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import { appDb } from "@/features/storage/app-db";
-import { listAllExercises, replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
+import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
+import { clearAllExerciseLogs } from "@/features/storage/exercise-logs.repository";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
 import { generateConditionsCsv, generateExerciseLogsCsv } from "../csv/history-csv";
+
+type DeleteState = "idle" | "confirming";
 
 function downloadCsv(filename: string, content: string) {
   const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
@@ -18,10 +21,86 @@ function downloadCsv(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
+function BulkDeleteButton({
+  label,
+  confirmMessage,
+  confirmBtnLabel,
+  cancelBtnLabel,
+  onConfirm,
+}: {
+  label: string;
+  confirmMessage: string;
+  confirmBtnLabel: string;
+  cancelBtnLabel: string;
+  onConfirm: () => Promise<void>;
+}) {
+  const [state, setState] = useState<DeleteState>("idle");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function startConfirm() {
+    setState("confirming");
+    timerRef.current = setTimeout(() => setState("idle"), 8000);
+  }
+
+  function cancel() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setState("idle");
+  }
+
+  async function confirm() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setState("idle");
+    await onConfirm();
+  }
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+  if (state === "confirming") {
+    return (
+      <div className="bulk-delete-confirm">
+        <p className="bulk-delete-confirm__message">{confirmMessage}</p>
+        <div className="bulk-delete-confirm__actions">
+          <button
+            type="button"
+            className="settings-action-button settings-action-button--secondary"
+            onClick={cancel}
+          >
+            {cancelBtnLabel}
+          </button>
+          <button
+            type="button"
+            className="settings-action-button settings-action-button--danger"
+            onClick={() => void confirm()}
+          >
+            {confirmBtnLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="settings-action-button settings-action-button--danger"
+      onClick={startConfirm}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function DataManagement() {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [exerciseCount, setExerciseCount] = useState(0);
+  const [logCount, setLogCount] = useState(0);
+
+  useEffect(() => {
+    void appDb.exercises.count().then(setExerciseCount);
+    void appDb.logs.count().then(setLogCount);
+  }, []);
 
   async function handleExportExercises() {
     const exercises = await listAllExercises();
@@ -58,11 +137,24 @@ export function DataManagement() {
           ? `${t("settings_import_success", { count: exercises.length })} (${skipped} skipped)`
           : t("settings_import_success", { count: exercises.length });
       setImportStatus(status);
+      setExerciseCount(exercises.length);
     } catch {
       setImportStatus(t("settings_import_error", { error: "Failed to save" }));
     }
 
     e.target.value = "";
+  }
+
+  async function handleDeleteAllExercises() {
+    await clearAllExercises();
+    setExerciseCount(0);
+    setImportStatus(t("settings_delete_success_exercises"));
+  }
+
+  async function handleDeleteAllLogs() {
+    await clearAllExerciseLogs();
+    setLogCount(0);
+    setImportStatus(t("settings_delete_success_logs"));
   }
 
   return (
@@ -94,6 +186,13 @@ export function DataManagement() {
             onChange={(e) => void handleFileChange(e)}
           />
         </div>
+        <BulkDeleteButton
+          label={t("settings_delete_all_exercises")}
+          confirmMessage={t("settings_delete_all_exercises_confirm", { count: exerciseCount })}
+          confirmBtnLabel={t("settings_delete_confirm_btn")}
+          cancelBtnLabel={t("settings_delete_cancel_btn")}
+          onConfirm={handleDeleteAllExercises}
+        />
         {importStatus && <p className="data-management__status">{importStatus}</p>}
       </div>
 
@@ -117,6 +216,13 @@ export function DataManagement() {
             {t("settings_export_conditions")}
           </button>
         </div>
+        <BulkDeleteButton
+          label={t("settings_delete_all_logs")}
+          confirmMessage={t("settings_delete_all_logs_confirm", { count: logCount })}
+          confirmBtnLabel={t("settings_delete_confirm_btn")}
+          cancelBtnLabel={t("settings_delete_cancel_btn")}
+          onConfirm={handleDeleteAllLogs}
+        />
       </div>
     </div>
   );

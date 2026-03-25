@@ -135,6 +135,14 @@ export const ja = {
   settings_import_error: "インポートに失敗しました: {error}",
   settings_export_logs: "運動ログをエクスポート（CSV）",
   settings_export_conditions: "体調記録をエクスポート（CSV）",
+  settings_delete_all_exercises: "全エクササイズを削除",
+  settings_delete_all_exercises_confirm: "{count}件のエクササイズをすべて削除します。この操作は取り消せません。",
+  settings_delete_all_logs: "全ログを削除",
+  settings_delete_all_logs_confirm: "{count}件の運動ログをすべて削除します。この操作は取り消せません。",
+  settings_delete_confirm_btn: "削除する",
+  settings_delete_cancel_btn: "キャンセル",
+  settings_delete_success_exercises: "全エクササイズを削除しました。",
+  settings_delete_success_logs: "全ログを削除しました。",
 
   // Common actions
   action_edit: "編集",

@@ -685,3 +685,26 @@ button {
 .day-summary__action-btn--danger:hover {
   background: #fee2e2;
 }
+
+/* ── Bulk delete confirmation ────────────────────────────────────── */
+
+.bulk-delete-confirm {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #fca5a5;
+  border-radius: 0.9rem;
+  background: #fdecea;
+}
+
+.bulk-delete-confirm__message {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.bulk-delete-confirm__actions {
+  display: flex;
+  gap: 0.75rem;
+}
