@@ -34,6 +34,18 @@ jobs:
         env:
           GITHUB_ACTIONS: true
 
+      - name: Fix manifest for GitHub Pages
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = 'out/manifest.webmanifest';
+            const m = JSON.parse(fs.readFileSync(p, 'utf8'));
+            m.start_url = '/ExerLog/';
+            m.scope = '/ExerLog/';
+            m.icons = m.icons.map(i => ({ ...i, src: '/ExerLog/' + i.src.replace(/^\//, '') }));
+            fs.writeFileSync(p, JSON.stringify(m, null, 2));
+          "
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
