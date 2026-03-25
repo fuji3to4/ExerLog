@@ -8,6 +8,8 @@ type RootLayoutProps = {
   children: ReactNode;
 };
 
+const base = process.env.GITHUB_ACTIONS === "true" ? "/ExerLog" : "";
+
 export const metadata: Metadata = {
   applicationName: "Exercise Log",
   title: {
@@ -15,7 +17,7 @@ export const metadata: Metadata = {
     template: "%s | Exercise Log",
   },
   description: "A local-first exercise logging app with guided recommendations, a library, and history review.",
-  manifest: "/manifest.webmanifest",
+  manifest: `${base}/manifest.webmanifest`,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -23,10 +25,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: `${base}/icons/icon-192.png`, sizes: "192x192", type: "image/png" },
+      { url: `${base}/icons/icon-512.png`, sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: `${base}/icons/icon-192.png`, sizes: "192x192", type: "image/png" }],
   },
 };
 
