@@ -343,8 +343,61 @@ button {
   gap: 0.75rem;
 }
 
+.history-calendar__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.history-calendar__month-label {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #14213d;
+  text-align: center;
+  flex: 1;
+}
+
+.history-calendar__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid #c7d4e6;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #14213d;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.history-calendar__nav-btn:hover {
+  background: #e5ecf6;
+  border-color: #14213d;
+}
+
+.history-calendar__weekdays,
 .history-calendar__grid {
   grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.history-calendar__weekdays {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.history-calendar__weekday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7a99;
+  text-transform: uppercase;
 }
 
 .history-calendar__day {

@@ -12,7 +12,14 @@ type HistoryScreenProps = {
   month: string;
 };
 
-export function HistoryScreen({ month }: HistoryScreenProps) {
+function shiftMonth(month: string, delta: number): string {
+  const [year, m] = month.split("-").map(Number);
+  const date = new Date(year, m - 1 + delta, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export function HistoryScreen({ month: initialMonth }: HistoryScreenProps) {
+  const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const [completedDays, setCompletedDays] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [summary, setSummary] = useState<HistoryDaySummary | null>(null);
@@ -22,7 +29,7 @@ export function HistoryScreen({ month }: HistoryScreenProps) {
     let isActive = true;
 
     async function loadCompletedDays() {
-      const days = await listCompletedDaysInMonth(month);
+      const days = await listCompletedDaysInMonth(currentMonth);
 
       if (!isActive) {
         return;
@@ -36,7 +43,19 @@ export function HistoryScreen({ month }: HistoryScreenProps) {
     return () => {
       isActive = false;
     };
-  }, [month]);
+  }, [currentMonth]);
+
+  function handlePrevMonth() {
+    setCurrentMonth((m) => shiftMonth(m, -1));
+    setSelectedDate(null);
+    setSummary(null);
+  }
+
+  function handleNextMonth() {
+    setCurrentMonth((m) => shiftMonth(m, 1));
+    setSelectedDate(null);
+    setSummary(null);
+  }
 
   async function handleSelectDate(date: string) {
     setSelectedDate(date);
@@ -46,23 +65,25 @@ export function HistoryScreen({ month }: HistoryScreenProps) {
   async function handleSummaryChanged() {
     if (selectedDate) {
       setSummary(await getHistoryDaySummary(selectedDate));
-      const days = await listCompletedDaysInMonth(month);
+      const days = await listCompletedDaysInMonth(currentMonth);
       setCompletedDays(days);
     }
   }
 
   return (
-      <>
-        <section className="card page-header">
+    <>
+      <section className="card page-header">
         <h1>{t("history_heading")}</h1>
         <p>{t("history_subheading")}</p>
-        </section>
+      </section>
 
       <HistoryCalendar
-        month={month}
+        month={currentMonth}
         completedDays={completedDays}
         selectedDate={selectedDate}
         onSelectDate={(date) => void handleSelectDate(date)}
+        onPrevMonth={handlePrevMonth}
+        onNextMonth={handleNextMonth}
       />
 
       <DaySummary selectedDate={selectedDate} summary={summary} onChanged={() => void handleSummaryChanged()} />

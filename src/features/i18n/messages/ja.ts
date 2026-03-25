@@ -1,4 +1,4 @@
-export const ja = {
+﻿export const ja = {
   // Shell navigation
   nav_today: "今日",
   nav_library: "ライブラリ",
@@ -10,7 +10,7 @@ export const ja = {
   language_en: "English",
 
   // Today screen
-  today_heading: "Today",
+  today_heading: "今日",
   today_subheading: "気分を保存して、おすすめのエクササイズをワンタップで記録しよう。",
   today_loading_heading: "今日のログを読み込み中...",
   today_loading_text: "この日の保存された状態とエクササイズ結果を確認中です。",
@@ -45,6 +45,8 @@ export const ja = {
   history_calendar_heading: "カレンダー",
   history_calendar_text: "記録したエクササイズとメモを確認する日を選びましょう。",
   history_calendar_completed_label: "{date}、実施済み",
+  history_calendar_prev_month: "前の月",
+  history_calendar_next_month: "次の月",
   history_day_summary_heading: "1日のまとめ",
   history_day_summary_empty: "カレンダーから日を選択して、記録した内容を確認しましょう。",
   history_exercises_heading: "エクササイズ",

@@ -45,6 +45,8 @@ export const en = {
   history_calendar_heading: "Calendar",
   history_calendar_text: "Select a completed day to review your logged exercises and note.",
   history_calendar_completed_label: "{date}, completed",
+  history_calendar_prev_month: "Previous month",
+  history_calendar_next_month: "Next month",
   history_day_summary_heading: "Day summary",
   history_day_summary_empty: "Select a day from the calendar to review what you logged.",
   history_exercises_heading: "Exercises",
