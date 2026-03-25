@@ -1,0 +1,31 @@
+import type { DailyConditionEntry, ExerciseLog } from "@/lib/types";
+
+function escapeCsvField(value: string | number): string {
+  const str = String(value);
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+export function generateExerciseLogsCsv(logs: ExerciseLog[], exerciseTitleMap: Map<string, string>): string {
+  const headers = ["date", "exerciseId", "exerciseTitle", "result", "loggedAt"];
+  const rows = [
+    headers.join(","),
+    ...logs.map((log) =>
+      [log.date, log.exerciseId, exerciseTitleMap.get(log.exerciseId) ?? log.exerciseId, log.result, log.loggedAt]
+        .map(escapeCsvField)
+        .join(","),
+    ),
+  ];
+  return rows.join("\n");
+}
+
+export function generateConditionsCsv(conditions: DailyConditionEntry[]): string {
+  const headers = ["date", "conditionLevel", "note", "updatedAt"];
+  const rows = [
+    headers.join(","),
+    ...conditions.map((c) => [c.date, c.conditionLevel, c.note, c.updatedAt].map(escapeCsvField).join(",")),
+  ];
+  return rows.join("\n");
+}

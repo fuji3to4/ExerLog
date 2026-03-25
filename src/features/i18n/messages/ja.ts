@@ -99,4 +99,55 @@ export const ja = {
   // Detail screen
   detail_loading_heading: "今日のログを読み込み中...",
   detail_loading_text: "この運動を今日すでに記録したかどうかを確認中です。",
+  exercise_not_found: "エクササイズが見つかりません。",
+
+  // Settings screen
+  nav_settings: "設定",
+  settings_heading: "設定",
+  settings_library_section_heading: "ライブラリ管理",
+  settings_data_section_heading: "データ管理",
+
+  // Library management
+  settings_library_add: "＋ エクササイズを追加",
+  settings_library_empty: "エクササイズがありません。追加またはCSVをインポートしてください。",
+  settings_exercise_delete_confirm: "このエクササイズを削除しますか？",
+  settings_exercise_delete_has_logs: "このエクササイズには{count}件のログがあります。削除してもログは残りますが、履歴での表示名が変わる場合があります。",
+
+  // Exercise form modal
+  settings_form_add_heading: "エクササイズを追加",
+  settings_form_edit_heading: "エクササイズを編集",
+  settings_form_title_label: "タイトル",
+  settings_form_description_label: "説明（任意）",
+  settings_form_video_url_label: "動画URL",
+  settings_form_thumbnail_url_label: "サムネイルURL（任意）",
+  settings_form_body_area_label: "体の部位",
+  settings_form_purpose_label: "目的",
+  settings_form_duration_label: "時間（分）",
+  settings_form_intensity_label: "強度",
+  settings_form_save: "保存",
+  settings_form_cancel: "キャンセル",
+
+  // Data management
+  settings_export_exercises: "エクササイズをエクスポート（CSV）",
+  settings_import_exercises: "エクササイズをインポート（CSV）",
+  settings_import_confirm: "すべてのエクササイズが置き換えられます。続けますか？",
+  settings_import_success: "{count}件のエクササイズをインポートしました。",
+  settings_import_error: "インポートに失敗しました: {error}",
+  settings_export_logs: "運動ログをエクスポート（CSV）",
+  settings_export_conditions: "体調記録をエクスポート（CSV）",
+
+  // Common actions
+  action_edit: "編集",
+  action_delete: "削除",
+
+  // History edit/delete
+  history_edit_heading_log: "運動ログを編集",
+  history_edit_heading_condition: "体調を編集",
+  history_edit_date_label: "日付",
+  history_edit_exercise_label: "エクササイズ",
+  history_edit_result_label: "結果",
+  history_edit_save: "保存",
+  history_edit_cancel: "キャンセル",
+  history_log_delete_confirm: "このログを削除しますか？",
+  history_condition_delete_confirm: "この日の体調記録を削除しますか？",
 } as const;

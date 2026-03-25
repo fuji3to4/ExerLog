@@ -43,6 +43,14 @@ export function HistoryScreen({ month }: HistoryScreenProps) {
     setSummary(await getHistoryDaySummary(date));
   }
 
+  async function handleSummaryChanged() {
+    if (selectedDate) {
+      setSummary(await getHistoryDaySummary(selectedDate));
+      const days = await listCompletedDaysInMonth(month);
+      setCompletedDays(days);
+    }
+  }
+
   return (
       <>
         <section className="card page-header">
@@ -57,7 +65,7 @@ export function HistoryScreen({ month }: HistoryScreenProps) {
         onSelectDate={(date) => void handleSelectDate(date)}
       />
 
-      <DaySummary selectedDate={selectedDate} summary={summary} />
+      <DaySummary selectedDate={selectedDate} summary={summary} onChanged={() => void handleSummaryChanged()} />
     </>
   );
 }

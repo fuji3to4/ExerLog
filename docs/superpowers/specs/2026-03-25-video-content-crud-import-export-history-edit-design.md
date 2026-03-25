@@ -92,8 +92,9 @@ Four export/import actions:
 id,title,description,videoUrl,thumbnailUrl,bodyArea,purpose,durationMinutes,intensity
 ```
 - On import: the file must contain all columns. Unknown columns are ignored.
-- Rows with missing required fields (title, videoUrl, bodyArea, purpose, durationMinutes, intensity) are skipped with a warning.
-- Import replaces all existing exercises atomically.
+- **ID handling:** If the `id` column is present and non-empty, it is used as-is. This preserves existing `exerciseId` references in `exercise-logs`. If `id` is blank, a new UUID is generated. This ensures a round-trip export → edit → import does not silently break log history.
+- `description` is optional; all other fields (title, videoUrl, bodyArea, purpose, durationMinutes, intensity) are required.
+- Rows with missing required fields are skipped with a warning. The DB transaction replaces all old exercises with only the valid rows from the file (invalid rows are excluded, not carried over).
 
 ### exercise-logs.csv
 ```

@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { getTodaysRecommendations } from "@/features/recommendations/get-todays-recommendations";
 import { getDailyCondition, saveDailyCondition } from "@/features/storage/daily-condition.repository";
 import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { toDayKey } from "@/lib/date/day-key";
-import type { ConditionLevel, ExerciseLogResult } from "@/lib/types";
+import type { ConditionLevel, ExerciseLogResult, ExerciseVideo } from "@/lib/types";
 
 type ExerciseLogState = Record<string, ExerciseLogResult | undefined>;
 
@@ -17,8 +17,13 @@ export function useTodayData(date: Date | string) {
   const [note, setNote] = useState("");
   const [logResults, setLogResults] = useState<ExerciseLogState>({});
   const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
+  const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
   const hasConditionDraft = useRef(false);
   const hasNoteDraft = useRef(false);
+
+  useEffect(() => {
+    void listAllExercises().then(setExercises);
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -60,11 +65,11 @@ export function useTodayData(date: Date | string) {
   const recommendations = useMemo(
     () =>
       getTodaysRecommendations({
-        catalog: exerciseCatalog,
+        catalog: exercises,
         conditionLevel,
         date: dayKey,
       }),
-    [conditionLevel, dayKey],
+    [exercises, conditionLevel, dayKey],
   );
 
   const saveConditionEntry = useCallback(async () => {

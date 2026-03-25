@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { LanguageProvider } from "@/features/i18n/language-provider";
+import { DbInitProvider } from "@/features/storage/db-init-provider";
 
 type RootLayoutProps = {
   children: ReactNode;
@@ -49,7 +50,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
             `,
           }}
         />
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          <DbInitProvider>{children}</DbInitProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

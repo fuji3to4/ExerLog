@@ -25,3 +25,12 @@ export async function saveExerciseLog(input: SaveExerciseLogInput) {
 export function listExerciseLogsForDay(date: string) {
   return appDb.logs.where("date").equals(date).sortBy("exerciseId");
 }
+
+export async function updateExerciseLog(log: ExerciseLog): Promise<void> {
+  await appDb.logs.put(log);
+}
+
+export function deleteExerciseLog(id: string): Promise<void> {
+  return appDb.logs.delete(id);
+}
+

@@ -17,3 +17,12 @@ export function saveDailyCondition(input: SaveDailyConditionInput) {
     updatedAt: new Date().toISOString(),
   });
 }
+
+export function updateDailyCondition(entry: DailyConditionEntry): Promise<string> {
+  return appDb.conditions.put(entry);
+}
+
+export function deleteDailyCondition(date: string): Promise<void> {
+  return appDb.conditions.delete(date);
+}
+

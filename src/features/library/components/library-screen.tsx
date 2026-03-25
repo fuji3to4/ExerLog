@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
+import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
+import type { ExerciseVideo } from "@/lib/types";
 
 import { LibraryFilters } from "./library-filters";
 
@@ -26,12 +27,17 @@ const initialFilters: LibraryFilterState = {
 
 export function LibraryScreen() {
   const [filters, setFilters] = useState<LibraryFilterState>(initialFilters);
+  const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
+
+  useEffect(() => {
+    void listAllExercises().then(setExercises);
+  }, []);
 
   const filteredExercises = useMemo(() => {
     const searchTerm = filters.search.trim().toLowerCase();
 
-    return exerciseCatalog.filter((exercise) => {
+    return exercises.filter((exercise) => {
       if (filters.bodyArea && exercise.bodyArea !== filters.bodyArea) {
         return false;
       }
@@ -57,7 +63,7 @@ export function LibraryScreen() {
         exercise.description.toLowerCase().includes(searchTerm)
       );
     });
-  }, [filters]);
+  }, [exercises, filters]);
 
   return (
     <>

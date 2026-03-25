@@ -14,6 +14,7 @@ export function BottomNav({ currentPath }: BottomNavProps) {
     { href: "/", label: messages.nav_today },
     { href: "/library", label: messages.nav_library },
     { href: "/history", label: messages.nav_history },
+    { href: "/settings", label: messages.nav_settings },
   ];
 
   return (

@@ -99,4 +99,55 @@ export const en = {
   // Detail screen
   detail_loading_heading: "Loading today's log...",
   detail_loading_text: "Checking whether you already logged this exercise for today.",
+  exercise_not_found: "Exercise not found.",
+
+  // Settings screen
+  nav_settings: "Settings",
+  settings_heading: "Settings",
+  settings_library_section_heading: "Library Management",
+  settings_data_section_heading: "Data Management",
+
+  // Library management
+  settings_library_add: "+ Add exercise",
+  settings_library_empty: "No exercises yet. Add one or import a CSV.",
+  settings_exercise_delete_confirm: "Delete this exercise?",
+  settings_exercise_delete_has_logs: "This exercise has {count} log(s). Deleting it won't remove the logs, but the exercise name may not display correctly in history.",
+
+  // Exercise form modal
+  settings_form_add_heading: "Add exercise",
+  settings_form_edit_heading: "Edit exercise",
+  settings_form_title_label: "Title",
+  settings_form_description_label: "Description (optional)",
+  settings_form_video_url_label: "Video URL",
+  settings_form_thumbnail_url_label: "Thumbnail URL (optional)",
+  settings_form_body_area_label: "Body area",
+  settings_form_purpose_label: "Purpose",
+  settings_form_duration_label: "Duration (minutes)",
+  settings_form_intensity_label: "Intensity",
+  settings_form_save: "Save",
+  settings_form_cancel: "Cancel",
+
+  // Data management
+  settings_export_exercises: "Export exercises (CSV)",
+  settings_import_exercises: "Import exercises (CSV)",
+  settings_import_confirm: "This will replace all exercises. Continue?",
+  settings_import_success: "Imported {count} exercise(s).",
+  settings_import_error: "Import failed: {error}",
+  settings_export_logs: "Export exercise logs (CSV)",
+  settings_export_conditions: "Export condition records (CSV)",
+
+  // Common actions
+  action_edit: "Edit",
+  action_delete: "Delete",
+
+  // History edit/delete
+  history_edit_heading_log: "Edit exercise log",
+  history_edit_heading_condition: "Edit condition",
+  history_edit_date_label: "Date",
+  history_edit_exercise_label: "Exercise",
+  history_edit_result_label: "Result",
+  history_edit_save: "Save",
+  history_edit_cancel: "Cancel",
+  history_log_delete_confirm: "Delete this log entry?",
+  history_condition_delete_confirm: "Delete condition record for this day?",
 } as const;
