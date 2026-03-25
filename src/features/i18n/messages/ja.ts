@@ -10,7 +10,7 @@ export const ja = {
   language_en: "English",
 
   // Today screen
-  today_heading: "今日",
+  today_heading: "Today",
   today_subheading: "気分を保存して、おすすめのエクササイズをワンタップで記録しよう。",
   today_loading_heading: "今日のログを読み込み中...",
   today_loading_text: "この日の保存された状態とエクササイズ結果を確認中です。",
