@@ -234,6 +234,21 @@ button {
   gap: 1rem;
 }
 
+.recommendation-card__thumbnail,
+.exercise-detail__thumbnail {
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #e8eef8;
+}
+
+.recommendation-card__thumbnail img,
+.exercise-detail__thumbnail img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
 .recommendation-card__header {
   display: grid;
   gap: 0.75rem;

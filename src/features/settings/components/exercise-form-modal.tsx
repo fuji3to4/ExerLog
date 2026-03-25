@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import { addExercise, updateExercise } from "@/features/storage/exercise-catalog.repository";
+import { getYouTubeThumbnailUrl } from "@/lib/video/youtube";
 import type { ExerciseIntensity, ExerciseVideo } from "@/lib/types";
 
 type ExerciseFormModalProps = {
@@ -40,6 +41,7 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
     durationMinutes: exercise?.durationMinutes?.toString() ?? "",
     intensity: exercise?.intensity ?? "low",
   });
+  const resolvedThumbnailUrl = form.thumbnailUrl.trim() || getYouTubeThumbnailUrl(form.videoUrl) || "";
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -117,6 +119,11 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
               value={form.thumbnailUrl}
               onChange={(e) => handleChange("thumbnailUrl", e.target.value)}
             />
+            {resolvedThumbnailUrl ? (
+              <div className="exercise-form-modal__thumbnail-preview">
+                <img src={resolvedThumbnailUrl} alt={t("settings_form_thumbnail_preview_alt")} />
+              </div>
+            ) : null}
           </div>
 
           <div className="modal__field">

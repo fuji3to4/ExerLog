@@ -6,6 +6,7 @@ import Link from "next/link";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { ExerciseVideo } from "@/lib/types";
+import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
 import { LibraryFilters } from "./library-filters";
 
@@ -77,16 +78,22 @@ export function LibraryScreen() {
       <section className="library-screen__results">
         {filteredExercises.map((exercise) => {
           const headingId = `library-${exercise.id}`;
+          const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
 
           return (
             <article key={exercise.id} className="card recommendation-card" aria-labelledby={headingId}>
+              {thumbnailUrl ? (
+                <div className="recommendation-card__thumbnail">
+                  <img src={thumbnailUrl} alt={exercise.title} loading="lazy" />
+                </div>
+              ) : null}
               <div className="recommendation-card__header">
                 <div>
                   <h2 id={headingId}>{exercise.title}</h2>
                   <p>{exercise.description}</p>
                 </div>
                 <Link
-                  href={`/exercises/${exercise.id}`}
+                  href={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
                   className="recommendation-card__watch-link"
                   aria-label={t("action_watch_aria", { title: exercise.title })}
                 >

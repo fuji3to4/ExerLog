@@ -59,8 +59,27 @@ test("library cards link to the exercise detail route", async () => {
 
   expect(await screen.findByRole("link", { name: /watch neck mobility/i })).toHaveAttribute(
     "href",
-    "/exercises/neck-mobility-5",
+    "/exercises?exerciseId=neck-mobility-5",
   );
+});
+
+test("library shows the shared thumbnail fallback for a blank-thumbnail YouTube exercise", async () => {
+  await appDb.exercises.clear();
+  await appDb.exercises.add({
+    id: "blank-youtube-thumb",
+    title: "Blank Thumbnail Exercise",
+    description: "",
+    videoUrl: "https://youtu.be/dQw4w9WgXcQ",
+    thumbnailUrl: "",
+    bodyArea: "upper-body",
+    purpose: "mobility",
+    durationMinutes: 5,
+    intensity: "low",
+  });
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  expect(await screen.findByRole("img", { name: /blank thumbnail exercise/i })).toBeInTheDocument();
 });
 
 test("renders Japanese library filters by default", async () => {

@@ -83,3 +83,23 @@ test("keeps imported content raw on the detail screen", async () => {
   expect(screen.getByRole("link", { name: /動画を見る/i })).toBeInTheDocument();
 });
 
+test("exercise detail page shows a derived thumbnail and keeps the external watch action", async () => {
+  await appDb.exercises.clear();
+  await appDb.exercises.add({
+    id: "blank-youtube-thumb",
+    title: "Blank Thumbnail Exercise",
+    description: "",
+    videoUrl: "https://youtu.be/dQw4w9WgXcQ",
+    thumbnailUrl: "",
+    bodyArea: "upper-body",
+    purpose: "mobility",
+    durationMinutes: 5,
+    intensity: "low",
+  });
+
+  renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "blank-youtube-thumb" }) }));
+
+  expect(await screen.findByRole("img", { name: /blank thumbnail exercise/i })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /動画を見る/i })).toHaveAttribute("href", "https://youtu.be/dQw4w9WgXcQ");
+});
+

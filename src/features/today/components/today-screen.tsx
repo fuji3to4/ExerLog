@@ -60,7 +60,7 @@ export function TodayScreen({ date }: TodayScreenProps) {
               key={exercise.id}
               exercise={exercise}
               result={logResults[exercise.id] ?? null}
-              watchHref={`/exercises/${exercise.id}`}
+              watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
               onLog={(result) => void logExercise(exercise.id, result)}
             />
           ))}

@@ -152,7 +152,7 @@ test("shows watch and library links for the today screen", async () => {
 
   expect(await screen.findByRole("link", { name: /watch seated calf raise/i })).toHaveAttribute(
     "href",
-    "/exercises/seated-calf-raise-5",
+    "/exercises?exerciseId=seated-calf-raise-5",
   );
   expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("href", "/library");
 });

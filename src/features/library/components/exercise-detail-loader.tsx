@@ -9,16 +9,24 @@ import type { ExerciseVideo } from "@/lib/types";
 import { ExerciseDetailScreen } from "./exercise-detail-screen";
 
 type ExerciseDetailLoaderProps = {
-  exerciseId: string;
+  exerciseId?: string;
 };
 
 export function ExerciseDetailLoader({ exerciseId }: ExerciseDetailLoaderProps) {
   const [exercise, setExercise] = useState<ExerciseVideo | null | undefined>(undefined);
   const { t } = useTranslation();
+  const resolvedExerciseId =
+    exerciseId ??
+    (typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("exerciseId") ?? "");
 
   useEffect(() => {
-    void getExerciseById(exerciseId).then((found) => setExercise(found ?? null));
-  }, [exerciseId]);
+    if (!resolvedExerciseId) {
+      setExercise(null);
+      return;
+    }
+
+    void getExerciseById(resolvedExerciseId).then((found) => setExercise(found ?? null));
+  }, [resolvedExerciseId]);
 
   if (exercise === undefined) {
     return (

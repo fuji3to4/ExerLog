@@ -6,6 +6,7 @@ import { ExerciseLogActions } from "@/features/logging/components/exercise-log-a
 import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
+import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 type ExerciseDetailScreenProps = {
@@ -16,6 +17,7 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
   const [result, setResult] = useState<ExerciseLogResult | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
+  const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
 
   useEffect(() => {
     let isActive = true;
@@ -57,6 +59,11 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
 
   return (
     <section className="card exercise-detail">
+      {thumbnailUrl ? (
+        <div className="exercise-detail__thumbnail">
+          <img src={thumbnailUrl} alt={exercise.title} />
+        </div>
+      ) : null}
       <div className="exercise-detail__header">
         <div className="exercise-detail__heading">
           <h1>{exercise.title}</h1>

@@ -122,6 +122,7 @@ export const en = {
   settings_form_description_label: "Description (optional)",
   settings_form_video_url_label: "Video URL",
   settings_form_thumbnail_url_label: "Thumbnail URL (optional)",
+  settings_form_thumbnail_preview_alt: "Thumbnail preview",
   settings_form_body_area_label: "Body area",
   settings_form_purpose_label: "Purpose",
   settings_form_duration_label: "Duration (minutes)",

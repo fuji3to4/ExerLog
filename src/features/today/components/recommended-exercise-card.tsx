@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
+import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
 type RecommendedExerciseCardProps = {
   exercise: ExerciseVideo;
@@ -19,9 +20,15 @@ export function RecommendedExerciseCard({
 }: RecommendedExerciseCardProps) {
   const { t, formatIntensity } = useTranslation();
   const headingId = `recommendation-${exercise.id}`;
+  const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
 
   return (
     <article className="card recommendation-card" aria-labelledby={headingId}>
+      {thumbnailUrl ? (
+        <div className="recommendation-card__thumbnail">
+          <img src={thumbnailUrl} alt={exercise.title} loading="lazy" />
+        </div>
+      ) : null}
       <div className="recommendation-card__header">
         <div>
           <h3 id={headingId}>{exercise.title}</h3>

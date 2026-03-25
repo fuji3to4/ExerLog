@@ -122,6 +122,7 @@
   settings_form_description_label: "説明（任意）",
   settings_form_video_url_label: "動画URL",
   settings_form_thumbnail_url_label: "サムネイルURL（任意）",
+  settings_form_thumbnail_preview_alt: "サムネイルのプレビュー",
   settings_form_body_area_label: "体の部位",
   settings_form_purpose_label: "目的",
   settings_form_duration_label: "時間（分）",
