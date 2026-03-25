@@ -46,8 +46,9 @@ function EditLogModal({
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
-    dialogRef.current?.showModal();
-    return () => dialogRef.current?.close();
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    return () => dialog?.close();
   }, []);
 
   return (
@@ -125,8 +126,9 @@ function EditConditionModal({
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
-    dialogRef.current?.showModal();
-    return () => dialogRef.current?.close();
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    return () => dialog?.close();
   }, []);
 
   return (
