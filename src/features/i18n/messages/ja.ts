@@ -16,7 +16,7 @@
   today_loading_text: "この日の保存された状態とエクササイズ結果を確認中です。",
   today_recommended_heading: "今日のおすすめ",
   today_recommended_text: "今日のリストは短く、始めやすくなっています。動画を見るか、すぐに結果を記録しましょう。",
-  today_library_card_heading: "他のものが必要ですか？",
+  today_library_card_heading: "他のエクササイズも見てみませんか？",
   today_library_card_text: "異なる動きやより詳しい内容が必要な場合は、全ライブラリを閲覧してください。",
   today_library_button: "ライブラリ",
 

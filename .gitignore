@@ -2,6 +2,7 @@
 node_modules/
 .next/
 out/
+docs/
 .review-temp-task3/
 .vscode/
 public/sw.js
