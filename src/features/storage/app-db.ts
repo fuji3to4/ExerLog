@@ -13,11 +13,6 @@ export class AppDb extends Dexie {
     this.version(1).stores({
       logs: "++id, date, exerciseId, result, loggedAt, &[date+exerciseId]",
       conditions: "date, conditionLevel, note, updatedAt",
-    });
-
-    this.version(2).stores({
-      logs: "++id, date, exerciseId, result, loggedAt, &[date+exerciseId]",
-      conditions: "date, conditionLevel, note, updatedAt",
       exercises: "id, title, bodyArea, purpose, durationMinutes, intensity",
     });
   }
