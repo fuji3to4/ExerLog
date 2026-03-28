@@ -3,16 +3,18 @@
 import Link from "next/link";
 
 import { useTranslation } from "@/features/i18n/use-translation";
+import { toDayKey } from "@/lib/date/day-key";
 
 import { DailyConditionCard } from "./daily-condition-card";
 import { RecommendedExerciseCard } from "./recommended-exercise-card";
 import { useTodayData } from "../use-today-data";
 
 type TodayScreenProps = {
-  date: string;
+  date?: string;
 };
 
-export function TodayScreen({ date }: TodayScreenProps) {
+export function TodayScreen({ date: dateProp }: TodayScreenProps) {
+  const date = dateProp ?? toDayKey(new Date());
   const { t, formatDate } = useTranslation();
   const {
     isHydrated,
