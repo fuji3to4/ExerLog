@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { localIsoNow } from "@/lib/date/local-iso";
+import { formatTime } from "@/lib/date/format-timestamp";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { deleteDailyCondition, updateDailyCondition } from "@/features/storage/daily-condition.repository";
 import { deleteExerciseLog, updateExerciseLog } from "@/features/storage/exercise-logs.repository";
@@ -245,6 +246,8 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
     );
   }
 
+  const updatedTime = summary.updatedAt ? formatTime(summary.updatedAt) : "";
+
   return (
     <section className="card day-summary">
       <h2>{t("history_day_summary_heading")}</h2>
@@ -255,36 +258,42 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
           <p>{t("history_no_exercises")}</p>
         ) : (
           <ul className="day-summary__list">
-            {summary.logs.map((log) => (
-              <li key={log.exerciseId} className="day-summary__item">
-                <span>{log.title}</span>
-                <span className="day-summary__result">{formatResult(log.result)}</span>
-                <div className="day-summary__item-actions">
-                  <button
-                    type="button"
-                    className="day-summary__action-btn"
-                    onClick={() =>
-                      setEditingLog({
-                        id: log.id,
-                        exerciseId: log.exerciseId,
-                        result: log.result,
-                        loggedAt: log.loggedAt,
-                        date: selectedDate,
-                      })
-                    }
-                  >
-                    {t("action_edit")}
-                  </button>
-                  <button
-                    type="button"
-                    className="day-summary__action-btn day-summary__action-btn--danger"
-                    onClick={() => void handleDeleteLog(log.id)}
-                  >
-                    {t("action_delete")}
-                  </button>
-                </div>
-              </li>
-            ))}
+            {summary.logs.map((log) => {
+              const logTime = formatTime(log.loggedAt);
+              return (
+                <li key={log.exerciseId} className="day-summary__item">
+                  <span>{log.title}</span>
+                  {logTime && (
+                    <span className="day-summary__time">{logTime}</span>
+                  )}
+                  <span className="day-summary__result">{formatResult(log.result)}</span>
+                  <div className="day-summary__item-actions">
+                    <button
+                      type="button"
+                      className="day-summary__action-btn"
+                      onClick={() =>
+                        setEditingLog({
+                          id: log.id,
+                          exerciseId: log.exerciseId,
+                          result: log.result,
+                          loggedAt: log.loggedAt,
+                          date: selectedDate,
+                        })
+                      }
+                    >
+                      {t("action_edit")}
+                    </button>
+                    <button
+                      type="button"
+                      className="day-summary__action-btn day-summary__action-btn--danger"
+                      onClick={() => void handleDeleteLog(log.id)}
+                    >
+                      {t("action_delete")}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -294,6 +303,9 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
           <h3>{t("history_condition_heading")}</h3>
           <p>{formatCondition(summary.conditionLevel)}</p>
           {summary.note ? <p>{summary.note}</p> : null}
+          {updatedTime && (
+            <p className="day-summary__time">{updatedTime}</p>
+          )}
           <div className="day-summary__item-actions">
             <button
               type="button"
