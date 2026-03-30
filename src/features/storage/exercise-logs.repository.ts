@@ -1,5 +1,6 @@
 import type { ExerciseLog } from "@/lib/types";
 
+import { localIsoNow } from "@/lib/date/local-iso";
 import { appDb } from "./app-db";
 
 export type SaveExerciseLogInput = Pick<
@@ -17,7 +18,7 @@ export async function saveExerciseLog(input: SaveExerciseLogInput) {
     return appDb.logs.put({
       ...input,
       id: existingLog?.id ?? crypto.randomUUID(),
-      loggedAt: new Date().toISOString(),
+      loggedAt: localIsoNow(),
     });
   });
 }

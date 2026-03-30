@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { localIsoNow } from "@/lib/date/local-iso";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { deleteDailyCondition, updateDailyCondition } from "@/features/storage/daily-condition.repository";
 import { deleteExerciseLog, updateExerciseLog } from "@/features/storage/exercise-logs.repository";
@@ -229,7 +230,7 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
       date: selectedDate,
       conditionLevel: editingCondition.conditionLevel,
       note: editingCondition.note,
-      updatedAt: new Date().toISOString(),
+      updatedAt: localIsoNow(),
     });
     setEditingCondition(null);
     onChanged?.();

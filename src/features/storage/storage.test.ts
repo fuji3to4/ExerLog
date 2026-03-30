@@ -29,6 +29,7 @@ test("upserts one daily condition per day", async () => {
 
   expect(entry?.conditionLevel).toBe("tired");
   expect(entry?.note).toBe("legs feel heavy");
+  expect(entry?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
 });
 
 test("stores one log result per exercise and day", async () => {
@@ -48,6 +49,7 @@ test("stores one log result per exercise and day", async () => {
 
   expect(logs).toHaveLength(1);
   expect(logs[0]?.result).toBe("did");
+  expect(logs[0]?.loggedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
 });
 
 test("replaces same-day exercise logs without duplicate rows under concurrent saves", async () => {

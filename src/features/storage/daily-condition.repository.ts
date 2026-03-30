@@ -1,5 +1,6 @@
 import type { DailyConditionEntry } from "@/lib/types";
 
+import { localIsoNow } from "@/lib/date/local-iso";
 import { appDb } from "./app-db";
 
 export type SaveDailyConditionInput = Pick<
@@ -14,7 +15,7 @@ export function getDailyCondition(date: string) {
 export function saveDailyCondition(input: SaveDailyConditionInput) {
   return appDb.conditions.put({
     ...input,
-    updatedAt: new Date().toISOString(),
+    updatedAt: localIsoNow(),
   });
 }
 
