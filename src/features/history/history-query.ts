@@ -15,6 +15,7 @@ export type HistoryDaySummary = {
   logs: HistoryDayLog[];
   conditionLevel: "good" | "okay" | "tired" | null;
   note: string;
+  updatedAt: string | null;
 };
 
 export async function listCompletedDaysInMonth(month: string) {
@@ -42,5 +43,6 @@ export async function getHistoryDaySummary(date: string): Promise<HistoryDaySumm
     })),
     conditionLevel: condition?.conditionLevel ?? null,
     note: condition?.note ?? "",
+    updatedAt: condition?.updatedAt ?? null,
   };
 }
