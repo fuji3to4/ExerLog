@@ -1,4 +1,5 @@
 import type { DailyConditionEntry, ExerciseLog } from "@/lib/types";
+import { formatTimestampForCsv } from "@/lib/date/format-timestamp";
 
 function escapeCsvField(value: string | number): string {
   const str = String(value);
@@ -13,7 +14,7 @@ export function generateExerciseLogsCsv(logs: ExerciseLog[], exerciseTitleMap: M
   const rows = [
     headers.join(","),
     ...logs.map((log) =>
-      [log.date, log.exerciseId, exerciseTitleMap.get(log.exerciseId) ?? log.exerciseId, log.result, log.loggedAt]
+      [log.date, log.exerciseId, exerciseTitleMap.get(log.exerciseId) ?? log.exerciseId, log.result, formatTimestampForCsv(log.loggedAt)]
         .map(escapeCsvField)
         .join(","),
     ),
@@ -25,7 +26,7 @@ export function generateConditionsCsv(conditions: DailyConditionEntry[]): string
   const headers = ["date", "conditionLevel", "note", "updatedAt"];
   const rows = [
     headers.join(","),
-    ...conditions.map((c) => [c.date, c.conditionLevel, c.note, c.updatedAt].map(escapeCsvField).join(",")),
+    ...conditions.map((c) => [c.date, c.conditionLevel, c.note, formatTimestampForCsv(c.updatedAt)].map(escapeCsvField).join(",")),
   ];
   return rows.join("\n");
 }
