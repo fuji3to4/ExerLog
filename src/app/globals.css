@@ -584,6 +584,97 @@ button {
   margin-top: 0.25rem;
 }
 
+/* ── Exercise Drawer (sliding panel) ────────────────────────────── */
+
+.exercise-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 33, 61, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  animation: exerciseDrawerFadeIn 0.2s ease;
+}
+
+.exercise-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(100%, 28rem);
+  background: #ffffff;
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(20, 33, 61, 0.18);
+  animation: exerciseDrawerSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes exerciseDrawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes exerciseDrawerSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.exercise-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid #e5ecf6;
+  flex-shrink: 0;
+}
+
+.exercise-drawer__header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.exercise-drawer__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: unset;
+  padding: 0;
+  border: 1px solid #e5ecf6;
+  border-radius: 999px;
+  background: #f4f7fb;
+  color: #14213d;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.exercise-drawer__close:hover {
+  background: #e5ecf6;
+}
+
+.exercise-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.exercise-drawer__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e5ecf6;
+  flex-shrink: 0;
+}
+
 /* ── Settings action buttons ─────────────────────────────────────── */
 
 .settings-action-button {
@@ -655,6 +746,8 @@ button {
   border-radius: 0.9rem;
   background: #f4f7fb;
   border: 1px solid #e5ecf6;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .settings-exercise-title {

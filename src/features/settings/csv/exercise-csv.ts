@@ -44,7 +44,7 @@ export function parseExerciseCsv(csv: string): ParseExerciseCsvResult {
     return { exercises: [], skipped: 0 };
   }
 
-  const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+  const headers = lines[0].split(",").map((h) => h.trim().replace(/^[\uFEFF"]+|"$/g, ""));
   const exercises: ExerciseVideo[] = [];
   let skipped = 0;
 

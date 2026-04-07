@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import { addExercise, updateExercise } from "@/features/storage/exercise-catalog.repository";
@@ -30,7 +31,7 @@ type FormState = {
 
 export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormModalProps) {
   const { t, formatBodyArea, formatPurpose, formatIntensity } = useTranslation();
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<FormState>({
     title: exercise?.title ?? "",
     description: exercise?.description ?? "",
@@ -44,10 +45,21 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
   const resolvedThumbnailUrl = form.thumbnailUrl.trim() || getYouTubeThumbnailUrl(form.videoUrl) || "";
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog?.showModal();
-    return () => dialog?.close();
+    setMounted(true);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, []);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
 
   function handleChange(field: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -75,11 +87,36 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
     onSaved();
   }
 
-  return (
-    <dialog ref={dialogRef} className="modal" onCancel={onCancel}>
-      <div className="modal__content">
-        <h2>{exercise ? t("settings_form_edit_heading") : t("settings_form_add_heading")}</h2>
-        <form onSubmit={(e) => void handleSubmit(e)}>
+  if (!mounted) return null;
+
+  return createPortal(
+    <>
+      <div className="exercise-drawer-overlay" onClick={onCancel} aria-hidden="true" />
+      <div
+        className="exercise-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exercise-drawer-title"
+      >
+        <div className="exercise-drawer__header">
+          <h2 id="exercise-drawer-title">
+            {exercise ? t("settings_form_edit_heading") : t("settings_form_add_heading")}
+          </h2>
+          <button
+            type="button"
+            className="exercise-drawer__close"
+            onClick={onCancel}
+            aria-label={t("settings_form_cancel")}
+          >
+            ✕
+          </button>
+        </div>
+
+        <form
+          id="exercise-drawer-form"
+          className="exercise-drawer__body"
+          onSubmit={(e) => void handleSubmit(e)}
+        >
           <div className="modal__field">
             <label htmlFor="ex-title">{t("settings_form_title_label")}</label>
             <input
@@ -128,7 +165,11 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
 
           <div className="modal__field">
             <label htmlFor="ex-body-area">{t("settings_form_body_area_label")}</label>
-            <select id="ex-body-area" value={form.bodyArea} onChange={(e) => handleChange("bodyArea", e.target.value)}>
+            <select
+              id="ex-body-area"
+              value={form.bodyArea}
+              onChange={(e) => handleChange("bodyArea", e.target.value)}
+            >
               {BODY_AREAS.map((area) => (
                 <option key={area} value={area}>
                   {formatBodyArea(area)}
@@ -139,7 +180,11 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
 
           <div className="modal__field">
             <label htmlFor="ex-purpose">{t("settings_form_purpose_label")}</label>
-            <select id="ex-purpose" value={form.purpose} onChange={(e) => handleChange("purpose", e.target.value)}>
+            <select
+              id="ex-purpose"
+              value={form.purpose}
+              onChange={(e) => handleChange("purpose", e.target.value)}
+            >
               {PURPOSES.map((p) => (
                 <option key={p} value={p}>
                   {formatPurpose(p)}
@@ -175,21 +220,22 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
               ))}
             </select>
           </div>
-
-          <div className="modal__actions">
-            <button
-              type="button"
-              className="settings-action-button settings-action-button--secondary"
-              onClick={onCancel}
-            >
-              {t("settings_form_cancel")}
-            </button>
-            <button type="submit" className="settings-action-button">
-              {t("settings_form_save")}
-            </button>
-          </div>
         </form>
+
+        <div className="exercise-drawer__actions">
+          <button
+            type="button"
+            className="settings-action-button settings-action-button--secondary"
+            onClick={onCancel}
+          >
+            {t("settings_form_cancel")}
+          </button>
+          <button type="submit" form="exercise-drawer-form" className="settings-action-button">
+            {t("settings_form_save")}
+          </button>
+        </div>
       </div>
-    </dialog>
+    </>,
+    document.body,
   );
 }

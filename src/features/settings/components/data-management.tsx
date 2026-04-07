@@ -11,8 +11,10 @@ import { generateConditionsCsv, generateExerciseLogsCsv } from "../csv/history-c
 
 type DeleteState = "idle" | "confirming";
 
+const UTF8_BOM = "\uFEFF";
+
 function downloadCsv(filename: string, content: string) {
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([UTF8_BOM + content], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -127,7 +129,7 @@ export function DataManagement() {
       return;
     }
 
-    const text = await file.text();
+    const text = (await file.text()).replace(/^\uFEFF/, "");
     const { exercises, skipped } = parseExerciseCsv(text);
 
     try {
