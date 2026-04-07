@@ -7,9 +7,10 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { DaySummary } from "./day-summary";
 import { HistoryCalendar } from "./history-calendar";
 import { getHistoryDaySummary, listCompletedDaysInMonth, type HistoryDaySummary } from "../history-query";
+import { toDayKey } from "@/lib/date/day-key";
 
 type HistoryScreenProps = {
-  month: string;
+  month?: string;
 };
 
 function shiftMonth(month: string, delta: number): string {
@@ -18,10 +19,11 @@ function shiftMonth(month: string, delta: number): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export function HistoryScreen({ month: initialMonth }: HistoryScreenProps) {
-  const [currentMonth, setCurrentMonth] = useState(initialMonth);
+export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) {
+  const today = toDayKey(new Date());
+  const [currentMonth, setCurrentMonth] = useState(() => initialMonth ?? today.slice(0, 7));
   const [completedDays, setCompletedDays] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(() => initialMonth ? null : today);
   const [summary, setSummary] = useState<HistoryDaySummary | null>(null);
   const { t } = useTranslation();
 
@@ -30,11 +32,7 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps) {
 
     async function loadCompletedDays() {
       const days = await listCompletedDaysInMonth(currentMonth);
-
-      if (!isActive) {
-        return;
-      }
-
+      if (!isActive) return;
       setCompletedDays(days);
     }
 
@@ -44,6 +42,25 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps) {
       isActive = false;
     };
   }, [currentMonth]);
+
+  useEffect(() => {
+    if (initialMonth) return;
+
+    let isActive = true;
+
+    async function loadTodaySummary() {
+      const todaySummary = await getHistoryDaySummary(today);
+      if (!isActive) return;
+      setSummary(todaySummary);
+    }
+
+    void loadTodaySummary();
+
+    return () => {
+      isActive = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handlePrevMonth() {
     setCurrentMonth((m) => shiftMonth(m, -1));
