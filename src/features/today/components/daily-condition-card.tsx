@@ -1,30 +1,48 @@
 import type { ChangeEvent } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
-import type { ConditionLevel } from "@/lib/types";
+import type { WellnessScore } from "@/lib/types";
 
 type DailyConditionCardProps = {
-  conditionLevel: ConditionLevel;
+  physicalScore: WellnessScore;
+  mentalScore: WellnessScore;
   note: string;
-  onConditionLevelChange: (conditionLevel: ConditionLevel) => void;
+  onPhysicalScoreChange: (score: WellnessScore) => void;
+  onMentalScoreChange: (score: WellnessScore) => void;
   onNoteChange: (note: string) => void;
   onSave: () => void | Promise<void>;
+  saveError?: string;
 };
 
 export function DailyConditionCard({
-  conditionLevel,
+  physicalScore,
+  mentalScore,
   note,
-  onConditionLevelChange,
+  onPhysicalScoreChange,
+  onMentalScoreChange,
   onNoteChange,
   onSave,
+  saveError,
 }: DailyConditionCardProps) {
   const { t } = useTranslation();
 
-  const conditionOptions: Array<{ label: string; value: ConditionLevel }> = [
-    { label: t("condition_good"), value: "good" },
-    { label: t("condition_okay"), value: "okay" },
-    { label: t("condition_tired"), value: "tired" },
-  ];
+  function toWellnessScore(value: string, fallback: WellnessScore): WellnessScore {
+    const numericValue = Number(value);
+
+    if (!Number.isFinite(numericValue)) {
+      return fallback;
+    }
+
+    if (numericValue <= 1) {
+      return 1;
+    }
+
+    if (numericValue >= 5) {
+      return 5;
+    }
+
+    return Math.round(numericValue) as WellnessScore;
+  }
 
   return (
     <section className="card today-screen__section">
@@ -35,18 +53,26 @@ export function DailyConditionCard({
 
       <fieldset className="condition-card__options">
         <legend>{t("condition_legend")}</legend>
-        {conditionOptions.map((option) => (
-          <label key={option.value} className="condition-card__option">
-            <input
-              type="radio"
-              name="daily-condition"
-              value={option.value}
-              checked={conditionLevel === option.value}
-              onChange={() => onConditionLevelChange(option.value)}
-            />
-            <span>{option.label}</span>
-          </label>
-        ))}
+        <label className="condition-card__option">
+          <span>{t("self_care_physical_label")}</span>
+          <input
+            type="number"
+            min={1}
+            max={5}
+            value={physicalScore}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => onPhysicalScoreChange(toWellnessScore(event.target.value, physicalScore))}
+          />
+        </label>
+        <label className="condition-card__option">
+          <span>{t("self_care_mental_label")}</span>
+          <input
+            type="number"
+            min={1}
+            max={5}
+            value={mentalScore}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => onMentalScoreChange(toWellnessScore(event.target.value, mentalScore))}
+          />
+        </label>
       </fieldset>
 
       <label className="condition-card__note">
@@ -62,6 +88,7 @@ export function DailyConditionCard({
       <button type="button" className="today-screen__primary-button" onClick={() => void onSave()}>
         {t("condition_save_button")}
       </button>
+      {saveError && <p role="alert" className="condition-card__error">{saveError}</p>}
     </section>
   );
 }

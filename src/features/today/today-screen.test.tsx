@@ -1,9 +1,9 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test } from "vitest";
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
-import { getDailyCondition, saveDailyCondition } from "@/features/storage/daily-condition.repository";
+import { getDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
 import { appDb } from "@/features/storage/app-db";
 import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { renderWithLanguage } from "@/test/render-with-language";
@@ -12,33 +12,37 @@ import { TodayScreen } from "./components/today-screen";
 
 beforeEach(async () => {
   await appDb.logs.clear();
-  await appDb.conditions.clear();
+  await appDb.dailyWellness.clear();
   await appDb.exercises.clear();
   await appDb.exercises.bulkAdd(exerciseCatalog);
 });
 
-async function seedCondition(date: string, conditionLevel: "good" | "okay" | "tired", note: string) {
-  await saveDailyCondition({ date, conditionLevel, note });
+async function seedWellness(date: string, physicalScore: 1 | 2 | 3 | 4 | 5, mentalScore: 1 | 2 | 3 | 4 | 5, note: string) {
+  await saveDailyWellness({ date, physicalScore, mentalScore, note });
 }
 
 async function seedLog(date: string, exerciseId: string, result: "did" | "partial" | "could_not") {
   await saveExerciseLog({ date, exerciseId, result });
 }
 
-test("saves a daily condition and logs an exercise from the home screen", async () => {
+test("saves a daily wellness entry and logs an exercise from the home screen", async () => {
   const user = userEvent.setup();
 
   renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
 
-  await user.click(await screen.findByRole("radio", { name: /feeling good/i }));
+  const physicalInput = await screen.findByRole("spinbutton", { name: /physical/i });
+  const mentalInput = screen.getByRole("spinbutton", { name: /mental/i });
+  fireEvent.change(physicalInput, { target: { value: "5" } });
+  fireEvent.change(mentalInput, { target: { value: "4" } });
   await user.type(screen.getByRole("textbox", { name: /note/i }), "Neck feels better today");
   await user.click(screen.getByRole("button", { name: /save condition/i }));
 
   await waitFor(async () => {
-    await expect(getDailyCondition("2026-03-23")).resolves.toMatchObject({
-      conditionLevel: "good",
+    await expect(getDailyWellness("2026-03-23")).resolves.toMatchObject({
+      physicalScore: 5,
+      mentalScore: 4,
       note: "Neck feels better today",
     });
   });
@@ -59,18 +63,19 @@ test("saves a daily condition and logs an exercise from the home screen", async 
   });
 });
 
-test("hydrates an existing condition note and log state on first render", async () => {
-  await seedCondition("2026-03-24", "tired", "Need a lighter day");
+test("hydrates an existing wellness note and log state on first render", async () => {
+  await seedWellness("2026-03-24", 2, 1, "Need a lighter day");
   await seedLog("2026-03-24", "neck-mobility-5", "partial");
 
   renderWithLanguage(<TodayScreen date="2026-03-24" />, { initialLanguage: "en" });
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
-  expect(screen.queryByRole("radio", { name: /okay/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("spinbutton", { name: /physical/i })).not.toBeInTheDocument();
 
   const neckMobilityCard = await screen.findByRole("article", { name: "Neck Mobility" });
 
-  expect(screen.getByRole("radio", { name: /tired/i })).toBeChecked();
+  expect(screen.getByRole("spinbutton", { name: /physical/i })).toHaveValue(2);
+  expect(screen.getByRole("spinbutton", { name: /mental/i })).toHaveValue(1);
   expect(screen.getByRole("textbox", { name: /note/i })).toHaveValue("Need a lighter day");
   expect(within(neckMobilityCard).getByRole("button", { name: /partly/i })).toHaveAttribute("aria-pressed", "true");
   expect(within(neckMobilityCard).getByText("Saved: Partly")).toBeInTheDocument();
@@ -94,10 +99,10 @@ test("keeps recommendations short and stable for the selected day", async () => 
   expect(screen.getByRole("heading", { name: "Walk in Place" })).toBeInTheDocument();
 });
 
-test("edits an existing daily condition and updates recommendations", async () => {
+test("edits an existing daily wellness entry and updates recommendations", async () => {
   const user = userEvent.setup();
 
-  await seedCondition("2026-03-24", "okay", "Start steady");
+  await seedWellness("2026-03-24", 3, 3, "Start steady");
 
   renderWithLanguage(<TodayScreen date="2026-03-24" />, { initialLanguage: "en" });
 
@@ -106,14 +111,18 @@ test("edits an existing daily condition and updates recommendations", async () =
   });
   expect(await screen.findByRole("heading", { name: "Breathing Reset" })).toBeInTheDocument();
 
-  await user.click(screen.getByRole("radio", { name: /tired/i }));
+  const physicalInput = screen.getByRole("spinbutton", { name: /physical/i });
+  const mentalInput = screen.getByRole("spinbutton", { name: /mental/i });
+  fireEvent.change(physicalInput, { target: { value: "1" } });
+  fireEvent.change(mentalInput, { target: { value: "2" } });
   await user.clear(screen.getByRole("textbox", { name: /note/i }));
   await user.type(screen.getByRole("textbox", { name: /note/i }), "Heavy legs");
   await user.click(screen.getByRole("button", { name: /save condition/i }));
 
   await waitFor(async () => {
-    await expect(getDailyCondition("2026-03-24")).resolves.toMatchObject({
-      conditionLevel: "tired",
+    await expect(getDailyWellness("2026-03-24")).resolves.toMatchObject({
+      physicalScore: 1,
+      mentalScore: 2,
       note: "Heavy legs",
     });
   });
@@ -132,7 +141,10 @@ test("supports keyboard reachability for today controls", async () => {
   const seatedCalfRaiseCard = await screen.findByRole("article", { name: "Seated Calf Raise" });
 
   await user.tab();
-  expect(screen.getByRole("radio", { name: /okay/i })).toHaveFocus();
+  expect(screen.getByRole("spinbutton", { name: /physical/i })).toHaveFocus();
+
+  await user.tab();
+  expect(screen.getByRole("spinbutton", { name: /mental/i })).toHaveFocus();
 
   await user.tab();
   expect(screen.getByRole("textbox", { name: /note/i })).toHaveFocus();
@@ -159,7 +171,7 @@ test("shows watch and library links for the today screen", async () => {
 
 test("resets saved log state when the selected day changes", async () => {
   await seedLog("2026-03-23", "seated-calf-raise-5", "did");
-  await seedCondition("2026-03-24", "tired", "");
+  await seedWellness("2026-03-24", 1, 2, "");
 
   const { rerender } = renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
 

@@ -18,11 +18,14 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const { t, formatDate } = useTranslation();
   const {
     isHydrated,
-    conditionLevel,
+    physicalScore,
+    mentalScore,
     note,
     recommendations,
     logResults,
-    setConditionLevel,
+    conditionSaveError,
+    setPhysicalScore,
+    setMentalScore,
     setNote,
     saveCondition,
     logExercise,
@@ -44,11 +47,14 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
       ) : (
         <>
       <DailyConditionCard
-        conditionLevel={conditionLevel}
+        physicalScore={physicalScore}
+        mentalScore={mentalScore}
         note={note}
-        onConditionLevelChange={setConditionLevel}
+        onPhysicalScoreChange={setPhysicalScore}
+        onMentalScoreChange={setMentalScore}
         onNoteChange={setNote}
         onSave={saveCondition}
+        saveError={conditionSaveError ? t("condition_save_error") : undefined}
       />
 
       <section className="today-screen__section">

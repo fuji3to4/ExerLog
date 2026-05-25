@@ -3,7 +3,7 @@ export const en = {
   nav_today: "Today",
   nav_library: "Library",
   nav_history: "History",
-  nav_self_care: "Self Care",
+  nav_self_care: "Condition",
   nav_aria_label: "Primary",
 
   // Language labels
@@ -31,6 +31,7 @@ export const en = {
   condition_note_label: "Note",
   condition_note_placeholder: "Add anything worth remembering for today.",
   condition_save_button: "Save condition",
+  condition_save_error: "Failed to save. Please try again.",
 
   // Library screen
   library_heading: "Library",
@@ -60,20 +61,8 @@ export const en = {
   history_graphs_empty: "No data available for the selected range.",
   history_graph_metric_label: "Metric",
 
-  // Self care screen
-  self_care_heading: "Self Care",
-  self_care_description: "Save a short self care note for today.",
-  self_care_physical_label: "Physical",
-  self_care_mental_label: "Mental",
-  self_care_metric_height: "Height",
-  self_care_metric_weight: "Weight",
-  self_care_metric_body_fat: "Body fat",
-  self_care_done_label: "Done",
-  self_care_count_label: "Count",
-  self_care_minutes_label: "Minutes",
-
-  // Self care screen
-  self_care_heading: "Self Care",
+  // Condition screen (self-care)
+  self_care_heading: "Condition",
   self_care_subheading: "Review your body and mind, then save a quick wellness check-in.",
   self_care_save_button: "Save check-in",
   self_care_wellness_heading: "Wellness check-in",

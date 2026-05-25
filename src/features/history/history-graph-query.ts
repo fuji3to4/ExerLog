@@ -1,5 +1,6 @@
 import { listAllSelfCareItems } from "@/features/storage/self-care-catalog.repository";
 import { appDb } from "@/features/storage/app-db";
+import { toDayKey } from "@/lib/date/day-key";
 import type { DailyMetricEntry, DailySelfCareEntry, MetricType } from "@/lib/types";
 
 type GraphRange = {
@@ -54,6 +55,21 @@ function mapMetricPoints(entries: DailyMetricEntry[]) {
   return sortPoints(entries.map((entry) => ({ date: entry.date, value: entry.value })));
 }
 
+function getDayKeysInRange({ start, end }: GraphRange) {
+  const [startYear, startMonth, startDay] = start.split("-").map(Number);
+  const [endYear, endMonth, endDay] = end.split("-").map(Number);
+  const current = new Date(startYear!, startMonth! - 1, startDay!);
+  const last = new Date(endYear!, endMonth! - 1, endDay!);
+  const dayKeys: string[] = [];
+
+  while (current <= last) {
+    dayKeys.push(toDayKey(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dayKeys;
+}
+
 function mapSelfCareValue(entry: DailySelfCareEntry, measure: Extract<GraphMetricSelection, { kind: "selfCare" }>["measure"]) {
   if (measure === "count") {
     return entry.count ?? 0;
@@ -72,9 +88,8 @@ export async function buildHistoryGraphSeries({
 }: BuildHistoryGraphSeriesInput): Promise<GraphSeries> {
   if (metric.kind === "metric") {
     const entries = await appDb.dailyMetrics
-      .where("date")
-      .between(range.start, range.end, true, true)
-      .filter((entry) => entry.metricType === metric.metricType)
+      .where("[date+metricType]")
+      .anyOf(getDayKeysInRange(range).map((date) => [date, metric.metricType] as [string, MetricType]))
       .toArray();
 
     return {
