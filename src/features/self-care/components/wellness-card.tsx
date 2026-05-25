@@ -15,7 +15,21 @@ export function WellnessCard({
   onPhysicalScoreChange,
   onMentalScoreChange,
 }: WellnessCardProps) {
-  const { t } = useTranslation();
+  const { language } = useTranslation();
+  const copy =
+    language === "ja"
+      ? {
+          heading: "ウェルネス",
+          text: "今日の体と心の状態を記録しましょう。",
+          physicalScoreLabel: "身体スコア",
+          mentalScoreLabel: "心のスコア",
+        }
+      : {
+          heading: "Wellness",
+          text: "Rate how your body and mind feel today.",
+          physicalScoreLabel: "Physical score",
+          mentalScoreLabel: "Mental score",
+        };
 
   function handleScoreChange(
     event: ChangeEvent<HTMLInputElement>,
@@ -28,12 +42,12 @@ export function WellnessCard({
   return (
     <section className="card self-care-screen__section">
       <div className="self-care-screen__section-heading">
-        <h2>{t("self_care_wellness_heading")}</h2>
-        <p>{t("self_care_wellness_text")}</p>
+        <h2>{copy.heading}</h2>
+        <p>{copy.text}</p>
       </div>
 
       <label className="self-care-screen__field">
-        <span>{t("self_care_physical_score_label")}</span>
+        <span>{copy.physicalScoreLabel}</span>
         <input
           type="number"
           min={1}
@@ -44,7 +58,7 @@ export function WellnessCard({
       </label>
 
       <label className="self-care-screen__field">
-        <span>{t("self_care_mental_score_label")}</span>
+        <span>{copy.mentalScoreLabel}</span>
         <input
           type="number"
           min={1}

@@ -10,30 +10,44 @@ type MetricsCardProps = {
 
 type MetricField = {
   metricType: MetricType;
-  labelKey: "self_care_height_label" | "self_care_weight_label" | "self_care_body_fat_label";
-  unitKey: "self_care_height_unit" | "self_care_weight_unit" | "self_care_body_fat_unit";
+  label: string;
+  unit: string;
 };
 
-const metricFields: MetricField[] = [
-  { metricType: "height", labelKey: "self_care_height_label", unitKey: "self_care_height_unit" },
-  { metricType: "weight", labelKey: "self_care_weight_label", unitKey: "self_care_weight_unit" },
-  { metricType: "bodyFat", labelKey: "self_care_body_fat_label", unitKey: "self_care_body_fat_unit" },
-];
-
 export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
-  const { t } = useTranslation();
+  const { language } = useTranslation();
+  const copy =
+    language === "ja"
+      ? {
+          heading: "身体指標",
+          text: "この日に残したい測定値を保存しましょう。",
+          fields: [
+            { metricType: "height", label: "身長", unit: "cm" },
+            { metricType: "weight", label: "体重", unit: "kg" },
+            { metricType: "bodyFat", label: "体脂肪率", unit: "%" },
+          ] satisfies MetricField[],
+        }
+      : {
+          heading: "Body metrics",
+          text: "Save any measurements you want to keep for the day.",
+          fields: [
+            { metricType: "height", label: "Height", unit: "cm" },
+            { metricType: "weight", label: "Weight", unit: "kg" },
+            { metricType: "bodyFat", label: "Body fat", unit: "%" },
+          ] satisfies MetricField[],
+        };
 
   return (
     <section className="card self-care-screen__section">
       <div className="self-care-screen__section-heading">
-        <h2>{t("self_care_metrics_heading")}</h2>
-        <p>{t("self_care_metrics_text")}</p>
+        <h2>{copy.heading}</h2>
+        <p>{copy.text}</p>
       </div>
 
       <div className="self-care-screen__metrics-grid">
-        {metricFields.map((field) => (
+        {copy.fields.map((field) => (
           <label key={field.metricType} className="self-care-screen__field">
-            <span>{t(field.labelKey)}</span>
+            <span>{field.label}</span>
             <div className="self-care-screen__metric-input">
               <input
                 type="number"
@@ -43,7 +57,7 @@ export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
                   onMetricChange(field.metricType, event.target.value)
                 }
               />
-              <span>{t(field.unitKey)}</span>
+              <span>{field.unit}</span>
             </div>
           </label>
         ))}

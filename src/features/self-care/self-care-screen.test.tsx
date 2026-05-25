@@ -1,7 +1,9 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test } from "vitest";
 
+import { LanguageContext } from "@/features/i18n/language-provider";
+import type { Messages } from "@/features/i18n/messages";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { appDb } from "@/features/storage/app-db";
 import { listDailyMetricsByDate, replaceDailyMetrics } from "@/features/storage/daily-metrics.repository";
@@ -113,4 +115,30 @@ test("hydrates saved rows on first render", async () => {
   expect(within(walkingRow!).getByRole("spinbutton", { name: /count/i })).toHaveValue(1);
   expect(within(walkingRow!).getByRole("spinbutton", { name: /minutes/i })).toHaveValue(20);
   expect(within(walkingRow!).getByRole("textbox", { name: /note/i })).toHaveValue("Evening walk");
+});
+
+test("renders self care labels even when only task 3 translation keys are available", async () => {
+  const task3Messages = {
+    self_care_heading: "Self Care",
+    self_care_description: "Save a short self care note for today.",
+    today_loading_heading: "Loading today's log...",
+    today_loading_text: "Checking your saved condition and exercise results for this day.",
+    history_condition_heading: "Condition",
+    condition_note_label: "Note",
+    condition_note_placeholder: "Add anything worth remembering for today.",
+    condition_save_button: "Save condition",
+    meta_duration: "Duration",
+  } as Messages;
+
+  render(
+    <LanguageContext.Provider
+      value={{ language: "en", messages: task3Messages, setLanguage: () => undefined }}
+    >
+      <SelfCareScreen date="2026-03-25" />
+    </LanguageContext.Provider>,
+  );
+
+  expect(await screen.findByRole("spinbutton", { name: /physical score/i })).toBeInTheDocument();
+  expect(screen.getByRole("spinbutton", { name: /height/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /save self care/i })).toBeInTheDocument();
 });
