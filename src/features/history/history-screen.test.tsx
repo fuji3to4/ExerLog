@@ -2,6 +2,8 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test } from "vitest";
 
+import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
+import { selfCareCatalog } from "@/features/catalog/self-care-catalog";
 import { saveDailyCondition } from "@/features/storage/daily-condition.repository";
 import { replaceDailyMetrics } from "@/features/storage/daily-metrics.repository";
 import { replaceDailySelfCareEntries } from "@/features/storage/daily-self-care.repository";
@@ -16,10 +18,12 @@ beforeEach(async () => {
   await appDb.logs.clear();
   await appDb.conditions.clear();
   await appDb.exercises.clear();
+  await appDb.exercises.bulkAdd(exerciseCatalog);
   await appDb.dailyWellness.clear();
   await appDb.dailyMetrics.clear();
   await appDb.dailySelfCareLogs.clear();
   await appDb.selfCareCatalog.clear();
+  await appDb.selfCareCatalog.bulkAdd(selfCareCatalog);
 });
 
 async function seedLogsForHistory() {
