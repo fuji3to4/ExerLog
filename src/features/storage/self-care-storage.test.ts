@@ -74,6 +74,15 @@ test("replaceDailyMetrics replaces all metric rows for the same day", async () =
   expect(await listDailyMetricsByDate("2026-03-27")).toEqual([]);
 });
 
+test("replaceDailyMetrics rejects duplicate metric types", async () => {
+  await expect(
+    replaceDailyMetrics("2026-03-27", [
+      { metricType: "height", value: 171, unit: "cm" },
+      { metricType: "height", value: 172, unit: "cm" },
+    ]),
+  ).rejects.toThrow("Duplicate metricType values in metrics array");
+});
+
 test("replaceDailySelfCareEntries replaces all self-care rows for the same day", async () => {
   await replaceDailySelfCareEntries("2026-03-28", [
     {
@@ -121,4 +130,25 @@ test("replaceDailySelfCareEntries replaces all self-care rows for the same day",
   await replaceDailySelfCareEntries("2026-03-28", []);
 
   expect(await listDailySelfCareEntriesByDate("2026-03-28")).toEqual([]);
+});
+
+test("replaceDailySelfCareEntries rejects duplicate self-care ids", async () => {
+  await expect(
+    replaceDailySelfCareEntries("2026-03-28", [
+      {
+        selfCareId: "stretching",
+        isDone: true,
+        count: null,
+        minutes: 10,
+        note: "",
+      },
+      {
+        selfCareId: "stretching",
+        isDone: false,
+        count: null,
+        minutes: null,
+        note: "later",
+      },
+    ]),
+  ).rejects.toThrow("Duplicate selfCareId values in entries array");
 });

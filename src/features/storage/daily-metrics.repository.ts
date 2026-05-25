@@ -17,6 +17,16 @@ export async function replaceDailyMetrics(date: string, metrics: MetricDraft[]) 
       return;
     }
 
+    const metricTypes = new Set<string>();
+
+    for (const metric of metrics) {
+      if (metricTypes.has(metric.metricType)) {
+        throw new Error("Duplicate metricType values in metrics array");
+      }
+
+      metricTypes.add(metric.metricType);
+    }
+
     const recordedAt = localIsoNow();
 
     await appDb.dailyMetrics.bulkAdd(
