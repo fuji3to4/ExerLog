@@ -3,6 +3,7 @@ export const en = {
   nav_today: "Today",
   nav_library: "Library",
   nav_history: "History",
+  nav_self_care: "Self Care",
   nav_aria_label: "Primary",
 
   // Language labels
@@ -52,6 +53,10 @@ export const en = {
   history_exercises_heading: "Exercises",
   history_no_exercises: "No logged exercises for this day.",
   history_condition_heading: "Condition",
+
+  // Self care screen
+  self_care_heading: "Self Care",
+  self_care_description: "Save a short self care note for today.",
 
   // Metadata labels
   meta_duration: "Duration",

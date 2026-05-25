@@ -3,6 +3,7 @@
   nav_today: "今日",
   nav_library: "ライブラリ",
   nav_history: "履歴",
+  nav_self_care: "セルフケア",
   nav_aria_label: "メイン",
 
   // Language labels
@@ -52,6 +53,10 @@
   history_exercises_heading: "エクササイズ",
   history_no_exercises: "この日に記録されたエクササイズはありません。",
   history_condition_heading: "体調",
+
+  // Self care screen
+  self_care_heading: "セルフケア",
+  self_care_description: "今日のために短いセルフケアの記録を残しましょう。",
 
   // Metadata labels
   meta_duration: "時間",

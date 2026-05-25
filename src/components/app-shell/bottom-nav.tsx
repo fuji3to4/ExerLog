@@ -11,10 +11,11 @@ export function BottomNav({ currentPath }: BottomNavProps) {
   const { messages } = useTranslation();
 
   const destinations = [
-    { href: "/", label: messages.nav_today },
-    { href: "/library", label: messages.nav_library },
-    { href: "/history", label: messages.nav_history },
-    { href: "/settings", label: messages.nav_settings },
+    { href: "/", icon: "◯", label: messages.nav_today },
+    { href: "/library", icon: "□", label: messages.nav_library },
+    { href: "/history", icon: "△", label: messages.nav_history },
+    { href: "/self-care", icon: "♡", label: messages.nav_self_care },
+    { href: "/settings", icon: "⚙", label: messages.nav_settings },
   ];
 
   return (
@@ -29,7 +30,10 @@ export function BottomNav({ currentPath }: BottomNavProps) {
             className="bottom-nav__link"
             href={destination.href}
           >
-            {destination.label}
+            <span aria-hidden="true" className="bottom-nav__icon">
+              {destination.icon}
+            </span>
+            <span className="bottom-nav__label">{destination.label}</span>
           </Link>
         );
       })}
