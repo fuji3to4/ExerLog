@@ -57,6 +57,17 @@ export const en = {
   // Self care screen
   self_care_heading: "Self Care",
   self_care_description: "Save a short self care note for today.",
+  self_care_wellness_heading: "Wellness",
+  self_care_wellness_description: "Rate how your body and mind feel today.",
+  self_care_physical_label: "Physical score",
+  self_care_mental_label: "Mental score",
+  self_care_metrics_heading: "Body metrics",
+  self_care_metrics_description: "Save any measurements you want to keep for the day.",
+  self_care_metric_height: "Height",
+  self_care_metric_weight: "Weight",
+  self_care_metric_body_fat: "Body fat",
+  self_care_done_label: "Done",
+  self_care_count_label: "Count",
 
   // Metadata labels
   meta_duration: "Duration",

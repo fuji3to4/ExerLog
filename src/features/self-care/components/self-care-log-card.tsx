@@ -12,17 +12,7 @@ type SelfCareLogCardProps = {
 };
 
 export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCardProps) {
-  const { language, t } = useTranslation();
-  const copy =
-    language === "ja"
-      ? {
-          doneLabel: "完了",
-          countLabel: "回数",
-        }
-      : {
-          doneLabel: "Done",
-          countLabel: "Count",
-        };
+  const { t } = useTranslation();
 
   return (
     <section className="self-care-screen__section">
@@ -53,12 +43,12 @@ export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCa
                     onEntryChange(item.id, { isDone: event.target.checked })
                   }
                 />
-                <span>{copy.doneLabel}</span>
+                <span>{t("self_care_done_label")}</span>
               </label>
 
               <div className="self-care-log-card__metrics">
                 <label className="self-care-screen__field">
-                  <span>{copy.countLabel}</span>
+                  <span>{t("self_care_count_label")}</span>
                   <input
                     type="number"
                     inputMode="numeric"
