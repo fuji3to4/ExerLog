@@ -14,7 +14,7 @@ type SelfCareScreenProps = {
 
 export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
   const date = dateProp ?? toDayKey(new Date());
-  const { language, t, formatDate } = useTranslation();
+  const { t, formatDate } = useTranslation();
   const {
     isHydrated,
     physicalScore,
@@ -28,19 +28,6 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
     setSelfCareEntry,
     save,
   } = useSelfCareData(date);
-  const copy =
-    language === "ja"
-      ? {
-          loadingHeading: "セルフケアの記録を読み込み中...",
-          loadingText: "この日に保存した体調、指標、セルフケア記録を確認しています。",
-          saveButton: "セルフケアを保存",
-        }
-      : {
-          loadingHeading: "Loading self care log...",
-          loadingText: "Checking your saved wellness, metrics, and self care entries for this day.",
-          saveButton: "Save self care",
-        };
-
   return (
     <>
       <section className="card page-header">
@@ -51,8 +38,8 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
 
       {!isHydrated ? (
         <section className="card self-care-screen__section" aria-live="polite">
-          <h2>{copy.loadingHeading}</h2>
-          <p>{copy.loadingText}</p>
+          <h2>{t("today_loading_heading")}</h2>
+          <p>{t("today_loading_text")}</p>
         </section>
       ) : (
         <>
@@ -70,7 +57,7 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
           <section className="card self-care-screen__section">
             <div className="button-row">
               <button type="button" className="today-screen__primary-button" onClick={() => void save()}>
-                {copy.saveButton}
+                {t("condition_save_button")}
               </button>
             </div>
           </section>

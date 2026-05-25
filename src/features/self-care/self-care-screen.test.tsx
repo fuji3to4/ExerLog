@@ -45,7 +45,7 @@ test("saves wellness, metrics, and self-care rows from the self-care screen", as
     target: { value: "Felt looser" },
   });
 
-  await user.click(screen.getByRole("button", { name: /save self care/i }));
+  await user.click(screen.getByRole("button", { name: /save condition/i }));
 
   await waitFor(async () => {
     await expect(getDailyWellness("2026-03-23")).resolves.toMatchObject({
@@ -140,5 +140,5 @@ test("renders self care labels even when only task 3 translation keys are availa
 
   expect(await screen.findByRole("spinbutton", { name: /physical score/i })).toBeInTheDocument();
   expect(screen.getByRole("spinbutton", { name: /height/i })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /save self care/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /save condition/i })).toBeInTheDocument();
 });

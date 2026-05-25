@@ -12,33 +12,23 @@ type SelfCareLogCardProps = {
 };
 
 export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCardProps) {
-  const { language } = useTranslation();
+  const { language, t } = useTranslation();
   const copy =
     language === "ja"
       ? {
-          heading: "セルフケア記録",
-          text: "できたことや覚えておきたいことを項目ごとに残しましょう。",
           doneLabel: "完了",
           countLabel: "回数",
-          minutesLabel: "分",
-          noteLabel: "メモ",
-          notePlaceholder: "この項目のメモを追加してください。",
         }
       : {
-          heading: "Self care log",
-          text: "Record the small actions you completed or want to remember.",
           doneLabel: "Done",
           countLabel: "Count",
-          minutesLabel: "Minutes",
-          noteLabel: "Note",
-          notePlaceholder: "Add a short note for this item.",
         };
 
   return (
     <section className="self-care-screen__section">
       <div className="card self-care-screen__section-heading">
-        <h2>{copy.heading}</h2>
-        <p>{copy.text}</p>
+        <h2>{t("self_care_heading")}</h2>
+        <p>{t("self_care_description")}</p>
       </div>
 
       <div className="self-care-screen__log-list">
@@ -81,7 +71,7 @@ export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCa
                 </label>
 
                 <label className="self-care-screen__field">
-                  <span>{copy.minutesLabel}</span>
+                  <span>{t("settings_form_duration_label")}</span>
                   <input
                     type="number"
                     inputMode="numeric"
@@ -95,11 +85,11 @@ export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCa
               </div>
 
               <label className="self-care-screen__field">
-                <span>{copy.noteLabel}</span>
+                <span>{t("condition_note_label")}</span>
                 <textarea
                   rows={3}
                   value={entry.note}
-                  placeholder={copy.notePlaceholder}
+                  placeholder={t("condition_note_placeholder")}
                   onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
                     onEntryChange(item.id, { note: event.target.value })
                   }
