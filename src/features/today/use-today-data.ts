@@ -3,22 +3,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getTodaysRecommendations } from "@/features/recommendations/get-todays-recommendations";
-import { getDailyCondition, saveDailyCondition } from "@/features/storage/daily-condition.repository";
+import { mapWellnessToCondition } from "@/features/recommendations/wellness-to-condition";
+import { getDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
 import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { toDayKey } from "@/lib/date/day-key";
-import type { ConditionLevel, ExerciseLogResult, ExerciseVideo } from "@/lib/types";
+import type { ExerciseLogResult, ExerciseVideo, WellnessScore } from "@/lib/types";
 
 type ExerciseLogState = Record<string, ExerciseLogResult | undefined>;
+const DEFAULT_WELLNESS_SCORE: WellnessScore = 3;
 
 export function useTodayData(date: Date | string) {
   const dayKey = useMemo(() => toDayKey(date), [date]);
-  const [conditionLevel, setConditionLevel] = useState<ConditionLevel>("okay");
+  const [physicalScore, setPhysicalScoreState] = useState<WellnessScore>(DEFAULT_WELLNESS_SCORE);
+  const [mentalScore, setMentalScoreState] = useState<WellnessScore>(DEFAULT_WELLNESS_SCORE);
   const [note, setNote] = useState("");
   const [logResults, setLogResults] = useState<ExerciseLogState>({});
   const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
-  const hasConditionDraft = useRef(false);
+  const hasWellnessDraft = useRef(false);
   const hasNoteDraft = useRef(false);
 
   useEffect(() => {
@@ -27,13 +30,13 @@ export function useTodayData(date: Date | string) {
 
   useEffect(() => {
     let isActive = true;
-    hasConditionDraft.current = false;
+    hasWellnessDraft.current = false;
     hasNoteDraft.current = false;
 
     async function loadTodayData() {
       const selectedDayKey = toDayKey(dayKey);
-      const [savedCondition, savedLogs] = await Promise.all([
-        getDailyCondition(selectedDayKey),
+      const [savedWellness, savedLogs] = await Promise.all([
+        getDailyWellness(selectedDayKey),
         listExerciseLogsForDay(selectedDayKey),
       ]);
 
@@ -41,12 +44,13 @@ export function useTodayData(date: Date | string) {
         return;
       }
 
-      if (!hasConditionDraft.current) {
-        setConditionLevel(savedCondition?.conditionLevel ?? "okay");
+      if (!hasWellnessDraft.current) {
+        setPhysicalScoreState(savedWellness?.physicalScore ?? DEFAULT_WELLNESS_SCORE);
+        setMentalScoreState(savedWellness?.mentalScore ?? DEFAULT_WELLNESS_SCORE);
       }
 
       if (!hasNoteDraft.current) {
-        setNote(savedCondition?.note ?? "");
+        setNote(savedWellness?.note ?? "");
       }
 
       setLogResults(
@@ -62,6 +66,11 @@ export function useTodayData(date: Date | string) {
     };
   }, [dayKey]);
 
+  const conditionLevel = useMemo(
+    () => mapWellnessToCondition({ physicalScore, mentalScore }),
+    [mentalScore, physicalScore],
+  );
+
   const recommendations = useMemo(
     () =>
       getTodaysRecommendations({
@@ -75,16 +84,22 @@ export function useTodayData(date: Date | string) {
   const saveConditionEntry = useCallback(async () => {
     const selectedDayKey = toDayKey(dayKey);
 
-    await saveDailyCondition({
+    await saveDailyWellness({
       date: selectedDayKey,
-      conditionLevel,
+      physicalScore,
+      mentalScore,
       note,
     });
-  }, [conditionLevel, dayKey, note]);
+  }, [dayKey, mentalScore, note, physicalScore]);
 
-  const updateConditionLevel = useCallback((nextConditionLevel: ConditionLevel) => {
-    hasConditionDraft.current = true;
-    setConditionLevel(nextConditionLevel);
+  const updatePhysicalScore = useCallback((nextPhysicalScore: WellnessScore) => {
+    hasWellnessDraft.current = true;
+    setPhysicalScoreState(nextPhysicalScore);
+  }, []);
+
+  const updateMentalScore = useCallback((nextMentalScore: WellnessScore) => {
+    hasWellnessDraft.current = true;
+    setMentalScoreState(nextMentalScore);
   }, []);
 
   const updateNote = useCallback((nextNote: string) => {
@@ -112,11 +127,13 @@ export function useTodayData(date: Date | string) {
 
   return {
     isHydrated: hydratedDayKey === dayKey,
-    conditionLevel,
+    physicalScore,
+    mentalScore,
     note,
     recommendations,
     logResults,
-    setConditionLevel: updateConditionLevel,
+    setPhysicalScore: updatePhysicalScore,
+    setMentalScore: updateMentalScore,
     setNote: updateNote,
     saveCondition: saveConditionEntry,
     logExercise,
