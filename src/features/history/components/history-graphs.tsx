@@ -22,7 +22,7 @@ const METRIC_OPTIONS: MetricOption[] = [
 
 function getDateRangeForPreset(preset: DateRangePreset): { start: string; end: string } {
   const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
   const endDate = toDayKey(today);
 
   if (preset === "all") {
