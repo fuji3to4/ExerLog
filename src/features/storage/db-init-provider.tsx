@@ -12,7 +12,9 @@ type DbInitProviderProps = {
 
 export function DbInitProvider({ children }: DbInitProviderProps) {
   useEffect(() => {
-    void Promise.all([seedIfEmpty(), seedSelfCareCatalogIfEmpty()]);
+    Promise.all([seedIfEmpty(), seedSelfCareCatalogIfEmpty()]).catch(
+      console.error,
+    );
   }, []);
 
   return <>{children}</>;
