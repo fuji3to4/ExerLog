@@ -11,11 +11,11 @@ export function BottomNav({ currentPath }: BottomNavProps) {
   const { messages } = useTranslation();
 
   const destinations = [
-    { href: "/", label: messages.nav_today, icon: "◎" },
-    { href: "/library", label: messages.nav_library, icon: "▦" },
-    { href: "/history", label: messages.nav_history, icon: "◷" },
-    { href: "/settings", label: messages.nav_settings, icon: "⚙" },
-    { href: "/self-care", label: messages.nav_self_care, icon: "♡" },
+    { href: "/", icon: "◯", label: messages.nav_today },
+    { href: "/library", icon: "□", label: messages.nav_library },
+    { href: "/history", icon: "△", label: messages.nav_history },
+    { href: "/self-care", icon: "♡", label: messages.nav_self_care },
+    { href: "/settings", icon: "⚙", label: messages.nav_settings },
   ];
 
   return (

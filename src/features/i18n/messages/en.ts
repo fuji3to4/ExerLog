@@ -53,6 +53,24 @@ export const en = {
   history_exercises_heading: "Exercises",
   history_no_exercises: "No logged exercises for this day.",
   history_condition_heading: "Condition",
+  history_wellness_heading: "Wellness",
+  history_metrics_heading: "Metrics",
+  history_self_care_heading: "Self Care",
+  history_graphs_heading: "Graphs",
+  history_graphs_empty: "No data available for the selected range.",
+  history_graph_metric_label: "Metric",
+
+  // Self care screen
+  self_care_heading: "Self Care",
+  self_care_description: "Save a short self care note for today.",
+  self_care_physical_label: "Physical",
+  self_care_mental_label: "Mental",
+  self_care_metric_height: "Height",
+  self_care_metric_weight: "Weight",
+  self_care_metric_body_fat: "Body fat",
+  self_care_done_label: "Done",
+  self_care_count_label: "Count",
+  self_care_minutes_label: "Minutes",
 
   // Self care screen
   self_care_heading: "Self Care",

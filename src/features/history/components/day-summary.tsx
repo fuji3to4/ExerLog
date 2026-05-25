@@ -8,7 +8,7 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { deleteDailyCondition, updateDailyCondition } from "@/features/storage/daily-condition.repository";
 import { deleteExerciseLog, updateExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
-import type { ConditionLevel, ExerciseLogResult, ExerciseVideo } from "@/lib/types";
+import type { ConditionLevel, ExerciseLogResult, ExerciseVideo, MetricType } from "@/lib/types";
 
 import type { HistoryDaySummary } from "../history-query";
 
@@ -199,6 +199,12 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
     return t("condition_tired");
   }
 
+  function formatMetricLabel(metricType: MetricType) {
+    if (metricType === "height") return t("self_care_metric_height");
+    if (metricType === "weight") return t("self_care_metric_weight");
+    return t("self_care_metric_body_fat");
+  }
+
   async function handleDeleteLog(logId: string) {
     if (!window.confirm(t("history_log_delete_confirm"))) return;
     await deleteExerciseLog(logId);
@@ -297,6 +303,54 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
           </ul>
         )}
       </div>
+
+      {summary.wellness ? (
+        <div className="day-summary__section">
+          <h3>{t("history_wellness_heading")}</h3>
+          <p>
+            <span>{t("self_care_physical_label")}</span>:{" "}
+            <span>{`${summary.wellness.physicalScore} / 5`}</span>
+          </p>
+          <p>
+            <span>{t("self_care_mental_label")}</span>:{" "}
+            <span>{`${summary.wellness.mentalScore} / 5`}</span>
+          </p>
+          {summary.wellness.note ? <p>{summary.wellness.note}</p> : null}
+        </div>
+      ) : null}
+
+      {summary.metrics.length > 0 ? (
+        <div className="day-summary__section">
+          <h3>{t("history_metrics_heading")}</h3>
+          <ul className="day-summary__list">
+            {summary.metrics.map((metric) => (
+              <li key={metric.metricType} className="day-summary__item">
+                <span>{formatMetricLabel(metric.metricType)}</span>
+                <span>{`${metric.value} ${metric.unit}`}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {summary.selfCareLogs.length > 0 ? (
+        <div className="day-summary__section">
+          <h3>{t("history_self_care_heading")}</h3>
+          <ul className="day-summary__list">
+            {summary.selfCareLogs.map((entry) => (
+              <li key={entry.selfCareId} className="day-summary__item">
+                <span>{entry.title}</span>
+                {entry.isDone ? <p>{t("self_care_done_label")}</p> : null}
+                {entry.count !== null ? <p>{`${t("self_care_count_label")}: ${entry.count}`}</p> : null}
+                {entry.minutes !== null ? (
+                  <p>{`${t("self_care_minutes_label")}: ${entry.minutes}`}</p>
+                ) : null}
+                {entry.note ? <p>{entry.note}</p> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {summary.conditionLevel ? (
         <div className="day-summary__section">

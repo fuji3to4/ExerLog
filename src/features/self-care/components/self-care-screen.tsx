@@ -1,74 +1,72 @@
 "use client";
 
 import { useTranslation } from "@/features/i18n/use-translation";
+import { toDayKey } from "@/lib/date/day-key";
 
-export function SelfCareScreen() {
-  const { t } = useTranslation();
+import { MetricsCard } from "./metrics-card";
+import { SelfCareLogCard } from "./self-care-log-card";
+import { WellnessCard } from "./wellness-card";
+import { useSelfCareData } from "../use-self-care-data";
 
+type SelfCareScreenProps = {
+  date?: string;
+};
+
+export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
+  const date = dateProp ?? toDayKey(new Date());
+  const { t, formatDate } = useTranslation();
+  const {
+    isHydrated,
+    physicalScore,
+    mentalScore,
+    note,
+    metrics,
+    selfCareItems,
+    selfCareEntries,
+    setPhysicalScore,
+    setMentalScore,
+    setNote,
+    setMetric,
+    setSelfCareEntry,
+    save,
+  } = useSelfCareData(date);
   return (
     <>
       <section className="card page-header">
+        <p className="self-care-screen__date">{formatDate(date)}</p>
         <h1>{t("self_care_heading")}</h1>
-        <p>{t("self_care_subheading")}</p>
+        <p>{t("self_care_description")}</p>
       </section>
 
-      <section className="card">
-        <h2>{t("self_care_wellness_heading")}</h2>
-        <form>
-          <fieldset>
-            <legend>{t("self_care_wellness_heading")}</legend>
-            <label>
-              <input type="radio" name="self-care-focus" value="physical" />
-              {t("self_care_physical_label")}
-            </label>
-            <label>
-              <input type="radio" name="self-care-focus" value="mental" />
-              {t("self_care_mental_label")}
-            </label>
-          </fieldset>
-          <button type="submit">{t("self_care_save_button")}</button>
-        </form>
-      </section>
+      {!isHydrated ? (
+        <section className="card self-care-screen__section" aria-live="polite">
+          <h2>{t("today_loading_heading")}</h2>
+          <p>{t("today_loading_text")}</p>
+        </section>
+      ) : (
+        <>
+          <WellnessCard
+            physicalScore={physicalScore}
+            mentalScore={mentalScore}
+            note={note}
+            onPhysicalScoreChange={setPhysicalScore}
+            onMentalScoreChange={setMentalScore}
+            onNoteChange={setNote}
+          />
 
-      <section className="card">
-        <h2>{t("self_care_metrics_heading")}</h2>
-        <dl>
-          <div>
-            <dt>{t("self_care_metric_height")}</dt>
-            <dd>170 cm</dd>
-          </div>
-          <div>
-            <dt>{t("self_care_metric_weight")}</dt>
-            <dd>65 kg</dd>
-          </div>
-          <div>
-            <dt>{t("self_care_metric_body_fat")}</dt>
-            <dd>18%</dd>
-          </div>
-        </dl>
-      </section>
+          <MetricsCard metrics={metrics} onMetricChange={setMetric} />
 
-      <section className="card">
-        <h2>{t("self_care_logs_heading")}</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>{t("self_care_done_label")}</th>
-              <th>{t("self_care_count_label")}</th>
-              <th>{t("self_care_minutes_label")}</th>
-              <th>{t("self_care_note_label")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>—</td>
-              <td>—</td>
-              <td>—</td>
-              <td>—</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+          <SelfCareLogCard items={selfCareItems} entries={selfCareEntries} onEntryChange={setSelfCareEntry} />
+
+          <section className="card self-care-screen__section">
+            <div className="button-row">
+              <button type="button" className="today-screen__primary-button" onClick={() => void save()}>
+                {t("condition_save_button")}
+              </button>
+            </div>
+          </section>
+        </>
+      )}
     </>
   );
 }

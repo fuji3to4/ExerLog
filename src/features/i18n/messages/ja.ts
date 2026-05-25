@@ -53,6 +53,24 @@
   history_exercises_heading: "エクササイズ",
   history_no_exercises: "この日に記録されたエクササイズはありません。",
   history_condition_heading: "体調",
+  history_wellness_heading: "ウェルネス",
+  history_metrics_heading: "測定値",
+  history_self_care_heading: "セルフケア",
+  history_graphs_heading: "グラフ",
+  history_graphs_empty: "選択した範囲に利用可能なデータがありません。",
+  history_graph_metric_label: "メトリック",
+
+  // Self care screen
+  self_care_heading: "セルフケア",
+  self_care_description: "今日のために短いセルフケアの記録を残しましょう。",
+  self_care_physical_label: "身体",
+  self_care_mental_label: "心",
+  self_care_metric_height: "身長",
+  self_care_metric_weight: "体重",
+  self_care_metric_body_fat: "体脂肪率",
+  self_care_done_label: "実施",
+  self_care_count_label: "回数",
+  self_care_minutes_label: "分",
 
   // Self care screen
   self_care_heading: "セルフケア",

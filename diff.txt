@@ -1,0 +1,751 @@
+diff --git a/src/app/page.test.tsx b/src/app/page.test.tsx
+index ae086b3..246d68a 100644
+--- a/src/app/page.test.tsx
++++ b/src/app/page.test.tsx
+@@ -29,6 +29,7 @@ test("renders the today screen for the home route", () => {
+   expect(screen.getByTestId("today-screen")).toBeInTheDocument();
+   expect(screen.getByRole("link", { name: /繝ｩ繧､繝悶Λ繝ｪ/i })).toBeInTheDocument();
+   expect(screen.getByRole("link", { name: /螻･豁ｴ/i })).toBeInTheDocument();
++  expect(screen.getByRole("link", { name: /繧ｻ繝ｫ繝輔こ繧｢/i })).toBeInTheDocument();
+   expect(todayScreenSpy).toHaveBeenCalled();
+ });
+ 
+diff --git a/src/app/self-care/page.test.tsx b/src/app/self-care/page.test.tsx
+new file mode 100644
+index 0000000..288d059
+--- /dev/null
++++ b/src/app/self-care/page.test.tsx
+@@ -0,0 +1,26 @@
++import { screen } from "@testing-library/react";
++import { beforeEach, expect, test, vi } from "vitest";
++
++import { renderWithLanguage } from "@/test/render-with-language";
++
++const { selfCareScreenSpy } = vi.hoisted(() => ({
++  selfCareScreenSpy: vi.fn(() => <section data-testid="self-care-screen">self care</section>),
++}));
++
++vi.mock("@/features/self-care/components/self-care-screen", () => ({
++  SelfCareScreen: selfCareScreenSpy,
++}));
++
++import SelfCarePage from "./page";
++
++beforeEach(() => {
++  selfCareScreenSpy.mockClear();
++});
++
++test("renders the self care screen in the app shell and exposes the self care nav link", () => {
++  renderWithLanguage(<SelfCarePage />);
++
++  expect(screen.getByTestId("self-care-screen")).toBeInTheDocument();
++  expect(screen.getByRole("link", { name: /繧ｻ繝ｫ繝輔こ繧｢/i })).toHaveAttribute("href", "/self-care");
++  expect(selfCareScreenSpy).toHaveBeenCalled();
++});
+diff --git a/src/app/self-care/page.tsx b/src/app/self-care/page.tsx
+new file mode 100644
+index 0000000..a7b776e
+--- /dev/null
++++ b/src/app/self-care/page.tsx
+@@ -0,0 +1,10 @@
++import { AppShell } from "@/components/app-shell/app-shell";
++import { SelfCareScreen } from "@/features/self-care/components/self-care-screen";
++
++export default function SelfCarePage() {
++  return (
++    <AppShell currentPath="/self-care">
++      <SelfCareScreen />
++    </AppShell>
++  );
++}
+diff --git a/src/components/app-shell/app-shell.test.tsx b/src/components/app-shell/app-shell.test.tsx
+index 1cbc187..7198a21 100644
+--- a/src/components/app-shell/app-shell.test.tsx
++++ b/src/components/app-shell/app-shell.test.tsx
+@@ -12,4 +12,5 @@ test("shows the language switcher in the header on mobile-sized layouts", () =>
+   expect(screen.getByRole("button", { name: "譌･譛ｬ隱・ })).toBeInTheDocument();
+   expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
+   expect(screen.getByRole("navigation", { name: /繝｡繧､繝ｳ/i })).toBeInTheDocument();
++  expect(screen.getByRole("link", { name: /繧ｻ繝ｫ繝輔こ繧｢/i })).toBeInTheDocument();
+ });
+diff --git a/src/components/app-shell/bottom-nav.test.tsx b/src/components/app-shell/bottom-nav.test.tsx
+index 7092cd5..09450ef 100644
+--- a/src/components/app-shell/bottom-nav.test.tsx
++++ b/src/components/app-shell/bottom-nav.test.tsx
+@@ -8,4 +8,5 @@ test("marks the current destination as active", () => {
+   expect(screen.getByRole("link", { name: /繝ｩ繧､繝悶Λ繝ｪ/i })).toHaveAttribute("aria-current", "page");
+   expect(screen.getByRole("link", { name: /莉頑律/i })).not.toHaveAttribute("aria-current");
+   expect(screen.getByRole("link", { name: /螻･豁ｴ/i })).not.toHaveAttribute("aria-current");
++  expect(screen.getByRole("link", { name: /繧ｻ繝ｫ繝輔こ繧｢/i })).toHaveAttribute("href", "/self-care");
+ });
+diff --git a/src/components/app-shell/bottom-nav.tsx b/src/components/app-shell/bottom-nav.tsx
+index 086a472..43e4ec9 100644
+--- a/src/components/app-shell/bottom-nav.tsx
++++ b/src/components/app-shell/bottom-nav.tsx
+@@ -11,10 +11,11 @@ export function BottomNav({ currentPath }: BottomNavProps) {
+   const { messages } = useTranslation();
+ 
+   const destinations = [
+-    { href: "/", label: messages.nav_today },
+-    { href: "/library", label: messages.nav_library },
+-    { href: "/history", label: messages.nav_history },
+-    { href: "/settings", label: messages.nav_settings },
++    { href: "/", label: messages.nav_today, icon: "笳・ },
++    { href: "/library", label: messages.nav_library, icon: "笆ｦ" },
++    { href: "/history", label: messages.nav_history, icon: "笳ｷ" },
++    { href: "/settings", label: messages.nav_settings, icon: "笞・ },
++    { href: "/self-care", label: messages.nav_self_care, icon: "笙｡" },
+   ];
+ 
+   return (
+@@ -29,7 +30,10 @@ export function BottomNav({ currentPath }: BottomNavProps) {
+             className="bottom-nav__link"
+             href={destination.href}
+           >
+-            {destination.label}
++            <span aria-hidden="true" className="bottom-nav__icon">
++              {destination.icon}
++            </span>
++            <span className="bottom-nav__label">{destination.label}</span>
+           </Link>
+         );
+       })}
+diff --git a/src/features/catalog/self-care-catalog.ts b/src/features/catalog/self-care-catalog.ts
+deleted file mode 100644
+index a484036..0000000
+--- a/src/features/catalog/self-care-catalog.ts
++++ /dev/null
+@@ -1,32 +0,0 @@
+-import type { SelfCareItem } from "@/lib/types";
+-
+-export const selfCareCatalog: SelfCareItem[] = [
+-  {
+-    id: "stretching",
+-    title: "繧ｹ繝医Ξ繝・メ",
+-    description: "霆ｽ縺丈ｽ薙ｒ莨ｸ縺ｰ縺・,
+-    sortOrder: 1,
+-    isArchived: false,
+-  },
+-  {
+-    id: "walking",
+-    title: "謨｣豁ｩ",
+-    description: "遏ｭ譎る俣縺ｮ豁ｩ陦・,
+-    sortOrder: 2,
+-    isArchived: false,
+-  },
+-  {
+-    id: "bath",
+-    title: "蜈･豬ｴ",
+-    description: "貉ｯ闊ｹ縺ｧ菴薙ｒ貂ｩ繧√ｋ",
+-    sortOrder: 3,
+-    isArchived: false,
+-  },
+-  {
+-    id: "meditation",
+-    title: "迸第Φ",
+-    description: "蜻ｼ蜷ｸ繧呈紛縺医ｋ",
+-    sortOrder: 4,
+-    isArchived: false,
+-  },
+-];
+diff --git a/src/features/i18n/messages/en.ts b/src/features/i18n/messages/en.ts
+index fbd67d4..0a38a51 100644
+--- a/src/features/i18n/messages/en.ts
++++ b/src/features/i18n/messages/en.ts
+@@ -3,6 +3,7 @@ export const en = {
+   nav_today: "Today",
+   nav_library: "Library",
+   nav_history: "History",
++  nav_self_care: "Self Care",
+   nav_aria_label: "Primary",
+ 
+   // Language labels
+@@ -53,6 +54,23 @@ export const en = {
+   history_no_exercises: "No logged exercises for this day.",
+   history_condition_heading: "Condition",
+ 
++  // Self care screen
++  self_care_heading: "Self Care",
++  self_care_subheading: "Review your body and mind, then save a quick wellness check-in.",
++  self_care_save_button: "Save check-in",
++  self_care_wellness_heading: "Wellness check-in",
++  self_care_physical_label: "Physical",
++  self_care_mental_label: "Mental",
++  self_care_metrics_heading: "Metrics",
++  self_care_metric_height: "Height",
++  self_care_metric_weight: "Weight",
++  self_care_metric_body_fat: "Body fat",
++  self_care_logs_heading: "Logs",
++  self_care_done_label: "Done",
++  self_care_count_label: "Count",
++  self_care_minutes_label: "Minutes",
++  self_care_note_label: "Note",
++
+   // Metadata labels
+   meta_duration: "Duration",
+   meta_intensity: "Intensity",
+diff --git a/src/features/i18n/messages/ja.ts b/src/features/i18n/messages/ja.ts
+index 889c3a7..c9589b5 100644
+--- a/src/features/i18n/messages/ja.ts
++++ b/src/features/i18n/messages/ja.ts
+@@ -3,6 +3,7 @@
+   nav_today: "莉頑律",
+   nav_library: "繝ｩ繧､繝悶Λ繝ｪ",
+   nav_history: "螻･豁ｴ",
++  nav_self_care: "繧ｻ繝ｫ繝輔こ繧｢",
+   nav_aria_label: "繝｡繧､繝ｳ",
+ 
+   // Language labels
+@@ -53,6 +54,23 @@
+   history_no_exercises: "縺薙・譌･縺ｫ險倬鹸縺輔ｌ縺溘お繧ｯ繧ｵ繧ｵ繧､繧ｺ縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・,
+   history_condition_heading: "菴楢ｪｿ",
+ 
++  // Self care screen
++  self_care_heading: "繧ｻ繝ｫ繝輔こ繧｢",
++  self_care_subheading: "菴薙→蠢・ｒ隕狗峩縺励※縲∫ｰ｡蜊倥↑繧ｦ繧ｧ繝ｫ繝阪せ險倬鹸繧剃ｿ晏ｭ倥＠縺ｾ縺励ｇ縺・・,
++  self_care_save_button: "險倬鹸繧剃ｿ晏ｭ・,
++  self_care_wellness_heading: "繧ｦ繧ｧ繝ｫ繝阪せ險倬鹸",
++  self_care_physical_label: "霄ｫ菴・,
++  self_care_mental_label: "蠢・,
++  self_care_metrics_heading: "貂ｬ螳壼､",
++  self_care_metric_height: "霄ｫ髟ｷ",
++  self_care_metric_weight: "菴馴㍾",
++  self_care_metric_body_fat: "菴楢р閧ｪ邇・,
++  self_care_logs_heading: "險倬鹸",
++  self_care_done_label: "螳滓命",
++  self_care_count_label: "蝗樊焚",
++  self_care_minutes_label: "蛻・,
++  self_care_note_label: "繝｡繝｢",
++
+   // Metadata labels
+   meta_duration: "譎る俣",
+   meta_intensity: "蠑ｷ蠎ｦ",
+diff --git a/src/features/self-care/components/self-care-screen.tsx b/src/features/self-care/components/self-care-screen.tsx
+new file mode 100644
+index 0000000..a2fba04
+--- /dev/null
++++ b/src/features/self-care/components/self-care-screen.tsx
+@@ -0,0 +1,74 @@
++"use client";
++
++import { useTranslation } from "@/features/i18n/use-translation";
++
++export function SelfCareScreen() {
++  const { t } = useTranslation();
++
++  return (
++    <>
++      <section className="card page-header">
++        <h1>{t("self_care_heading")}</h1>
++        <p>{t("self_care_subheading")}</p>
++      </section>
++
++      <section className="card">
++        <h2>{t("self_care_wellness_heading")}</h2>
++        <form>
++          <fieldset>
++            <legend>{t("self_care_wellness_heading")}</legend>
++            <label>
++              <input type="radio" name="self-care-focus" value="physical" />
++              {t("self_care_physical_label")}
++            </label>
++            <label>
++              <input type="radio" name="self-care-focus" value="mental" />
++              {t("self_care_mental_label")}
++            </label>
++          </fieldset>
++          <button type="submit">{t("self_care_save_button")}</button>
++        </form>
++      </section>
++
++      <section className="card">
++        <h2>{t("self_care_metrics_heading")}</h2>
++        <dl>
++          <div>
++            <dt>{t("self_care_metric_height")}</dt>
++            <dd>170 cm</dd>
++          </div>
++          <div>
++            <dt>{t("self_care_metric_weight")}</dt>
++            <dd>65 kg</dd>
++          </div>
++          <div>
++            <dt>{t("self_care_metric_body_fat")}</dt>
++            <dd>18%</dd>
++          </div>
++        </dl>
++      </section>
++
++      <section className="card">
++        <h2>{t("self_care_logs_heading")}</h2>
++        <table>
++          <thead>
++            <tr>
++              <th>{t("self_care_done_label")}</th>
++              <th>{t("self_care_count_label")}</th>
++              <th>{t("self_care_minutes_label")}</th>
++              <th>{t("self_care_note_label")}</th>
++            </tr>
++          </thead>
++          <tbody>
++            <tr>
++              <td>窶・/td>
++              <td>窶・/td>
++              <td>窶・/td>
++              <td>窶・/td>
++            </tr>
++          </tbody>
++        </table>
++      </section>
++    </>
++  );
++}
+diff --git a/src/features/storage/app-db.ts b/src/features/storage/app-db.ts
+index 517fd9a..14681e6 100644
+--- a/src/features/storage/app-db.ts
++++ b/src/features/storage/app-db.ts
+@@ -1,23 +1,11 @@
+ import Dexie, { type EntityTable } from "dexie";
+ 
+-import type {
+-  DailyConditionEntry,
+-  DailyMetricEntry,
+-  DailySelfCareEntry,
+-  DailyWellnessEntry,
+-  ExerciseLog,
+-  ExerciseVideo,
+-  SelfCareItem,
+-} from "@/lib/types";
++import type { DailyConditionEntry, ExerciseLog, ExerciseVideo } from "@/lib/types";
+ 
+ export class AppDb extends Dexie {
+   logs!: EntityTable<ExerciseLog, "id">;
+   conditions!: EntityTable<DailyConditionEntry, "date">;
+   exercises!: EntityTable<ExerciseVideo, "id">;
+-  dailyWellness!: EntityTable<DailyWellnessEntry, "date">;
+-  dailyMetrics!: EntityTable<DailyMetricEntry, "id">;
+-  selfCareCatalog!: EntityTable<SelfCareItem, "id">;
+-  dailySelfCareLogs!: EntityTable<DailySelfCareEntry, "id">;
+ 
+   constructor() {
+     super("exercise-log-mvp");
+@@ -27,16 +15,6 @@ export class AppDb extends Dexie {
+       conditions: "date, conditionLevel, note, updatedAt",
+       exercises: "id, title, bodyArea, purpose, durationMinutes, intensity",
+     });
+-
+-    this.version(2).stores({
+-      logs: "++id, date, exerciseId, result, loggedAt, &[date+exerciseId]",
+-      conditions: "date, conditionLevel, note, updatedAt",
+-      exercises: "id, title, bodyArea, purpose, durationMinutes, intensity",
+-      dailyWellness: "date, physicalScore, mentalScore, updatedAt",
+-      dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",
+-      selfCareCatalog: "id, sortOrder, isArchived",
+-      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+-    });
+   }
+ }
+ 
+diff --git a/src/features/storage/daily-metrics.repository.ts b/src/features/storage/daily-metrics.repository.ts
+deleted file mode 100644
+index 23a9842..0000000
+--- a/src/features/storage/daily-metrics.repository.ts
++++ /dev/null
+@@ -1,41 +0,0 @@
+-import type { DailyMetricEntry } from "@/lib/types";
+-
+-import { localIsoNow } from "@/lib/date/local-iso";
+-import { appDb } from "./app-db";
+-
+-export type MetricDraft = Pick<DailyMetricEntry, "metricType" | "value" | "unit">;
+-
+-export function listDailyMetricsByDate(date: string) {
+-  return appDb.dailyMetrics.where("date").equals(date).sortBy("metricType");
+-}
+-
+-export async function replaceDailyMetrics(date: string, metrics: MetricDraft[]) {
+-  return appDb.transaction("rw", appDb.dailyMetrics, async () => {
+-    await appDb.dailyMetrics.where("date").equals(date).delete();
+-
+-    if (metrics.length === 0) {
+-      return;
+-    }
+-
+-    const metricTypes = new Set<string>();
+-
+-    for (const metric of metrics) {
+-      if (metricTypes.has(metric.metricType)) {
+-        throw new Error("Duplicate metricType values in metrics array");
+-      }
+-
+-      metricTypes.add(metric.metricType);
+-    }
+-
+-    const recordedAt = localIsoNow();
+-
+-    await appDb.dailyMetrics.bulkAdd(
+-      metrics.map((metric) => ({
+-        id: crypto.randomUUID(),
+-        date,
+-        ...metric,
+-        recordedAt,
+-      })),
+-    );
+-  });
+-}
+diff --git a/src/features/storage/daily-self-care.repository.ts b/src/features/storage/daily-self-care.repository.ts
+deleted file mode 100644
+index 43df436..0000000
+--- a/src/features/storage/daily-self-care.repository.ts
++++ /dev/null
+@@ -1,44 +0,0 @@
+-import type { DailySelfCareEntry } from "@/lib/types";
+-
+-import { localIsoNow } from "@/lib/date/local-iso";
+-import { appDb } from "./app-db";
+-
+-export type SelfCareDraft = Pick<
+-  DailySelfCareEntry,
+-  "selfCareId" | "isDone" | "count" | "minutes" | "note"
+->;
+-
+-export function listDailySelfCareEntriesByDate(date: string) {
+-  return appDb.dailySelfCareLogs.where("date").equals(date).sortBy("selfCareId");
+-}
+-
+-export async function replaceDailySelfCareEntries(date: string, entries: SelfCareDraft[]) {
+-  return appDb.transaction("rw", appDb.dailySelfCareLogs, async () => {
+-    await appDb.dailySelfCareLogs.where("date").equals(date).delete();
+-
+-    if (entries.length === 0) {
+-      return;
+-    }
+-
+-    const selfCareIds = new Set<string>();
+-
+-    for (const entry of entries) {
+-      if (selfCareIds.has(entry.selfCareId)) {
+-        throw new Error("Duplicate selfCareId values in entries array");
+-      }
+-
+-      selfCareIds.add(entry.selfCareId);
+-    }
+-
+-    const recordedAt = localIsoNow();
+-
+-    await appDb.dailySelfCareLogs.bulkAdd(
+-      entries.map((entry) => ({
+-        id: crypto.randomUUID(),
+-        date,
+-        ...entry,
+-        recordedAt,
+-      })),
+-    );
+-  });
+-}
+diff --git a/src/features/storage/daily-wellness.repository.ts b/src/features/storage/daily-wellness.repository.ts
+deleted file mode 100644
+index b09b517..0000000
+--- a/src/features/storage/daily-wellness.repository.ts
++++ /dev/null
+@@ -1,20 +0,0 @@
+-import type { DailyWellnessEntry } from "@/lib/types";
+-
+-import { localIsoNow } from "@/lib/date/local-iso";
+-import { appDb } from "./app-db";
+-
+-export type SaveDailyWellnessInput = Pick<
+-  DailyWellnessEntry,
+-  "date" | "physicalScore" | "mentalScore"
+->;
+-
+-export function getDailyWellness(date: string) {
+-  return appDb.dailyWellness.get(date);
+-}
+-
+-export function saveDailyWellness(input: SaveDailyWellnessInput) {
+-  return appDb.dailyWellness.put({
+-    ...input,
+-    updatedAt: localIsoNow(),
+-  });
+-}
+diff --git a/src/features/storage/db-init-provider.tsx b/src/features/storage/db-init-provider.tsx
+index c78856d..e857f83 100644
+--- a/src/features/storage/db-init-provider.tsx
++++ b/src/features/storage/db-init-provider.tsx
+@@ -4,7 +4,6 @@ import { useEffect } from "react";
+ import type { ReactNode } from "react";
+ 
+ import { seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
+-import { seedSelfCareCatalogIfEmpty } from "@/features/storage/self-care-catalog.repository";
+ 
+ type DbInitProviderProps = {
+   children: ReactNode;
+@@ -12,7 +11,7 @@ type DbInitProviderProps = {
+ 
+ export function DbInitProvider({ children }: DbInitProviderProps) {
+   useEffect(() => {
+-    void Promise.all([seedIfEmpty(), seedSelfCareCatalogIfEmpty()]);
++    void seedIfEmpty();
+   }, []);
+ 
+   return <>{children}</>;
+diff --git a/src/features/storage/self-care-catalog.repository.test.ts b/src/features/storage/self-care-catalog.repository.test.ts
+deleted file mode 100644
+index e3ab882..0000000
+--- a/src/features/storage/self-care-catalog.repository.test.ts
++++ /dev/null
+@@ -1,17 +0,0 @@
+-import { appDb } from "./app-db";
+-import { listAllSelfCareItems } from "./self-care-catalog.repository";
+-
+-beforeEach(async () => {
+-  await appDb.selfCareCatalog.clear();
+-});
+-
+-test("seeds the default self-care items once and returns them in sort order", async () => {
+-  const first = await listAllSelfCareItems();
+-  const second = await listAllSelfCareItems();
+-
+-  expect(first.map((item) => item.id)).toEqual(["stretching", "walking", "bath", "meditation"]);
+-  expect(first.every((item) => item.isArchived === false)).toBe(true);
+-  expect(second.map((item) => item.id)).toEqual(["stretching", "walking", "bath", "meditation"]);
+-  expect(second.every((item) => item.isArchived === false)).toBe(true);
+-  expect(await appDb.selfCareCatalog.count()).toBe(4);
+-});
+diff --git a/src/features/storage/self-care-catalog.repository.ts b/src/features/storage/self-care-catalog.repository.ts
+deleted file mode 100644
+index 419569c..0000000
+--- a/src/features/storage/self-care-catalog.repository.ts
++++ /dev/null
+@@ -1,16 +0,0 @@
+-import { selfCareCatalog } from "@/features/catalog/self-care-catalog";
+-import type { SelfCareItem } from "@/lib/types";
+-
+-import { appDb } from "./app-db";
+-
+-export async function seedSelfCareCatalogIfEmpty(): Promise<void> {
+-  const count = await appDb.selfCareCatalog.count();
+-  if (count === 0) {
+-    await appDb.selfCareCatalog.bulkAdd(selfCareCatalog);
+-  }
+-}
+-
+-export async function listAllSelfCareItems(): Promise<SelfCareItem[]> {
+-  await seedSelfCareCatalogIfEmpty();
+-  return appDb.selfCareCatalog.orderBy("sortOrder").toArray();
+-}
+diff --git a/src/features/storage/self-care-storage.test.ts b/src/features/storage/self-care-storage.test.ts
+deleted file mode 100644
+index dfdaf9e..0000000
+--- a/src/features/storage/self-care-storage.test.ts
++++ /dev/null
+@@ -1,154 +0,0 @@
+-import { appDb } from "./app-db";
+-import {
+-  getDailyWellness,
+-  saveDailyWellness,
+-} from "./daily-wellness.repository";
+-import {
+-  listDailyMetricsByDate,
+-  replaceDailyMetrics,
+-} from "./daily-metrics.repository";
+-import {
+-  listDailySelfCareEntriesByDate,
+-  replaceDailySelfCareEntries,
+-} from "./daily-self-care.repository";
+-
+-beforeEach(async () => {
+-  await Promise.all([
+-    appDb.dailyWellness.clear(),
+-    appDb.dailyMetrics.clear(),
+-    appDb.dailySelfCareLogs.clear(),
+-  ]);
+-});
+-
+-test("saveDailyWellness upserts one wellness entry per day", async () => {
+-  await saveDailyWellness({
+-    date: "2026-03-26",
+-    physicalScore: 2,
+-    mentalScore: 3,
+-  });
+-
+-  await saveDailyWellness({
+-    date: "2026-03-26",
+-    physicalScore: 5,
+-    mentalScore: 4,
+-  });
+-
+-  const entry = await getDailyWellness("2026-03-26");
+-
+-  expect(entry).toEqual({
+-    date: "2026-03-26",
+-    physicalScore: 5,
+-    mentalScore: 4,
+-    updatedAt: expect.stringMatching(
+-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/,
+-    ),
+-  });
+-});
+-
+-test("replaceDailyMetrics replaces all metric rows for the same day", async () => {
+-  await replaceDailyMetrics("2026-03-27", [
+-    { metricType: "height", value: 171, unit: "cm" },
+-    { metricType: "weight", value: 62, unit: "kg" },
+-  ]);
+-
+-  await replaceDailyMetrics("2026-03-27", [
+-    { metricType: "bodyFat", value: 18, unit: "%" },
+-  ]);
+-
+-  const metrics = await listDailyMetricsByDate("2026-03-27");
+-
+-  expect(metrics).toHaveLength(1);
+-  expect(metrics[0]).toMatchObject({
+-    date: "2026-03-27",
+-    metricType: "bodyFat",
+-    value: 18,
+-    unit: "%",
+-  });
+-  expect(metrics[0]?.id).toEqual(expect.any(String));
+-  expect(metrics[0]?.recordedAt).toMatch(
+-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/,
+-  );
+-
+-  await replaceDailyMetrics("2026-03-27", []);
+-
+-  expect(await listDailyMetricsByDate("2026-03-27")).toEqual([]);
+-});
+-
+-test("replaceDailyMetrics rejects duplicate metric types", async () => {
+-  await expect(
+-    replaceDailyMetrics("2026-03-27", [
+-      { metricType: "height", value: 171, unit: "cm" },
+-      { metricType: "height", value: 172, unit: "cm" },
+-    ]),
+-  ).rejects.toThrow("Duplicate metricType values in metrics array");
+-});
+-
+-test("replaceDailySelfCareEntries replaces all self-care rows for the same day", async () => {
+-  await replaceDailySelfCareEntries("2026-03-28", [
+-    {
+-      selfCareId: "stretching",
+-      isDone: true,
+-      count: null,
+-      minutes: 10,
+-      note: "",
+-    },
+-    {
+-      selfCareId: "meditation",
+-      isDone: false,
+-      count: null,
+-      minutes: null,
+-      note: "later",
+-    },
+-  ]);
+-
+-  await replaceDailySelfCareEntries("2026-03-28", [
+-    {
+-      selfCareId: "walking",
+-      isDone: true,
+-      count: 1,
+-      minutes: 25,
+-      note: "",
+-    },
+-  ]);
+-
+-  const entries = await listDailySelfCareEntriesByDate("2026-03-28");
+-
+-  expect(entries).toHaveLength(1);
+-  expect(entries[0]).toMatchObject({
+-    date: "2026-03-28",
+-    selfCareId: "walking",
+-    isDone: true,
+-    count: 1,
+-    minutes: 25,
+-    note: "",
+-  });
+-  expect(entries[0]?.id).toEqual(expect.any(String));
+-  expect(entries[0]?.recordedAt).toMatch(
+-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/,
+-  );
+-
+-  await replaceDailySelfCareEntries("2026-03-28", []);
+-
+-  expect(await listDailySelfCareEntriesByDate("2026-03-28")).toEqual([]);
+-});
+-
+-test("replaceDailySelfCareEntries rejects duplicate self-care ids", async () => {
+-  await expect(
+-    replaceDailySelfCareEntries("2026-03-28", [
+-      {
+-        selfCareId: "stretching",
+-        isDone: true,
+-        count: null,
+-        minutes: 10,
+-        note: "",
+-      },
+-      {
+-        selfCareId: "stretching",
+-        isDone: false,
+-        count: null,
+-        minutes: null,
+-        note: "later",
+-      },
+-    ]),
+-  ).rejects.toThrow("Duplicate selfCareId values in entries array");
+-});
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index 8760d00..3ebd268 100644
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -4,10 +4,6 @@ export type ExerciseLogResult = "did" | "partial" | "could_not";
+ 
+ export type ExerciseIntensity = "low" | "medium" | "high";
+ 
+-export type WellnessScore = 1 | 2 | 3 | 4 | 5;
+-
+-export type MetricType = "height" | "weight" | "bodyFat";
+-
+ export type ExerciseVideo = {
+   id: string;
+   title: string;
+@@ -34,38 +30,3 @@ export type DailyConditionEntry = {
+   note: string;
+   updatedAt: string;
+ };
+-
+-export type DailyWellnessEntry = {
+-  date: string;
+-  physicalScore: WellnessScore;
+-  mentalScore: WellnessScore;
+-  updatedAt: string;
+-};
+-
+-export type DailyMetricEntry = {
+-  id: string;
+-  date: string;
+-  metricType: MetricType;
+-  value: number;
+-  unit: string;
+-  recordedAt: string;
+-};
+-
+-export type SelfCareItem = {
+-  id: string;
+-  title: string;
+-  description: string;
+-  sortOrder: number;
+-  isArchived: boolean;
+-};
+-
+-export type DailySelfCareEntry = {
+-  id: string;
+-  date: string;
+-  selfCareId: string;
+-  isDone: boolean;
+-  count: number | null;
+-  minutes: number | null;
+-  note: string;
+-  recordedAt: string;
+-};
