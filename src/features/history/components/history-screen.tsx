@@ -98,32 +98,16 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
         <p>{t("history_subheading")}</p>
       </section>
 
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+      <div className="history-screen__mode-toggle">
         <button
           onClick={() => setMode("summary")}
-          style={{
-            fontWeight: mode === "summary" ? "bold" : "normal",
-            backgroundColor: mode === "summary" ? "#007bff" : "#f0f0f0",
-            color: mode === "summary" ? "white" : "black",
-            padding: "0.5rem 1rem",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
+          className={`history-screen__mode-btn ${mode === "summary" ? "is-active" : ""}`}
         >
           Summary
         </button>
         <button
           onClick={() => setMode("graph")}
-          style={{
-            fontWeight: mode === "graph" ? "bold" : "normal",
-            backgroundColor: mode === "graph" ? "#007bff" : "#f0f0f0",
-            color: mode === "graph" ? "white" : "black",
-            padding: "0.5rem 1rem",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
+          className={`history-screen__mode-btn ${mode === "graph" ? "is-active" : ""}`}
         >
           Graphs
         </button>

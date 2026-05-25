@@ -880,3 +880,291 @@ button {
   display: flex;
   gap: 0.75rem;
 }
+
+/* ── Self-care and history styling ───────────────────────────────────── */
+
+.self-care-screen__metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.self-care-screen__field {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.self-care-screen__field > span {
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.self-care-screen__metric-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid #c7d4e6;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.self-care-screen__metric-input input {
+  flex: 1;
+  border: 0;
+  padding: 0.75rem 0.75rem;
+  font: inherit;
+  color: inherit;
+}
+
+.self-care-screen__metric-input input:focus {
+  outline: none;
+  background: #f8fbff;
+}
+
+.self-care-screen__metric-input > span {
+  padding: 0 0.75rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.self-care-screen__section {
+  gap: 1rem;
+}
+
+/* Metric selector dropdown */
+#metric-selector {
+  padding: 0.75rem 1rem;
+  border: 1px solid #c7d4e6;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#metric-selector:hover {
+  border-color: #14213d;
+  background: #f8fbff;
+}
+
+#metric-selector:focus {
+  outline: 2px solid #14213d;
+  outline-offset: 2px;
+}
+
+/* Date range preset buttons */
+.history-screen__date-presets {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.history-screen__preset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid #c7d4e6;
+  border-radius: 0.75rem;
+  background: #f8fbff;
+  color: #14213d;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.history-screen__preset-btn:hover {
+  border-color: #14213d;
+  background: #e5ecf6;
+}
+
+.history-screen__preset-btn.is-active {
+  background: #14213d;
+  color: #ffffff;
+  border-color: #14213d;
+}
+
+/* Chart/graph container */
+.history-screen__chart-container {
+  padding: 1.25rem;
+  border-radius: 0.9rem;
+  background: #f8fbff;
+  border: 1px solid #d7dfeb;
+  overflow: hidden;
+}
+
+.history-screen__chart-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.history-screen__chart {
+  min-width: 100%;
+  border: 1px solid #c7d4e6;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.history-screen__chart-loading {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.history-screen__chart-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #6b7a99;
+  font-size: 0.95rem;
+}
+
+/* Mode toggle buttons */
+.history-screen__mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem;
+  border-radius: 0.9rem;
+  background: #e5ecf6;
+}
+
+.history-screen__mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: #14213d;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.history-screen__mode-btn:hover {
+  background: rgba(20, 33, 61, 0.05);
+}
+
+.history-screen__mode-btn.is-active {
+  background: #ffffff;
+  color: #14213d;
+  box-shadow: 0 2px 8px rgba(20, 33, 61, 0.1);
+}
+
+/* Wellness card styling */
+.wellness-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.wellness-card__field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.wellness-card__field label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #14213d;
+}
+
+.wellness-card__score-input {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.wellness-card__score-option {
+  display: flex;
+}
+
+.wellness-card__score-option input[type="radio"] {
+  display: none;
+}
+
+.wellness-card__score-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 1px solid #c7d4e6;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  color: #14213d;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wellness-card__score-button:hover {
+  border-color: #14213d;
+  background: #f8fbff;
+}
+
+.wellness-card__score-option input[type="radio"]:checked ~ .wellness-card__score-button {
+  background: #14213d;
+  color: #ffffff;
+  border-color: #14213d;
+}
+
+/* Self-care activity log card */
+.self-care-log-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.self-care-log-card__field {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.self-care-log-card__field select,
+.self-care-log-card__field textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid #c7d4e6;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+}
+
+.self-care-log-card__field select:hover,
+.self-care-log-card__field textarea:hover {
+  border-color: #14213d;
+}
+
+.self-care-log-card__field select:focus,
+.self-care-log-card__field textarea:focus {
+  outline: 2px solid #14213d;
+  outline-offset: 2px;
+  border-color: #14213d;
+}
+
+.self-care-log-card__field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+@media (max-width: 479px) {
+  .self-care-screen__metrics-grid {
+     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+   
+  .history-screen__mode-btn {
+     font-size: 0.85rem;
+     padding: 0.65rem 0.75rem;
+  }
+}

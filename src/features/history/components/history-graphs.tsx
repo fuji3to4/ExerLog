@@ -118,46 +118,44 @@ export function HistoryGraphs() {
     <section className="card">
       <h2>{t("history_graphs_heading")}</h2>
 
-      <div className="controls" style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-        <label htmlFor="metric-selector" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span>{t("history_graph_metric_label")}</span>
-          <select
-            id="metric-selector"
-            value={JSON.stringify(selectedMetric)}
-            onChange={(e) => setSelectedMetric(JSON.parse(e.currentTarget.value))}
-          >
-            {METRIC_OPTIONS.map((option, index) => (
-              <option key={index} value={JSON.stringify(option.value)}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          {(["7d", "30d", "90d", "all"] as const).map((preset) => (
-            <button
-              key={preset}
-              onClick={() => setDateRangePreset(preset)}
-              style={{
-                fontWeight: dateRangePreset === preset ? "bold" : "normal",
-                backgroundColor: dateRangePreset === preset ? "#007bff" : "#f0f0f0",
-                color: dateRangePreset === preset ? "white" : "black",
-              }}
+      <div className="history-screen__chart-container" style={{ marginBottom: "1rem" }}>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+          <label htmlFor="metric-selector" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ fontWeight: "600" }}>{t("history_graph_metric_label")}</span>
+            <select
+              id="metric-selector"
+              value={JSON.stringify(selectedMetric)}
+              onChange={(e) => setSelectedMetric(JSON.parse(e.currentTarget.value))}
             >
-              {preset}
-            </button>
-          ))}
+              {METRIC_OPTIONS.map((option, index) => (
+                <option key={index} value={JSON.stringify(option.value)}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="history-screen__date-presets">
+            {(["7d", "30d", "90d", "all"] as const).map((preset) => (
+              <button
+                key={preset}
+                onClick={() => setDateRangePreset(preset)}
+                className={`history-screen__preset-btn ${dateRangePreset === preset ? "is-active" : ""}`}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {loading && <p>Loading...</p>}
+      {loading && <p className="history-screen__chart-loading">Loading...</p>}
 
       {!loading && hasData && series && (
-        <div style={{ overflowX: "auto" }}>
+        <div className="history-screen__chart-wrapper">
           <svg
             viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-            style={{ minWidth: "100%", border: "1px solid #ccc" }}
+            className="history-screen__chart"
             role="img"
             aria-label="History graph"
           >
@@ -225,7 +223,7 @@ export function HistoryGraphs() {
         </div>
       )}
 
-      {!loading && !hasData && <p>{t("history_graphs_empty")}</p>}
+      {!loading && !hasData && <p className="history-screen__chart-empty">{t("history_graphs_empty")}</p>}
     </section>
   );
 }
