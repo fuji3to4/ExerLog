@@ -15,6 +15,7 @@ import { HistoryScreen } from "./components/history-screen";
 beforeEach(async () => {
   await appDb.logs.clear();
   await appDb.conditions.clear();
+  await appDb.exercises.clear();
   await appDb.dailyWellness.clear();
   await appDb.dailyMetrics.clear();
   await appDb.dailySelfCareLogs.clear();

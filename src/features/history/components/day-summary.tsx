@@ -315,7 +315,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
             <span>{t("self_care_mental_label")}</span>:{" "}
             <span>{`${summary.wellness.mentalScore} / 5`}</span>
           </p>
-          {summary.wellness.note ? <p>{summary.wellness.note}</p> : null}
         </div>
       ) : null}
 
