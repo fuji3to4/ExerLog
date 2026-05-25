@@ -38,15 +38,17 @@ function toNullableNumber(value: string): number | null {
 }
 
 function toWellnessScore(value: number): WellnessScore {
-  if (value <= 1) {
+  const roundedValue = Math.round(value);
+
+  if (roundedValue <= 1) {
     return 1;
   }
 
-  if (value >= 5) {
+  if (roundedValue >= 5) {
     return 5;
   }
 
-  return value as WellnessScore;
+  return roundedValue as WellnessScore;
 }
 
 export function useSelfCareData(date: Date | string) {
