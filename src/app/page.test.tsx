@@ -29,6 +29,7 @@ test("renders the today screen for the home route", () => {
   expect(screen.getByTestId("today-screen")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /ライブラリ/i })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /履歴/i })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /セルフケア/i })).toBeInTheDocument();
   expect(todayScreenSpy).toHaveBeenCalled();
 });
 

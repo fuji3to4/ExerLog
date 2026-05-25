@@ -3,6 +3,7 @@
   nav_today: "今日",
   nav_library: "ライブラリ",
   nav_history: "履歴",
+  nav_self_care: "セルフケア",
   nav_aria_label: "メイン",
 
   // Language labels
@@ -52,6 +53,23 @@
   history_exercises_heading: "エクササイズ",
   history_no_exercises: "この日に記録されたエクササイズはありません。",
   history_condition_heading: "体調",
+
+  // Self care screen
+  self_care_heading: "セルフケア",
+  self_care_subheading: "体と心を見直して、簡単なウェルネス記録を保存しましょう。",
+  self_care_save_button: "記録を保存",
+  self_care_wellness_heading: "ウェルネス記録",
+  self_care_physical_label: "身体",
+  self_care_mental_label: "心",
+  self_care_metrics_heading: "測定値",
+  self_care_metric_height: "身長",
+  self_care_metric_weight: "体重",
+  self_care_metric_body_fat: "体脂肪率",
+  self_care_logs_heading: "記録",
+  self_care_done_label: "実施",
+  self_care_count_label: "回数",
+  self_care_minutes_label: "分",
+  self_care_note_label: "メモ",
 
   // Metadata labels
   meta_duration: "時間",

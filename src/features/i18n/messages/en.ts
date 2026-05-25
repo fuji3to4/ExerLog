@@ -3,6 +3,7 @@ export const en = {
   nav_today: "Today",
   nav_library: "Library",
   nav_history: "History",
+  nav_self_care: "Self Care",
   nav_aria_label: "Primary",
 
   // Language labels
@@ -52,6 +53,23 @@ export const en = {
   history_exercises_heading: "Exercises",
   history_no_exercises: "No logged exercises for this day.",
   history_condition_heading: "Condition",
+
+  // Self care screen
+  self_care_heading: "Self Care",
+  self_care_subheading: "Review your body and mind, then save a quick wellness check-in.",
+  self_care_save_button: "Save check-in",
+  self_care_wellness_heading: "Wellness check-in",
+  self_care_physical_label: "Physical",
+  self_care_mental_label: "Mental",
+  self_care_metrics_heading: "Metrics",
+  self_care_metric_height: "Height",
+  self_care_metric_weight: "Weight",
+  self_care_metric_body_fat: "Body fat",
+  self_care_logs_heading: "Logs",
+  self_care_done_label: "Done",
+  self_care_count_label: "Count",
+  self_care_minutes_label: "Minutes",
+  self_care_note_label: "Note",
 
   // Metadata labels
   meta_duration: "Duration",

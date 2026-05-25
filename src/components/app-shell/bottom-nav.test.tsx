@@ -8,4 +8,5 @@ test("marks the current destination as active", () => {
   expect(screen.getByRole("link", { name: /ライブラリ/i })).toHaveAttribute("aria-current", "page");
   expect(screen.getByRole("link", { name: /今日/i })).not.toHaveAttribute("aria-current");
   expect(screen.getByRole("link", { name: /履歴/i })).not.toHaveAttribute("aria-current");
+  expect(screen.getByRole("link", { name: /セルフケア/i })).toHaveAttribute("href", "/self-care");
 });
