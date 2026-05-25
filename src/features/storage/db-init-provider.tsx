@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import type { ReactNode } from "react";
 
 import { seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
+import { seedSelfCareCatalogIfEmpty } from "@/features/storage/self-care-catalog.repository";
 
 type DbInitProviderProps = {
   children: ReactNode;
@@ -11,7 +12,7 @@ type DbInitProviderProps = {
 
 export function DbInitProvider({ children }: DbInitProviderProps) {
   useEffect(() => {
-    void seedIfEmpty();
+    void Promise.all([seedIfEmpty(), seedSelfCareCatalogIfEmpty()]);
   }, []);
 
   return <>{children}</>;
