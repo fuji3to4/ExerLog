@@ -31,7 +31,7 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
       <section className="card page-header">
         <p className="self-care-screen__date">{formatDate(date)}</p>
         <h1>{t("self_care_heading")}</h1>
-        <p>{t("self_care_description")}</p>
+        <p>{t("self_care_subheading")}</p>
       </section>
 
       {!isHydrated ? (

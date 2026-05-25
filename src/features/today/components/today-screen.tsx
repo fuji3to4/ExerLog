@@ -23,6 +23,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
     note,
     recommendations,
     logResults,
+    conditionSaveError,
     setPhysicalScore,
     setMentalScore,
     setNote,
@@ -53,6 +54,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
         onMentalScoreChange={setMentalScore}
         onNoteChange={setNote}
         onSave={saveCondition}
+        saveError={conditionSaveError ? t("condition_save_error") : undefined}
       />
 
       <section className="today-screen__section">

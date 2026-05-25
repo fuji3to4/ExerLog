@@ -11,6 +11,7 @@ type DailyConditionCardProps = {
   onMentalScoreChange: (score: WellnessScore) => void;
   onNoteChange: (note: string) => void;
   onSave: () => void | Promise<void>;
+  saveError?: string;
 };
 
 export function DailyConditionCard({
@@ -21,6 +22,7 @@ export function DailyConditionCard({
   onMentalScoreChange,
   onNoteChange,
   onSave,
+  saveError,
 }: DailyConditionCardProps) {
   const { t } = useTranslation();
 
@@ -82,6 +84,7 @@ export function DailyConditionCard({
       <button type="button" className="today-screen__primary-button" onClick={() => void onSave()}>
         {t("condition_save_button")}
       </button>
+      {saveError && <p role="alert" className="condition-card__error">{saveError}</p>}
     </section>
   );
 }

@@ -29,7 +29,7 @@ test("saves only wellness and metrics from the self-care screen", async () => {
 
   renderWithLanguage(<SelfCareScreen date="2026-03-23" />, { initialLanguage: "en" });
 
-  const wellnessSection = (await screen.findByRole("heading", { name: /condition/i })).closest("section");
+  const wellnessSection = (await screen.findByRole("heading", { name: /condition/i, level: 2 })).closest("section");
   expect(wellnessSection).not.toBeNull();
   const [physicalScoreInput, mentalScoreInput, heightInput, weightInput, bodyFatInput] =
     await screen.findAllByRole("spinbutton");
@@ -93,7 +93,7 @@ test("hydrates saved rows on first render", async () => {
 
   renderWithLanguage(<SelfCareScreen date="2026-03-24" />, { initialLanguage: "en" });
 
-  const wellnessSection = (await screen.findByRole("heading", { name: /condition/i })).closest("section");
+  const wellnessSection = (await screen.findByRole("heading", { name: /condition/i, level: 2 })).closest("section");
   expect(wellnessSection).not.toBeNull();
   const [physicalScoreInput, mentalScoreInput, heightInput, weightInput, bodyFatInput] =
     await screen.findAllByRole("spinbutton");
@@ -110,10 +110,10 @@ test("hydrates saved rows on first render", async () => {
   expect(screen.queryByRole("heading", { name: "散歩", level: 3 })).not.toBeInTheDocument();
 });
 
-test("renders wellness save controls even when only task 3 translation keys are available", async () => {
-  const task3Messages = {
-    self_care_heading: "Self Care",
-    self_care_description: "Save a short self care note for today.",
+test("renders wellness save controls even when only condition screen translation keys are available", async () => {
+  const conditionMessages = {
+    self_care_heading: "Condition",
+    self_care_subheading: "Review your body and mind, then save a quick wellness check-in.",
     today_loading_heading: "Loading today's log...",
     today_loading_text: "Checking your saved condition and exercise results for this day.",
     condition_heading: "Daily condition",
@@ -129,7 +129,7 @@ test("renders wellness save controls even when only task 3 translation keys are 
 
   render(
     <LanguageContext.Provider
-      value={{ language: "en", messages: task3Messages, setLanguage: () => undefined }}
+      value={{ language: "en", messages: conditionMessages, setLanguage: () => undefined }}
     >
       <SelfCareScreen date="2026-03-25" />
     </LanguageContext.Provider>,

@@ -3,7 +3,7 @@
   nav_today: "今日",
   nav_library: "ライブラリ",
   nav_history: "履歴",
-  nav_self_care: "セルフケア",
+  nav_self_care: "コンディション",
   nav_aria_label: "メイン",
 
   // Language labels
@@ -31,6 +31,7 @@
   condition_note_label: "メモ",
   condition_note_placeholder: "今日覚えておく価値のあることを追加してください。",
   condition_save_button: "体調を保存",
+  condition_save_error: "保存に失敗しました。もう一度お試しください。",
 
   // Library screen
   library_heading: "ライブラリ",
@@ -60,20 +61,8 @@
   history_graphs_empty: "選択した範囲に利用可能なデータがありません。",
   history_graph_metric_label: "メトリック",
 
-  // Self care screen
-  self_care_heading: "セルフケア",
-  self_care_description: "今日のために短いセルフケアの記録を残しましょう。",
-  self_care_physical_label: "身体",
-  self_care_mental_label: "心",
-  self_care_metric_height: "身長",
-  self_care_metric_weight: "体重",
-  self_care_metric_body_fat: "体脂肪率",
-  self_care_done_label: "実施",
-  self_care_count_label: "回数",
-  self_care_minutes_label: "分",
-
-  // Self care screen
-  self_care_heading: "セルフケア",
+  // Condition screen (self-care)
+  self_care_heading: "コンディション",
   self_care_subheading: "体と心を見直して、簡単なウェルネス記録を保存しましょう。",
   self_care_save_button: "記録を保存",
   self_care_wellness_heading: "ウェルネス記録",

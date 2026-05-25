@@ -81,15 +81,22 @@ export function useTodayData(date: Date | string) {
     [exercises, conditionLevel, dayKey],
   );
 
+  const [conditionSaveError, setConditionSaveError] = useState<string | null>(null);
+
   const saveConditionEntry = useCallback(async () => {
     const selectedDayKey = toDayKey(dayKey);
 
-    await saveDailyWellness({
-      date: selectedDayKey,
-      physicalScore,
-      mentalScore,
-      note,
-    });
+    try {
+      await saveDailyWellness({
+        date: selectedDayKey,
+        physicalScore,
+        mentalScore,
+        note,
+      });
+      setConditionSaveError(null);
+    } catch {
+      setConditionSaveError("condition_save_error");
+    }
   }, [dayKey, mentalScore, note, physicalScore]);
 
   const updatePhysicalScore = useCallback((nextPhysicalScore: WellnessScore) => {
@@ -132,6 +139,7 @@ export function useTodayData(date: Date | string) {
     note,
     recommendations,
     logResults,
+    conditionSaveError,
     setPhysicalScore: updatePhysicalScore,
     setMentalScore: updateMentalScore,
     setNote: updateNote,

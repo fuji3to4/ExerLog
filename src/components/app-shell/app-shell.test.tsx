@@ -12,5 +12,5 @@ test("shows the language switcher in the header on mobile-sized layouts", () => 
   expect(screen.getByRole("button", { name: "日本語" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
   expect(screen.getByRole("navigation", { name: /メイン/i })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /セルフケア/i })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /コンディション/i })).toBeInTheDocument();
 });
