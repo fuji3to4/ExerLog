@@ -55,7 +55,7 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
           <section className="card self-care-screen__section">
             <div className="button-row">
               <button type="button" className="today-screen__primary-button" onClick={() => void save()}>
-                {t("condition_save_button")}
+                {t("self_care_save_button")}
               </button>
             </div>
           </section>
