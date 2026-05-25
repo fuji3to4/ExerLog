@@ -100,16 +100,18 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
 
       <div className="history-screen__mode-toggle">
         <button
+          type="button"
           onClick={() => setMode("summary")}
           className={`history-screen__mode-btn ${mode === "summary" ? "is-active" : ""}`}
         >
-          Summary
+          {t("history_mode_summary")}
         </button>
         <button
+          type="button"
           onClick={() => setMode("graph")}
           className={`history-screen__mode-btn ${mode === "graph" ? "is-active" : ""}`}
         >
-          Graphs
+          {t("history_mode_graphs")}
         </button>
       </div>
 
