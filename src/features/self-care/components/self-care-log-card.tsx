@@ -17,7 +17,7 @@ export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCa
   return (
     <section className="self-care-screen__section">
       <div className="card self-care-screen__section-heading">
-        <h2>{t("history_exercises_heading")}</h2>
+        <h2>{t("self_care_logs_heading")}</h2>
       </div>
 
       <div className="self-care-screen__log-list">
