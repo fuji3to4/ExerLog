@@ -102,7 +102,7 @@ test("uses Japanese calendar labels and summary copy by default", async () => {
   await user.click(completedDay);
 
   expect(await screen.findByRole("heading", { name: /1日のまとめ/i })).toBeInTheDocument();
-  expect(screen.getByText("Neck Mobility")).toBeInTheDocument();
+  expect(await screen.findByText("Neck Mobility")).toBeInTheDocument();
   expect(screen.getByText(/できた/i)).toBeInTheDocument();
   expect(screen.getByText(/疲れている/i)).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /ウェルネス/i })).toBeInTheDocument();
@@ -122,5 +122,5 @@ test("switches history copy to English while keeping exercise titles raw", async
 
   expect(screen.getByRole("heading", { name: "History" })).toBeInTheDocument();
   expect(await screen.findByRole("heading", { name: /Day summary/i })).toBeInTheDocument();
-  expect(screen.getByText("Neck Mobility")).toBeInTheDocument();
+  expect(await screen.findByText("Neck Mobility")).toBeInTheDocument();
 });
