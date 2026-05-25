@@ -33,6 +33,9 @@ const makeSummary = (overrides = {}) => ({
   conditionLevel: "good" as const,
   note: "Felt great",
   updatedAt: "2024-01-15T09:30:00+09:00",
+  wellness: null,
+  metrics: [],
+  selfCareLogs: [],
   ...overrides,
 });
 
@@ -66,5 +69,54 @@ describe("DaySummary timestamps", () => {
     const conditionHeading = screen.getByText("history_condition_heading");
     const conditionSection = conditionHeading.closest("div")!;
     expect(within(conditionSection).queryByText(/\d{2}:\d{2}/)).toBeNull();
+  });
+
+  it("renders wellness, metrics, and self-care sections when data exists", async () => {
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            wellness: {
+              physicalScore: 4,
+              mentalScore: 3,
+              note: "Feeling steady",
+            },
+            metrics: [
+              { metricType: "weight", value: 62, unit: "kg" },
+              { metricType: "bodyFat", value: 18, unit: "%" },
+            ],
+            selfCareLogs: [
+              {
+                selfCareId: "stretching",
+                title: "Stretching",
+                isDone: true,
+                count: 1,
+                minutes: 10,
+                note: "Loosened up",
+              },
+            ],
+          })}
+        />,
+      );
+    });
+
+    expect(screen.getByText("history_wellness_heading")).toBeInTheDocument();
+    expect(screen.getByText("self_care_physical_label")).toBeInTheDocument();
+    expect(screen.getByText("4 / 5")).toBeInTheDocument();
+    expect(screen.getByText("self_care_mental_label")).toBeInTheDocument();
+    expect(screen.getByText("3 / 5")).toBeInTheDocument();
+    expect(screen.getByText("Feeling steady")).toBeInTheDocument();
+    expect(screen.getByText("history_metrics_heading")).toBeInTheDocument();
+    expect(screen.getByText("self_care_metric_weight")).toBeInTheDocument();
+    expect(screen.getByText("62 kg")).toBeInTheDocument();
+    expect(screen.getByText("self_care_metric_body_fat")).toBeInTheDocument();
+    expect(screen.getByText("18 %")).toBeInTheDocument();
+    expect(screen.getByText("history_self_care_heading")).toBeInTheDocument();
+    expect(screen.getByText("Stretching")).toBeInTheDocument();
+    expect(screen.getByText(/self_care_done_label/i)).toBeInTheDocument();
+    expect(screen.getByText(/self_care_count_label: 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/self_care_minutes_label: 10/i)).toBeInTheDocument();
+    expect(screen.getByText("Loosened up")).toBeInTheDocument();
   });
 });
