@@ -24,7 +24,7 @@ beforeEach(async () => {
   ]);
 });
 
-test("saves wellness, metrics, and self-care rows from the self-care screen", async () => {
+test("saves only wellness and metrics from the self-care screen", async () => {
   const user = userEvent.setup();
 
   renderWithLanguage(<SelfCareScreen date="2026-03-23" />, { initialLanguage: "en" });
@@ -42,18 +42,7 @@ test("saves wellness, metrics, and self-care rows from the self-care screen", as
   fireEvent.change(weightInput, { target: { value: "62" } });
   fireEvent.change(bodyFatInput, { target: { value: "18" } });
 
-  const stretchingRow = screen.getByRole("heading", { name: "ストレッチ", level: 3 }).closest("article");
-  expect(stretchingRow).not.toBeNull();
-
-  await user.click(within(stretchingRow!).getByRole("checkbox", { name: /did it/i }));
-
-  const [countInput, minutesInput] = within(stretchingRow!).getAllByRole("spinbutton");
-
-  fireEvent.change(countInput, { target: { value: "1" } });
-  fireEvent.change(minutesInput, { target: { value: "10" } });
-  fireEvent.change(within(stretchingRow!).getByRole("textbox", { name: /note/i }), {
-    target: { value: "Felt looser" },
-  });
+  expect(screen.queryByRole("checkbox", { name: /did it/i })).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: /save condition/i }));
 
@@ -76,17 +65,7 @@ test("saves wellness, metrics, and self-care rows from the self-care screen", as
   });
 
   await waitFor(async () => {
-    await expect(listDailySelfCareEntriesByDate("2026-03-23")).resolves.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          selfCareId: "stretching",
-          isDone: true,
-          count: 1,
-          minutes: 10,
-          note: "Felt looser",
-        }),
-      ]),
-    );
+    await expect(listDailySelfCareEntriesByDate("2026-03-23")).resolves.toEqual([]);
   });
 });
 
@@ -127,19 +106,11 @@ test("hydrates saved rows on first render", async () => {
   expect(weightInput).toHaveValue(63);
   expect(bodyFatInput).toHaveValue(19);
 
-  const walkingRow = screen.getByRole("heading", { name: "散歩", level: 3 }).closest("article");
-  expect(walkingRow).not.toBeNull();
-
-  expect(within(walkingRow!).getByRole("checkbox", { name: /did it/i })).toBeChecked();
-
-  const [countInput, minutesInput] = within(walkingRow!).getAllByRole("spinbutton");
-
-  expect(countInput).toHaveValue(1);
-  expect(minutesInput).toHaveValue(20);
-  expect(within(walkingRow!).getByRole("textbox", { name: /note/i })).toHaveValue("Evening walk");
+  expect(screen.queryByRole("checkbox", { name: /did it/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "散歩", level: 3 })).not.toBeInTheDocument();
 });
 
-test("renders self care labels even when only task 3 translation keys are available", async () => {
+test("renders wellness save controls even when only task 3 translation keys are available", async () => {
   const task3Messages = {
     self_care_heading: "Self Care",
     self_care_description: "Save a short self care note for today.",
@@ -164,6 +135,6 @@ test("renders self care labels even when only task 3 translation keys are availa
     </LanguageContext.Provider>,
   );
 
-  expect((await screen.findAllByRole("checkbox", { name: /did it/i })).length).toBeGreaterThan(0);
-  expect(screen.getByRole("button", { name: /save condition/i })).toBeInTheDocument();
+  expect(screen.queryByRole("checkbox", { name: /did it/i })).not.toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: /save condition/i })).toBeInTheDocument();
 });

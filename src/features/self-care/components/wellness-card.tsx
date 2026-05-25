@@ -36,7 +36,7 @@ export function WellnessCard({
     </div>
 
     <label className="self-care-screen__field">
-      <span>{t("condition_heading")}</span>
+      <span>{t("self_care_physical_label")}</span>
       <input
         type="number"
         min={1}
@@ -47,7 +47,7 @@ export function WellnessCard({
       </label>
 
       <label className="self-care-screen__field">
-        <span>{t("meta_intensity")}</span>
+        <span>{t("self_care_mental_label")}</span>
         <input
           type="number"
           min={1}

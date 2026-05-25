@@ -4,7 +4,6 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { toDayKey } from "@/lib/date/day-key";
 
 import { MetricsCard } from "./metrics-card";
-import { SelfCareLogCard } from "./self-care-log-card";
 import { WellnessCard } from "./wellness-card";
 import { useSelfCareData } from "../use-self-care-data";
 
@@ -21,13 +20,10 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
     mentalScore,
     note,
     metrics,
-    selfCareItems,
-    selfCareEntries,
     setPhysicalScore,
     setMentalScore,
     setNote,
     setMetric,
-    setSelfCareEntry,
     save,
   } = useSelfCareData(date);
   return (
@@ -55,8 +51,6 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
           />
 
           <MetricsCard metrics={metrics} onMetricChange={setMetric} />
-
-          <SelfCareLogCard items={selfCareItems} entries={selfCareEntries} onEntryChange={setSelfCareEntry} />
 
           <section className="card self-care-screen__section">
             <div className="button-row">
