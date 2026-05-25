@@ -1,5 +1,6 @@
 import type { ChangeEvent } from "react";
 
+import { useTranslation } from "@/features/i18n/use-translation";
 import type { MetricType } from "@/lib/types";
 
 type MetricsCardProps = {
@@ -10,13 +11,15 @@ type MetricsCardProps = {
 type MetricField = {
   metricType: MetricType;
   unit: string;
+  labelKey: "self_care_metric_height" | "self_care_metric_weight" | "self_care_metric_body_fat";
 };
 
 export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
+  const { t } = useTranslation();
   const fields = [
-    { metricType: "height", unit: "cm" },
-    { metricType: "weight", unit: "kg" },
-    { metricType: "bodyFat", unit: "%" },
+    { metricType: "height", unit: "cm", labelKey: "self_care_metric_height" },
+    { metricType: "weight", unit: "kg", labelKey: "self_care_metric_weight" },
+    { metricType: "bodyFat", unit: "%", labelKey: "self_care_metric_body_fat" },
   ] satisfies MetricField[];
 
   return (
@@ -24,7 +27,7 @@ export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
       <div className="self-care-screen__metrics-grid">
         {fields.map((field) => (
           <label key={field.metricType} className="self-care-screen__field">
-            <span>{field.unit}</span>
+            <span>{t(field.labelKey)}</span>
             <div className="self-care-screen__metric-input">
               <input
                 type="number"
