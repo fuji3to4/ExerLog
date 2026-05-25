@@ -1,3 +1,4 @@
+import { expect, test } from "vitest";
 import { screen } from "@testing-library/react";
 
 import { renderWithLanguage } from "@/test/render-with-language";

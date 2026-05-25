@@ -479,7 +479,7 @@ button {
   bottom: 1rem;
   transform: translateX(-50%);
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   width: min(calc(100% - 2rem), 30rem);
   padding: 0.5rem;
   border-radius: 999px;
@@ -489,12 +489,23 @@ button {
 
 .bottom-nav__link {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 0.85rem 0.5rem;
   border-radius: 999px;
   color: #dbe5f5;
   font-weight: 600;
+}
+
+.bottom-nav__icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.bottom-nav__label {
+  font-size: 0.7rem;
+  line-height: 1.2;
 }
 
 .bottom-nav__link[aria-current="page"] {
