@@ -57,17 +57,6 @@
   // Self care screen
   self_care_heading: "セルフケア",
   self_care_description: "今日のために短いセルフケアの記録を残しましょう。",
-  self_care_wellness_heading: "ウェルネス",
-  self_care_wellness_description: "今日の体と心の状態を記録しましょう。",
-  self_care_physical_label: "身体スコア",
-  self_care_mental_label: "心のスコア",
-  self_care_metrics_heading: "身体指標",
-  self_care_metrics_description: "この日に残したい測定値を保存しましょう。",
-  self_care_metric_height: "身長",
-  self_care_metric_weight: "体重",
-  self_care_metric_body_fat: "体脂肪率",
-  self_care_done_label: "完了",
-  self_care_count_label: "回数",
 
   // Metadata labels
   meta_duration: "時間",

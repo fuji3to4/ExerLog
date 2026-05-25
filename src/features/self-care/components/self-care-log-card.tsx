@@ -17,8 +17,7 @@ export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCa
   return (
     <section className="self-care-screen__section">
       <div className="card self-care-screen__section-heading">
-        <h2>{t("self_care_heading")}</h2>
-        <p>{t("self_care_description")}</p>
+        <h2>{t("history_exercises_heading")}</h2>
       </div>
 
       <div className="self-care-screen__log-list">
@@ -43,12 +42,12 @@ export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCa
                     onEntryChange(item.id, { isDone: event.target.checked })
                   }
                 />
-                <span>{t("self_care_done_label")}</span>
+                <span>{t("result_did")}</span>
               </label>
 
               <div className="self-care-log-card__metrics">
                 <label className="self-care-screen__field">
-                  <span>{t("self_care_count_label")}</span>
+                  <span>#</span>
                   <input
                     type="number"
                     inputMode="numeric"

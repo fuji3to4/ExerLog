@@ -26,17 +26,16 @@ export function WellnessCard({
   }
 
   return (
-    <section className="card self-care-screen__section">
-      <div className="self-care-screen__section-heading">
-        <h2>{t("self_care_wellness_heading")}</h2>
-        <p>{t("self_care_wellness_description")}</p>
-      </div>
+  <section className="card self-care-screen__section">
+    <div className="self-care-screen__section-heading">
+      <h2>{t("history_condition_heading")}</h2>
+    </div>
 
-      <label className="self-care-screen__field">
-        <span>{t("self_care_physical_label")}</span>
-        <input
-          type="number"
-          min={1}
+    <label className="self-care-screen__field">
+      <span>{t("condition_heading")}</span>
+      <input
+        type="number"
+        min={1}
           max={5}
           value={physicalScore}
           onChange={(event) => handleScoreChange(event, onPhysicalScoreChange)}
@@ -44,7 +43,7 @@ export function WellnessCard({
       </label>
 
       <label className="self-care-screen__field">
-        <span>{t("self_care_mental_label")}</span>
+        <span>{t("meta_intensity")}</span>
         <input
           type="number"
           min={1}

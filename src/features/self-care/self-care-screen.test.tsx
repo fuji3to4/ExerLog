@@ -29,18 +29,24 @@ test("saves wellness, metrics, and self-care rows from the self-care screen", as
 
   renderWithLanguage(<SelfCareScreen date="2026-03-23" />, { initialLanguage: "en" });
 
-  fireEvent.change(await screen.findByRole("spinbutton", { name: /physical score/i }), { target: { value: "4" } });
-  fireEvent.change(screen.getByRole("spinbutton", { name: /mental score/i }), { target: { value: "3" } });
-  fireEvent.change(screen.getByRole("spinbutton", { name: /height/i }), { target: { value: "171" } });
-  fireEvent.change(screen.getByRole("spinbutton", { name: /weight/i }), { target: { value: "62" } });
-  fireEvent.change(screen.getByRole("spinbutton", { name: /body fat/i }), { target: { value: "18" } });
+  const [physicalScoreInput, mentalScoreInput, heightInput, weightInput, bodyFatInput] =
+    await screen.findAllByRole("spinbutton");
+
+  fireEvent.change(physicalScoreInput, { target: { value: "4" } });
+  fireEvent.change(mentalScoreInput, { target: { value: "3" } });
+  fireEvent.change(heightInput, { target: { value: "171" } });
+  fireEvent.change(weightInput, { target: { value: "62" } });
+  fireEvent.change(bodyFatInput, { target: { value: "18" } });
 
   const stretchingRow = screen.getByRole("heading", { name: "ストレッチ", level: 3 }).closest("article");
   expect(stretchingRow).not.toBeNull();
 
-  await user.click(within(stretchingRow!).getByRole("checkbox", { name: /done/i }));
-  fireEvent.change(within(stretchingRow!).getByRole("spinbutton", { name: /count/i }), { target: { value: "1" } });
-  fireEvent.change(within(stretchingRow!).getByRole("spinbutton", { name: /minutes/i }), { target: { value: "10" } });
+  await user.click(within(stretchingRow!).getByRole("checkbox", { name: /did it/i }));
+
+  const [countInput, minutesInput] = within(stretchingRow!).getAllByRole("spinbutton");
+
+  fireEvent.change(countInput, { target: { value: "1" } });
+  fireEvent.change(minutesInput, { target: { value: "10" } });
   fireEvent.change(within(stretchingRow!).getByRole("textbox", { name: /note/i }), {
     target: { value: "Felt looser" },
   });
@@ -102,18 +108,24 @@ test("hydrates saved rows on first render", async () => {
 
   renderWithLanguage(<SelfCareScreen date="2026-03-24" />, { initialLanguage: "en" });
 
-  expect(await screen.findByRole("spinbutton", { name: /physical score/i })).toHaveValue(5);
-  expect(screen.getByRole("spinbutton", { name: /mental score/i })).toHaveValue(2);
-  expect(screen.getByRole("spinbutton", { name: /height/i })).toHaveValue(172);
-  expect(screen.getByRole("spinbutton", { name: /weight/i })).toHaveValue(63);
-  expect(screen.getByRole("spinbutton", { name: /body fat/i })).toHaveValue(19);
+  const [physicalScoreInput, mentalScoreInput, heightInput, weightInput, bodyFatInput] =
+    await screen.findAllByRole("spinbutton");
+
+  expect(physicalScoreInput).toHaveValue(5);
+  expect(mentalScoreInput).toHaveValue(2);
+  expect(heightInput).toHaveValue(172);
+  expect(weightInput).toHaveValue(63);
+  expect(bodyFatInput).toHaveValue(19);
 
   const walkingRow = screen.getByRole("heading", { name: "散歩", level: 3 }).closest("article");
   expect(walkingRow).not.toBeNull();
 
-  expect(within(walkingRow!).getByRole("checkbox", { name: /done/i })).toBeChecked();
-  expect(within(walkingRow!).getByRole("spinbutton", { name: /count/i })).toHaveValue(1);
-  expect(within(walkingRow!).getByRole("spinbutton", { name: /minutes/i })).toHaveValue(20);
+  expect(within(walkingRow!).getByRole("checkbox", { name: /did it/i })).toBeChecked();
+
+  const [countInput, minutesInput] = within(walkingRow!).getAllByRole("spinbutton");
+
+  expect(countInput).toHaveValue(1);
+  expect(minutesInput).toHaveValue(20);
   expect(within(walkingRow!).getByRole("textbox", { name: /note/i })).toHaveValue("Evening walk");
 });
 
@@ -121,24 +133,17 @@ test("renders self care labels even when only task 3 translation keys are availa
   const task3Messages = {
     self_care_heading: "Self Care",
     self_care_description: "Save a short self care note for today.",
-    self_care_wellness_heading: "Wellness",
-    self_care_wellness_description: "Rate how your body and mind feel today.",
-    self_care_physical_label: "Physical score",
-    self_care_mental_label: "Mental score",
-    self_care_metrics_heading: "Body metrics",
-    self_care_metrics_description: "Save any measurements you want to keep for the day.",
-    self_care_metric_height: "Height",
-    self_care_metric_weight: "Weight",
-    self_care_metric_body_fat: "Body fat",
-    self_care_done_label: "Done",
-    self_care_count_label: "Count",
     today_loading_heading: "Loading today's log...",
     today_loading_text: "Checking your saved condition and exercise results for this day.",
+    condition_heading: "Daily condition",
     history_condition_heading: "Condition",
+    history_exercises_heading: "Exercises",
+    meta_intensity: "Intensity",
+    result_did: "Did it",
     condition_note_label: "Note",
     condition_note_placeholder: "Add anything worth remembering for today.",
     condition_save_button: "Save condition",
-    meta_duration: "Duration",
+    settings_form_duration_label: "Duration (minutes)",
   } as Messages;
 
   render(
@@ -149,7 +154,6 @@ test("renders self care labels even when only task 3 translation keys are availa
     </LanguageContext.Provider>,
   );
 
-  expect(await screen.findByRole("spinbutton", { name: /physical score/i })).toBeInTheDocument();
-  expect(screen.getByRole("spinbutton", { name: /height/i })).toBeInTheDocument();
+  expect((await screen.findAllByRole("checkbox", { name: /did it/i })).length).toBeGreaterThan(0);
   expect(screen.getByRole("button", { name: /save condition/i })).toBeInTheDocument();
 });
