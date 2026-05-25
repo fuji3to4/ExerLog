@@ -26,8 +26,12 @@ export function DailyConditionCard({
 }: DailyConditionCardProps) {
   const { t } = useTranslation();
 
-  function toWellnessScore(value: string): WellnessScore {
+  function toWellnessScore(value: string, fallback: WellnessScore): WellnessScore {
     const numericValue = Number(value);
+
+    if (!Number.isFinite(numericValue)) {
+      return fallback;
+    }
 
     if (numericValue <= 1) {
       return 1;
@@ -56,7 +60,7 @@ export function DailyConditionCard({
             min={1}
             max={5}
             value={physicalScore}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => onPhysicalScoreChange(toWellnessScore(event.target.value))}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => onPhysicalScoreChange(toWellnessScore(event.target.value, physicalScore))}
           />
         </label>
         <label className="condition-card__option">
@@ -66,7 +70,7 @@ export function DailyConditionCard({
             min={1}
             max={5}
             value={mentalScore}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => onMentalScoreChange(toWellnessScore(event.target.value))}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => onMentalScoreChange(toWellnessScore(event.target.value, mentalScore))}
           />
         </label>
       </fieldset>
