@@ -56,6 +56,9 @@
   history_wellness_heading: "ウェルネス",
   history_metrics_heading: "測定値",
   history_self_care_heading: "セルフケア",
+  history_graphs_heading: "グラフ",
+  history_graphs_empty: "選択した範囲に利用可能なデータがありません。",
+  history_graph_metric_label: "メトリック",
 
   // Self care screen
   self_care_heading: "セルフケア",

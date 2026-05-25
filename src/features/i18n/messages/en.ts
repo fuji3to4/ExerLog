@@ -56,6 +56,9 @@ export const en = {
   history_wellness_heading: "Wellness",
   history_metrics_heading: "Metrics",
   history_self_care_heading: "Self Care",
+  history_graphs_heading: "Graphs",
+  history_graphs_empty: "No data available for the selected range.",
+  history_graph_metric_label: "Metric",
 
   // Self care screen
   self_care_heading: "Self Care",

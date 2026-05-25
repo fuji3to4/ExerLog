@@ -6,12 +6,15 @@ import { useTranslation } from "@/features/i18n/use-translation";
 
 import { DaySummary } from "./day-summary";
 import { HistoryCalendar } from "./history-calendar";
+import { HistoryGraphs } from "./history-graphs";
 import { getHistoryDaySummary, listCompletedDaysInMonth, type HistoryDaySummary } from "../history-query";
 import { toDayKey } from "@/lib/date/day-key";
 
 type HistoryScreenProps = {
   month?: string;
 };
+
+type HistoryMode = "summary" | "graph";
 
 function shiftMonth(month: string, delta: number): string {
   const [year, m] = month.split("-").map(Number);
@@ -25,6 +28,7 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
   const [completedDays, setCompletedDays] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(() => initialMonth ? null : today);
   const [summary, setSummary] = useState<HistoryDaySummary | null>(null);
+  const [mode, setMode] = useState<HistoryMode>("summary");
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -94,16 +98,53 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
         <p>{t("history_subheading")}</p>
       </section>
 
-      <HistoryCalendar
-        month={currentMonth}
-        completedDays={completedDays}
-        selectedDate={selectedDate}
-        onSelectDate={(date) => void handleSelectDate(date)}
-        onPrevMonth={handlePrevMonth}
-        onNextMonth={handleNextMonth}
-      />
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+        <button
+          onClick={() => setMode("summary")}
+          style={{
+            fontWeight: mode === "summary" ? "bold" : "normal",
+            backgroundColor: mode === "summary" ? "#007bff" : "#f0f0f0",
+            color: mode === "summary" ? "white" : "black",
+            padding: "0.5rem 1rem",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          Summary
+        </button>
+        <button
+          onClick={() => setMode("graph")}
+          style={{
+            fontWeight: mode === "graph" ? "bold" : "normal",
+            backgroundColor: mode === "graph" ? "#007bff" : "#f0f0f0",
+            color: mode === "graph" ? "white" : "black",
+            padding: "0.5rem 1rem",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          Graphs
+        </button>
+      </div>
 
-      <DaySummary selectedDate={selectedDate} summary={summary} onChanged={() => void handleSummaryChanged()} />
+      {mode === "summary" && (
+        <>
+          <HistoryCalendar
+            month={currentMonth}
+            completedDays={completedDays}
+            selectedDate={selectedDate}
+            onSelectDate={(date) => void handleSelectDate(date)}
+            onPrevMonth={handlePrevMonth}
+            onNextMonth={handleNextMonth}
+          />
+
+          <DaySummary selectedDate={selectedDate} summary={summary} onChanged={() => void handleSummaryChanged()} />
+        </>
+      )}
+
+      {mode === "graph" && <HistoryGraphs />}
     </>
   );
 }

@@ -124,3 +124,46 @@ test("switches history copy to English while keeping exercise titles raw", async
   expect(await screen.findByRole("heading", { name: /Day summary/i })).toBeInTheDocument();
   expect(await screen.findByText("Neck Mobility")).toBeInTheDocument();
 });
+
+test("switches to graph mode when clicking graphs button", async () => {
+  const user = userEvent.setup();
+
+  await seedLogsForHistory();
+
+  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "en" });
+
+  // Initially in summary mode
+  expect(await screen.findByRole("heading", { name: /calendar/i })).toBeInTheDocument();
+
+  // Click the graphs button
+  const graphsButton = screen.getByRole("button", { name: "Graphs" });
+  await user.click(graphsButton);
+
+  // Calendar should no longer be visible
+  expect(screen.queryByRole("heading", { name: /calendar/i })).not.toBeInTheDocument();
+
+  // Graph heading should be visible (or the metric selector label if data is empty)
+  expect(await screen.findByText("Metric")).toBeInTheDocument();
+});
+
+test("returns to summary mode when clicking summary button from graph mode", async () => {
+  const user = userEvent.setup();
+
+  await seedLogsForHistory();
+
+  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "en" });
+
+  // Switch to graph mode
+  const graphsButton = screen.getByRole("button", { name: "Graphs" });
+  await user.click(graphsButton);
+
+  // Verify we're in graph mode by checking for the metric selector
+  expect(await screen.findByText("Metric")).toBeInTheDocument();
+
+  // Switch back to summary mode
+  const summaryButton = screen.getByRole("button", { name: "Summary" });
+  await user.click(summaryButton);
+
+  // Calendar should be visible again
+  expect(await screen.findByRole("heading", { name: /calendar/i })).toBeInTheDocument();
+});
