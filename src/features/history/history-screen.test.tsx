@@ -39,6 +39,7 @@ async function seedLogsForHistory() {
     date: "2026-03-23",
     physicalScore: 4,
     mentalScore: 3,
+    note: "Needed a slow start",
   });
 
   await replaceDailyMetrics("2026-03-23", [
@@ -76,6 +77,7 @@ test("marks days with exercise logs in the calendar and shows the selected day s
   expect(screen.getByText(/legs feel heavy/i)).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /wellness/i })).toBeInTheDocument();
   expect(screen.getByText("4 / 5")).toBeInTheDocument();
+  expect(screen.getByText(/needed a slow start/i)).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /metrics/i })).toBeInTheDocument();
   expect(screen.getByText("171 cm")).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /self care/i })).toBeInTheDocument();

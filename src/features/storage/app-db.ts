@@ -37,6 +37,24 @@ export class AppDb extends Dexie {
       selfCareCatalog: "id, sortOrder, isArchived",
       dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
     });
+
+    this.version(3)
+      .stores({
+        logs: "++id, date, exerciseId, result, loggedAt, &[date+exerciseId]",
+        conditions: "date, conditionLevel, note, updatedAt",
+        exercises: "id, title, bodyArea, purpose, durationMinutes, intensity",
+        dailyWellness: "date, physicalScore, mentalScore, updatedAt",
+        dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",
+        selfCareCatalog: "id, sortOrder, isArchived",
+        dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      })
+      .upgrade(async (tx) => {
+        await tx.table("dailyWellness").toCollection().modify((entry) => {
+          if (typeof entry.note !== "string") {
+            entry.note = "";
+          }
+        });
+      });
   }
 }
 

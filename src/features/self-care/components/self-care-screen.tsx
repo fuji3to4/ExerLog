@@ -19,11 +19,13 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
     isHydrated,
     physicalScore,
     mentalScore,
+    note,
     metrics,
     selfCareItems,
     selfCareEntries,
     setPhysicalScore,
     setMentalScore,
+    setNote,
     setMetric,
     setSelfCareEntry,
     save,
@@ -46,8 +48,10 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
           <WellnessCard
             physicalScore={physicalScore}
             mentalScore={mentalScore}
+            note={note}
             onPhysicalScoreChange={setPhysicalScore}
             onMentalScoreChange={setMentalScore}
+            onNoteChange={setNote}
           />
 
           <MetricsCard metrics={metrics} onMetricChange={setMetric} />

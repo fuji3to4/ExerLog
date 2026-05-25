@@ -25,12 +25,14 @@ test("saveDailyWellness upserts one wellness entry per day", async () => {
     date: "2026-03-26",
     physicalScore: 2,
     mentalScore: 3,
+    note: "Taking it easy",
   });
 
   await saveDailyWellness({
     date: "2026-03-26",
     physicalScore: 5,
     mentalScore: 4,
+    note: "Energy came back",
   });
 
   const entry = await getDailyWellness("2026-03-26");
@@ -39,6 +41,7 @@ test("saveDailyWellness upserts one wellness entry per day", async () => {
     date: "2026-03-26",
     physicalScore: 5,
     mentalScore: 4,
+    note: "Energy came back",
     updatedAt: expect.stringMatching(
       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/,
     ),

@@ -5,15 +5,19 @@ import { useTranslation } from "@/features/i18n/use-translation";
 type WellnessCardProps = {
   physicalScore: number;
   mentalScore: number;
+  note: string;
   onPhysicalScoreChange: (value: number) => void;
   onMentalScoreChange: (value: number) => void;
+  onNoteChange: (value: string) => void;
 };
 
 export function WellnessCard({
   physicalScore,
   mentalScore,
+  note,
   onPhysicalScoreChange,
   onMentalScoreChange,
+  onNoteChange,
 }: WellnessCardProps) {
   const { t } = useTranslation();
 
@@ -50,6 +54,16 @@ export function WellnessCard({
           max={5}
           value={mentalScore}
           onChange={(event) => handleScoreChange(event, onMentalScoreChange)}
+        />
+      </label>
+
+      <label className="self-care-screen__field">
+        <span>{t("condition_note_label")}</span>
+        <textarea
+          rows={3}
+          value={note}
+          placeholder={t("condition_note_placeholder")}
+          onChange={(event) => onNoteChange(event.target.value)}
         />
       </label>
     </section>

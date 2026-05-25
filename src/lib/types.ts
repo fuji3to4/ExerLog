@@ -39,6 +39,7 @@ export type DailyWellnessEntry = {
   date: string;
   physicalScore: WellnessScore;
   mentalScore: WellnessScore;
+  note: string;
   updatedAt: string;
 };
 

@@ -5,16 +5,26 @@ import { appDb } from "./app-db";
 
 export type SaveDailyWellnessInput = Pick<
   DailyWellnessEntry,
-  "date" | "physicalScore" | "mentalScore"
+  "date" | "physicalScore" | "mentalScore" | "note"
 >;
 
-export function getDailyWellness(date: string) {
-  return appDb.dailyWellness.get(date);
+export async function getDailyWellness(date: string) {
+  const entry = await appDb.dailyWellness.get(date);
+
+  if (!entry) {
+    return undefined;
+  }
+
+  return {
+    ...entry,
+    note: entry.note ?? "",
+  };
 }
 
 export function saveDailyWellness(input: SaveDailyWellnessInput) {
   return appDb.dailyWellness.put({
     ...input,
+    note: input.note.trim(),
     updatedAt: localIsoNow(),
   });
 }

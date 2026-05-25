@@ -118,7 +118,7 @@ export function useSelfCareData(date: Date | string) {
       setSelfCareItems(items);
       setPhysicalScoreState(savedWellness?.physicalScore ?? DEFAULT_WELLNESS_SCORE);
       setMentalScoreState(savedWellness?.mentalScore ?? DEFAULT_WELLNESS_SCORE);
-      setNote("");
+      setNote(savedWellness?.note ?? "");
       setMetrics(nextMetrics);
       setSelfCareEntries(nextEntries);
       setHydratedDayKey(selectedDayKey);
@@ -197,11 +197,12 @@ export function useSelfCareData(date: Date | string) {
         date: selectedDayKey,
         physicalScore,
         mentalScore,
+        note,
       }),
       replaceDailyMetrics(selectedDayKey, metricDrafts),
       replaceDailySelfCareEntries(selectedDayKey, selfCareDrafts),
     ]);
-  }, [dayKey, mentalScore, metrics, physicalScore, selfCareEntries]);
+  }, [dayKey, mentalScore, metrics, note, physicalScore, selfCareEntries]);
 
   return {
     dayKey,

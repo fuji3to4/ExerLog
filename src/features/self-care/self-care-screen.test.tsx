@@ -29,11 +29,15 @@ test("saves wellness, metrics, and self-care rows from the self-care screen", as
 
   renderWithLanguage(<SelfCareScreen date="2026-03-23" />, { initialLanguage: "en" });
 
+  const wellnessSection = (await screen.findByRole("heading", { name: /condition/i })).closest("section");
+  expect(wellnessSection).not.toBeNull();
   const [physicalScoreInput, mentalScoreInput, heightInput, weightInput, bodyFatInput] =
     await screen.findAllByRole("spinbutton");
 
   fireEvent.change(physicalScoreInput, { target: { value: "4" } });
   fireEvent.change(mentalScoreInput, { target: { value: "3" } });
+  const wellnessNoteInput = within(wellnessSection!).getByRole("textbox", { name: /^note$/i });
+  fireEvent.change(wellnessNoteInput, { target: { value: "Slept better after lunch" } });
   fireEvent.change(heightInput, { target: { value: "171" } });
   fireEvent.change(weightInput, { target: { value: "62" } });
   fireEvent.change(bodyFatInput, { target: { value: "18" } });
@@ -57,6 +61,7 @@ test("saves wellness, metrics, and self-care rows from the self-care screen", as
     await expect(getDailyWellness("2026-03-23")).resolves.toMatchObject({
       physicalScore: 4,
       mentalScore: 3,
+      note: "Slept better after lunch",
     });
   });
 
@@ -90,6 +95,7 @@ test("hydrates saved rows on first render", async () => {
     date: "2026-03-24",
     physicalScore: 5,
     mentalScore: 2,
+    note: "Needed extra rest",
   });
   await replaceDailyMetrics("2026-03-24", [
     { metricType: "height", value: 172, unit: "cm" },
@@ -108,11 +114,15 @@ test("hydrates saved rows on first render", async () => {
 
   renderWithLanguage(<SelfCareScreen date="2026-03-24" />, { initialLanguage: "en" });
 
+  const wellnessSection = (await screen.findByRole("heading", { name: /condition/i })).closest("section");
+  expect(wellnessSection).not.toBeNull();
   const [physicalScoreInput, mentalScoreInput, heightInput, weightInput, bodyFatInput] =
     await screen.findAllByRole("spinbutton");
+  const wellnessNoteInput = within(wellnessSection!).getByRole("textbox", { name: /^note$/i });
 
   expect(physicalScoreInput).toHaveValue(5);
   expect(mentalScoreInput).toHaveValue(2);
+  expect(wellnessNoteInput).toHaveValue("Needed extra rest");
   expect(heightInput).toHaveValue(172);
   expect(weightInput).toHaveValue(63);
   expect(bodyFatInput).toHaveValue(19);

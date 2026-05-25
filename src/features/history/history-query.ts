@@ -19,6 +19,7 @@ type HistoryDayLog = {
 type HistoryDayWellness = {
   physicalScore: number;
   mentalScore: number;
+  note: string;
 };
 
 type HistoryDayMetric = {
@@ -81,6 +82,7 @@ export async function getHistoryDaySummary(date: string): Promise<HistoryDaySumm
       ? {
           physicalScore: wellness.physicalScore,
           mentalScore: wellness.mentalScore,
+          note: wellness.note,
         }
       : null,
     metrics: metrics.map((metric) => ({
