@@ -1,6 +1,6 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { selfCareCatalog } from "@/features/catalog/self-care-catalog";
@@ -24,6 +24,12 @@ beforeEach(async () => {
   await appDb.dailySelfCareLogs.clear();
   await appDb.selfCareCatalog.clear();
   await appDb.selfCareCatalog.bulkAdd(selfCareCatalog);
+  HTMLDialogElement.prototype.showModal = vi.fn(function showModal(this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function close(this: HTMLDialogElement) {
+    this.removeAttribute("open");
+  });
 });
 
 async function seedLogsForHistory() {
@@ -166,4 +172,54 @@ test("returns to summary mode when clicking summary button from graph mode", asy
 
   // Calendar should be visible again
   expect(await screen.findByRole("heading", { name: /calendar/i })).toBeInTheDocument();
+});
+
+test("keeps edit and delete controls hidden in view mode after selecting a completed past day", async () => {
+  const user = userEvent.setup();
+
+  await seedLogsForHistory();
+
+  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "en" });
+
+  const completedDay = await screen.findByRole("button", { name: /march 23, completed/i });
+  await user.click(completedDay);
+
+  const daySummary = await screen.findByRole("heading", { name: /day summary/i });
+  const summaryCard = daySummary.closest("section");
+
+  expect(summaryCard).not.toBeNull();
+  expect(within(summaryCard!).getByText("View")).toBeInTheDocument();
+  expect(within(summaryCard!).queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+  expect(within(summaryCard!).queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+  expect(within(summaryCard!).queryByRole("button", { name: "Delete wellness" })).not.toBeInTheDocument();
+});
+
+test("shows edit-mode controls and saves edits for a selected completed past day", async () => {
+  const user = userEvent.setup();
+
+  await seedLogsForHistory();
+
+  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "en" });
+
+  const completedDay = await screen.findByRole("button", { name: /march 23, completed/i });
+  await user.click(completedDay);
+
+  await user.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+
+  const daySummary = await screen.findByRole("heading", { name: /day summary/i });
+  const summaryCard = daySummary.closest("section");
+  const conditionHeading = screen.getByRole("heading", { name: "Condition" });
+  const conditionSection = conditionHeading.closest("div");
+
+  expect(summaryCard).not.toBeNull();
+  expect(conditionSection).not.toBeNull();
+  expect(within(summaryCard!).getAllByRole("button", { name: "Edit" }).length).toBeGreaterThan(0);
+  expect(within(summaryCard!).getByRole("button", { name: "Delete wellness" })).toBeInTheDocument();
+
+  await user.click(within(conditionSection!).getByRole("button", { name: "Edit" }));
+  await user.clear(screen.getByLabelText("Note"));
+  await user.type(screen.getByLabelText("Note"), "Recovered after stretching");
+  await user.click(screen.getByRole("button", { name: "Save" }));
+
+  expect(await screen.findByText("Recovered after stretching")).toBeInTheDocument();
 });

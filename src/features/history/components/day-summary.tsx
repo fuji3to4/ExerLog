@@ -498,6 +498,7 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
 
   const updatedTime = summary.updatedAt ? formatTime(summary.updatedAt) : "";
   const metricMap = new Map(summary.metrics.map((metric) => [metric.metricType, metric]));
+  const wellness = summary.wellness;
 
   return (
     <section className="card day-summary">
@@ -521,7 +522,7 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
             {summary.logs.map((log) => {
               const logTime = formatTime(log.loggedAt);
               return (
-                <li key={log.exerciseId} className="day-summary__item">
+                <li key={log.id} className="day-summary__item">
                   <span>{log.title}</span>
                   {logTime && (
                     <span className="day-summary__time">{logTime}</span>
@@ -560,34 +561,34 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
         )}
       </div>
 
-      {summary.wellness || isEditMode ? (
+      {wellness || isEditMode ? (
         <div className="day-summary__section">
           <h3>{t("history_wellness_heading")}</h3>
-          {summary.wellness ? (
+          {wellness ? (
             <>
               <p>
                 <span>{t("self_care_physical_label")}</span>:{" "}
-                <span>{`${summary.wellness.physicalScore} / 5`}</span>
+                <span>{`${wellness.physicalScore} / 5`}</span>
               </p>
               <p>
                 <span>{t("self_care_mental_label")}</span>:{" "}
-                <span>{`${summary.wellness.mentalScore} / 5`}</span>
+                <span>{`${wellness.mentalScore} / 5`}</span>
               </p>
-              {summary.wellness.note ? <p>{summary.wellness.note}</p> : null}
+              {wellness.note ? <p>{wellness.note}</p> : null}
             </>
           ) : null}
           {isEditMode && (
             <div className="day-summary__item-actions">
-              {summary.wellness ? (
+              {wellness ? (
                 <>
                   <button
                     type="button"
                     className="day-summary__action-btn"
                     onClick={() =>
                       setEditingWellness({
-                        physicalScore: toWellnessScore(summary.wellness.physicalScore),
-                        mentalScore: toWellnessScore(summary.wellness.mentalScore),
-                        note: summary.wellness.note,
+                        physicalScore: toWellnessScore(wellness.physicalScore),
+                        mentalScore: toWellnessScore(wellness.mentalScore),
+                        note: wellness.note ?? "",
                       })
                     }
                   >
