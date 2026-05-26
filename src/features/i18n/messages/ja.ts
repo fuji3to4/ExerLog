@@ -16,20 +16,20 @@
   today_loading_heading: "今日のログを読み込み中...",
   today_loading_text: "この日の保存された状態とエクササイズ結果を確認中です。",
   today_recommended_heading: "今日のおすすめ",
-  today_recommended_text: "今日のリストは短く、始めやすくなっています。動画を見るか、すぐに結果を記録しましょう。",
+  today_recommended_text: "体調にあわせておすすめを表示してます。",
   today_library_card_heading: "他のエクササイズも見てみませんか？",
   today_library_card_text: "異なる動きやより詳しい内容が必要な場合は、全ライブラリを閲覧してください。",
   today_library_button: "ライブラリ",
 
   // Daily condition
   condition_heading: "体調",
-  condition_subheading: "今日の気分を選び、短いメモを追加して、今日の計画のために保存しましょう。",
+  condition_subheading: "今日の気分を記録して、おすすめのエクササイズをパーソナライズしましょう。",
   condition_legend: "気分はどうですか？",
   condition_good: "調子が良い",
   condition_okay: "普通",
   condition_tired: "疲れている",
   condition_note_label: "メモ",
-  condition_note_placeholder: "今日覚えておく価値のあることを追加してください。",
+  condition_note_placeholder: "今日覚えておきたいことあればメモしておきましょう。",
   condition_save_button: "体調を保存",
   condition_save_error: "保存に失敗しました。もう一度お試しください。",
 
