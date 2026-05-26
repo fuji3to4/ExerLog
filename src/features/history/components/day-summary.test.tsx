@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within, act, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { DaySummary } from "./day-summary";
-import { deleteDailyMetric } from "@/features/storage/daily-metrics.repository";
+import { upsertDailyMetric, deleteDailyMetric } from "@/features/storage/daily-metrics.repository";
 import { deleteDailyWellness } from "@/features/storage/daily-wellness.repository";
 
 vi.mock("@/features/i18n/use-translation", () => ({
@@ -29,6 +30,15 @@ vi.mock("@/features/storage/exercise-catalog.repository", () => ({
 vi.mock("@/lib/date/local-iso", () => ({
   localIsoNow: vi.fn().mockReturnValue("2024-01-15T09:00:00+09:00"),
 }));
+
+beforeEach(() => {
+  HTMLDialogElement.prototype.showModal = vi.fn(function showModal(this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function close(this: HTMLDialogElement) {
+    this.removeAttribute("open");
+  });
+});
 
 const baseLog = {
   id: "log1",
@@ -170,6 +180,35 @@ describe("DaySummary timestamps", () => {
 
     expect(screen.getByRole("button", { name: "history_metrics_add_height" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "history_metrics_add_body_fat" })).toBeInTheDocument();
+  });
+
+  it("calls upsertDailyMetric and onChanged when adding a metric", async () => {
+    const user = userEvent.setup();
+    const onChanged = vi.fn();
+
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            metrics: [{ metricType: "weight", value: 62, unit: "kg" }],
+          })}
+          onChanged={onChanged}
+        />,
+      );
+    });
+
+    await user.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    await user.click(screen.getByRole("button", { name: "history_metrics_add_height" }));
+    await user.type(screen.getByLabelText("self_care_metric_height"), "170");
+    await user.click(screen.getByRole("button", { name: "history_edit_save" }));
+
+    expect(upsertDailyMetric).toHaveBeenCalledWith("2024-01-15", {
+      metricType: "height",
+      value: 170,
+      unit: "cm",
+    });
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
   });
 
   it("calls deleteDailyMetric for individual metric deletion", async () => {
