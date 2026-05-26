@@ -6,9 +6,11 @@ import { localIsoNow } from "@/lib/date/local-iso";
 import { formatTime } from "@/lib/date/format-timestamp";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { deleteDailyCondition, updateDailyCondition } from "@/features/storage/daily-condition.repository";
+import { deleteDailyMetric, upsertDailyMetric } from "@/features/storage/daily-metrics.repository";
+import { deleteDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
 import { deleteExerciseLog, updateExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
-import type { ConditionLevel, ExerciseLogResult, ExerciseVideo, MetricType } from "@/lib/types";
+import type { ConditionLevel, ExerciseLogResult, ExerciseVideo, MetricType, WellnessScore } from "@/lib/types";
 
 import type { HistoryDaySummary } from "../history-query";
 
@@ -30,6 +32,44 @@ type EditConditionState = {
   conditionLevel: ConditionLevel;
   note: string;
 };
+
+type EditMetricState = {
+  metricType: MetricType;
+  value: string;
+  unit: string;
+};
+
+type EditWellnessState = {
+  physicalScore: WellnessScore;
+  mentalScore: WellnessScore;
+  note: string;
+};
+
+type MetricField = {
+  metricType: MetricType;
+  unit: string;
+};
+
+const METRIC_FIELDS: MetricField[] = [
+  { metricType: "height", unit: "cm" },
+  { metricType: "weight", unit: "kg" },
+  { metricType: "bodyFat", unit: "%" },
+];
+
+function getMetricLabelKey(metricType: MetricType) {
+  if (metricType === "height") return "self_care_metric_height";
+  if (metricType === "weight") return "self_care_metric_weight";
+  return "self_care_metric_body_fat";
+}
+
+function toWellnessScore(value: number): WellnessScore {
+  const roundedValue = Math.round(value);
+
+  if (roundedValue <= 1) return 1;
+  if (roundedValue >= 5) return 5;
+
+  return roundedValue as WellnessScore;
+}
 
 function EditLogModal({
   state,
@@ -176,12 +216,155 @@ function EditConditionModal({
   );
 }
 
+function EditMetricModal({
+  state,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  state: EditMetricState;
+  onChange: (next: EditMetricState) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, []);
+
+  return (
+    <dialog ref={dialogRef} className="modal" onCancel={onCancel}>
+      <div className="modal__content">
+        <h2>{t("history_metrics_heading")}</h2>
+
+        <div className="modal__field">
+          <label htmlFor="edit-metric-value">{t(getMetricLabelKey(state.metricType))}</label>
+          <div className="self-care-screen__metric-input">
+            <input
+              id="edit-metric-value"
+              type="number"
+              inputMode="decimal"
+              value={state.value}
+              onChange={(e) => onChange({ ...state, value: e.target.value })}
+            />
+            <span>{state.unit}</span>
+          </div>
+        </div>
+
+        <div className="modal__actions">
+          <button
+            type="button"
+            className="settings-action-button settings-action-button--secondary"
+            onClick={onCancel}
+          >
+            {t("history_edit_cancel")}
+          </button>
+          <button type="button" className="settings-action-button" onClick={onSave}>
+            {t("history_edit_save")}
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
+function EditWellnessModal({
+  state,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  state: EditWellnessState;
+  onChange: (next: EditWellnessState) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, []);
+
+  return (
+    <dialog ref={dialogRef} className="modal" onCancel={onCancel}>
+      <div className="modal__content">
+        <h2>{t("history_wellness_heading")}</h2>
+
+        <div className="modal__field">
+          <label htmlFor="edit-wellness-physical">{t("self_care_physical_label")}</label>
+          <input
+            id="edit-wellness-physical"
+            type="number"
+            min={1}
+            max={5}
+            value={state.physicalScore}
+            onChange={(e) =>
+              onChange({
+                ...state,
+                physicalScore: toWellnessScore(Number(e.target.value)),
+              })
+            }
+          />
+        </div>
+
+        <div className="modal__field">
+          <label htmlFor="edit-wellness-mental">{t("self_care_mental_label")}</label>
+          <input
+            id="edit-wellness-mental"
+            type="number"
+            min={1}
+            max={5}
+            value={state.mentalScore}
+            onChange={(e) =>
+              onChange({
+                ...state,
+                mentalScore: toWellnessScore(Number(e.target.value)),
+              })
+            }
+          />
+        </div>
+
+        <div className="modal__field">
+          <label htmlFor="edit-wellness-note">{t("condition_note_label")}</label>
+          <textarea
+            id="edit-wellness-note"
+            value={state.note}
+            onChange={(e) => onChange({ ...state, note: e.target.value })}
+          />
+        </div>
+
+        <div className="modal__actions">
+          <button
+            type="button"
+            className="settings-action-button settings-action-button--secondary"
+            onClick={onCancel}
+          >
+            {t("history_edit_cancel")}
+          </button>
+          <button type="button" className="settings-action-button" onClick={onSave}>
+            {t("history_edit_save")}
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps) {
   const { t } = useTranslation();
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingLog, setEditingLog] = useState<EditLogState | null>(null);
   const [editingCondition, setEditingCondition] = useState<EditConditionState | null>(null);
+  const [editingMetric, setEditingMetric] = useState<EditMetricState | null>(null);
+  const [editingWellness, setEditingWellness] = useState<EditWellnessState | null>(null);
 
   useEffect(() => {
     void listAllExercises().then(setExercises);
@@ -199,9 +382,19 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
   }
 
   function formatMetricLabel(metricType: MetricType) {
-    if (metricType === "height") return t("self_care_metric_height");
-    if (metricType === "weight") return t("self_care_metric_weight");
-    return t("self_care_metric_body_fat");
+    return t(getMetricLabelKey(metricType));
+  }
+
+  function getMetricAddKey(metricType: MetricType) {
+    if (metricType === "height") return "history_metrics_add_height";
+    if (metricType === "weight") return "history_metrics_add_weight";
+    return "history_metrics_add_body_fat";
+  }
+
+  function getMetricDeleteKey(metricType: MetricType) {
+    if (metricType === "height") return "history_metrics_delete_height";
+    if (metricType === "weight") return "history_metrics_delete_weight";
+    return "history_metrics_delete_body_fat";
   }
 
   async function handleDeleteLog(logId: string) {
@@ -242,6 +435,47 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
     onChanged?.();
   }
 
+  async function handleSaveMetric() {
+    if (!editingMetric || !selectedDate) return;
+
+    const value = Number(editingMetric.value);
+    if (!Number.isFinite(value)) return;
+
+    await upsertDailyMetric(selectedDate, {
+      metricType: editingMetric.metricType,
+      value,
+      unit: editingMetric.unit,
+    });
+    setEditingMetric(null);
+    onChanged?.();
+  }
+
+  async function handleDeleteMetric(metricType: MetricType) {
+    if (!selectedDate) return;
+    if (!window.confirm(t("history_metric_delete_confirm"))) return;
+    await deleteDailyMetric(selectedDate, metricType);
+    onChanged?.();
+  }
+
+  async function handleSaveWellness() {
+    if (!editingWellness || !selectedDate) return;
+    await saveDailyWellness({
+      date: selectedDate,
+      physicalScore: editingWellness.physicalScore,
+      mentalScore: editingWellness.mentalScore,
+      note: editingWellness.note,
+    });
+    setEditingWellness(null);
+    onChanged?.();
+  }
+
+  async function handleDeleteWellness() {
+    if (!selectedDate) return;
+    if (!window.confirm(t("history_wellness_delete_confirm"))) return;
+    await deleteDailyWellness(selectedDate);
+    onChanged?.();
+  }
+
   if (!selectedDate || !summary) {
     return (
       <section className="card day-summary">
@@ -261,6 +495,7 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
   }
 
   const updatedTime = summary.updatedAt ? formatTime(summary.updatedAt) : "";
+  const metricMap = new Map(summary.metrics.map((metric) => [metric.metricType, metric]));
 
   return (
     <section className="card day-summary">
@@ -323,31 +558,126 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
         )}
       </div>
 
-      {summary.wellness ? (
+      {summary.wellness || isEditMode ? (
         <div className="day-summary__section">
           <h3>{t("history_wellness_heading")}</h3>
-          <p>
-            <span>{t("self_care_physical_label")}</span>:{" "}
-            <span>{`${summary.wellness.physicalScore} / 5`}</span>
-          </p>
-          <p>
-            <span>{t("self_care_mental_label")}</span>:{" "}
-            <span>{`${summary.wellness.mentalScore} / 5`}</span>
-          </p>
-          {summary.wellness.note ? <p>{summary.wellness.note}</p> : null}
+          {summary.wellness ? (
+            <>
+              <p>
+                <span>{t("self_care_physical_label")}</span>:{" "}
+                <span>{`${summary.wellness.physicalScore} / 5`}</span>
+              </p>
+              <p>
+                <span>{t("self_care_mental_label")}</span>:{" "}
+                <span>{`${summary.wellness.mentalScore} / 5`}</span>
+              </p>
+              {summary.wellness.note ? <p>{summary.wellness.note}</p> : null}
+            </>
+          ) : null}
+          {isEditMode && (
+            <div className="day-summary__item-actions">
+              {summary.wellness ? (
+                <>
+                  <button
+                    type="button"
+                    className="day-summary__action-btn"
+                    onClick={() =>
+                      setEditingWellness({
+                        physicalScore: toWellnessScore(summary.wellness.physicalScore),
+                        mentalScore: toWellnessScore(summary.wellness.mentalScore),
+                        note: summary.wellness.note,
+                      })
+                    }
+                  >
+                    {t("history_wellness_edit")}
+                  </button>
+                  <button
+                    type="button"
+                    className="day-summary__action-btn day-summary__action-btn--danger"
+                    onClick={() => void handleDeleteWellness()}
+                  >
+                    {t("history_wellness_delete")}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="day-summary__action-btn"
+                  onClick={() =>
+                    setEditingWellness({
+                      physicalScore: 3,
+                      mentalScore: 3,
+                      note: "",
+                    })
+                  }
+                >
+                  {t("history_wellness_add")}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       ) : null}
 
-      {summary.metrics.length > 0 ? (
+      {summary.metrics.length > 0 || isEditMode ? (
         <div className="day-summary__section">
           <h3>{t("history_metrics_heading")}</h3>
           <ul className="day-summary__list">
-            {summary.metrics.map((metric) => (
-              <li key={metric.metricType} className="day-summary__item">
-                <span>{formatMetricLabel(metric.metricType)}</span>
-                <span>{`${metric.value} ${metric.unit}`}</span>
-              </li>
-            ))}
+            {(isEditMode
+              ? METRIC_FIELDS
+              : summary.metrics.map((metric) => ({
+                  metricType: metric.metricType,
+                  unit: metric.unit,
+                }))
+            ).map((field) => {
+              const metric = metricMap.get(field.metricType);
+
+              return (
+                <li key={field.metricType} className="day-summary__item">
+                  <span>{formatMetricLabel(field.metricType)}</span>
+                  {metric ? <span>{`${metric.value} ${metric.unit}`}</span> : null}
+                  {isEditMode && metric ? (
+                    <div className="day-summary__item-actions">
+                      <button
+                        type="button"
+                        className="day-summary__action-btn"
+                        onClick={() =>
+                          setEditingMetric({
+                            metricType: metric.metricType,
+                            value: String(metric.value),
+                            unit: metric.unit,
+                          })
+                        }
+                      >
+                        {t("action_edit")}
+                      </button>
+                      <button
+                        type="button"
+                        className="day-summary__action-btn day-summary__action-btn--danger"
+                        onClick={() => void handleDeleteMetric(metric.metricType)}
+                      >
+                        {t(getMetricDeleteKey(metric.metricType))}
+                      </button>
+                    </div>
+                  ) : null}
+                  {isEditMode && !metric ? (
+                    <button
+                      type="button"
+                      className="day-summary__action-btn"
+                      onClick={() =>
+                        setEditingMetric({
+                          metricType: field.metricType,
+                          value: "",
+                          unit: field.unit,
+                        })
+                      }
+                    >
+                      {t(getMetricAddKey(field.metricType))}
+                    </button>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}
@@ -421,6 +751,24 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
           onChange={setEditingCondition}
           onSave={() => void handleSaveCondition()}
           onCancel={() => setEditingCondition(null)}
+        />
+      )}
+
+      {isEditMode && editingMetric && (
+        <EditMetricModal
+          state={editingMetric}
+          onChange={setEditingMetric}
+          onSave={() => void handleSaveMetric()}
+          onCancel={() => setEditingMetric(null)}
+        />
+      )}
+
+      {isEditMode && editingWellness && (
+        <EditWellnessModal
+          state={editingWellness}
+          onChange={setEditingWellness}
+          onSave={() => void handleSaveWellness()}
+          onCancel={() => setEditingWellness(null)}
         />
       )}
     </section>

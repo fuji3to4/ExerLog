@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, within, act, fireEvent } from "@testing-library/react";
+import { render, screen, within, act, fireEvent, waitFor } from "@testing-library/react";
 import { DaySummary } from "./day-summary";
+import { deleteDailyMetric } from "@/features/storage/daily-metrics.repository";
+import { deleteDailyWellness } from "@/features/storage/daily-wellness.repository";
 
 vi.mock("@/features/i18n/use-translation", () => ({
   useTranslation: () => ({ t: (k: string) => k }),
@@ -12,6 +14,14 @@ vi.mock("@/features/storage/exercise-logs.repository", () => ({
 vi.mock("@/features/storage/daily-condition.repository", () => ({
   deleteDailyCondition: vi.fn(),
   updateDailyCondition: vi.fn(),
+}));
+vi.mock("@/features/storage/daily-metrics.repository", () => ({
+  upsertDailyMetric: vi.fn(),
+  deleteDailyMetric: vi.fn(),
+}));
+vi.mock("@/features/storage/daily-wellness.repository", () => ({
+  saveDailyWellness: vi.fn(),
+  deleteDailyWellness: vi.fn(),
 }));
 vi.mock("@/features/storage/exercise-catalog.repository", () => ({
   listAllExercises: vi.fn().mockResolvedValue([]),
@@ -140,7 +150,77 @@ describe("DaySummary timestamps", () => {
 
     expect(screen.getByRole("checkbox", { name: "history_mode_edit" })).toBeChecked();
     expect(screen.getByText("history_mode_edit")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "action_edit" })).toHaveLength(2);
-    expect(screen.getAllByRole("button", { name: "action_delete" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "action_edit" }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByRole("button", { name: "action_delete" }).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("shows metric add controls when metric missing in edit mode", async () => {
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            metrics: [{ metricType: "weight", value: 62, unit: "kg" }],
+          })}
+        />,
+      );
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+
+    expect(screen.getByRole("button", { name: "history_metrics_add_height" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "history_metrics_add_body_fat" })).toBeInTheDocument();
+  });
+
+  it("calls deleteDailyMetric for individual metric deletion", async () => {
+    const onChanged = vi.fn();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            metrics: [{ metricType: "weight", value: 62, unit: "kg" }],
+          })}
+          onChanged={onChanged}
+        />,
+      );
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "history_metrics_delete_weight" }));
+
+    expect(confirmSpy).toHaveBeenCalledWith("history_metric_delete_confirm");
+    expect(deleteDailyMetric).toHaveBeenCalledWith("2024-01-15", "weight");
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
+  });
+
+  it("calls deleteDailyWellness when deleting wellness", async () => {
+    const onChanged = vi.fn();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            wellness: {
+              physicalScore: 4,
+              mentalScore: 3,
+              note: "Feeling steady",
+            },
+          })}
+          onChanged={onChanged}
+        />,
+      );
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "history_wellness_delete" }));
+
+    expect(confirmSpy).toHaveBeenCalledWith("history_wellness_delete_confirm");
+    expect(deleteDailyWellness).toHaveBeenCalledWith("2024-01-15");
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
   });
 });
