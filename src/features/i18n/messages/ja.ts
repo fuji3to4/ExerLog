@@ -166,6 +166,7 @@
   settings_export_logs: "運動ログをエクスポート（CSV）",
   settings_export_daily_wellness: "体調（dailyWellness）をエクスポート（CSV）",
   settings_export_daily_metrics: "身体計測値をエクスポート（CSV）",
+  settings_export_conditions_legacy: "旧体調記録（condition）をエクスポート（CSV）",
   settings_delete_all_exercises: "全エクササイズを削除",
   settings_delete_all_exercises_confirm: "{count}件のエクササイズをすべて削除します。この操作は取り消せません。",
   settings_delete_all_logs: "全ログを削除",

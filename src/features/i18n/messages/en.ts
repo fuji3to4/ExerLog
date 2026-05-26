@@ -166,6 +166,7 @@ export const en = {
   settings_export_logs: "Export exercise logs (CSV)",
   settings_export_daily_wellness: "Export daily wellness records (CSV)",
   settings_export_daily_metrics: "Export body metrics records (CSV)",
+  settings_export_conditions_legacy: "Export legacy condition records (CSV)",
   settings_delete_all_exercises: "Delete all exercises",
   settings_delete_all_exercises_confirm: "Delete all {count} exercises? This cannot be undone.",
   settings_delete_all_logs: "Delete all logs",

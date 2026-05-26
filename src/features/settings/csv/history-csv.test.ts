@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
+  generateConditionsCsv,
   generateDailyMetricsCsv,
   generateDailyWellnessCsv,
   generateExerciseLogsCsv,
 } from "./history-csv";
-import type { DailyMetricEntry, DailyWellnessEntry, ExerciseLog } from "@/lib/types";
+import type { DailyConditionEntry, DailyMetricEntry, DailyWellnessEntry, ExerciseLog } from "@/lib/types";
 
 const makeLog = (overrides: Partial<ExerciseLog> = {}): ExerciseLog => ({
   id: "log1",
@@ -31,6 +32,14 @@ const makeMetric = (overrides: Partial<DailyMetricEntry> = {}): DailyMetricEntry
   value: 62.4,
   unit: "kg",
   recordedAt: "2024-01-15T07:10:00+09:00",
+  ...overrides,
+});
+
+const makeCondition = (overrides: Partial<DailyConditionEntry> = {}): DailyConditionEntry => ({
+  date: "2024-01-15",
+  conditionLevel: "good",
+  note: "Felt great",
+  updatedAt: "2024-01-15T09:30:00+09:00",
   ...overrides,
 });
 
@@ -83,5 +92,17 @@ describe("generateDailyMetricsCsv", () => {
   it("handles empty recordedAt gracefully", () => {
     const csv = generateDailyMetricsCsv([makeMetric({ recordedAt: "" })]);
     expect(csv).toContain("weight");
+  });
+});
+
+describe("generateConditionsCsv", () => {
+  it("formats updatedAt as YYYY-MM-DD HH:MM", () => {
+    const csv = generateConditionsCsv([makeCondition()]);
+    expect(csv).toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+  });
+
+  it("handles empty string updatedAt gracefully", () => {
+    const csv = generateConditionsCsv([makeCondition({ updatedAt: "" })]);
+    expect(csv).toContain("good");
   });
 });
