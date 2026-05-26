@@ -7,7 +7,11 @@ import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { clearAllExerciseLogs } from "@/features/storage/exercise-logs.repository";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
-import { generateConditionsCsv, generateExerciseLogsCsv } from "../csv/history-csv";
+import {
+  generateDailyMetricsCsv,
+  generateDailyWellnessCsv,
+  generateExerciseLogsCsv,
+} from "../csv/history-csv";
 
 type DeleteState = "idle" | "confirming";
 
@@ -115,9 +119,14 @@ export function DataManagement() {
     downloadCsv("exercise-logs.csv", generateExerciseLogsCsv(logs, titleMap));
   }
 
-  async function handleExportConditions() {
-    const conditions = await appDb.conditions.toArray();
-    downloadCsv("conditions.csv", generateConditionsCsv(conditions));
+  async function handleExportDailyWellness() {
+    const entries = await appDb.dailyWellness.toArray();
+    downloadCsv("daily-wellness.csv", generateDailyWellnessCsv(entries));
+  }
+
+  async function handleExportDailyMetrics() {
+    const entries = await appDb.dailyMetrics.toArray();
+    downloadCsv("daily-metrics.csv", generateDailyMetricsCsv(entries));
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -213,9 +222,16 @@ export function DataManagement() {
           <button
             type="button"
             className="settings-action-button"
-            onClick={() => void handleExportConditions()}
+            onClick={() => void handleExportDailyWellness()}
           >
-            {t("settings_export_conditions")}
+            {t("settings_export_daily_wellness")}
+          </button>
+          <button
+            type="button"
+            className="settings-action-button"
+            onClick={() => void handleExportDailyMetrics()}
+          >
+            {t("settings_export_daily_metrics")}
           </button>
         </div>
         <BulkDeleteButton

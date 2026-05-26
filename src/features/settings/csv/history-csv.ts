@@ -1,4 +1,4 @@
-import type { DailyConditionEntry, ExerciseLog } from "@/lib/types";
+import type { DailyMetricEntry, DailyWellnessEntry, ExerciseLog } from "@/lib/types";
 import { formatTimestampForCsv } from "@/lib/date/format-timestamp";
 
 function escapeCsvField(value: string | number): string {
@@ -22,11 +22,36 @@ export function generateExerciseLogsCsv(logs: ExerciseLog[], exerciseTitleMap: M
   return rows.join("\n");
 }
 
-export function generateConditionsCsv(conditions: DailyConditionEntry[]): string {
-  const headers = ["date", "conditionLevel", "note", "updatedAt"];
+export function generateDailyWellnessCsv(entries: DailyWellnessEntry[]): string {
+  const headers = ["date", "physicalScore", "mentalScore", "note", "updatedAt"];
   const rows = [
     headers.join(","),
-    ...conditions.map((c) => [c.date, c.conditionLevel, c.note, formatTimestampForCsv(c.updatedAt)].map(escapeCsvField).join(",")),
+    ...entries.map((entry) =>
+      [
+        entry.date,
+        entry.physicalScore,
+        entry.mentalScore,
+        entry.note,
+        formatTimestampForCsv(entry.updatedAt),
+      ].map(escapeCsvField).join(","),
+    ),
+  ];
+  return rows.join("\n");
+}
+
+export function generateDailyMetricsCsv(entries: DailyMetricEntry[]): string {
+  const headers = ["date", "metricType", "value", "unit", "recordedAt"];
+  const rows = [
+    headers.join(","),
+    ...entries.map((entry) =>
+      [
+        entry.date,
+        entry.metricType,
+        entry.value,
+        entry.unit,
+        formatTimestampForCsv(entry.recordedAt),
+      ].map(escapeCsvField).join(","),
+    ),
   ];
   return rows.join("\n");
 }
