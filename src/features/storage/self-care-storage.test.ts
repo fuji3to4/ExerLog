@@ -111,6 +111,28 @@ test("upsertDailyMetric updates existing metric row for same day and type", asyn
   });
 });
 
+test("upsertDailyMetric inserts a new metric row when none exists", async () => {
+  await upsertDailyMetric("2026-03-27", {
+    metricType: "weight",
+    value: 63,
+    unit: "kg",
+  });
+
+  const metrics = await listDailyMetricsByDate("2026-03-27");
+
+  expect(metrics).toHaveLength(1);
+  expect(metrics[0]).toMatchObject({
+    date: "2026-03-27",
+    metricType: "weight",
+    value: 63,
+    unit: "kg",
+  });
+  expect(metrics[0]?.id).toEqual(expect.any(String));
+  expect(metrics[0]?.recordedAt).toMatch(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/,
+  );
+});
+
 test("deleteDailyMetric removes only requested metric type", async () => {
   await replaceDailyMetrics("2026-03-27", [
     { metricType: "height", value: 171, unit: "cm" },
