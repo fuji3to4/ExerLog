@@ -29,7 +29,7 @@
   condition_okay: "普通",
   condition_tired: "疲れている",
   condition_note_label: "メモ",
-  condition_note_placeholder: "今日覚えておきたいことあればメモしておきましょう。",
+  condition_note_placeholder: "今日の記録しておきたいことあれば、メモしておきましょう。",
   condition_save_button: "体調を保存",
   condition_save_error: "保存に失敗しました。もう一度お試しください。",
 
