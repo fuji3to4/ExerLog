@@ -204,7 +204,7 @@ test("shows edit-mode controls and saves edits for a selected completed past day
   const completedDay = await screen.findByRole("button", { name: /march 23, completed/i });
   await user.click(completedDay);
 
-  await user.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+  await user.click(screen.getByRole("checkbox", { name: "Edit" }));
 
   const daySummary = await screen.findByRole("heading", { name: /day summary/i });
   const summaryCard = daySummary.closest("section");

@@ -485,7 +485,7 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
         <label>
           <input
             type="checkbox"
-            aria-label="history_mode_edit"
+            aria-label={t("history_mode_edit")}
             checked={isEditMode}
             onChange={(e) => setIsEditMode(e.target.checked)}
           />
@@ -506,7 +506,7 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
       <label>
         <input
           type="checkbox"
-          aria-label="history_mode_edit"
+          aria-label={t("history_mode_edit")}
           checked={isEditMode}
           onChange={(e) => setIsEditMode(e.target.checked)}
         />
