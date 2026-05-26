@@ -51,6 +51,8 @@
   history_calendar_next_month: "次の月",
   history_day_summary_heading: "1日のまとめ",
   history_day_summary_empty: "カレンダーから日を選択して、記録した内容を確認しましょう。",
+  history_mode_view: "閲覧",
+  history_mode_edit: "編集",
   history_exercises_heading: "エクササイズ",
   history_no_exercises: "この日に記録されたエクササイズはありません。",
   history_condition_heading: "体調",

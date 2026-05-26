@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, within, act } from "@testing-library/react";
+import { render, screen, within, act, fireEvent } from "@testing-library/react";
 import { DaySummary } from "./day-summary";
 
 vi.mock("@/features/i18n/use-translation", () => ({
@@ -118,5 +118,29 @@ describe("DaySummary timestamps", () => {
     expect(screen.getByText(/self_care_count_label: 1/i)).toBeInTheDocument();
     expect(screen.getByText(/self_care_minutes_label: 10/i)).toBeInTheDocument();
     expect(screen.getByText("Loosened up")).toBeInTheDocument();
+  });
+
+  it("defaults to view mode and hides action buttons", async () => {
+    await act(async () => {
+      render(<DaySummary selectedDate="2024-01-15" summary={makeSummary()} />);
+    });
+
+    expect(screen.getByRole("checkbox", { name: "history_mode_edit" })).not.toBeChecked();
+    expect(screen.getByText("history_mode_view")).toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: "action_edit" })).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: "action_delete" })).toHaveLength(0);
+  });
+
+  it("shows action buttons after switching to edit mode via switch", async () => {
+    await act(async () => {
+      render(<DaySummary selectedDate="2024-01-15" summary={makeSummary()} />);
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+
+    expect(screen.getByRole("checkbox", { name: "history_mode_edit" })).toBeChecked();
+    expect(screen.getByText("history_mode_edit")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "action_edit" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "action_delete" })).toHaveLength(2);
   });
 });

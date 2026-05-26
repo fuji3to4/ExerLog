@@ -179,6 +179,7 @@ function EditConditionModal({
 export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps) {
   const { t } = useTranslation();
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [editingLog, setEditingLog] = useState<EditLogState | null>(null);
   const [editingCondition, setEditingCondition] = useState<EditConditionState | null>(null);
 
@@ -245,6 +246,15 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
     return (
       <section className="card day-summary">
         <h2>{t("history_day_summary_heading")}</h2>
+        <label>
+          <input
+            type="checkbox"
+            aria-label="history_mode_edit"
+            checked={isEditMode}
+            onChange={(e) => setIsEditMode(e.target.checked)}
+          />
+        </label>
+        <p>{isEditMode ? t("history_mode_edit") : t("history_mode_view")}</p>
         <p>{t("history_day_summary_empty")}</p>
       </section>
     );
@@ -255,6 +265,15 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
   return (
     <section className="card day-summary">
       <h2>{t("history_day_summary_heading")}</h2>
+      <label>
+        <input
+          type="checkbox"
+          aria-label="history_mode_edit"
+          checked={isEditMode}
+          onChange={(e) => setIsEditMode(e.target.checked)}
+        />
+      </label>
+      <p>{isEditMode ? t("history_mode_edit") : t("history_mode_view")}</p>
 
       <div className="day-summary__section">
         <h3>{t("history_exercises_heading")}</h3>
@@ -271,30 +290,32 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
                     <span className="day-summary__time">{logTime}</span>
                   )}
                   <span className="day-summary__result">{formatResult(log.result)}</span>
-                  <div className="day-summary__item-actions">
-                    <button
-                      type="button"
-                      className="day-summary__action-btn"
-                      onClick={() =>
-                        setEditingLog({
-                          id: log.id,
-                          exerciseId: log.exerciseId,
-                          result: log.result,
-                          loggedAt: log.loggedAt,
-                          date: selectedDate,
-                        })
-                      }
-                    >
-                      {t("action_edit")}
-                    </button>
-                    <button
-                      type="button"
-                      className="day-summary__action-btn day-summary__action-btn--danger"
-                      onClick={() => void handleDeleteLog(log.id)}
-                    >
-                      {t("action_delete")}
-                    </button>
-                  </div>
+                  {isEditMode && (
+                    <div className="day-summary__item-actions">
+                      <button
+                        type="button"
+                        className="day-summary__action-btn"
+                        onClick={() =>
+                          setEditingLog({
+                            id: log.id,
+                            exerciseId: log.exerciseId,
+                            result: log.result,
+                            loggedAt: log.loggedAt,
+                            date: selectedDate,
+                          })
+                        }
+                      >
+                        {t("action_edit")}
+                      </button>
+                      <button
+                        type="button"
+                        className="day-summary__action-btn day-summary__action-btn--danger"
+                        onClick={() => void handleDeleteLog(log.id)}
+                      >
+                        {t("action_delete")}
+                      </button>
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -358,31 +379,33 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
           {updatedTime && (
             <p className="day-summary__time">{updatedTime}</p>
           )}
-          <div className="day-summary__item-actions">
-            <button
-              type="button"
-              className="day-summary__action-btn"
-              onClick={() =>
-                setEditingCondition({
-                  conditionLevel: summary.conditionLevel!,
-                  note: summary.note,
-                })
-              }
-            >
-              {t("action_edit")}
-            </button>
-            <button
-              type="button"
-              className="day-summary__action-btn day-summary__action-btn--danger"
-              onClick={() => void handleDeleteCondition()}
-            >
-              {t("action_delete")}
-            </button>
-          </div>
+          {isEditMode && (
+            <div className="day-summary__item-actions">
+              <button
+                type="button"
+                className="day-summary__action-btn"
+                onClick={() =>
+                  setEditingCondition({
+                    conditionLevel: summary.conditionLevel!,
+                    note: summary.note,
+                  })
+                }
+              >
+                {t("action_edit")}
+              </button>
+              <button
+                type="button"
+                className="day-summary__action-btn day-summary__action-btn--danger"
+                onClick={() => void handleDeleteCondition()}
+              >
+                {t("action_delete")}
+              </button>
+            </div>
+          )}
         </div>
       ) : null}
 
-      {editingLog && (
+      {isEditMode && editingLog && (
         <EditLogModal
           state={editingLog}
           exercises={exercises}
@@ -392,7 +415,7 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
         />
       )}
 
-      {editingCondition && (
+      {isEditMode && editingCondition && (
         <EditConditionModal
           state={editingCondition}
           onChange={setEditingCondition}

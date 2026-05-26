@@ -51,6 +51,8 @@ export const en = {
   history_calendar_next_month: "Next month",
   history_day_summary_heading: "Day summary",
   history_day_summary_empty: "Select a day from the calendar to review what you logged.",
+  history_mode_view: "View",
+  history_mode_edit: "Edit",
   history_exercises_heading: "Exercises",
   history_no_exercises: "No logged exercises for this day.",
   history_condition_heading: "Condition",
