@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getTodaysRecommendations } from "@/features/recommendations/get-todays-recommendations";
 import { mapWellnessToCondition } from "@/features/recommendations/wellness-to-condition";
 import { getDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
-import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { deleteExerciseLogByDateAndExercise, listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import type { ExerciseLogResult, ExerciseVideo, WellnessScore } from "@/lib/types";
@@ -132,6 +132,21 @@ export function useTodayData(date: Date | string) {
     [dayKey],
   );
 
+  const clearExercise = useCallback(
+    async (exerciseId: string) => {
+      const selectedDayKey = toDayKey(dayKey);
+
+      setLogResults((currentResults) => {
+        const next = { ...currentResults };
+        delete next[exerciseId];
+        return next;
+      });
+
+      await deleteExerciseLogByDateAndExercise(selectedDayKey, exerciseId);
+    },
+    [dayKey],
+  );
+
   return {
     isHydrated: hydratedDayKey === dayKey,
     physicalScore,
@@ -145,5 +160,6 @@ export function useTodayData(date: Date | string) {
     setNote: updateNote,
     saveCondition: saveConditionEntry,
     logExercise,
+    clearExercise,
   };
 }

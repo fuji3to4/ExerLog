@@ -92,7 +92,6 @@ function EditLogModal({
           >
             <option value="did">{t("result_did")}</option>
             <option value="partial">{t("result_partial")}</option>
-            <option value="could_not">{t("result_couldnt")}</option>
           </select>
         </div>
 
@@ -189,8 +188,7 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
 
   function formatResult(result: HistoryDaySummary["logs"][number]["result"]) {
     if (result === "did") return t("result_did");
-    if (result === "partial") return t("result_partial");
-    return t("result_couldnt");
+    return t("result_partial");
   }
 
   function formatCondition(level: NonNullable<HistoryDaySummary["conditionLevel"]>) {

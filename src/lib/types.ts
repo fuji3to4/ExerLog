@@ -1,6 +1,6 @@
 export type ConditionLevel = "good" | "okay" | "tired";
 
-export type ExerciseLogResult = "did" | "partial" | "could_not";
+export type ExerciseLogResult = "did" | "partial";
 
 export type ExerciseIntensity = "low" | "medium" | "high";
 

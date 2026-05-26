@@ -10,6 +10,7 @@ type RecommendedExerciseCardProps = {
   result: ExerciseLogResult | null;
   watchHref: string;
   onLog: (result: ExerciseLogResult) => void;
+  onClear: () => void;
 };
 
 export function RecommendedExerciseCard({
@@ -17,6 +18,7 @@ export function RecommendedExerciseCard({
   result,
   watchHref,
   onLog,
+  onClear,
 }: RecommendedExerciseCardProps) {
   const { t, formatIntensity } = useTranslation();
   const headingId = `recommendation-${exercise.id}`;
@@ -54,7 +56,7 @@ export function RecommendedExerciseCard({
         </div>
       </dl>
 
-      <ExerciseLogActions result={result} onLog={onLog} />
+      <ExerciseLogActions result={result} onLog={onLog} onClear={onClear} />
     </article>
   );
 }

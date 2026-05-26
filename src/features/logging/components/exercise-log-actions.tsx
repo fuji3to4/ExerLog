@@ -4,15 +4,15 @@ import type { ExerciseLogResult } from "@/lib/types";
 type ExerciseLogActionsProps = {
   result: ExerciseLogResult | null;
   onLog: (result: ExerciseLogResult) => void;
+  onClear: () => void;
 };
 
-export function ExerciseLogActions({ result, onLog }: ExerciseLogActionsProps) {
+export function ExerciseLogActions({ result, onLog, onClear }: ExerciseLogActionsProps) {
   const { t } = useTranslation();
 
   const logActions: Array<{ label: string; value: ExerciseLogResult }> = [
     { label: t("result_did"), value: "did" },
     { label: t("result_partial"), value: "partial" },
-    { label: t("result_couldnt"), value: "could_not" },
   ];
 
   function getSavedStateLabel(result: ExerciseLogResult | null) {
@@ -22,10 +22,6 @@ export function ExerciseLogActions({ result, onLog }: ExerciseLogActionsProps) {
 
     if (result === "partial") {
       return t("result_saved_partial");
-    }
-
-    if (result === "could_not") {
-      return t("result_saved_couldnt");
     }
 
     return t("result_not_logged");
@@ -45,6 +41,14 @@ export function ExerciseLogActions({ result, onLog }: ExerciseLogActionsProps) {
             {action.label}
           </button>
         ))}
+        <button
+          type="button"
+          className="exercise-log-actions__button"
+          aria-pressed={false}
+          onClick={onClear}
+        >
+          {t("result_couldnt")}
+        </button>
       </div>
       <p className="exercise-log-actions__status" aria-live="polite">
         {getSavedStateLabel(result)}

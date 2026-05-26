@@ -20,7 +20,7 @@ test("renders a derived thumbnail image when a YouTube exercise has no stored th
   };
 
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={exercise} result={null} watchHref="/watch" onLog={vi.fn()} />,
+    <RecommendedExerciseCard exercise={exercise} result={null} watchHref="/watch" onLog={vi.fn()} onClear={vi.fn()} />,
   );
 
   expect(screen.getByRole("img", { name: /blank thumbnail exercise/i })).toHaveAttribute(
@@ -38,6 +38,7 @@ test("uses the watch destination provided by the container", () => {
       result={null}
       watchHref="/custom-watch-path"
       onLog={vi.fn()}
+      onClear={vi.fn()}
     />,
     { initialLanguage: "en" }
   );
@@ -54,6 +55,7 @@ test("translates metadata labels and actions while keeping exercise title raw", 
       result={null}
       watchHref="/custom-watch-path"
       onLog={vi.fn()}
+      onClear={vi.fn()}
     />,
   );
 

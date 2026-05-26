@@ -6,13 +6,13 @@ import { appDb } from "@/features/storage/app-db";
 import { listExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { listAllSelfCareItems } from "@/features/storage/self-care-catalog.repository";
-import type { MetricType } from "@/lib/types";
+import type { ExerciseLogResult, MetricType } from "@/lib/types";
 
 type HistoryDayLog = {
   id: string;
   exerciseId: string;
   title: string;
-  result: "did" | "partial" | "could_not";
+  result: ExerciseLogResult;
   loggedAt: string;
 };
 

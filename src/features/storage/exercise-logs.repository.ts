@@ -35,6 +35,10 @@ export function deleteExerciseLog(id: string): Promise<void> {
   return appDb.logs.delete(id);
 }
 
+export async function deleteExerciseLogByDateAndExercise(date: string, exerciseId: string): Promise<void> {
+  await appDb.logs.where("[date+exerciseId]").equals([date, exerciseId]).delete();
+}
+
 export function clearAllExerciseLogs(): Promise<void> {
   return appDb.logs.clear();
 }

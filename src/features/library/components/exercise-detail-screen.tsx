@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
-import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { deleteExerciseLogByDateAndExercise, listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
 import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
@@ -57,6 +57,14 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
     [exercise.id],
   );
 
+  const handleClear = useCallback(async () => {
+    const currentDayKey = toDayKey(new Date());
+
+    setResult(null);
+
+    await deleteExerciseLogByDateAndExercise(currentDayKey, exercise.id);
+  }, [exercise.id]);
+
   return (
     <section className="card exercise-detail">
       {thumbnailUrl ? (
@@ -99,7 +107,7 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
           <p>{t("detail_loading_text")}</p>
         </div>
       ) : (
-        <ExerciseLogActions result={result} onLog={(nextResult) => void handleLog(nextResult)} />
+        <ExerciseLogActions result={result} onLog={(nextResult) => void handleLog(nextResult)} onClear={() => void handleClear()} />
       )}
     </section>
   );

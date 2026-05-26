@@ -55,6 +55,20 @@ export class AppDb extends Dexie {
           }
         });
       });
+
+    this.version(4)
+      .stores({
+        logs: "++id, date, exerciseId, result, loggedAt, &[date+exerciseId]",
+        conditions: "date, conditionLevel, note, updatedAt",
+        exercises: "id, title, bodyArea, purpose, durationMinutes, intensity",
+        dailyWellness: "date, physicalScore, mentalScore, updatedAt",
+        dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",
+        selfCareCatalog: "id, sortOrder, isArchived",
+        dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      })
+      .upgrade(async (tx) => {
+        await tx.table("logs").where("result").equals("could_not").delete();
+      });
   }
 }
 

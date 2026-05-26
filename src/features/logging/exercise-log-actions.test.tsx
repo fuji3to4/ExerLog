@@ -9,8 +9,9 @@ import { ExerciseLogActions } from "./components/exercise-log-actions";
 test("shows all shared logging actions and the current saved state", async () => {
   const user = userEvent.setup();
   const onLog = vi.fn();
+  const onClear = vi.fn();
 
-  renderWithLanguage(<ExerciseLogActions result="partial" onLog={onLog} />, { initialLanguage: "en" });
+  renderWithLanguage(<ExerciseLogActions result="partial" onLog={onLog} onClear={onClear} />, { initialLanguage: "en" });
 
   const didItButton = screen.getByRole("button", { name: /did it/i });
   const partlyButton = screen.getByRole("button", { name: /partly/i });
@@ -23,11 +24,12 @@ test("shows all shared logging actions and the current saved state", async () =>
 
   await user.click(couldntButton);
 
-  expect(onLog).toHaveBeenCalledWith("could_not");
+  expect(onClear).toHaveBeenCalledOnce();
+  expect(onLog).not.toHaveBeenCalled();
 });
 
 test("translates logging buttons and saved state text", () => {
-  renderWithLanguage(<ExerciseLogActions result="did" onLog={vi.fn()} />);
+  renderWithLanguage(<ExerciseLogActions result="did" onLog={vi.fn()} onClear={vi.fn()} />);
 
   const buttons = screen.getAllByRole("button");
   expect(buttons[0]).toHaveTextContent("できた");

@@ -29,6 +29,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
     setNote,
     saveCondition,
     logExercise,
+    clearExercise,
   } = useTodayData(date);
 
   return (
@@ -70,6 +71,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
               result={logResults[exercise.id] ?? null}
               watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
               onLog={(result) => void logExercise(exercise.id, result)}
+              onClear={() => void clearExercise(exercise.id)}
             />
           ))}
         </div>
