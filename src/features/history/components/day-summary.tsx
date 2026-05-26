@@ -438,6 +438,8 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
   async function handleSaveMetric() {
     if (!editingMetric || !selectedDate) return;
 
+    if (editingMetric.value.trim() === "") return;
+
     const value = Number(editingMetric.value);
     if (!Number.isFinite(value)) return;
 

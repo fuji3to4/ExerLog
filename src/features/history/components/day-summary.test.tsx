@@ -32,6 +32,7 @@ vi.mock("@/lib/date/local-iso", () => ({
 }));
 
 beforeEach(() => {
+  vi.clearAllMocks();
   HTMLDialogElement.prototype.showModal = vi.fn(function showModal(this: HTMLDialogElement) {
     this.setAttribute("open", "");
   });
@@ -209,6 +210,30 @@ describe("DaySummary timestamps", () => {
       unit: "cm",
     });
     await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
+  });
+
+  it("does not call upsertDailyMetric when the metric input is empty", async () => {
+    const user = userEvent.setup();
+    const onChanged = vi.fn();
+
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            metrics: [{ metricType: "weight", value: 62, unit: "kg" }],
+          })}
+          onChanged={onChanged}
+        />,
+      );
+    });
+
+    await user.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    await user.click(screen.getByRole("button", { name: "history_metrics_add_height" }));
+    await user.click(screen.getByRole("button", { name: "history_edit_save" }));
+
+    expect(upsertDailyMetric).not.toHaveBeenCalled();
+    expect(onChanged).not.toHaveBeenCalled();
   });
 
   it("calls deleteDailyMetric for individual metric deletion", async () => {
