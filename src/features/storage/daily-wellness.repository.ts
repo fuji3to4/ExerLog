@@ -28,3 +28,7 @@ export function saveDailyWellness(input: SaveDailyWellnessInput) {
     updatedAt: localIsoNow(),
   });
 }
+
+export function deleteDailyWellness(date: string) {
+  return appDb.dailyWellness.delete(date);
+}

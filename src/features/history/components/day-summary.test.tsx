@@ -1,6 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, within, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, within, act, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { DaySummary } from "./day-summary";
+import { upsertDailyMetric, deleteDailyMetric } from "@/features/storage/daily-metrics.repository";
+import { deleteDailyWellness } from "@/features/storage/daily-wellness.repository";
 
 vi.mock("@/features/i18n/use-translation", () => ({
   useTranslation: () => ({ t: (k: string) => k }),
@@ -13,12 +16,30 @@ vi.mock("@/features/storage/daily-condition.repository", () => ({
   deleteDailyCondition: vi.fn(),
   updateDailyCondition: vi.fn(),
 }));
+vi.mock("@/features/storage/daily-metrics.repository", () => ({
+  upsertDailyMetric: vi.fn(),
+  deleteDailyMetric: vi.fn(),
+}));
+vi.mock("@/features/storage/daily-wellness.repository", () => ({
+  saveDailyWellness: vi.fn(),
+  deleteDailyWellness: vi.fn(),
+}));
 vi.mock("@/features/storage/exercise-catalog.repository", () => ({
   listAllExercises: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("@/lib/date/local-iso", () => ({
   localIsoNow: vi.fn().mockReturnValue("2024-01-15T09:00:00+09:00"),
 }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  HTMLDialogElement.prototype.showModal = vi.fn(function showModal(this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function close(this: HTMLDialogElement) {
+    this.removeAttribute("open");
+  });
+});
 
 const baseLog = {
   id: "log1",
@@ -118,5 +139,152 @@ describe("DaySummary timestamps", () => {
     expect(screen.getByText(/self_care_count_label: 1/i)).toBeInTheDocument();
     expect(screen.getByText(/self_care_minutes_label: 10/i)).toBeInTheDocument();
     expect(screen.getByText("Loosened up")).toBeInTheDocument();
+  });
+
+  it("defaults to view mode and hides action buttons", async () => {
+    await act(async () => {
+      render(<DaySummary selectedDate="2024-01-15" summary={makeSummary()} />);
+    });
+
+    expect(screen.getByRole("checkbox", { name: "history_mode_edit" })).not.toBeChecked();
+    expect(screen.getByText("history_mode_view")).toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: "action_edit" })).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: "action_delete" })).toHaveLength(0);
+  });
+
+  it("shows action buttons after switching to edit mode via switch", async () => {
+    await act(async () => {
+      render(<DaySummary selectedDate="2024-01-15" summary={makeSummary()} />);
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+
+    expect(screen.getByRole("checkbox", { name: "history_mode_edit" })).toBeChecked();
+    expect(screen.getByText("history_mode_edit")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "action_edit" }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByRole("button", { name: "action_delete" }).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("shows metric add controls when metric missing in edit mode", async () => {
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            metrics: [{ metricType: "weight", value: 62, unit: "kg" }],
+          })}
+        />,
+      );
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+
+    expect(screen.getByRole("button", { name: "history_metrics_add_height" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "history_metrics_add_body_fat" })).toBeInTheDocument();
+  });
+
+  it("calls upsertDailyMetric and onChanged when adding a metric", async () => {
+    const user = userEvent.setup();
+    const onChanged = vi.fn();
+
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            metrics: [{ metricType: "weight", value: 62, unit: "kg" }],
+          })}
+          onChanged={onChanged}
+        />,
+      );
+    });
+
+    await user.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    await user.click(screen.getByRole("button", { name: "history_metrics_add_height" }));
+    await user.type(screen.getByLabelText("self_care_metric_height"), "170");
+    await user.click(screen.getByRole("button", { name: "history_edit_save" }));
+
+    expect(upsertDailyMetric).toHaveBeenCalledWith("2024-01-15", {
+      metricType: "height",
+      value: 170,
+      unit: "cm",
+    });
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
+  });
+
+  it("does not call upsertDailyMetric when the metric input is empty", async () => {
+    const user = userEvent.setup();
+    const onChanged = vi.fn();
+
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            metrics: [{ metricType: "weight", value: 62, unit: "kg" }],
+          })}
+          onChanged={onChanged}
+        />,
+      );
+    });
+
+    await user.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    await user.click(screen.getByRole("button", { name: "history_metrics_add_height" }));
+    await user.click(screen.getByRole("button", { name: "history_edit_save" }));
+
+    expect(upsertDailyMetric).not.toHaveBeenCalled();
+    expect(onChanged).not.toHaveBeenCalled();
+  });
+
+  it("calls deleteDailyMetric for individual metric deletion", async () => {
+    const onChanged = vi.fn();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            metrics: [{ metricType: "weight", value: 62, unit: "kg" }],
+          })}
+          onChanged={onChanged}
+        />,
+      );
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "history_metrics_delete_weight" }));
+
+    expect(confirmSpy).toHaveBeenCalledWith("history_metric_delete_confirm");
+    expect(deleteDailyMetric).toHaveBeenCalledWith("2024-01-15", "weight");
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
+  });
+
+  it("calls deleteDailyWellness when deleting wellness", async () => {
+    const onChanged = vi.fn();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    await act(async () => {
+      render(
+        <DaySummary
+          selectedDate="2024-01-15"
+          summary={makeSummary({
+            wellness: {
+              physicalScore: 4,
+              mentalScore: 3,
+              note: "Feeling steady",
+            },
+          })}
+          onChanged={onChanged}
+        />,
+      );
+    });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "history_wellness_delete" }));
+
+    expect(confirmSpy).toHaveBeenCalledWith("history_wellness_delete_confirm");
+    expect(deleteDailyWellness).toHaveBeenCalledWith("2024-01-15");
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
   });
 });

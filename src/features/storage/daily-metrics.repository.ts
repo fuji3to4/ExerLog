@@ -9,6 +9,29 @@ export function listDailyMetricsByDate(date: string) {
   return appDb.dailyMetrics.where("date").equals(date).sortBy("metricType");
 }
 
+export async function upsertDailyMetric(date: string, metric: MetricDraft) {
+  return appDb.transaction("rw", appDb.dailyMetrics, async () => {
+    const existing = await appDb.dailyMetrics
+      .where("[date+metricType]")
+      .equals([date, metric.metricType])
+      .first();
+
+    return appDb.dailyMetrics.put({
+      id: existing?.id ?? crypto.randomUUID(),
+      date,
+      ...metric,
+      recordedAt: localIsoNow(),
+    });
+  });
+}
+
+export function deleteDailyMetric(
+  date: string,
+  metricType: DailyMetricEntry["metricType"],
+) {
+  return appDb.dailyMetrics.where("[date+metricType]").equals([date, metricType]).delete();
+}
+
 export async function replaceDailyMetrics(date: string, metrics: MetricDraft[]) {
   return appDb.transaction("rw", appDb.dailyMetrics, async () => {
     await appDb.dailyMetrics.where("date").equals(date).delete();
