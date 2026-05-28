@@ -564,8 +564,8 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
                     className="day-summary__action-btn"
                     onClick={() =>
                       setEditingWellness({
-                        physicalScore: wellness.physicalScore as WellnessScore,
-                        mentalScore: wellness.mentalScore as WellnessScore,
+                        physicalScore: wellness.physicalScore,
+                        mentalScore: wellness.mentalScore,
                         note: wellness.note ?? "",
                       })
                     }
