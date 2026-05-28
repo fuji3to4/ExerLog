@@ -55,27 +55,28 @@ function expectDeclaration(
   );
 }
 
-function expectBlockToContainAll(block: string, values: string[]) {
-  for (const value of values) {
-    expect(block).toContain(value);
-  }
+function getGlobalsCss() {
+  return readGlobalsCss();
 }
 
-const globalsCss = readGlobalsCss();
-const rootBlock = getCssBlock(globalsCss, ":root");
+function getRootBlock() {
+  return getCssBlock(getGlobalsCss(), ":root");
+}
 
 describe("globals.css warm theme contract", () => {
-  test("defines warm theme tokens in :root", () => {
-    expectBlockToContainAll(rootBlock, [
-      "--bg-soft",
-      "--surface-soft",
-      "--text-strong",
-      "--accent-strong",
-      "--nav-surface",
-    ]);
+  test("defines warm theme token values in :root", () => {
+    const rootBlock = getRootBlock();
+
+    expectDeclaration(rootBlock, "--bg-soft", "#f4f7fb");
+    expectDeclaration(rootBlock, "--surface-soft", "#ffffff");
+    expectDeclaration(rootBlock, "--text-strong", "#14213d");
+    expectDeclaration(rootBlock, "--accent-strong", "#14213d");
+    expectDeclaration(rootBlock, "--nav-surface", "rgba(20, 33, 61, 0.96)");
   });
 
   test("uses theme tokens in body/card/primary button styles", () => {
+    const globalsCss = getGlobalsCss();
+
     expectDeclaration(
       getCssBlock(globalsCss, "body", {
         matches: (block) => block.includes("background:"),
@@ -98,6 +99,8 @@ describe("globals.css warm theme contract", () => {
   });
 
   test("covers bottom nav colors and active state readability", () => {
+    const globalsCss = getGlobalsCss();
+
     const navBlock = getCssBlock(globalsCss, ".bottom-nav");
     const navLinkBlock = getCssBlock(globalsCss, ".bottom-nav__link");
     const activeNavLinkBlock = getCssBlock(
