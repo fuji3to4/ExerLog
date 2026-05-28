@@ -39,8 +39,12 @@ function normalizeWhitespace(value: string) {
 }
 
 function getDeclarationValue(block: string, property: string) {
-  const declarationPattern = new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*([^;]+)`, "i");
-  const match = block.match(declarationPattern);
+  const declarationPattern = new RegExp(
+    `(?:^|;)\\s*${property}\\s*:\\s*([^;]+)`,
+    "ig",
+  );
+  const matches = [...block.matchAll(declarationPattern)];
+  const match = matches.at(-1);
 
   return match?.[1] ? normalizeWhitespace(match[1]) : undefined;
 }
@@ -73,6 +77,8 @@ describe("globals.css warm theme contract", () => {
     expectDeclaration(rootBlock, "--text-strong", "#3b2f2a");
     expectDeclaration(rootBlock, "--accent-strong", "#9a5c49");
     expectDeclaration(rootBlock, "--nav-surface", "#fdf4ee");
+    expectDeclaration(rootBlock, "--nav-text", "#5e4137");
+    expectDeclaration(rootBlock, "--accent-soft", "#edd9ce");
   });
 
   test("uses theme tokens in body/card/primary button styles", () => {
