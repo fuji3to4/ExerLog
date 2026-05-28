@@ -182,6 +182,97 @@ describe("globals.css warm theme contract", () => {
       "background",
       "var(--accent-strong)",
     );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".bottom-nav", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "background",
+      "var(--nav-surface)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".bottom-nav", {
+        matches: (block) => block.includes("box-shadow:"),
+      }),
+      "box-shadow",
+      "0 18px 36px rgba(149, 92, 73, 0.22)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".bottom-nav", {
+        matches: (block) => block.includes("border:"),
+      }),
+      "border",
+      "1px solid var(--border-soft)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".bottom-nav__link", {
+        matches: (block) => block.includes("color:"),
+      }),
+      "color",
+      "var(--nav-text)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".bottom-nav__link[aria-current=\"page\"]", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "background",
+      "var(--accent-soft)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".bottom-nav__link[aria-current=\"page\"]", {
+        matches: (block) => block.includes("color:"),
+      }),
+      "color",
+      "var(--text-strong)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".data-management__status", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "background",
+      "var(--success-bg)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".data-management__status", {
+        matches: (block) => block.includes("color:"),
+      }),
+      "color",
+      "var(--success-text)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".data-management__status--error", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "background",
+      "var(--danger-bg)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".data-management__status--error", {
+        matches: (block) => block.includes("color:"),
+      }),
+      "color",
+      "var(--danger-text)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".modal__field input:focus", {
+        matches: (block) => block.includes("outline:"),
+      }),
+      "outline",
+      "2px solid var(--focus-ring)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, "#metric-selector:focus", {
+        matches: (block) => block.includes("outline:"),
+      }),
+      "outline",
+      "2px solid var(--focus-ring)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".self-care-log-card__field select:focus", {
+        matches: (block) => block.includes("outline:"),
+      }),
+      "outline",
+      "2px solid var(--focus-ring)",
+    );
   });
 
 });
