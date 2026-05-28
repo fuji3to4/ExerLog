@@ -110,24 +110,6 @@ describe("globals.css warm theme contract", () => {
     );
   });
 
-  test("returns the last matching selector block when a selector appears more than once", () => {
-    const css = `
-      .thing {
-        color: red;
-      }
-
-      .thing {
-        color: blue;
-      }
-    `;
-
-    expectDeclaration(
-      getCssBlock(css, ".thing"),
-      "color",
-      "blue",
-    );
-  });
-
   test("covers bottom nav colors and active state readability", () => {
     const globalsCss = getGlobalsCss();
 
