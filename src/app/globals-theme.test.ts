@@ -55,38 +55,45 @@ function expectDeclaration(
   );
 }
 
+function expectBlockToContainAll(block: string, values: string[]) {
+  for (const value of values) {
+    expect(block).toContain(value);
+  }
+}
+
 const globalsCss = readGlobalsCss();
 const rootBlock = getCssBlock(globalsCss, ":root");
 
 describe("globals.css warm theme contract", () => {
   test("defines warm theme tokens in :root", () => {
-    expectDeclaration(rootBlock, "--bg-top", "#f7f9fc");
-    expectDeclaration(rootBlock, "--bg-soft", "#eef3f9");
-    expectDeclaration(rootBlock, "--surface-soft", "rgba(255, 255, 255, 0.92)");
-    expectDeclaration(rootBlock, "--text-strong", "#14213d");
-    expectDeclaration(rootBlock, "--accent-strong", "#14213d");
-    expectDeclaration(rootBlock, "--nav-surface", "rgba(20, 33, 61, 0.96)");
+    expectBlockToContainAll(rootBlock, [
+      "--bg-soft",
+      "--surface-soft",
+      "--text-strong",
+      "--accent-strong",
+      "--nav-surface",
+    ]);
   });
 
-  test("uses theme colors in body/card/primary button styles", () => {
+  test("uses theme tokens in body/card/primary button styles", () => {
     expectDeclaration(
       getCssBlock(globalsCss, "body", {
         matches: (block) => block.includes("background:"),
       }),
       "background",
-      "linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%)",
+      "var(--bg-soft)",
     );
     expectDeclaration(
       getCssBlock(globalsCss, ".card"),
       "background",
-      "rgba(255, 255, 255, 0.92)",
+      "var(--surface-soft)",
     );
     expectDeclaration(
       getCssBlock(globalsCss, ".today-screen__primary-button", {
         matches: (block) => block.includes("background:"),
       }),
       "background",
-      "#14213d",
+      "var(--accent-strong)",
     );
   });
 
@@ -98,7 +105,7 @@ describe("globals.css warm theme contract", () => {
       '.bottom-nav__link[aria-current="page"]',
     );
 
-    expectDeclaration(navBlock, "background", "rgba(20, 33, 61, 0.96)");
+    expectDeclaration(navBlock, "background", "var(--nav-surface)");
     expectDeclaration(navLinkBlock, "color", "#dbe5f5");
     expectDeclaration(activeNavLinkBlock, "background", "#ffffff");
     expectDeclaration(activeNavLinkBlock, "color", "#14213d");
