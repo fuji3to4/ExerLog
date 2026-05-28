@@ -347,9 +347,9 @@ button {
 }
 
 .exercise-log-actions__button.is-selected {
-  background: #14213d;
+  background: var(--accent-strong);
   color: #ffffff;
-  border-color: #14213d;
+  border-color: var(--accent-strong);
 }
 
 .exercise-log-actions__status {

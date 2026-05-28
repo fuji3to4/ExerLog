@@ -140,6 +140,13 @@ describe("globals.css warm theme contract", () => {
       "background",
       "var(--accent-strong)",
     );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".exercise-log-actions__button.is-selected", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "background",
+      "var(--accent-strong)",
+    );
   });
 
 });
