@@ -13,6 +13,7 @@ import { listAllExercises } from "@/features/storage/exercise-catalog.repository
 import type { ConditionLevel, ExerciseLogResult, ExerciseVideo, MetricType, WellnessScore } from "@/lib/types";
 
 import type { HistoryDaySummary } from "../history-query";
+import { WellnessScoreInput } from "@/features/self-care/components/wellness-score-input";
 
 type DaySummaryProps = {
   selectedDate: string | null;
@@ -62,14 +63,7 @@ function getMetricLabelKey(metricType: MetricType) {
   return "self_care_metric_body_fat";
 }
 
-function toWellnessScore(value: number): WellnessScore {
-  const roundedValue = Math.round(value);
 
-  if (roundedValue <= 1) return 1;
-  if (roundedValue >= 5) return 5;
-
-  return roundedValue as WellnessScore;
-}
 
 function EditLogModal({
   state,
@@ -298,36 +292,20 @@ function EditWellnessModal({
         <h2>{t("history_wellness_heading")}</h2>
 
         <div className="modal__field">
-          <label htmlFor="edit-wellness-physical">{t("self_care_physical_label")}</label>
-          <input
-            id="edit-wellness-physical"
-            type="number"
-            min={1}
-            max={5}
+          <span>{t("self_care_physical_label")}</span>
+          <WellnessScoreInput
+            label={t("self_care_physical_label")}
             value={state.physicalScore}
-            onChange={(e) =>
-              onChange({
-                ...state,
-                physicalScore: toWellnessScore(Number(e.target.value)),
-              })
-            }
+            onChange={(score) => onChange({ ...state, physicalScore: score })}
           />
         </div>
 
         <div className="modal__field">
-          <label htmlFor="edit-wellness-mental">{t("self_care_mental_label")}</label>
-          <input
-            id="edit-wellness-mental"
-            type="number"
-            min={1}
-            max={5}
+          <span>{t("self_care_mental_label")}</span>
+          <WellnessScoreInput
+            label={t("self_care_mental_label")}
             value={state.mentalScore}
-            onChange={(e) =>
-              onChange({
-                ...state,
-                mentalScore: toWellnessScore(Number(e.target.value)),
-              })
-            }
+            onChange={(score) => onChange({ ...state, mentalScore: score })}
           />
         </div>
 
@@ -586,8 +564,8 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
                     className="day-summary__action-btn"
                     onClick={() =>
                       setEditingWellness({
-                        physicalScore: toWellnessScore(wellness.physicalScore),
-                        mentalScore: toWellnessScore(wellness.mentalScore),
+                        physicalScore: wellness.physicalScore as WellnessScore,
+                        mentalScore: wellness.mentalScore as WellnessScore,
                         note: wellness.note ?? "",
                       })
                     }
