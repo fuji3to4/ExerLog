@@ -67,11 +67,12 @@ describe("globals.css warm theme contract", () => {
   test("defines warm theme token values in :root", () => {
     const rootBlock = getRootBlock();
 
-    expectDeclaration(rootBlock, "--bg-soft", "#f4f7fb");
-    expectDeclaration(rootBlock, "--surface-soft", "#ffffff");
-    expectDeclaration(rootBlock, "--text-strong", "#14213d");
-    expectDeclaration(rootBlock, "--accent-strong", "#14213d");
-    expectDeclaration(rootBlock, "--nav-surface", "rgba(20, 33, 61, 0.96)");
+    expectDeclaration(rootBlock, "--bg-top", "#fff8f4");
+    expectDeclaration(rootBlock, "--bg-soft", "#f8efe8");
+    expectDeclaration(rootBlock, "--surface-soft", "#fffaf6");
+    expectDeclaration(rootBlock, "--text-strong", "#3b2f2a");
+    expectDeclaration(rootBlock, "--accent-strong", "#9a5c49");
+    expectDeclaration(rootBlock, "--nav-surface", "#fdf4ee");
   });
 
   test("uses theme tokens in body/card/primary button styles", () => {
@@ -82,7 +83,7 @@ describe("globals.css warm theme contract", () => {
         matches: (block) => block.includes("background:"),
       }),
       "background",
-      "var(--bg-soft)",
+      "linear-gradient(180deg, var(--bg-top) 0%, var(--bg-soft) 100%)",
     );
     expectDeclaration(
       getCssBlock(globalsCss, ".card"),
@@ -109,8 +110,8 @@ describe("globals.css warm theme contract", () => {
     );
 
     expectDeclaration(navBlock, "background", "var(--nav-surface)");
-    expectDeclaration(navLinkBlock, "color", "#dbe5f5");
-    expectDeclaration(activeNavLinkBlock, "background", "#ffffff");
-    expectDeclaration(activeNavLinkBlock, "color", "#14213d");
+    expectDeclaration(navLinkBlock, "color", "var(--nav-text)");
+    expectDeclaration(activeNavLinkBlock, "background", "var(--accent-soft)");
+    expectDeclaration(activeNavLinkBlock, "color", "var(--text-strong)");
   });
 });
