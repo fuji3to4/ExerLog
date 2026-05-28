@@ -11,6 +11,7 @@ function getCssBlock(
   options?: { matches?: (block: string) => boolean },
 ) {
   const rulePattern = /(^|\n)\s*([^{}]+?)\s*\{\s*([^{}]*?)\s*\}/gms;
+  let lastBlock: string | undefined;
 
   for (const match of css.matchAll(rulePattern)) {
     const selectors = match[2]
@@ -25,8 +26,12 @@ function getCssBlock(
     const block = match[3].trim();
 
     if (!options?.matches || options.matches(block)) {
-      return block;
+      lastBlock = block;
     }
+  }
+
+  if (lastBlock !== undefined) {
+    return lastBlock;
   }
 
   throw new Error(
@@ -102,6 +107,24 @@ describe("globals.css warm theme contract", () => {
       }),
       "background",
       "var(--accent-strong)",
+    );
+  });
+
+  test("returns the last matching selector block when a selector appears more than once", () => {
+    const css = `
+      .thing {
+        color: red;
+      }
+
+      .thing {
+        color: blue;
+      }
+    `;
+
+    expectDeclaration(
+      getCssBlock(css, ".thing"),
+      "color",
+      "blue",
     );
   });
 
