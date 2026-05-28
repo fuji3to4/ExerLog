@@ -273,6 +273,34 @@ describe("globals.css warm theme contract", () => {
       "outline",
       "2px solid var(--focus-ring)",
     );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".library-filters__field input:focus", {
+        matches: (block) => block.includes("outline:"),
+      }),
+      "outline",
+      "2px solid var(--focus-ring)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".library-filters__field input:focus", {
+        matches: (block) => block.includes("outline-offset:"),
+      }),
+      "outline-offset",
+      "2px",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".library-filters__field select:focus", {
+        matches: (block) => block.includes("outline:"),
+      }),
+      "outline",
+      "2px solid var(--focus-ring)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".library-filters__field select:focus", {
+        matches: (block) => block.includes("outline-offset:"),
+      }),
+      "outline-offset",
+      "2px",
+    );
   });
 
 });

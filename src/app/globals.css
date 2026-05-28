@@ -395,6 +395,12 @@ button {
   font: inherit;
 }
 
+.library-filters__field input:focus,
+.library-filters__field select:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .exercise-detail__header .today-screen__primary-button {
   max-width: 12rem;
 }
