@@ -94,6 +94,13 @@ describe("globals.css warm theme contract", () => {
     expectDeclaration(rootBlock, "--danger-text", "#b91c1c");
   });
 
+  test("does not include legacy dark bottom-nav hard-coded colors", () => {
+    const globalsCss = getGlobalsCss();
+
+    expect(globalsCss).not.toContain("background: rgba(20, 33, 61, 0.96)");
+    expect(globalsCss).not.toContain("color: #dbe5f5");
+  });
+
   test("uses theme tokens in body/card/button styles", () => {
     const globalsCss = getGlobalsCss();
 
