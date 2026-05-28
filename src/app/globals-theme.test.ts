@@ -7,6 +7,7 @@ function readGlobalsCss() {
 
 function getCssBlock(css: string, selector: string) {
   let selectorStart = 0;
+  let groupedMatch: string | undefined;
 
   for (let i = 0; i < css.length; i += 1) {
     if (css[i] !== "{") {
@@ -32,13 +33,28 @@ function getCssBlock(css: string, selector: string) {
       break;
     }
 
-    if (selectorText !== selector) {
+    const selectors = selectorText.split(",").map((part) => part.trim());
+
+    if (!selectors.includes(selector)) {
       selectorStart = end;
       i = end - 1;
       continue;
     }
 
-    return css.slice(i + 1, end - 1);
+    const block = css.slice(i + 1, end - 1);
+
+    if (selectors.length === 1) {
+      return block;
+    }
+
+    groupedMatch ??= block;
+
+    selectorStart = end;
+    i = end - 1;
+  }
+
+  if (groupedMatch) {
+    return groupedMatch;
   }
 
   throw new Error(`Expected to find a CSS block for "${selector}".`);
@@ -58,7 +74,9 @@ describe("globals.css warm theme contract", () => {
   test("uses tokens in body/card/primary button styles", () => {
     const css = readGlobalsCss();
 
-    expect(getCssBlock(css, "body")).toContain("background: var(--bg-soft)");
+    expect(getCssBlock(css, "body")).toContain(
+      "background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-soft) 100%)",
+    );
     expect(getCssBlock(css, ".card")).toContain(
       "background: var(--surface-soft)",
     );
