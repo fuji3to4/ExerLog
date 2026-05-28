@@ -10,48 +10,20 @@ function getCssBlock(
   selector: string,
   options?: { matches?: (block: string) => boolean },
 ) {
-  let selectorStart = 0;
+  const rulePattern = /(^|\n)\s*([^{}]+?)\s*\{\s*([^{}]*?)\s*\}/gms;
 
-  for (let i = 0; i < css.length; i += 1) {
-    if (css[i] !== "{") {
+  for (const match of css.matchAll(rulePattern)) {
+    const selectorText = match[2].trim();
+
+    if (selectorText !== selector) {
       continue;
     }
 
-    const selectorText = css.slice(selectorStart, i).trim();
-
-    let end = i + 1;
-    let depth = 1;
-
-    while (end < css.length && depth > 0) {
-      if (css[end] === "{") {
-        depth += 1;
-      } else if (css[end] === "}") {
-        depth -= 1;
-      }
-
-      end += 1;
-    }
-
-    if (depth !== 0) {
-      break;
-    }
-
-    const selectors = selectorText.split(",").map((part) => part.trim());
-
-    if (!selectors.includes(selector)) {
-      selectorStart = end;
-      i = end - 1;
-      continue;
-    }
-
-    const block = css.slice(i + 1, end - 1);
+    const block = match[3].trim();
 
     if (!options?.matches || options.matches(block)) {
       return block;
     }
-
-    selectorStart = end;
-    i = end - 1;
   }
 
   throw new Error(
