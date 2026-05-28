@@ -5,9 +5,12 @@ function readGlobalsCss() {
   return readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
 }
 
-function getCssBlock(css: string, selector: string) {
+function getCssBlock(
+  css: string,
+  selector: string,
+  options?: { matches?: (block: string) => boolean },
+) {
   let selectorStart = 0;
-  let groupedMatch: string | undefined;
 
   for (let i = 0; i < css.length; i += 1) {
     if (css[i] !== "{") {
@@ -43,21 +46,17 @@ function getCssBlock(css: string, selector: string) {
 
     const block = css.slice(i + 1, end - 1);
 
-    if (selectors.length === 1) {
+    if (!options?.matches || options.matches(block)) {
       return block;
     }
-
-    groupedMatch ??= block;
 
     selectorStart = end;
     i = end - 1;
   }
 
-  if (groupedMatch) {
-    return groupedMatch;
-  }
-
-  throw new Error(`Expected to find a CSS block for "${selector}".`);
+  throw new Error(
+    `Expected to find a CSS block for "${selector}"${options?.matches ? " matching the provided condition" : ""}.`,
+  );
 }
 
 describe("globals.css warm theme contract", () => {
@@ -80,7 +79,11 @@ describe("globals.css warm theme contract", () => {
     expect(getCssBlock(css, ".card")).toContain(
       "background: var(--surface-soft)",
     );
-    expect(getCssBlock(css, ".today-screen__primary-button")).toContain(
+    expect(
+      getCssBlock(css, ".today-screen__primary-button", {
+        matches: (block) => block.includes("background:"),
+      }),
+    ).toContain(
       "background: var(--accent-strong)",
     );
   });
