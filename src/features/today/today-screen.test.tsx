@@ -32,10 +32,10 @@ test("saves a daily wellness entry and logs an exercise from the home screen", a
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
 
-  const physicalInput = await screen.findByRole("spinbutton", { name: /physical/i });
-  const mentalInput = screen.getByRole("spinbutton", { name: /mental/i });
-  fireEvent.change(physicalInput, { target: { value: "5" } });
-  fireEvent.change(mentalInput, { target: { value: "4" } });
+  const physicalGroup = await screen.findByRole("group", { name: /physical/i });
+  fireEvent.click(within(physicalGroup).getByRole("button", { name: "5" }));
+  const mentalGroup = screen.getByRole("group", { name: /mental/i });
+  fireEvent.click(within(mentalGroup).getByRole("button", { name: "4" }));
   await user.type(screen.getByRole("textbox", { name: /note/i }), "Neck feels better today");
   await user.click(screen.getByRole("button", { name: /save condition/i }));
 
@@ -70,12 +70,12 @@ test("hydrates an existing wellness note and log state on first render", async (
   renderWithLanguage(<TodayScreen date="2026-03-24" />, { initialLanguage: "en" });
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
-  expect(screen.queryByRole("spinbutton", { name: /physical/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("group", { name: /physical/i })).not.toBeInTheDocument();
 
   const neckMobilityCard = await screen.findByRole("article", { name: "Neck Mobility" });
 
-  expect(screen.getByRole("spinbutton", { name: /physical/i })).toHaveValue(2);
-  expect(screen.getByRole("spinbutton", { name: /mental/i })).toHaveValue(1);
+  expect(within(screen.getByRole("group", { name: /physical/i })).getByRole("button", { name: "2" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(screen.getByRole("group", { name: /mental/i })).getByRole("button", { name: "1" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("textbox", { name: /note/i })).toHaveValue("Need a lighter day");
   expect(within(neckMobilityCard).getByRole("button", { name: /partly/i })).toHaveAttribute("aria-pressed", "true");
   expect(within(neckMobilityCard).getByText("Saved: Partly")).toBeInTheDocument();
@@ -111,10 +111,10 @@ test("edits an existing daily wellness entry and updates recommendations", async
   });
   expect(await screen.findByRole("heading", { name: "Breathing Reset" })).toBeInTheDocument();
 
-  const physicalInput = screen.getByRole("spinbutton", { name: /physical/i });
-  const mentalInput = screen.getByRole("spinbutton", { name: /mental/i });
-  fireEvent.change(physicalInput, { target: { value: "1" } });
-  fireEvent.change(mentalInput, { target: { value: "2" } });
+  const physicalGroup = screen.getByRole("group", { name: /physical/i });
+  fireEvent.click(within(physicalGroup).getByRole("button", { name: "1" }));
+  const mentalGroup = screen.getByRole("group", { name: /mental/i });
+  fireEvent.click(within(mentalGroup).getByRole("button", { name: "2" }));
   await user.clear(screen.getByRole("textbox", { name: /note/i }));
   await user.type(screen.getByRole("textbox", { name: /note/i }), "Heavy legs");
   await user.click(screen.getByRole("button", { name: /save condition/i }));
@@ -140,12 +140,30 @@ test("supports keyboard reachability for today controls", async () => {
 
   const seatedCalfRaiseCard = await screen.findByRole("article", { name: "Seated Calf Raise" });
 
+  // Physical score group: 5 buttons (1-5) are all reachable via tab
   await user.tab();
-  expect(screen.getByRole("spinbutton", { name: /physical/i })).toHaveFocus();
+  const physicalGroup = screen.getByRole("group", { name: /physical/i });
+  expect(within(physicalGroup).getByRole("button", { name: "1" })).toHaveFocus();
+
+  // Tab through remaining 4 physical buttons
+  await user.tab();
+  await user.tab();
+  await user.tab();
+  await user.tab();
+  expect(within(physicalGroup).getByRole("button", { name: "5" })).toHaveFocus();
+
+  // Mental score group: 5 more buttons
+  await user.tab();
+  const mentalGroup = screen.getByRole("group", { name: /mental/i });
+  expect(within(mentalGroup).getByRole("button", { name: "1" })).toHaveFocus();
 
   await user.tab();
-  expect(screen.getByRole("spinbutton", { name: /mental/i })).toHaveFocus();
+  await user.tab();
+  await user.tab();
+  await user.tab();
+  expect(within(mentalGroup).getByRole("button", { name: "5" })).toHaveFocus();
 
+  // Note, save, then exercise card link
   await user.tab();
   expect(screen.getByRole("textbox", { name: /note/i })).toHaveFocus();
 

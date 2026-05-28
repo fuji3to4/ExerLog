@@ -37,20 +37,6 @@ function toNullableNumber(value: string): number | null {
   return Number.isFinite(parsedValue) ? parsedValue : null;
 }
 
-function toWellnessScore(value: number): WellnessScore {
-  const roundedValue = Math.round(value);
-
-  if (roundedValue <= 1) {
-    return 1;
-  }
-
-  if (roundedValue >= 5) {
-    return 5;
-  }
-
-  return roundedValue as WellnessScore;
-}
-
 export function useSelfCareData(date: Date | string) {
   const dayKey = useMemo(() => toDayKey(date), [date]);
   const [physicalScore, setPhysicalScoreState] = useState<WellnessScore>(DEFAULT_WELLNESS_SCORE);
