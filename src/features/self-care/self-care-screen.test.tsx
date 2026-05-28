@@ -31,11 +31,14 @@ test("saves only wellness and metrics from the self-care screen", async () => {
 
   const wellnessSection = (await screen.findByRole("heading", { name: /condition/i, level: 2 })).closest("section");
   expect(wellnessSection).not.toBeNull();
-  const [physicalScoreInput, mentalScoreInput, heightInput, weightInput, bodyFatInput] =
-    await screen.findAllByRole("spinbutton");
 
-  fireEvent.change(physicalScoreInput, { target: { value: "4" } });
-  fireEvent.change(mentalScoreInput, { target: { value: "3" } });
+  const physicalGroup = within(wellnessSection!).getByRole("group", { name: /physical/i });
+  fireEvent.click(within(physicalGroup).getByRole("button", { name: "4" }));
+
+  const mentalGroup = within(wellnessSection!).getByRole("group", { name: /mental/i });
+  fireEvent.click(within(mentalGroup).getByRole("button", { name: "3" }));
+
+  const [heightInput, weightInput, bodyFatInput] = await screen.findAllByRole("spinbutton");
   const wellnessNoteInput = within(wellnessSection!).getByRole("textbox", { name: /^note$/i });
   fireEvent.change(wellnessNoteInput, { target: { value: "Slept better after lunch" } });
   fireEvent.change(heightInput, { target: { value: "171" } });
@@ -44,7 +47,7 @@ test("saves only wellness and metrics from the self-care screen", async () => {
 
   expect(screen.queryByRole("checkbox", { name: /did it/i })).not.toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: /save condition/i }));
+  await user.click(screen.getByRole("button", { name: /save check-in/i }));
 
   await waitFor(async () => {
     await expect(getDailyWellness("2026-03-23")).resolves.toMatchObject({
@@ -95,12 +98,13 @@ test("hydrates saved rows on first render", async () => {
 
   const wellnessSection = (await screen.findByRole("heading", { name: /condition/i, level: 2 })).closest("section");
   expect(wellnessSection).not.toBeNull();
-  const [physicalScoreInput, mentalScoreInput, heightInput, weightInput, bodyFatInput] =
-    await screen.findAllByRole("spinbutton");
+  const [heightInput, weightInput, bodyFatInput] = await screen.findAllByRole("spinbutton");
   const wellnessNoteInput = within(wellnessSection!).getByRole("textbox", { name: /^note$/i });
 
-  expect(physicalScoreInput).toHaveValue(5);
-  expect(mentalScoreInput).toHaveValue(2);
+  const physicalGroup = within(wellnessSection!).getByRole("group", { name: /physical/i });
+  const mentalGroup = within(wellnessSection!).getByRole("group", { name: /mental/i });
+  expect(within(physicalGroup).getByRole("button", { name: "5" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(mentalGroup).getByRole("button", { name: "2" })).toHaveAttribute("aria-pressed", "true");
   expect(wellnessNoteInput).toHaveValue("Needed extra rest");
   expect(heightInput).toHaveValue(172);
   expect(weightInput).toHaveValue(63);
@@ -114,6 +118,7 @@ test("renders wellness save controls even when only condition screen translation
   const conditionMessages = {
     self_care_heading: "Condition",
     self_care_subheading: "Review your body and mind, then save a quick wellness check-in.",
+    self_care_save_button: "Save check-in",
     today_loading_heading: "Loading today's log...",
     today_loading_text: "Checking your saved condition and exercise results for this day.",
     condition_heading: "Daily condition",
@@ -123,7 +128,6 @@ test("renders wellness save controls even when only condition screen translation
     result_did: "Did it",
     condition_note_label: "Note",
     condition_note_placeholder: "Add anything worth remembering for today.",
-    condition_save_button: "Save condition",
     settings_form_duration_label: "Duration (minutes)",
   } as Messages;
 
@@ -136,5 +140,5 @@ test("renders wellness save controls even when only condition screen translation
   );
 
   expect(screen.queryByRole("checkbox", { name: /did it/i })).not.toBeInTheDocument();
-  expect(await screen.findByRole("button", { name: /save condition/i })).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: /save check-in/i })).toBeInTheDocument();
 });
