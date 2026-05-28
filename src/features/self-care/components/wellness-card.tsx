@@ -1,13 +1,14 @@
-import type { ChangeEvent } from "react";
-
 import { useTranslation } from "@/features/i18n/use-translation";
+import type { WellnessScore } from "@/lib/types";
+
+import { WellnessScoreInput } from "./wellness-score-input";
 
 type WellnessCardProps = {
-  physicalScore: number;
-  mentalScore: number;
+  physicalScore: WellnessScore;
+  mentalScore: WellnessScore;
   note: string;
-  onPhysicalScoreChange: (value: number) => void;
-  onMentalScoreChange: (value: number) => void;
+  onPhysicalScoreChange: (value: WellnessScore) => void;
+  onMentalScoreChange: (value: WellnessScore) => void;
   onNoteChange: (value: string) => void;
 };
 
@@ -21,41 +22,29 @@ export function WellnessCard({
 }: WellnessCardProps) {
   const { t } = useTranslation();
 
-  function handleScoreChange(
-    event: ChangeEvent<HTMLInputElement>,
-    onChange: (value: number) => void,
-  ) {
-    const nextValue = Number(event.target.value);
-    onChange(Number.isFinite(nextValue) ? nextValue : 1);
-  }
-
   return (
-  <section className="card self-care-screen__section">
-    <div className="self-care-screen__section-heading">
-      <h2>{t("history_condition_heading")}</h2>
-    </div>
+    <section className="card self-care-screen__section">
+      <div className="self-care-screen__section-heading">
+        <h2>{t("history_condition_heading")}</h2>
+      </div>
 
-    <label className="self-care-screen__field">
-      <span>{t("self_care_physical_label")}</span>
-      <input
-        type="number"
-        min={1}
-          max={5}
+      <div className="self-care-screen__field">
+        <span>{t("self_care_physical_label")}</span>
+        <WellnessScoreInput
+          label={t("self_care_physical_label")}
           value={physicalScore}
-          onChange={(event) => handleScoreChange(event, onPhysicalScoreChange)}
+          onChange={onPhysicalScoreChange}
         />
-      </label>
+      </div>
 
-      <label className="self-care-screen__field">
+      <div className="self-care-screen__field">
         <span>{t("self_care_mental_label")}</span>
-        <input
-          type="number"
-          min={1}
-          max={5}
+        <WellnessScoreInput
+          label={t("self_care_mental_label")}
           value={mentalScore}
-          onChange={(event) => handleScoreChange(event, onMentalScoreChange)}
+          onChange={onMentalScoreChange}
         />
-      </label>
+      </div>
 
       <label className="self-care-screen__field">
         <span>{t("condition_note_label")}</span>

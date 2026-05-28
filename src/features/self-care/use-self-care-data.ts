@@ -92,12 +92,12 @@ export function useSelfCareData(date: Date | string) {
     };
   }, [dayKey]);
 
-  const setPhysicalScore = useCallback((value: number) => {
-    setPhysicalScoreState(toWellnessScore(value));
+  const setPhysicalScore = useCallback((value: WellnessScore) => {
+    setPhysicalScoreState(value);
   }, []);
 
-  const setMentalScore = useCallback((value: number) => {
-    setMentalScoreState(toWellnessScore(value));
+  const setMentalScore = useCallback((value: WellnessScore) => {
+    setMentalScoreState(value);
   }, []);
 
   const setMetric = useCallback((metricType: MetricType, value: string) => {
