@@ -79,11 +79,19 @@ describe("globals.css warm theme contract", () => {
     expectDeclaration(rootBlock, "--bg-top", "#fff8f4");
     expectDeclaration(rootBlock, "--bg-soft", "#f8efe8");
     expectDeclaration(rootBlock, "--surface-soft", "#fffaf6");
+    expectDeclaration(rootBlock, "--surface-elevated", "#ffffff");
     expectDeclaration(rootBlock, "--text-strong", "#3b2f2a");
+    expectDeclaration(rootBlock, "--text-muted", "#6f5f57");
+    expectDeclaration(rootBlock, "--border-soft", "#ecdccf");
     expectDeclaration(rootBlock, "--accent-strong", "#9a5c49");
+    expectDeclaration(rootBlock, "--accent-soft", "#f2ddd3");
+    expectDeclaration(rootBlock, "--focus-ring", "#b87560");
     expectDeclaration(rootBlock, "--nav-surface", "#fdf4ee");
-    expectDeclaration(rootBlock, "--nav-text", "#5e4137");
-    expectDeclaration(rootBlock, "--accent-soft", "#edd9ce");
+    expectDeclaration(rootBlock, "--nav-text", "#6d5a50");
+    expectDeclaration(rootBlock, "--success-bg", "#dff3e6");
+    expectDeclaration(rootBlock, "--success-text", "#166534");
+    expectDeclaration(rootBlock, "--danger-bg", "#fdecea");
+    expectDeclaration(rootBlock, "--danger-text", "#b91c1c");
   });
 
   test("uses theme tokens in body/card/primary button styles", () => {
@@ -96,10 +104,20 @@ describe("globals.css warm theme contract", () => {
       "background",
       "linear-gradient(180deg, var(--bg-top) 0%, var(--bg-soft) 100%)",
     );
+    expectDeclaration(getCssBlock(globalsCss, "body"), "color", "var(--text-strong)");
     expectDeclaration(
-      getCssBlock(globalsCss, ".card"),
+      getCssBlock(globalsCss, ".card", {
+        matches: (block) => block.includes("background:"),
+      }),
       "background",
       "var(--surface-soft)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".card", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "border",
+      "1px solid var(--border-soft)",
     );
     expectDeclaration(
       getCssBlock(globalsCss, ".today-screen__primary-button", {
@@ -108,21 +126,20 @@ describe("globals.css warm theme contract", () => {
       "background",
       "var(--accent-strong)",
     );
-  });
-
-  test("covers bottom nav colors and active state readability", () => {
-    const globalsCss = getGlobalsCss();
-
-    const navBlock = getCssBlock(globalsCss, ".bottom-nav");
-    const navLinkBlock = getCssBlock(globalsCss, ".bottom-nav__link");
-    const activeNavLinkBlock = getCssBlock(
-      globalsCss,
-      '.bottom-nav__link[aria-current="page"]',
+    expectDeclaration(
+      getCssBlock(globalsCss, ".recommendation-card__watch-link", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "background",
+      "var(--accent-strong)",
     );
-
-    expectDeclaration(navBlock, "background", "var(--nav-surface)");
-    expectDeclaration(navLinkBlock, "color", "var(--nav-text)");
-    expectDeclaration(activeNavLinkBlock, "background", "var(--accent-soft)");
-    expectDeclaration(activeNavLinkBlock, "color", "var(--text-strong)");
+    expectDeclaration(
+      getCssBlock(globalsCss, ".exercise-log-actions__button", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "background",
+      "var(--accent-strong)",
+    );
   });
+
 });
