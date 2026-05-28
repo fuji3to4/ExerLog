@@ -5,30 +5,73 @@ function readGlobalsCss() {
   return readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
 }
 
+function getCssBlock(css: string, selector: string) {
+  let selectorStart = 0;
+
+  for (let i = 0; i < css.length; i += 1) {
+    if (css[i] !== "{") {
+      continue;
+    }
+
+    const selectorText = css.slice(selectorStart, i).trim();
+
+    let end = i + 1;
+    let depth = 1;
+
+    while (end < css.length && depth > 0) {
+      if (css[end] === "{") {
+        depth += 1;
+      } else if (css[end] === "}") {
+        depth -= 1;
+      }
+
+      end += 1;
+    }
+
+    if (depth !== 0) {
+      break;
+    }
+
+    if (selectorText !== selector) {
+      selectorStart = end;
+      i = end - 1;
+      continue;
+    }
+
+    return css.slice(i + 1, end - 1);
+  }
+
+  throw new Error(`Expected to find a CSS block for "${selector}".`);
+}
+
 describe("globals.css warm theme contract", () => {
   test("defines warm theme tokens in :root", () => {
-    const css = readGlobalsCss();
-    expect(css).toContain("--bg-soft:");
-    expect(css).toContain("--surface-soft:");
-    expect(css).toContain("--text-strong:");
-    expect(css).toContain("--accent-strong:");
-    expect(css).toContain("--nav-surface:");
+    const rootBlock = getCssBlock(readGlobalsCss(), ":root");
+
+    expect(rootBlock).toContain("--bg-soft:");
+    expect(rootBlock).toContain("--surface-soft:");
+    expect(rootBlock).toContain("--text-strong:");
+    expect(rootBlock).toContain("--accent-strong:");
+    expect(rootBlock).toContain("--nav-surface:");
   });
 
   test("uses tokens in body/card/primary button styles", () => {
     const css = readGlobalsCss();
-    expect(css).toContain("body {");
-    expect(css).toContain("background: var(--bg-soft)");
-    expect(css).toContain(".card {");
-    expect(css).toContain("background: var(--surface-soft)");
-    expect(css).toContain(".today-screen__primary-button");
-    expect(css).toContain("background: var(--accent-strong)");
+
+    expect(getCssBlock(css, "body")).toContain("background: var(--bg-soft)");
+    expect(getCssBlock(css, ".card")).toContain(
+      "background: var(--surface-soft)",
+    );
+    expect(getCssBlock(css, ".today-screen__primary-button")).toContain(
+      "background: var(--accent-strong)",
+    );
   });
 
   test("declares nav token and applies it in nav block", () => {
-    const css = readGlobalsCss();
-    expect(css).toContain("--nav-surface:");
-    expect(css).toContain(".bottom-nav {");
-    expect(css).toContain("background: var(--nav-surface)");
+    const rootBlock = getCssBlock(readGlobalsCss(), ":root");
+    const navBlock = getCssBlock(readGlobalsCss(), ".bottom-nav");
+
+    expect(rootBlock).toContain("--nav-surface:");
+    expect(navBlock).toContain("background: var(--nav-surface)");
   });
 });
