@@ -7,3 +7,4 @@ docs/memo/
 .vscode/
 public/sw.js
 public/workbox-*.js
+data/
