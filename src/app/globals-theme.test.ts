@@ -94,7 +94,7 @@ describe("globals.css warm theme contract", () => {
     expectDeclaration(rootBlock, "--danger-text", "#b91c1c");
   });
 
-  test("uses theme tokens in body/card/primary button styles", () => {
+  test("uses theme tokens in body/card/button styles", () => {
     const globalsCss = getGlobalsCss();
 
     expectDeclaration(
@@ -124,6 +124,34 @@ describe("globals.css warm theme contract", () => {
         matches: (block) => block.includes("background:"),
       }),
       "background",
+      "var(--accent-strong)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".button-row a", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "background",
+      "var(--accent-strong)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".button-row a", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "color",
+      "var(--surface-elevated)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".button-row .button-secondary", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "background",
+      "var(--accent-soft)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".button-row .button-secondary", {
+        matches: (block) => block.includes("background:"),
+      }),
+      "color",
       "var(--accent-strong)",
     );
     expectDeclaration(

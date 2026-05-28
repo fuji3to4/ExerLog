@@ -144,14 +144,14 @@ button {
   padding: 0.85rem 1rem;
   border: 0;
   border-radius: 999px;
-  background: #14213d;
-  color: #ffffff;
+  background: var(--accent-strong);
+  color: var(--surface-elevated);
   font-weight: 600;
 }
 
 .button-row .button-secondary {
-  background: #e5ecf6;
-  color: #14213d;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .today-screen__date {
