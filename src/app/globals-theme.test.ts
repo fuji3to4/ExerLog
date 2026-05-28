@@ -60,36 +60,47 @@ const rootBlock = getCssBlock(globalsCss, ":root");
 
 describe("globals.css warm theme contract", () => {
   test("defines warm theme tokens in :root", () => {
-    expect(rootBlock).toContain("--bg-soft:");
-    expect(rootBlock).toContain("--surface-soft:");
-    expect(rootBlock).toContain("--text-strong:");
-    expect(rootBlock).toContain("--accent-strong:");
-    expect(rootBlock).toContain("--nav-surface:");
+    expectDeclaration(rootBlock, "--bg-top", "#f7f9fc");
+    expectDeclaration(rootBlock, "--bg-soft", "#eef3f9");
+    expectDeclaration(rootBlock, "--surface-soft", "rgba(255, 255, 255, 0.92)");
+    expectDeclaration(rootBlock, "--text-strong", "#14213d");
+    expectDeclaration(rootBlock, "--accent-strong", "#14213d");
+    expectDeclaration(rootBlock, "--nav-surface", "rgba(20, 33, 61, 0.96)");
   });
 
-  test("uses tokens in body/card/primary button styles", () => {
+  test("uses theme colors in body/card/primary button styles", () => {
     expectDeclaration(
-      getCssBlock(globalsCss, "body"),
+      getCssBlock(globalsCss, "body", {
+        matches: (block) => block.includes("background:"),
+      }),
       "background",
-      "linear-gradient(180deg, var(--bg-top) 0%, var(--bg-soft) 100%)",
+      "linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%)",
     );
     expectDeclaration(
       getCssBlock(globalsCss, ".card"),
       "background",
-      "var(--surface-soft)",
+      "rgba(255, 255, 255, 0.92)",
     );
     expectDeclaration(
       getCssBlock(globalsCss, ".today-screen__primary-button", {
         matches: (block) => block.includes("background:"),
       }),
       "background",
-      "var(--accent-strong)",
+      "#14213d",
     );
   });
 
-  test("declares nav token and applies it in nav block", () => {
+  test("covers bottom nav colors and active state readability", () => {
     const navBlock = getCssBlock(globalsCss, ".bottom-nav");
+    const navLinkBlock = getCssBlock(globalsCss, ".bottom-nav__link");
+    const activeNavLinkBlock = getCssBlock(
+      globalsCss,
+      '.bottom-nav__link[aria-current="page"]',
+    );
 
-    expectDeclaration(navBlock, "background", "var(--nav-surface)");
+    expectDeclaration(navBlock, "background", "rgba(20, 33, 61, 0.96)");
+    expectDeclaration(navLinkBlock, "color", "#dbe5f5");
+    expectDeclaration(activeNavLinkBlock, "background", "#ffffff");
+    expectDeclaration(activeNavLinkBlock, "color", "#14213d");
   });
 });
