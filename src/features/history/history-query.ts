@@ -6,7 +6,7 @@ import { appDb } from "@/features/storage/app-db";
 import { listExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { listAllSelfCareItems } from "@/features/storage/self-care-catalog.repository";
-import type { ExerciseLogResult, MetricType } from "@/lib/types";
+import type { ExerciseLogResult, MetricType, WellnessScore } from "@/lib/types";
 
 type HistoryDayLog = {
   id: string;
@@ -17,8 +17,8 @@ type HistoryDayLog = {
 };
 
 type HistoryDayWellness = {
-  physicalScore: number;
-  mentalScore: number;
+  physicalScore: WellnessScore;
+  mentalScore: WellnessScore;
   note: string;
 };
 
