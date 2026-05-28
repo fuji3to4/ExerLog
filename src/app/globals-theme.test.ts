@@ -13,9 +13,12 @@ function getCssBlock(
   const rulePattern = /(^|\n)\s*([^{}]+?)\s*\{\s*([^{}]*?)\s*\}/gms;
 
   for (const match of css.matchAll(rulePattern)) {
-    const selectorText = match[2].trim();
+    const selectors = match[2]
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
 
-    if (selectorText !== selector) {
+    if (!selectors.includes(selector)) {
       continue;
     }
 
