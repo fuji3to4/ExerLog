@@ -1,7 +1,6 @@
-import type { ChangeEvent } from "react";
-
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { WellnessScore } from "@/lib/types";
+import { WellnessScoreInput } from "@/features/self-care/components/wellness-score-input";
 
 type DailyConditionCardProps = {
   physicalScore: WellnessScore;
@@ -26,24 +25,6 @@ export function DailyConditionCard({
 }: DailyConditionCardProps) {
   const { t } = useTranslation();
 
-  function toWellnessScore(value: string, fallback: WellnessScore): WellnessScore {
-    const numericValue = Number(value);
-
-    if (!Number.isFinite(numericValue)) {
-      return fallback;
-    }
-
-    if (numericValue <= 1) {
-      return 1;
-    }
-
-    if (numericValue >= 5) {
-      return 5;
-    }
-
-    return Math.round(numericValue) as WellnessScore;
-  }
-
   return (
     <section className="card today-screen__section">
       <div className="today-screen__section-heading">
@@ -53,26 +34,22 @@ export function DailyConditionCard({
 
       <fieldset className="condition-card__options">
         <legend>{t("condition_legend")}</legend>
-        <label className="condition-card__option">
+        <div className="condition-card__option">
           <span>{t("self_care_physical_label")}</span>
-          <input
-            type="number"
-            min={1}
-            max={5}
+          <WellnessScoreInput
+            label={t("self_care_physical_label")}
             value={physicalScore}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => onPhysicalScoreChange(toWellnessScore(event.target.value, physicalScore))}
+            onChange={onPhysicalScoreChange}
           />
-        </label>
-        <label className="condition-card__option">
+        </div>
+        <div className="condition-card__option">
           <span>{t("self_care_mental_label")}</span>
-          <input
-            type="number"
-            min={1}
-            max={5}
+          <WellnessScoreInput
+            label={t("self_care_mental_label")}
             value={mentalScore}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => onMentalScoreChange(toWellnessScore(event.target.value, mentalScore))}
+            onChange={onMentalScoreChange}
           />
-        </label>
+        </div>
       </fieldset>
 
       <label className="condition-card__note">
@@ -81,7 +58,7 @@ export function DailyConditionCard({
           rows={4}
           value={note}
           placeholder={t("condition_note_placeholder")}
-          onChange={(event: ChangeEvent<HTMLTextAreaElement>) => onNoteChange(event.target.value)}
+          onChange={(event) => onNoteChange(event.target.value)}
         />
       </label>
 
