@@ -72,6 +72,8 @@
   self_care_wellness_heading: "ウェルネス記録",
   self_care_physical_label: "身体",
   self_care_mental_label: "心",
+  wellness_score_hint_low: "😞 最悪",
+  wellness_score_hint_high: "最高 😄",
   self_care_metrics_heading: "測定値",
   self_care_metric_height: "身長",
   self_care_metric_weight: "体重",

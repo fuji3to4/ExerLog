@@ -72,6 +72,8 @@ export const en = {
   self_care_wellness_heading: "Wellness check-in",
   self_care_physical_label: "Physical",
   self_care_mental_label: "Mental",
+  wellness_score_hint_low: "😞 Worst",
+  wellness_score_hint_high: "Best 😄",
   self_care_metrics_heading: "Metrics",
   self_care_metric_height: "Height",
   self_care_metric_weight: "Weight",
