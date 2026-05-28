@@ -200,17 +200,51 @@ button {
 }
 
 .condition-card__option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
   padding: 0.85rem 1rem;
   border: 1px solid #d7dfeb;
   border-radius: 0.9rem;
   background: #f8fbff;
 }
 
-.condition-card__option input {
-  margin: 0;
+/* ── Wellness score segment control ────────────────────────────── */
+
+.wellness-score-input {
+  display: flex;
+  background: #e8eef8;
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.wellness-score-input__button {
+  flex: 1;
+  min-height: 44px;
+  padding: 0.5rem 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #4b5563;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.wellness-score-input__button.is-selected {
+  background: #14213d;
+  color: #ffffff;
+}
+
+.wellness-score-input__hint {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #6b7a99;
+  font-weight: normal;
 }
 
 .condition-card__note {
