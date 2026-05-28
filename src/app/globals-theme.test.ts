@@ -166,6 +166,13 @@ describe("globals.css warm theme contract", () => {
         matches: (block) => block.includes("background:"),
       }),
       "background",
+      "var(--accent-soft)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, ".exercise-log-actions__button", {
+        matches: (block) => block.includes("color:"),
+      }),
+      "color",
       "var(--accent-strong)",
     );
     expectDeclaration(

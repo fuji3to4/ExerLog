@@ -341,9 +341,9 @@ button {
 }
 
 .exercise-log-actions__button {
-  background: var(--accent-strong);
-  color: #ffffff;
-  border-color: var(--accent-strong);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent-soft);
 }
 
 .exercise-log-actions__button.is-selected {
