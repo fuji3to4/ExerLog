@@ -46,6 +46,10 @@
   color: var(--text-strong);
 }
 
+/* Design tokens locked — do not modify these variables directly.
+   Theme changes should go through Tailwind config and token mappings in globals.css.
+*/
+
 * {
   box-sizing: border-box;
 }
@@ -67,14 +71,6 @@ a {
   text-decoration: none;
 }
 
-button,
-a {
-  min-height: 48px;
-}
-
-button {
-  font: inherit;
-}
 
 .app-shell {
   margin: 0 auto;
@@ -104,23 +100,6 @@ button {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid var(--border-soft);
-}
-
-.language-switcher__button {
-  padding: 0.5rem 1rem;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.language-switcher__button--active {
-  background: var(--accent-strong);
-  color: #ffffff;
 }
 
 .page-content {
@@ -180,6 +159,7 @@ button {
   color: var(--accent-strong);
 }
 
+
 .today-screen__recommendations {
   display: grid;
   gap: 1rem;
@@ -237,34 +217,7 @@ button {
   gap: 3px;
 }
 
-.wellness-score-input__button {
-  flex: 1;
-  min-height: 44px;
-  padding: 0.5rem 0;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.wellness-score-input__button.is-selected {
-  background: var(--accent-strong);
-  color: #ffffff;
-}
-
-.wellness-score-input__hint {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.35rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-weight: normal;
-}
+/* Visual hints and per-button legacy rules removed — component now uses primitives and Tailwind utility classes */
 
 .condition-card__note {
   display: grid;
@@ -1128,61 +1081,10 @@ button {
   box-shadow: 0 2px 8px rgba(62, 40, 34, 0.1);
 }
 
-/* Wellness card styling */
+/* Wellness card styling (migrated to primitives) — legacy per-element rules removed. */
 .wellness-card {
   display: grid;
   gap: 0.75rem;
-}
-
-.wellness-card__field {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.wellness-card__field label {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--text-strong);
-}
-
-.wellness-card__score-input {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-.wellness-card__score-option {
-  display: flex;
-}
-
-.wellness-card__score-option input[type="radio"] {
-  display: none;
-}
-
-.wellness-card__score-button {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem;
-  border: 1px solid var(--border-soft);
-  border-radius: 0.75rem;
-  background: #ffffff;
-  color: var(--text-strong);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.wellness-card__score-button:hover {
-  border-color: var(--accent-strong);
-  background: var(--surface-soft);
-}
-
-.wellness-card__score-option input[type="radio"]:checked ~ .wellness-card__score-button {
-  background: var(--accent-strong);
-  color: #ffffff;
-  border-color: var(--accent-strong);
 }
 
 /* Self-care activity log card */
