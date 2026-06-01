@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   color-scheme: light;
   font-family: Inter, Arial, Helvetica, sans-serif;
@@ -19,6 +23,26 @@
   --success-text: #166534;
   --danger-bg: #fdecea;
   --danger-text: #b91c1c;
+  --background: 20 100% 98%;
+  --foreground: 22 17% 20%;
+  --card: 20 100% 98%;
+  --card-foreground: 22 17% 20%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 22 17% 20%;
+  --primary: 16 36% 44%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 18 44% 89%;
+  --secondary-foreground: 16 36% 44%;
+  --muted: 23 45% 94%;
+  --muted-foreground: 20 12% 39%;
+  --accent: 18 44% 89%;
+  --accent-foreground: 16 36% 44%;
+  --destructive: 0 74% 42%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 30 39% 86%;
+  --input: 30 39% 86%;
+  --ring: 16 38% 55%;
+  --radius: 1rem;
 }
 
 * {
