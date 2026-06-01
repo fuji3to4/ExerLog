@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Sofia_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { LanguageProvider } from "@/features/i18n/language-provider";
@@ -9,6 +10,11 @@ type RootLayoutProps = {
 };
 
 const base = process.env.GITHUB_ACTIONS === "true" ? "/ExerLog" : "";
+const sofiaSans = Sofia_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   applicationName: "Exercise Log",
@@ -33,13 +39,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#14213d",
+  themeColor: "#f3f0ee",
 };
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body>
+      <body className={`${sofiaSans.variable} antialiased`}>
         <script
           dangerouslySetInnerHTML={{
             __html: `

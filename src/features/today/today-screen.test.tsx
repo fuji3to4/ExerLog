@@ -32,6 +32,9 @@ test("saves a daily wellness entry and logs an exercise from the home screen", a
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
 
+  expect(await screen.findByRole("region", { name: /daily condition/i })).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: /recommended/i })).toBeInTheDocument();
+
   const physicalGroup = await screen.findByRole("group", { name: /physical/i });
   fireEvent.click(within(physicalGroup).getByRole("button", { name: "5" }));
   const mentalGroup = screen.getByRole("group", { name: /mental/i });
@@ -180,11 +183,32 @@ test("supports keyboard reachability for today controls", async () => {
 test("shows watch and library links for the today screen", async () => {
   renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
 
+  expect(await screen.findByRole("region", { name: /need something else/i })).toBeInTheDocument();
   expect(await screen.findByRole("link", { name: /watch seated calf raise/i })).toHaveAttribute(
     "href",
     "/exercises?exerciseId=seated-calf-raise-5",
   );
   expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("href", "/library");
+});
+
+test("renders today cards without legacy global hook classes", async () => {
+  renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
+
+  expect(await screen.findByRole("region", { name: /daily condition/i })).toBeInTheDocument();
+  expect(screen.getByRole("group", { name: /physical/i })).toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: /note/i })).toBeInTheDocument();
+  expect(await screen.findByRole("article", { name: "Seated Calf Raise" })).toBeInTheDocument();
+
+  expect(document.querySelector(".condition-card__options")).not.toBeInTheDocument();
+  expect(document.querySelector(".condition-card__option")).not.toBeInTheDocument();
+  expect(document.querySelector(".condition-card__note")).not.toBeInTheDocument();
+  expect(document.querySelector(".recommendation-card__thumbnail")).not.toBeInTheDocument();
+  expect(document.querySelector(".recommendation-card__header")).not.toBeInTheDocument();
+  expect(document.querySelector(".recommendation-card__watch-link")).not.toBeInTheDocument();
+  expect(document.querySelector(".recommendation-card__meta")).not.toBeInTheDocument();
+  expect(document.querySelector(".today-screen__date")).not.toBeInTheDocument();
+  expect(document.querySelector(".today-screen__section")).not.toBeInTheDocument();
+  expect(document.querySelector(".today-screen__section-heading")).not.toBeInTheDocument();
 });
 
 test("resets saved log state when the selected day changes", async () => {

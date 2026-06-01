@@ -29,17 +29,17 @@ test("saves only wellness and metrics from the self-care screen", async () => {
 
   renderWithLanguage(<SelfCareScreen date="2026-03-23" />, { initialLanguage: "en" });
 
-  const wellnessSection = (await screen.findByRole("heading", { name: /condition/i, level: 2 })).closest("section");
-  expect(wellnessSection).not.toBeNull();
+  const wellnessRegion = await screen.findByRole("region", { name: /condition/i });
+  const metricsRegion = screen.getByRole("region", { name: /metrics/i });
 
-  const physicalGroup = within(wellnessSection!).getByRole("group", { name: /physical/i });
+  const physicalGroup = within(wellnessRegion).getByRole("group", { name: /physical/i });
   fireEvent.click(within(physicalGroup).getByRole("button", { name: "4" }));
 
-  const mentalGroup = within(wellnessSection!).getByRole("group", { name: /mental/i });
+  const mentalGroup = within(wellnessRegion).getByRole("group", { name: /mental/i });
   fireEvent.click(within(mentalGroup).getByRole("button", { name: "3" }));
 
-  const [heightInput, weightInput, bodyFatInput] = await screen.findAllByRole("spinbutton");
-  const wellnessNoteInput = within(wellnessSection!).getByRole("textbox", { name: /^note$/i });
+  const [heightInput, weightInput, bodyFatInput] = within(metricsRegion).getAllByRole("spinbutton");
+  const wellnessNoteInput = within(wellnessRegion).getByRole("textbox", { name: /^note$/i });
   fireEvent.change(wellnessNoteInput, { target: { value: "Slept better after lunch" } });
   fireEvent.change(heightInput, { target: { value: "171" } });
   fireEvent.change(weightInput, { target: { value: "62" } });
@@ -96,13 +96,13 @@ test("hydrates saved rows on first render", async () => {
 
   renderWithLanguage(<SelfCareScreen date="2026-03-24" />, { initialLanguage: "en" });
 
-  const wellnessSection = (await screen.findByRole("heading", { name: /condition/i, level: 2 })).closest("section");
-  expect(wellnessSection).not.toBeNull();
-  const [heightInput, weightInput, bodyFatInput] = await screen.findAllByRole("spinbutton");
-  const wellnessNoteInput = within(wellnessSection!).getByRole("textbox", { name: /^note$/i });
+  const wellnessRegion = await screen.findByRole("region", { name: /condition/i });
+  const metricsRegion = screen.getByRole("region", { name: /metrics/i });
+  const [heightInput, weightInput, bodyFatInput] = within(metricsRegion).getAllByRole("spinbutton");
+  const wellnessNoteInput = within(wellnessRegion).getByRole("textbox", { name: /^note$/i });
 
-  const physicalGroup = within(wellnessSection!).getByRole("group", { name: /physical/i });
-  const mentalGroup = within(wellnessSection!).getByRole("group", { name: /mental/i });
+  const physicalGroup = within(wellnessRegion).getByRole("group", { name: /physical/i });
+  const mentalGroup = within(wellnessRegion).getByRole("group", { name: /mental/i });
   expect(within(physicalGroup).getByRole("button", { name: "5" })).toHaveAttribute("aria-pressed", "true");
   expect(within(mentalGroup).getByRole("button", { name: "2" })).toHaveAttribute("aria-pressed", "true");
   expect(wellnessNoteInput).toHaveValue("Needed extra rest");
@@ -112,6 +112,24 @@ test("hydrates saved rows on first render", async () => {
 
   expect(screen.queryByRole("checkbox", { name: /did it/i })).not.toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: "散歩", level: 3 })).not.toBeInTheDocument();
+});
+
+test("renders self-care wellness and metrics without legacy global hook classes", async () => {
+  renderWithLanguage(<SelfCareScreen date="2026-03-23" />, { initialLanguage: "en" });
+
+  const wellnessRegion = await screen.findByRole("region", { name: /condition/i });
+  const metricsRegion = screen.getByRole("region", { name: /metrics/i });
+
+  expect(within(wellnessRegion).getByRole("group", { name: /physical/i })).toBeInTheDocument();
+  expect(within(wellnessRegion).getByRole("textbox", { name: /^note$/i })).toBeInTheDocument();
+  expect(within(metricsRegion).getAllByRole("spinbutton")).toHaveLength(3);
+
+  expect(document.querySelector(".self-care-screen__date")).not.toBeInTheDocument();
+  expect(document.querySelector(".self-care-screen__section-heading")).not.toBeInTheDocument();
+  expect(document.querySelector(".self-care-screen__field")).not.toBeInTheDocument();
+  expect(document.querySelector(".self-care-screen__metric-input")).not.toBeInTheDocument();
+  expect(document.querySelector(".self-care-screen__section")).not.toBeInTheDocument();
+  expect(document.querySelector(".self-care-screen__metrics-grid")).not.toBeInTheDocument();
 });
 
 test("renders wellness save controls even when only condition screen translation keys are available", async () => {

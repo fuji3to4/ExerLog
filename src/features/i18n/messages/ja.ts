@@ -7,6 +7,7 @@
   nav_aria_label: "メイン",
 
   // Language labels
+  language_label: "言語",
   language_ja: "日本語",
   language_en: "English",
 

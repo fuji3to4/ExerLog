@@ -7,6 +7,7 @@ export const en = {
   nav_aria_label: "Primary",
 
   // Language labels
+  language_label: "Language",
   language_ja: "日本語",
   language_en: "English",
 

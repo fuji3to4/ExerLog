@@ -1,5 +1,7 @@
 import type { ChangeEvent } from "react";
 
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { MetricType } from "@/lib/types";
 
@@ -16,6 +18,7 @@ type MetricField = {
 
 export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
   const { t } = useTranslation();
+  const headingId = "self-care-metrics-heading";
   const fields = [
     { metricType: "height", unit: "cm", labelKey: "self_care_metric_height" },
     { metricType: "weight", unit: "kg", labelKey: "self_care_metric_weight" },
@@ -23,25 +26,33 @@ export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
   ] satisfies MetricField[];
 
   return (
-    <section className="card self-care-screen__section">
-      <div className="self-care-screen__metrics-grid">
-        {fields.map((field) => (
-          <label key={field.metricType} className="self-care-screen__field">
-            <span>{t(field.labelKey)}</span>
-            <div className="self-care-screen__metric-input">
-              <input
-                type="number"
-                inputMode="decimal"
-                value={metrics[field.metricType]}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  onMetricChange(field.metricType, event.target.value)
-                }
-              />
-              <span>{field.unit}</span>
-            </div>
-          </label>
-        ))}
-      </div>
-    </section>
+    <Card role="region" aria-labelledby={headingId} className="grid gap-4">
+      <CardHeader className="gap-2">
+        <h2 id={headingId} className="text-xl font-semibold">
+          {t("self_care_metrics_heading")}
+        </h2>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-3 min-[480px]:grid-cols-3">
+          {fields.map((field) => (
+            <label key={field.metricType} className="grid gap-2 font-semibold">
+              <span className="text-sm text-muted-foreground">{t(field.labelKey)}</span>
+              <div className="flex items-center overflow-hidden rounded-2xl border border-input bg-white/95">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  className="rounded-none border-0 bg-transparent px-3 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  value={metrics[field.metricType]}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                    onMetricChange(field.metricType, event.target.value)
+                  }
+                />
+                <span className="px-3 text-sm font-medium text-muted-foreground">{field.unit}</span>
+              </div>
+            </label>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
