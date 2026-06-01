@@ -191,6 +191,23 @@ test("shows watch and library links for the today screen", async () => {
   expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("href", "/library");
 });
 
+test("renders today cards without legacy global hook classes", async () => {
+  renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
+
+  expect(await screen.findByRole("region", { name: /daily condition/i })).toBeInTheDocument();
+  expect(screen.getByRole("group", { name: /physical/i })).toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: /note/i })).toBeInTheDocument();
+  expect(await screen.findByRole("article", { name: "Seated Calf Raise" })).toBeInTheDocument();
+
+  expect(document.querySelector(".condition-card__options")).not.toBeInTheDocument();
+  expect(document.querySelector(".condition-card__option")).not.toBeInTheDocument();
+  expect(document.querySelector(".condition-card__note")).not.toBeInTheDocument();
+  expect(document.querySelector(".recommendation-card__thumbnail")).not.toBeInTheDocument();
+  expect(document.querySelector(".recommendation-card__header")).not.toBeInTheDocument();
+  expect(document.querySelector(".recommendation-card__watch-link")).not.toBeInTheDocument();
+  expect(document.querySelector(".recommendation-card__meta")).not.toBeInTheDocument();
+});
+
 test("resets saved log state when the selected day changes", async () => {
   await seedLog("2026-03-23", "seated-calf-raise-5", "did");
   await seedWellness("2026-03-24", 1, 2, "");

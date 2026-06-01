@@ -34,8 +34,8 @@ export function WellnessCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="self-care-screen__field">
-          <span>{t("self_care_physical_label")}</span>
+        <div className="grid gap-2 font-semibold">
+          <span className="text-sm text-muted-foreground">{t("self_care_physical_label")}</span>
           <WellnessScoreInput
             label={t("self_care_physical_label")}
             value={physicalScore}
@@ -43,8 +43,8 @@ export function WellnessCard({
           />
         </div>
 
-        <div className="self-care-screen__field">
-          <span>{t("self_care_mental_label")}</span>
+        <div className="grid gap-2 font-semibold">
+          <span className="text-sm text-muted-foreground">{t("self_care_mental_label")}</span>
           <WellnessScoreInput
             label={t("self_care_mental_label")}
             value={mentalScore}
@@ -52,8 +52,8 @@ export function WellnessCard({
           />
         </div>
 
-        <label className="self-care-screen__field">
-          <span>{t("condition_note_label")}</span>
+        <label className="grid gap-2 font-semibold">
+          <span className="text-sm text-muted-foreground">{t("condition_note_label")}</span>
           <Textarea
             rows={3}
             value={note}

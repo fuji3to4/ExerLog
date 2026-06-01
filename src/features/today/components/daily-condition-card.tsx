@@ -39,18 +39,18 @@ export function DailyConditionCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <fieldset className="condition-card__options">
-          <legend>{t("condition_legend")}</legend>
-          <div className="condition-card__option">
-            <span>{t("self_care_physical_label")}</span>
+        <fieldset className="grid gap-3 border-0 p-0">
+          <legend className="mb-1 font-semibold">{t("condition_legend")}</legend>
+          <div className="grid gap-2 rounded-2xl border border-border/70 bg-muted/30 p-4">
+            <span className="text-sm font-semibold text-muted-foreground">{t("self_care_physical_label")}</span>
             <WellnessScoreInput
               label={t("self_care_physical_label")}
               value={physicalScore}
               onChange={onPhysicalScoreChange}
             />
           </div>
-          <div className="condition-card__option">
-            <span>{t("self_care_mental_label")}</span>
+          <div className="grid gap-2 rounded-2xl border border-border/70 bg-muted/30 p-4">
+            <span className="text-sm font-semibold text-muted-foreground">{t("self_care_mental_label")}</span>
             <WellnessScoreInput
               label={t("self_care_mental_label")}
               value={mentalScore}
@@ -59,8 +59,8 @@ export function DailyConditionCard({
           </div>
         </fieldset>
 
-        <label className="condition-card__note">
-          <span>{t("condition_note_label")}</span>
+        <label className="grid gap-2 font-semibold">
+          <span className="text-sm text-muted-foreground">{t("condition_note_label")}</span>
           <Textarea
             rows={4}
             value={note}
@@ -73,7 +73,7 @@ export function DailyConditionCard({
           {t("condition_save_button")}
         </Button>
         {saveError ? (
-          <p role="alert" className="condition-card__error text-sm text-destructive">
+          <p role="alert" className="text-sm font-medium text-destructive">
             {saveError}
           </p>
         ) : null}

@@ -114,6 +114,20 @@ test("hydrates saved rows on first render", async () => {
   expect(screen.queryByRole("heading", { name: "散歩", level: 3 })).not.toBeInTheDocument();
 });
 
+test("renders self-care wellness and metrics without legacy global hook classes", async () => {
+  renderWithLanguage(<SelfCareScreen date="2026-03-23" />, { initialLanguage: "en" });
+
+  const wellnessRegion = await screen.findByRole("region", { name: /condition/i });
+  const metricsRegion = screen.getByRole("region", { name: /metrics/i });
+
+  expect(within(wellnessRegion).getByRole("group", { name: /physical/i })).toBeInTheDocument();
+  expect(within(wellnessRegion).getByRole("textbox", { name: /^note$/i })).toBeInTheDocument();
+  expect(within(metricsRegion).getAllByRole("spinbutton")).toHaveLength(3);
+
+  expect(document.querySelector(".self-care-screen__field")).not.toBeInTheDocument();
+  expect(document.querySelector(".self-care-screen__metric-input")).not.toBeInTheDocument();
+});
+
 test("renders wellness save controls even when only condition screen translation keys are available", async () => {
   const conditionMessages = {
     self_care_heading: "Condition",

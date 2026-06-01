@@ -35,18 +35,19 @@ export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
       <CardContent>
         <div className="self-care-screen__metrics-grid">
           {fields.map((field) => (
-            <label key={field.metricType} className="self-care-screen__field">
-              <span>{t(field.labelKey)}</span>
-              <div className="self-care-screen__metric-input">
+            <label key={field.metricType} className="grid gap-2 font-semibold">
+              <span className="text-sm text-muted-foreground">{t(field.labelKey)}</span>
+              <div className="flex items-center overflow-hidden rounded-2xl border border-input bg-white/95">
                 <Input
                   type="number"
                   inputMode="decimal"
+                  className="rounded-none border-0 bg-transparent px-3 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   value={metrics[field.metricType]}
                   onChange={(event: ChangeEvent<HTMLInputElement>) =>
                     onMetricChange(field.metricType, event.target.value)
                   }
                 />
-                <span>{field.unit}</span>
+                <span className="px-3 text-sm font-medium text-muted-foreground">{field.unit}</span>
               </div>
             </label>
           ))}

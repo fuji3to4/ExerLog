@@ -28,35 +28,35 @@ export function RecommendedExerciseCard({
   const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
 
   return (
-    <Card role="article" className="recommendation-card overflow-hidden p-0" aria-labelledby={headingId}>
+    <Card role="article" className="overflow-hidden p-0" aria-labelledby={headingId}>
       {thumbnailUrl ? (
-        <div className="recommendation-card__thumbnail">
-          <img src={thumbnailUrl} alt={exercise.title} loading="lazy" />
+        <div className="overflow-hidden bg-accent/30">
+          <img className="block h-auto w-full object-cover" src={thumbnailUrl} alt={exercise.title} loading="lazy" />
         </div>
       ) : null}
       <CardContent className="space-y-4 p-4 sm:p-5">
-        <div className="recommendation-card__header">
+        <div className="grid gap-3 min-[480px]:grid-cols-[minmax(0,1fr)_auto] min-[480px]:items-start">
           <div>
             <h3 id={headingId}>{exercise.title}</h3>
             <p>{exercise.description}</p>
           </div>
           <Link
             href={watchHref}
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "recommendation-card__watch-link")}
+            className={cn(buttonVariants({ variant: "outline" }), "w-full min-[480px]:w-auto min-[480px]:shrink-0")}
             aria-label={t("action_watch_aria", { title: exercise.title })}
           >
             {t("action_watch")}
           </Link>
         </div>
 
-        <dl className="recommendation-card__meta">
-          <div>
-            <dt>{t("meta_duration")}</dt>
-            <dd>{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
+        <dl className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-muted/40 px-4 py-3">
+            <dt className="mb-1 text-sm text-muted-foreground">{t("meta_duration")}</dt>
+            <dd className="m-0 font-semibold capitalize">{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
           </div>
-          <div>
-            <dt>{t("meta_intensity")}</dt>
-            <dd>{formatIntensity(exercise.intensity)}</dd>
+          <div className="rounded-2xl bg-muted/40 px-4 py-3">
+            <dt className="mb-1 text-sm text-muted-foreground">{t("meta_intensity")}</dt>
+            <dd className="m-0 font-semibold capitalize">{formatIntensity(exercise.intensity)}</dd>
           </div>
         </dl>
 
