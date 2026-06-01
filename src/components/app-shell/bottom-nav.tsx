@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { cva } from "class-variance-authority";
-import { cn } from "@/lib/utils";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 type BottomNavProps = {
@@ -35,7 +34,7 @@ export function BottomNav({ currentPath }: BottomNavProps) {
   return (
     <nav
       aria-label={messages.nav_aria_label}
-      className="bottom-nav fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur"
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur"
     >
       <div className="mx-auto flex w-full max-w-screen-sm gap-2 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
         {destinations.map((destination) => {
@@ -45,13 +44,13 @@ export function BottomNav({ currentPath }: BottomNavProps) {
             <Link
               key={destination.href}
               aria-current={isActive ? "page" : undefined}
-              className={cn("bottom-nav__link", navLinkVariants({ active: isActive }))}
+              className={navLinkVariants({ active: isActive })}
               href={destination.href}
             >
-              <span aria-hidden="true" className="bottom-nav__icon text-base leading-none">
+              <span aria-hidden="true" className="text-base leading-none">
                 {destination.icon}
               </span>
-              <span className="bottom-nav__label truncate">{destination.label}</span>
+              <span className="truncate">{destination.label}</span>
             </Link>
           );
         })}
