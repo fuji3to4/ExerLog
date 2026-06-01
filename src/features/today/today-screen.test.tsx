@@ -32,6 +32,9 @@ test("saves a daily wellness entry and logs an exercise from the home screen", a
 
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
 
+  expect(await screen.findByRole("region", { name: /daily condition/i })).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: /recommended/i })).toBeInTheDocument();
+
   const physicalGroup = await screen.findByRole("group", { name: /physical/i });
   fireEvent.click(within(physicalGroup).getByRole("button", { name: "5" }));
   const mentalGroup = screen.getByRole("group", { name: /mental/i });
@@ -180,6 +183,7 @@ test("supports keyboard reachability for today controls", async () => {
 test("shows watch and library links for the today screen", async () => {
   renderWithLanguage(<TodayScreen date="2026-03-23" />, { initialLanguage: "en" });
 
+  expect(await screen.findByRole("region", { name: /need something else/i })).toBeInTheDocument();
   expect(await screen.findByRole("link", { name: /watch seated calf raise/i })).toHaveAttribute(
     "href",
     "/exercises?exerciseId=seated-calf-raise-5",

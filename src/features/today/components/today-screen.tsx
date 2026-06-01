@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { cn } from "@/lib/utils";
 import { toDayKey } from "@/lib/date/day-key";
 
 import { DailyConditionCard } from "./daily-condition-card";
@@ -16,6 +19,8 @@ type TodayScreenProps = {
 export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const date = dateProp ?? toDayKey(new Date());
   const { t, formatDate } = useTranslation();
+  const recommendedHeadingId = "today-recommended-heading";
+  const libraryHeadingId = "today-library-heading";
   const {
     isHydrated,
     physicalScore,
@@ -34,58 +39,79 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
 
   return (
     <>
-      <section className="card page-header">
-        <p className="today-screen__date">{formatDate(date)}</p>
-        <h1>{t("today_heading")}</h1>
-        <p>{t("today_subheading")}</p>
-      </section>
+      <Card className="page-header">
+        <CardHeader className="gap-2">
+          <p className="today-screen__date text-sm text-muted-foreground">{formatDate(date)}</p>
+          <h1 className="text-3xl font-semibold tracking-tight">{t("today_heading")}</h1>
+          <CardDescription>{t("today_subheading")}</CardDescription>
+        </CardHeader>
+      </Card>
 
       {!isHydrated ? (
-        <section className="card today-screen__section" aria-live="polite">
-          <h2>{t("today_loading_heading")}</h2>
-          <p>{t("today_loading_text")}</p>
-        </section>
+        <Card className="today-screen__section" aria-live="polite">
+          <CardHeader>
+            <h2 className="text-xl font-semibold">{t("today_loading_heading")}</h2>
+            <CardDescription>{t("today_loading_text")}</CardDescription>
+          </CardHeader>
+        </Card>
       ) : (
         <>
-      <DailyConditionCard
-        physicalScore={physicalScore}
-        mentalScore={mentalScore}
-        note={note}
-        onPhysicalScoreChange={setPhysicalScore}
-        onMentalScoreChange={setMentalScore}
-        onNoteChange={setNote}
-        onSave={saveCondition}
-        saveError={conditionSaveError ? t("condition_save_error") : undefined}
-      />
+          <DailyConditionCard
+            physicalScore={physicalScore}
+            mentalScore={mentalScore}
+            note={note}
+            onPhysicalScoreChange={setPhysicalScore}
+            onMentalScoreChange={setMentalScore}
+            onNoteChange={setNote}
+            onSave={saveCondition}
+            saveError={conditionSaveError ? t("condition_save_error") : undefined}
+          />
 
-      <section className="today-screen__section">
-        <div className="card today-screen__section-heading">
-          <h2>{t("today_recommended_heading")}</h2>
-          <p>{t("today_recommended_text")}</p>
-        </div>
-        <div className="today-screen__recommendations">
-          {recommendations.map((exercise) => (
-            <RecommendedExerciseCard
-              key={exercise.id}
-              exercise={exercise}
-              result={logResults[exercise.id] ?? null}
-              watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
-              onLog={(result) => void logExercise(exercise.id, result)}
-              onClear={() => void clearExercise(exercise.id)}
-            />
-          ))}
-        </div>
-      </section>
+          <Card
+            role="region"
+            aria-labelledby={recommendedHeadingId}
+            className="today-screen__section"
+          >
+            <CardHeader className="today-screen__section-heading">
+              <h2 id={recommendedHeadingId} className="text-xl font-semibold">
+                {t("today_recommended_heading")}
+              </h2>
+              <CardDescription>{t("today_recommended_text")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="today-screen__recommendations">
+                {recommendations.map((exercise) => (
+                  <RecommendedExerciseCard
+                    key={exercise.id}
+                    exercise={exercise}
+                    result={logResults[exercise.id] ?? null}
+                    watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
+                    onLog={(result) => void logExercise(exercise.id, result)}
+                    onClear={() => void clearExercise(exercise.id)}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-      <section className="card today-screen__library-card">
-        <h2>{t("today_library_card_heading")}</h2>
-        <p>{t("today_library_card_text")}</p>
-        <div className="button-row">
-          <Link href="/library" className="button-secondary">
-            {t("today_library_button")}
-          </Link>
-        </div>
-      </section>
+          <Card role="region" aria-labelledby={libraryHeadingId} className="today-screen__library-card">
+            <CardHeader>
+              <h2 id={libraryHeadingId} className="text-xl font-semibold">
+                {t("today_library_card_heading")}
+              </h2>
+              <CardDescription>{t("today_library_card_text")}</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="button-row">
+                <Link
+                  href="/library"
+                  className={cn(buttonVariants({ variant: "secondary" }), "w-full sm:w-auto")}
+                >
+                  {t("today_library_button")}
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
     </>

@@ -1,3 +1,5 @@
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { WellnessScore } from "@/lib/types";
 
@@ -21,40 +23,45 @@ export function WellnessCard({
   onNoteChange,
 }: WellnessCardProps) {
   const { t } = useTranslation();
+  const headingId = "self-care-wellness-heading";
 
   return (
-    <section className="card self-care-screen__section">
-      <div className="self-care-screen__section-heading">
-        <h2>{t("history_condition_heading")}</h2>
-      </div>
+    <Card role="region" aria-labelledby={headingId} className="self-care-screen__section">
+      <CardHeader className="self-care-screen__section-heading">
+        <h2 id={headingId} className="text-xl font-semibold">
+          {t("history_condition_heading")}
+        </h2>
+      </CardHeader>
 
-      <div className="self-care-screen__field">
-        <span>{t("self_care_physical_label")}</span>
-        <WellnessScoreInput
-          label={t("self_care_physical_label")}
-          value={physicalScore}
-          onChange={onPhysicalScoreChange}
-        />
-      </div>
+      <CardContent className="space-y-4">
+        <div className="self-care-screen__field">
+          <span>{t("self_care_physical_label")}</span>
+          <WellnessScoreInput
+            label={t("self_care_physical_label")}
+            value={physicalScore}
+            onChange={onPhysicalScoreChange}
+          />
+        </div>
 
-      <div className="self-care-screen__field">
-        <span>{t("self_care_mental_label")}</span>
-        <WellnessScoreInput
-          label={t("self_care_mental_label")}
-          value={mentalScore}
-          onChange={onMentalScoreChange}
-        />
-      </div>
+        <div className="self-care-screen__field">
+          <span>{t("self_care_mental_label")}</span>
+          <WellnessScoreInput
+            label={t("self_care_mental_label")}
+            value={mentalScore}
+            onChange={onMentalScoreChange}
+          />
+        </div>
 
-      <label className="self-care-screen__field">
-        <span>{t("condition_note_label")}</span>
-        <textarea
-          rows={3}
-          value={note}
-          placeholder={t("condition_note_placeholder")}
-          onChange={(event) => onNoteChange(event.target.value)}
-        />
-      </label>
-    </section>
+        <label className="self-care-screen__field">
+          <span>{t("condition_note_label")}</span>
+          <Textarea
+            rows={3}
+            value={note}
+            placeholder={t("condition_note_placeholder")}
+            onChange={(event) => onNoteChange(event.target.value)}
+          />
+        </label>
+      </CardContent>
+    </Card>
   );
 }
