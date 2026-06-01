@@ -4,28 +4,11 @@
 
 :root {
   color-scheme: light;
-  font-family: Inter, Arial, Helvetica, sans-serif;
-  background: var(--bg-top);
-  color: var(--text-strong);
-  --bg-top: #fff8f4;
-  --bg-soft: #f8efe8;
-  --surface-soft: #fffaf6;
-  --surface-elevated: #ffffff;
-  --text-strong: #3b2f2a;
-  --text-muted: #6f5f57;
-  --border-soft: #ecdccf;
-  --accent-strong: #9a5c49;
-  --accent-soft: #f2ddd3;
-  --focus-ring: #b87560;
-  --nav-surface: #fdf4ee;
-  --nav-text: #6d5a50;
-  --success-bg: #dff3e6;
-  --success-text: #166534;
-  --danger-bg: #fdecea;
-  --danger-text: #b91c1c;
-  --background: 20 100% 98%;
+  font-family: var(--font-sans);
+  --font-sans: "Sofia Sans", "Noto Sans JP", sans-serif;
+  --background: 26 14% 95%;
   --foreground: 22 17% 20%;
-  --card: 20 100% 98%;
+  --card: 24 33% 97%;
   --card-foreground: 22 17% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 22 17% 20%;
@@ -33,7 +16,7 @@
   --primary-foreground: 0 0% 100%;
   --secondary: 18 44% 89%;
   --secondary-foreground: 16 36% 44%;
-  --muted: 23 45% 94%;
+  --muted: 23 35% 92%;
   --muted-foreground: 20 12% 39%;
   --accent: 18 44% 89%;
   --accent-foreground: 16 36% 44%;
@@ -43,6 +26,24 @@
   --input: 30 39% 86%;
   --ring: 16 38% 55%;
   --radius: 1rem;
+  --bg-top: hsl(var(--background));
+  --bg-soft: hsl(var(--muted));
+  --surface-soft: hsl(var(--card));
+  --surface-elevated: hsl(var(--popover));
+  --text-strong: hsl(var(--foreground));
+  --text-muted: hsl(var(--muted-foreground));
+  --border-soft: hsl(var(--border));
+  --accent-strong: hsl(var(--primary));
+  --accent-soft: hsl(var(--secondary));
+  --focus-ring: hsl(var(--ring));
+  --nav-surface: hsl(var(--card));
+  --nav-text: hsl(var(--muted-foreground));
+  --success-bg: #dff3e6;
+  --success-text: #166534;
+  --danger-bg: #fdecea;
+  --danger-text: #b91c1c;
+  background: var(--bg-top);
+  color: var(--text-strong);
 }
 
 * {
@@ -56,6 +57,7 @@ body {
 }
 
 body {
+  font-family: var(--font-sans);
   background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-soft) 100%);
   color: var(--text-strong);
 }

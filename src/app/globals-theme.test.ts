@@ -5,6 +5,10 @@ function readGlobalsCss() {
   return readFileSync(resolve(import.meta.dirname, "globals.css"), "utf8");
 }
 
+function readLayoutTsx() {
+  return readFileSync(resolve(import.meta.dirname, "layout.tsx"), "utf8");
+}
+
 function getCssBlock(
   css: string,
   selector: string,
@@ -16,7 +20,7 @@ function getCssBlock(
   for (const match of css.matchAll(rulePattern)) {
     const selectors = match[2]
       .split(",")
-      .map((entry) => entry.trim())
+      .map((entry) => entry.split(";").at(-1)?.trim() ?? "")
       .filter(Boolean);
 
     if (!selectors.includes(selector)) {
@@ -73,35 +77,45 @@ function getRootBlock() {
 }
 
 describe("globals.css warm theme contract", () => {
-  test("defines warm theme token values in :root", () => {
+  test("defines shadcn-compatible warm tokens in :root", () => {
     const rootBlock = getRootBlock();
 
-    expectDeclaration(rootBlock, "--bg-top", "#fff8f4");
-    expectDeclaration(rootBlock, "--bg-soft", "#f8efe8");
-    expectDeclaration(rootBlock, "--surface-soft", "#fffaf6");
-    expectDeclaration(rootBlock, "--surface-elevated", "#ffffff");
-    expectDeclaration(rootBlock, "--text-strong", "#3b2f2a");
-    expectDeclaration(rootBlock, "--text-muted", "#6f5f57");
-    expectDeclaration(rootBlock, "--border-soft", "#ecdccf");
-    expectDeclaration(rootBlock, "--accent-strong", "#9a5c49");
-    expectDeclaration(rootBlock, "--accent-soft", "#f2ddd3");
-    expectDeclaration(rootBlock, "--focus-ring", "#b87560");
-    expectDeclaration(rootBlock, "--nav-surface", "#fdf4ee");
-    expectDeclaration(rootBlock, "--nav-text", "#6d5a50");
-    expectDeclaration(rootBlock, "--success-bg", "#dff3e6");
-    expectDeclaration(rootBlock, "--success-text", "#166534");
-    expectDeclaration(rootBlock, "--danger-bg", "#fdecea");
-    expectDeclaration(rootBlock, "--danger-text", "#b91c1c");
+    expectDeclaration(rootBlock, "--background", "26 14% 95%");
+    expectDeclaration(rootBlock, "--foreground", "22 17% 20%");
+    expectDeclaration(rootBlock, "--card", "24 33% 97%");
+    expectDeclaration(rootBlock, "--card-foreground", "22 17% 20%");
+    expectDeclaration(rootBlock, "--primary", "16 36% 44%");
+    expectDeclaration(rootBlock, "--primary-foreground", "0 0% 100%");
+    expectDeclaration(rootBlock, "--secondary", "18 44% 89%");
+    expectDeclaration(rootBlock, "--secondary-foreground", "16 36% 44%");
+    expectDeclaration(rootBlock, "--muted", "23 35% 92%");
+    expectDeclaration(rootBlock, "--muted-foreground", "20 12% 39%");
+    expectDeclaration(rootBlock, "--border", "30 39% 86%");
+    expectDeclaration(rootBlock, "--ring", "16 38% 55%");
+    expectDeclaration(rootBlock, "--font-sans", "\"Sofia Sans\", \"Noto Sans JP\", sans-serif");
   });
 
-  test("does not include legacy dark bottom-nav hard-coded colors", () => {
+  test("keeps compatibility aliases mapped from shadcn tokens", () => {
+    const rootBlock = getRootBlock();
+
+    expectDeclaration(rootBlock, "--bg-top", "hsl(var(--background))");
+    expectDeclaration(rootBlock, "--bg-soft", "hsl(var(--muted))");
+    expectDeclaration(rootBlock, "--surface-soft", "hsl(var(--card))");
+    expectDeclaration(rootBlock, "--text-strong", "hsl(var(--foreground))");
+    expectDeclaration(rootBlock, "--accent-strong", "hsl(var(--primary))");
+    expectDeclaration(rootBlock, "--accent-soft", "hsl(var(--secondary))");
+    expectDeclaration(rootBlock, "--border-soft", "hsl(var(--border))");
+    expectDeclaration(rootBlock, "--focus-ring", "hsl(var(--ring))");
+  });
+
+  test("does not include legacy dark nav hard-coded colors", () => {
     const globalsCss = getGlobalsCss();
 
     expect(globalsCss).not.toContain("background: rgba(20, 33, 61, 0.96)");
     expect(globalsCss).not.toContain("color: #dbe5f5");
   });
 
-  test("uses theme tokens in body/card/button styles", () => {
+  test("uses tokenized warm styles for base surfaces and key controls", () => {
     const globalsCss = getGlobalsCss();
 
     expectDeclaration(
@@ -111,7 +125,20 @@ describe("globals.css warm theme contract", () => {
       "background",
       "linear-gradient(180deg, var(--bg-top) 0%, var(--bg-soft) 100%)",
     );
-    expectDeclaration(getCssBlock(globalsCss, "body"), "color", "var(--text-strong)");
+    expectDeclaration(
+      getCssBlock(globalsCss, "body", {
+        matches: (block) => block.includes("color:"),
+      }),
+      "color",
+      "var(--text-strong)",
+    );
+    expectDeclaration(
+      getCssBlock(globalsCss, "body", {
+        matches: (block) => block.includes("font-family:"),
+      }),
+      "font-family",
+      "var(--font-sans)",
+    );
     expectDeclaration(
       getCssBlock(globalsCss, ".card", {
         matches: (block) => block.includes("background:"),
@@ -327,6 +354,14 @@ describe("globals.css warm theme contract", () => {
         "outline: none",
       ),
     ).toBe(true);
+  });
+
+  test("wires Sofia Sans and warm theme color in layout", () => {
+    const layoutTsx = readLayoutTsx();
+
+    expect(layoutTsx).toContain("Sofia_Sans");
+    expect(layoutTsx).toContain("variable: \"--font-sans\"");
+    expect(layoutTsx).toContain("themeColor: \"#f3f0ee\"");
   });
 
 });
