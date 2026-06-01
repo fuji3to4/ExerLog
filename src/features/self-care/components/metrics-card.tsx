@@ -26,14 +26,14 @@ export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
   ] satisfies MetricField[];
 
   return (
-    <Card role="region" aria-labelledby={headingId} className="self-care-screen__section">
+    <Card role="region" aria-labelledby={headingId} className="grid gap-4">
       <CardHeader className="self-care-screen__section-heading">
         <h2 id={headingId} className="text-xl font-semibold">
           {t("self_care_metrics_heading")}
         </h2>
       </CardHeader>
       <CardContent>
-        <div className="self-care-screen__metrics-grid">
+        <div className="grid grid-cols-2 gap-3 min-[480px]:grid-cols-3">
           {fields.map((field) => (
             <label key={field.metricType} className="grid gap-2 font-semibold">
               <span className="text-sm text-muted-foreground">{t(field.labelKey)}</span>

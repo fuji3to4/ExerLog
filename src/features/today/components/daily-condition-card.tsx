@@ -30,8 +30,8 @@ export function DailyConditionCard({
   const headingId = "today-daily-condition-heading";
 
   return (
-    <Card role="region" aria-labelledby={headingId} className="today-screen__section">
-      <CardHeader className="today-screen__section-heading">
+    <Card role="region" aria-labelledby={headingId} className="grid gap-4">
+      <CardHeader className="gap-2">
         <h2 id={headingId} className="text-xl font-semibold">
           {t("condition_heading")}
         </h2>

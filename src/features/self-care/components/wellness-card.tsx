@@ -26,7 +26,7 @@ export function WellnessCard({
   const headingId = "self-care-wellness-heading";
 
   return (
-    <Card role="region" aria-labelledby={headingId} className="self-care-screen__section">
+    <Card role="region" aria-labelledby={headingId} className="grid gap-4">
       <CardHeader className="self-care-screen__section-heading">
         <h2 id={headingId} className="text-xl font-semibold">
           {t("history_condition_heading")}

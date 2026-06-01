@@ -126,6 +126,8 @@ test("renders self-care wellness and metrics without legacy global hook classes"
 
   expect(document.querySelector(".self-care-screen__field")).not.toBeInTheDocument();
   expect(document.querySelector(".self-care-screen__metric-input")).not.toBeInTheDocument();
+  expect(document.querySelector(".self-care-screen__section")).not.toBeInTheDocument();
+  expect(document.querySelector(".self-care-screen__metrics-grid")).not.toBeInTheDocument();
 });
 
 test("renders wellness save controls even when only condition screen translation keys are available", async () => {

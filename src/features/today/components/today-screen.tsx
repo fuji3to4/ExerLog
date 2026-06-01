@@ -48,7 +48,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
       </Card>
 
       {!isHydrated ? (
-        <Card className="today-screen__section" aria-live="polite">
+        <Card className="grid gap-4" aria-live="polite">
           <CardHeader>
             <h2 className="text-xl font-semibold">{t("today_loading_heading")}</h2>
             <CardDescription>{t("today_loading_text")}</CardDescription>
@@ -70,9 +70,9 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
           <Card
             role="region"
             aria-labelledby={recommendedHeadingId}
-            className="today-screen__section"
+            className="grid gap-4"
           >
-            <CardHeader className="today-screen__section-heading">
+            <CardHeader className="gap-2">
               <h2 id={recommendedHeadingId} className="text-xl font-semibold">
                 {t("today_recommended_heading")}
               </h2>

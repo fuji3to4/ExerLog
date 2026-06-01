@@ -39,7 +39,7 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
       </Card>
 
       {!isHydrated ? (
-        <Card className="self-care-screen__section" aria-live="polite">
+        <Card className="grid gap-4" aria-live="polite">
           <CardHeader>
             <h2 className="text-xl font-semibold">{t("today_loading_heading")}</h2>
             <CardDescription>{t("today_loading_text")}</CardDescription>
@@ -58,7 +58,7 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
 
           <MetricsCard metrics={metrics} onMetricChange={setMetric} />
 
-          <Card className="self-care-screen__section">
+          <Card className="grid gap-4">
             <CardContent className="pt-0">
               <div className="button-row">
                 <Button className="w-full sm:w-auto" onClick={() => void save()}>
