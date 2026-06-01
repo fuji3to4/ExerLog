@@ -124,6 +124,8 @@ test("renders self-care wellness and metrics without legacy global hook classes"
   expect(within(wellnessRegion).getByRole("textbox", { name: /^note$/i })).toBeInTheDocument();
   expect(within(metricsRegion).getAllByRole("spinbutton")).toHaveLength(3);
 
+  expect(document.querySelector(".self-care-screen__date")).not.toBeInTheDocument();
+  expect(document.querySelector(".self-care-screen__section-heading")).not.toBeInTheDocument();
   expect(document.querySelector(".self-care-screen__field")).not.toBeInTheDocument();
   expect(document.querySelector(".self-care-screen__metric-input")).not.toBeInTheDocument();
   expect(document.querySelector(".self-care-screen__section")).not.toBeInTheDocument();

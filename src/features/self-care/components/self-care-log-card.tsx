@@ -16,7 +16,7 @@ export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCa
 
   return (
     <section className="self-care-screen__section">
-      <div className="card self-care-screen__section-heading">
+      <div className="card gap-2">
         <h2>{t("self_care_logs_heading")}</h2>
       </div>
 

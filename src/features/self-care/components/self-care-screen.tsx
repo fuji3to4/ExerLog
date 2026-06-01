@@ -32,7 +32,7 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
     <>
       <Card className="page-header">
         <CardHeader className="gap-2">
-          <p className="self-care-screen__date text-sm text-muted-foreground">{formatDate(date)}</p>
+          <p className="text-sm text-muted-foreground">{formatDate(date)}</p>
           <h1 className="text-3xl font-semibold tracking-tight">{t("self_care_heading")}</h1>
           <CardDescription>{t("self_care_subheading")}</CardDescription>
         </CardHeader>

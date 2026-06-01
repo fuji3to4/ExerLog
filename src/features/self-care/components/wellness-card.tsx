@@ -27,7 +27,7 @@ export function WellnessCard({
 
   return (
     <Card role="region" aria-labelledby={headingId} className="grid gap-4">
-      <CardHeader className="self-care-screen__section-heading">
+      <CardHeader className="gap-2">
         <h2 id={headingId} className="text-xl font-semibold">
           {t("history_condition_heading")}
         </h2>

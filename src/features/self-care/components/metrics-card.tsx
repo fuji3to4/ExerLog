@@ -27,7 +27,7 @@ export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
 
   return (
     <Card role="region" aria-labelledby={headingId} className="grid gap-4">
-      <CardHeader className="self-care-screen__section-heading">
+      <CardHeader className="gap-2">
         <h2 id={headingId} className="text-xl font-semibold">
           {t("self_care_metrics_heading")}
         </h2>

@@ -41,7 +41,9 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
     <>
       <Card className="page-header">
         <CardHeader className="gap-2">
-          <p className="today-screen__date text-sm text-muted-foreground">{formatDate(date)}</p>
+          <p className="text-sm font-bold uppercase tracking-[0.04em] text-[#31507d]">
+            {formatDate(date)}
+          </p>
           <h1 className="text-3xl font-semibold tracking-tight">{t("today_heading")}</h1>
           <CardDescription>{t("today_subheading")}</CardDescription>
         </CardHeader>

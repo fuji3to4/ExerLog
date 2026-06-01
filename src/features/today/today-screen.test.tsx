@@ -206,6 +206,7 @@ test("renders today cards without legacy global hook classes", async () => {
   expect(document.querySelector(".recommendation-card__header")).not.toBeInTheDocument();
   expect(document.querySelector(".recommendation-card__watch-link")).not.toBeInTheDocument();
   expect(document.querySelector(".recommendation-card__meta")).not.toBeInTheDocument();
+  expect(document.querySelector(".today-screen__date")).not.toBeInTheDocument();
   expect(document.querySelector(".today-screen__section")).not.toBeInTheDocument();
   expect(document.querySelector(".today-screen__section-heading")).not.toBeInTheDocument();
 });
