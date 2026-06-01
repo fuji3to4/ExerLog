@@ -22,6 +22,13 @@ const buttonVariants = cva(
         icon: "size-12 rounded-2xl p-0",
       },
     },
+    compoundVariants: [
+      {
+        variant: "link",
+        size: "default",
+        class: "h-auto",
+      },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",

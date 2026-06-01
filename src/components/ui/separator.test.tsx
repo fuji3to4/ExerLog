@@ -6,3 +6,9 @@ test("renders radix separator with data-orientation attribute", () => {
 
   expect(screen.getByTestId("separator")).toHaveAttribute("data-orientation", "vertical");
 });
+
+test("exposes separator role by default", () => {
+  render(<Separator />);
+
+  expect(screen.getByRole("separator")).toBeInTheDocument();
+});
