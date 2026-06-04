@@ -36,8 +36,7 @@ describe("HistoryGraphs", () => {
     });
 
     render(<HistoryGraphs />);
-
-    expect(screen.getByText("history_graphs_heading")).toBeInTheDocument();
+    expect(await screen.findByText("history_graphs_heading")).toBeInTheDocument();
   });
 
   it("renders metric selector dropdown with weight option", async () => {
@@ -52,6 +51,7 @@ describe("HistoryGraphs", () => {
     });
 
     render(<HistoryGraphs />);
+    await screen.findByText("history_graphs_heading");
 
     const selector = screen.getByLabelText("history_graph_metric_label");
     expect(selector).toBeInTheDocument();
@@ -70,6 +70,7 @@ describe("HistoryGraphs", () => {
     });
 
     render(<HistoryGraphs />);
+    await screen.findByText("history_graphs_heading");
 
     expect(screen.getByRole("button", { name: "7d" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "30d" })).toBeInTheDocument();
@@ -167,8 +168,8 @@ describe("HistoryGraphs", () => {
     const thirtyDayButton = screen.getByRole("button", { name: "30d" });
     await user.click(thirtyDayButton);
 
-    // The function should have been called at least twice (once for initial 7d, once for 30d)
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for the graph update to settle (the loading indicator or graph content)
+    await screen.findByText("Weight");
     expect(vi.mocked(buildHistoryGraphSeries).mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
