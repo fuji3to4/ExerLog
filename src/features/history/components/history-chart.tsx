@@ -1,62 +1,87 @@
 "use client";
 
-import { Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { GraphSeries } from "./history-graph-query";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import type { GraphSeries } from "../history-graph-query";
 
-type CustomTooltipProps = {
-  active?: boolean;
-  payload?: any[];
-  label?: string;
+type HistoryChartProps = {
+  series: GraphSeries;
 };
 
-const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+const CustomTooltip = ({ active, payload, label, unit }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-2 border border-gray-200 shadow-lg">
-        <p className="font-medium">{new Date(+payload[0].name).toLocaleDateString('ja-JP')}</p>
-        <p className="text-blue-500">{`価格: ¥${payload[0].value}`}</p>
+      <div className="rounded-lg border border-gray-200 bg-white p-2 shadow-md">
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-sm font-bold text-gray-900">
+          {payload[0].value} <span className="text-xs font-normal text-gray-500">{unit}</span>
+        </p>
       </div>
     );
   }
+
   return null;
 };
 
-const formatDate = (timestamp: number) => {
-  return new Date(timestamp).toLocaleDateString('ja-JP');
-};
-
-type HistoryChartProps = {
-  data: GraphSeries[];
-};
-
-export const HistoryChart = ({ data }: HistoryChartProps) => {
+export function HistoryChart({ series }: HistoryChartProps) {
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <LineChart
-        data={data}
-        margin={{ top: 10, right: 30, left: 20, bottom: 30 }}
-      >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis
-          dataKey="name"
-          tickFormatter={ts => formatDate(+ts)}
-          tick={{ fontSize: 12 }}
-        />
-        <YAxis
-          tickFormatter={value => `¥${value}`}
-          tick={{ fontSize: 12 }}
-        />
-        <Tooltip content={<CustomTooltip />} />
-        <Area type="monotone" dataKey="value" stroke="#8884d8" fill="url(#gradient)" />
-        <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} />
-        <Legend verticalAlign="top" height={36} />
-        <defs>
-          <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-      </LineChart>
-    </ResponsiveContainer>
+    <div
+      className="relative min-h-[250px] min-w-[300px] rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+      style={{ resize: "both", overflow: "hidden", height: "350px" }}
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart
+          data={series.points}
+          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="historyGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1} />
+              <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} stroke="#e5e7eb" strokeDasharray="3 3" />
+          <XAxis
+            dataKey="date"
+            tickFormatter={(value) => {
+              const date = new Date(value);
+              return `${date.getMonth() + 1}/${date.getDate()}`;
+            }}
+            tick={{ fontSize: 12, fill: "#6b7280" }}
+            tickLine={false}
+            axisLine={false}
+            dy={10}
+          />
+          <YAxis
+            tick={{ fontSize: 12, fill: "#6b7280" }}
+            tickLine={false}
+            axisLine={false}
+            dx={-5}
+          />
+          <Tooltip
+            content={<CustomTooltip unit={series.unit} />}
+            cursor={{ stroke: "#2563eb", strokeWidth: 1 }}
+          />
+          <Area
+            isAnimationActive={false}
+            type="monotone"
+            dataKey="value"
+            stroke="#2563eb"
+            strokeWidth={2.5}
+            fillOpacity={1}
+            fill="url(#historyGradient)"
+            dot={{ r: 3, fill: "#2563eb", strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: "#2563eb", strokeWidth: 2, stroke: "#fff" }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   );
-};
+}

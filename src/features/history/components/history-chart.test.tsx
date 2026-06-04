@@ -1,42 +1,65 @@
-import { render, screen } from '@testing-library/react';
-import { HistoryChart } from './history-chart';
-import type { GraphSeries } from './history-graph-query';
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { HistoryChart } from "./history-chart";
+import type { GraphSeries } from "../history-graph-query";
 
-describe('HistoryChart', () => {
-  const mockData: GraphSeries[] = [
-    { name: '1620000000000', value: 150 },
-    { name: '1620134400000', value: 200 },
-    { name: '1620220800000', value: 175 },
-  ];
+// Mock Recharts to render without ResponsiveContainer constraints in JSDOM
+vi.mock("recharts", async () => {
+  const original = await vi.importActual("recharts");
+  return {
+    ...original,
+    ResponsiveContainer: ({ children }: any) => (
+      <div className="recharts-responsive-container" style={{ width: 800, height: 600 }}>
+        {children}
+      </div>
+    ),
+    AreaChart: (props: any) => (
+      <original.AreaChart {...props} width={800} height={600}>
+        {props.children}
+      </original.AreaChart>
+    ),
+  };
+});
 
-  it('レンダリングが正常に行われること', () => {
-    render(<HistoryChart data={mockData} />);
+// ResizeObserver mock
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+global.ResizeObserver = ResizeObserverMock as any;
 
-    const chartContainer = screen.getByTestId('history-chart');
-    expect(chartContainer).toBeInTheDocument();
+describe("HistoryChart", () => {
+  const mockSeries: GraphSeries = {
+    label: "Weight",
+    unit: "kg",
+    points: [
+      { date: "2026-06-01", value: 70 },
+      { date: "2026-06-02", value: 71 },
+      { date: "2026-06-03", value: 69.5 },
+    ],
+  };
+
+  it("renders correctly with provided series data", () => {
+    const { container } = render(<HistoryChart series={mockSeries} />);
+    expect(container.querySelector("svg")).toBeInTheDocument();
+    expect(container.querySelector(".recharts-responsive-container")).toBeInTheDocument();
   });
 
-  it('データポイントが正しく表示されること', () => {
-    render(<HistoryChart data={mockData} />);
+  it("renders the correct number of dots matching data points", () => {
+    const { container } = render(<HistoryChart series={mockSeries} />);
 
-    // データポイントの存在を確認
-    for (const point of mockData) {
-      // 日付の変換を検証
-      const dateLabel = screen.queryByText(
-        new Date(+point.name).toLocaleDateString('ja-JP')
-      );
-
-      // 価格ラベルが少なくとも1つは表示されていること
-      const priceLabel = screen.queryByText(`¥${point.value}`);
-
-      expect(dateLabel || priceLabel).toBeInTheDocument();
-    }
+    // AreaChart with dot={true} renders .recharts-dot elements
+    const dots = container.querySelectorAll(".recharts-dot");
+    expect(dots.length).toBe(mockSeries.points.length);
   });
 
-  it('カスタムツールチップが表示されること', () => {
-    render(<HistoryChart data={mockData} />);
+  it("displays x-axis date labels", () => {
+    render(<HistoryChart series={mockSeries} />);
 
-    // ツールチップ要素を検証
-    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+    // Check if formatted dates are visible
+    expect(screen.getByText("6/1")).toBeInTheDocument();
+    expect(screen.getByText("6/2")).toBeInTheDocument();
+    expect(screen.getByText("6/3")).toBeInTheDocument();
   });
 });
