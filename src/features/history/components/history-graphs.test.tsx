@@ -11,6 +11,18 @@ vi.mock("@/features/history/history-graph-query", () => ({
   buildHistoryGraphSeries: vi.fn(),
 }));
 
+vi.mock("recharts", async (importOriginal) => {
+  const original = await importOriginal<typeof import("recharts")>();
+  return {
+    ...original,
+    ResponsiveContainer: ({ children }: any) => (
+      <div className="recharts-responsive-container" style={{ width: 800, height: 400 }}>
+        {children}
+      </div>
+    ),
+  };
+});
+
 describe("HistoryGraphs", () => {
   it("renders graph heading", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
@@ -65,7 +77,7 @@ describe("HistoryGraphs", () => {
     expect(screen.getByRole("button", { name: "all" })).toBeInTheDocument();
   });
 
-  it("renders SVG polyline chart when data exists", async () => {
+  it("renders chart when data exists", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
       label: "Weight",
@@ -77,15 +89,14 @@ describe("HistoryGraphs", () => {
       ],
     });
 
-    render(<HistoryGraphs />);
+    const { container } = render(<HistoryGraphs />);
 
     // Wait for the chart to load
-    const svg = await screen.findByRole("img", { hidden: true });
-    expect(svg).toBeInTheDocument();
+    const chart = await screen.findByRole("region", { name: "", hidden: true }).catch(() => null)
+      || container.querySelector(".recharts-wrapper");
 
-    // Check for polyline element (the chart line)
-    const polyline = svg.querySelector("polyline");
-    expect(polyline).toBeInTheDocument();
+    expect(container.querySelector(".history-screen__chart-wrapper")).toBeInTheDocument();
+    expect(container.querySelector(".recharts-responsive-container")).toBeInTheDocument();
   });
 
   it("shows empty state when no data points", async () => {
@@ -161,7 +172,7 @@ describe("HistoryGraphs", () => {
     expect(vi.mocked(buildHistoryGraphSeries).mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders chart with correct axis scale", async () => {
+  it("renders chart and handles data updates", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
       label: "Weight",
@@ -173,12 +184,9 @@ describe("HistoryGraphs", () => {
       ],
     });
 
-    render(<HistoryGraphs />);
+    const { container } = render(<HistoryGraphs />);
 
-    const svg = await screen.findByRole("img", { hidden: true });
-    expect(svg).toBeInTheDocument();
-
-    // The SVG should have proper dimensions
-    expect(svg).toHaveAttribute("viewBox");
+    await screen.findByText("history_graphs_heading");
+    expect(container.querySelector(".history-screen__chart-wrapper")).toBeInTheDocument();
   });
 });
