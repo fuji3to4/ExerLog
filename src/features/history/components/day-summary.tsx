@@ -15,6 +15,8 @@ import type { ConditionLevel, ExerciseLogResult, ExerciseVideo, MetricType, Well
 import type { HistoryDaySummary } from "../history-query";
 import { WellnessScoreInput } from "@/features/self-care/components/wellness-score-input";
 
+import { Switch } from "@/components/ui/switch"
+
 type DaySummaryProps = {
   selectedDate: string | null;
   summary: HistoryDaySummary | null;
@@ -461,14 +463,15 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
       <section className="card day-summary">
         <h2>{t("history_day_summary_heading")}</h2>
         <label>
-          <input
-            type="checkbox"
+          <Switch
+            className="ml-2 mr-2"
             aria-label={t("history_mode_edit")}
             checked={isEditMode}
-            onChange={(e) => setIsEditMode(e.target.checked)}
+            onCheckedChange={(checked) => setIsEditMode(checked)}
           />
+          {isEditMode ? t("history_mode_edit") : t("history_mode_view")}
         </label>
-        <p>{isEditMode ? t("history_mode_edit") : t("history_mode_view")}</p>
+        
         <p>{t("history_day_summary_empty")}</p>
       </section>
     );
@@ -482,14 +485,15 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
     <section className="card day-summary">
       <h2>{t("history_day_summary_heading")}</h2>
       <label>
-        <input
-          type="checkbox"
+        <Switch
+          className="ml-2 mr-2"
           aria-label={t("history_mode_edit")}
           checked={isEditMode}
-          onChange={(e) => setIsEditMode(e.target.checked)}
+          onCheckedChange={(checked) => setIsEditMode(checked)}
         />
+        {isEditMode ? t("history_mode_edit") : t("history_mode_view")}
       </label>
-      <p>{isEditMode ? t("history_mode_edit") : t("history_mode_view")}</p>
+      
 
       <div className="day-summary__section">
         <h3>{t("history_exercises_heading")}</h3>
