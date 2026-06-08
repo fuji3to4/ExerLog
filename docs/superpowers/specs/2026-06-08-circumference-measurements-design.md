@@ -243,6 +243,8 @@ Add translation keys for metric labels, group headings, and validation errors.
   
   "self_care_metrics_basic_group": "Basic Metrics",
   "self_care_metrics_circumference_group": "Circumference Measurements",
+  
+  "metrics_validation_error": "{{label}} must be between {{min}} and {{max}} {{unit}}",
 }
 ```
 
@@ -257,6 +259,8 @@ Add translation keys for metric labels, group headings, and validation errors.
   
   "self_care_metrics_basic_group": "基本測定",
   "self_care_metrics_circumference_group": "周径測定",
+  
+  "metrics_validation_error": "{{label}}は{{min}}〜{{max}}{{unit}}の範囲で入力してください",
 }
 ```
 
@@ -264,27 +268,27 @@ Add translation keys for metric labels, group headings, and validation errors.
 
 ## 4. Implementation Plan
 
-### 4.1 Phase 1: Type Definitions & i18n (1 hour)
+### 4.1 Phase 1: Type Definitions & i18n
 
 1. Update `src/lib/types.ts` - Add new `MetricType` values
 2. Update `src/features/i18n/messages/en.ts` - Add English translations
 3. Update `src/features/i18n/messages/ja.ts` - Add Japanese translations
 
-### 4.2 Phase 2: UI Layer - Metrics Card (2 hours)
+### 4.2 Phase 2: UI Layer - Metrics Card
 
 1. Update `src/features/self-care/components/metrics-card.tsx`:
    - Define `METRIC_FIELDS` with validation ranges
    - Render grouped sections with headings
    - Add validation logic
 
-### 4.3 Phase 3: History Graphs (1 hour)
+### 4.3 Phase 3: History Graphs
 
 1. Update `src/features/history/history-graph-query.ts`:
    - Add labels and units for new metric types
 2. Update `src/features/history/components/history-graphs.tsx`:
    - Add grouped dropdown options with `<optgroup>`
 
-### 4.4 Phase 4: Testing & Validation (1 hour)
+### 4.4 Phase 4: Testing & Validation
 
 1. Test input validation (min/max ranges)
 2. Test history graph rendering for new metrics
