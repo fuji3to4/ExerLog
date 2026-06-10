@@ -72,7 +72,7 @@
   self_care_save_button: "記録を保存",
   self_care_wellness_heading: "ウェルネス記録",
   self_care_physical_label: "身体",
-  self_care_mental_label: "心",
+  self_care_mental_label: "メンタル",
   wellness_score_hint_low: "😞 最悪",
   wellness_score_hint_high: "最高 😄",
   self_care_metrics_heading: "測定値",
