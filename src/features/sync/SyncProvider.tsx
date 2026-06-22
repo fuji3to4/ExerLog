@@ -10,13 +10,13 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
-import { trySilentRefresh, requestSignIn, signOut, hasValidToken } from "./google-auth";
+import { trySilentRefresh, requestSignIn, signOut } from "./google-auth";
 import { syncAll } from "./sync-engine";
 import type { SyncAllResult, SyncTableResult } from "./sync-engine";
 
 export type SyncStatus =
   | { type: "disconnected" }
-  | { type: "syncing"; message: string; progress: number }
+  | { type: "syncing"; message: string }
   | { type: "synced"; lastSynced: Date }
   | { type: "error"; message: string; partial: boolean };
 
@@ -50,14 +50,13 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const syncNow = useCallback(async () => {
-    setStatus({ type: "syncing", message: "Starting sync...", progress: 0 });
+    setStatus({ type: "syncing", message: "Starting sync..." });
 
     const onProgress = (result: SyncTableResult) => {
       if (!mountedRef.current) return;
       setStatus({
         type: "syncing",
         message: `Synced ${result.tableName} (${result.appended} new rows)`,
-        progress: 0, // Simplified; actual progress aggregated at completion
       });
     };
 
@@ -108,12 +107,14 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   // On mount, try silent refresh and sync
   useEffect(() => {
     (async () => {
-      const valid = await hasValidToken();
-      if (!valid) return;
-      const token = await trySilentRefresh();
-      if (!token) return;
-      setUserEmail(token.email);
-      await syncNow();
+      try {
+        const token = await trySilentRefresh();
+        if (!token) return;
+        setUserEmail(token.email);
+        await syncNow();
+      } catch {
+        // Silent failure on mount
+      }
     })();
   }, [syncNow]);
 
