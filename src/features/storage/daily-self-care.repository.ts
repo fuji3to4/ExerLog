@@ -1,6 +1,7 @@
 import type { DailySelfCareEntry } from "@/lib/types";
 
 import { localIsoNow } from "@/lib/date/local-iso";
+import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
 
 export type SelfCareDraft = Pick<
@@ -40,5 +41,6 @@ export async function replaceDailySelfCareEntries(date: string, entries: SelfCar
         recordedAt,
       })),
     );
+    scheduleSync();
   });
 }
