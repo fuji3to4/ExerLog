@@ -38,6 +38,8 @@ export function useSync(): SyncContextValue {
   return ctx;
 }
 
+export { SyncContext };
+
 export function SyncProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SyncStatus>({ type: "disconnected" });
   const [userEmail, setUserEmail] = useState<string | null>(null);

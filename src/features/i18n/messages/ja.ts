@@ -181,6 +181,15 @@
   settings_delete_success_exercises: "全エクササイズを削除しました。",
   settings_delete_success_logs: "全ログを削除しました。",
 
+  // Google Drive sync
+  settings_google_drive_heading: "Google Drive 同期",
+  settings_google_drive_description: "Google ドライブのスプレッドシートにデータを同期します。",
+  settings_google_drive_sign_in: "Google でサインイン",
+  settings_google_drive_sync_now: "今すぐ同期",
+  settings_google_drive_disconnect: "連携を解除",
+  settings_google_drive_syncing: "同期中…",
+  settings_google_drive_last_synced: "最終同期",
+
   // Common actions
   action_edit: "編集",
   action_delete: "削除",
