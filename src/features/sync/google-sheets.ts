@@ -21,7 +21,7 @@ export async function findSpreadsheet(
   accessToken: string,
 ): Promise<SpreadsheetInfo | null> {
   try {
-    const url = `${DRIVE_API}/files?q=name%3D%27ExerLog%20Data%27%20and%20mimeType%3D%27application%2Fvnd.google-apps.spreadsheet%27&orderBy=modifiedTime%20desc&pageSize=1&fields=files(id%2Cname)`;
+    const url = `${DRIVE_API}/files?q=name%3D%27ExerLog%20Data%27%20and%20mimeType%3D%27application%2Fvnd.google-apps.spreadsheet%27%20and%20trashed%3Dfalse&orderBy=modifiedTime%20desc&pageSize=1&fields=files(id%2Cname)`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
