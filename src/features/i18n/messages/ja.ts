@@ -182,6 +182,7 @@
   settings_delete_success_logs: "全ログを削除しました。",
 
   // Google Drive sync
+  settings_google_drive_section_heading: "Google Drive",
   settings_google_drive_heading: "Google Drive 同期",
   settings_google_drive_description: "Google ドライブのスプレッドシートにデータを同期します。",
   settings_google_drive_sign_in: "Google でサインイン",

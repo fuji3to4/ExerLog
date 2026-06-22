@@ -26,7 +26,7 @@ export function SettingsScreen() {
       </section>
 
       <section className="card settings-section">
-        <h2>Google Drive</h2>
+        <h2>{t("settings_google_drive_section_heading")}</h2>
         <GoogleDriveSettings />
       </section>
     </>

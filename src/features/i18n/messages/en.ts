@@ -182,6 +182,7 @@ export const en = {
   settings_delete_success_logs: "All logs deleted.",
 
   // Google Drive sync
+  settings_google_drive_section_heading: "Google Drive",
   settings_google_drive_heading: "Google Drive sync",
   settings_google_drive_description: "Sync your data to a Google Sheets spreadsheet on your Google Drive.",
   settings_google_drive_sign_in: "Sign in with Google",
