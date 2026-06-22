@@ -194,6 +194,7 @@ export const en = {
   // Sync indicator
   sync_indicator_sign_in: "Sign in with Google",
   sync_indicator_disconnect: "Disconnect",
+  sync_indicator_synced: "Connected",
   sync_indicator_syncing: "Syncing...",
   sync_indicator_error: "Sync error",
 

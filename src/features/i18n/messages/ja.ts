@@ -194,6 +194,7 @@
   // Sync indicator
   sync_indicator_sign_in: "Google でログイン",
   sync_indicator_disconnect: "連携を解除",
+  sync_indicator_synced: "接続済み",
   sync_indicator_syncing: "同期中...",
   sync_indicator_error: "同期エラー",
 

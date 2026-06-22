@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSync } from "@/features/sync/SyncProvider";
 import { useTranslation } from "@/features/i18n/use-translation";
 
@@ -24,6 +24,16 @@ export function SyncIndicator() {
 
   const isConnected = status.type !== "disconnected";
 
+  // Close dropdown on Escape key
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open]);
+
   return (
     <div className="relative">
       <button
@@ -37,7 +47,7 @@ export function SyncIndicator() {
               ? t("sync_indicator_syncing")
               : status.type === "error"
                 ? t("sync_indicator_error")
-                : userEmail ?? ""
+                : userEmail ?? t("sync_indicator_synced")
         }
         className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
       >

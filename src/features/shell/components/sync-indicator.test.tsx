@@ -59,6 +59,19 @@ describe("SyncIndicator", () => {
     expect(screen.getByRole("button", { name: /disconnect/i })).toBeDefined();
   });
 
+  test("closes dropdown on Escape key", async () => {
+    const ctx = createMockContext({
+      status: { type: "synced", lastSynced: new Date() },
+      userEmail: "user@example.com",
+    });
+    const user = userEvent.setup();
+    renderWithProviders(ctx);
+    await user.click(screen.getByText(/user@example\.com/));
+    expect(screen.getByRole("button", { name: /disconnect/i })).toBeDefined();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("button", { name: /disconnect/i })).toBeNull();
+  });
+
   test("calls disconnect from dropdown", async () => {
     const ctx = createMockContext({
       status: { type: "synced", lastSynced: new Date() },
@@ -76,7 +89,9 @@ describe("SyncIndicator", () => {
       status: { type: "syncing" },
     });
     renderWithProviders(ctx);
-    expect(screen.getByRole("button", { name: /syncing/i })).toBeDefined();
+    const btn = screen.getByRole("button", { name: /syncing/i });
+    expect(btn).toBeDefined();
+    expect(btn).toBeDisabled();
   });
 
   test("shows error state", () => {
