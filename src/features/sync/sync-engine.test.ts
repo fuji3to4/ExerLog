@@ -9,7 +9,33 @@ vi.mock("./google-sheets", () => ({
   createSpreadsheet: vi.fn(),
   ensureSheetTabs: vi.fn(),
   writeHeaders: vi.fn(),
+  SHEET_TABS: ["TableOne", "TableTwo"],
 }));
+
+// Mock sync-config with a small, deterministic config set for syncAll tests.
+// Hoisted to top so it applies to all tests in this file.
+vi.mock("./sync-config", async () => {
+  const actual = await vi.importActual<typeof import("./sync-config")>(
+    "./sync-config",
+  );
+  return {
+    ...actual,
+    TABLE_SYNC_CONFIGS: [
+      {
+        keyColumn: "id",
+        headers: ["id", "name"],
+        readFromDb: async () => [{ id: "a", name: "A" }],
+        toRow: (r: { id: string; name: string }) => [r.id, r.name],
+      },
+      {
+        keyColumn: "id",
+        headers: ["id", "value"],
+        readFromDb: async () => [{ id: "b", value: 1 }],
+        toRow: (r: { id: string; value: number }) => [r.id, String(r.value)],
+      },
+    ],
+  };
+});
 
 import {
   readSheetColumn,
@@ -109,5 +135,75 @@ describe("syncTable", () => {
 
     expect(result.error).toBeDefined();
     expect(result.appended).toBe(0);
+  });
+});
+
+describe("syncAll", () => {
+  test("finds existing spreadsheet, ensures tabs, syncs each table", async () => {
+    vi.mocked(findSpreadsheet).mockResolvedValue({
+      spreadsheetId: FAKE_SPREADSHEET_ID,
+    });
+    vi.mocked(ensureSheetTabs).mockResolvedValue(true);
+    vi.mocked(readSheetColumn).mockResolvedValue([]);
+    vi.mocked(appendRowsBatched).mockResolvedValue(true);
+
+    const result = await syncAll(FAKE_TOKEN);
+
+    expect(findSpreadsheet).toHaveBeenCalledWith(FAKE_TOKEN);
+    expect(createSpreadsheet).not.toHaveBeenCalled();
+    expect(ensureSheetTabs).toHaveBeenCalledWith(FAKE_TOKEN, FAKE_SPREADSHEET_ID);
+    expect(writeHeaders).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.spreadsheetId).toBe(FAKE_SPREADSHEET_ID);
+    expect(result.results).toHaveLength(2);
+    expect(result.results.every((r) => r.appended === 1)).toBe(true);
+  });
+
+  test("creates new spreadsheet and writes headers when none exists", async () => {
+    vi.mocked(findSpreadsheet).mockResolvedValue(null);
+    vi.mocked(createSpreadsheet).mockResolvedValue({
+      spreadsheetId: FAKE_SPREADSHEET_ID,
+    });
+    vi.mocked(writeHeaders).mockResolvedValue(true);
+    vi.mocked(readSheetColumn).mockResolvedValue([]);
+    vi.mocked(appendRowsBatched).mockResolvedValue(true);
+
+    const result = await syncAll(FAKE_TOKEN);
+
+    expect(createSpreadsheet).toHaveBeenCalledWith(FAKE_TOKEN);
+    expect(ensureSheetTabs).not.toHaveBeenCalled();
+    // 2 configs × 1 writeHeaders call each
+    expect(writeHeaders).toHaveBeenCalledTimes(2);
+    expect(result.success).toBe(true);
+    expect(result.spreadsheetId).toBe(FAKE_SPREADSHEET_ID);
+  });
+
+  test("returns failure when createSpreadsheet returns null", async () => {
+    vi.mocked(findSpreadsheet).mockResolvedValue(null);
+    vi.mocked(createSpreadsheet).mockResolvedValue(null);
+
+    const result = await syncAll(FAKE_TOKEN);
+
+    expect(result.success).toBe(false);
+    expect(result.results[0].error).toBe("Failed to create spreadsheet");
+  });
+
+  test("propagates per-table errors and reports partial failure", async () => {
+    vi.mocked(findSpreadsheet).mockResolvedValue({
+      spreadsheetId: FAKE_SPREADSHEET_ID,
+    });
+    vi.mocked(ensureSheetTabs).mockResolvedValue(true);
+    vi.mocked(readSheetColumn).mockResolvedValue([]);
+    // First call succeeds, second fails
+    vi.mocked(appendRowsBatched)
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+
+    const result = await syncAll(FAKE_TOKEN);
+
+    expect(result.success).toBe(false);
+    expect(result.results).toHaveLength(2);
+    expect(result.results[0].error).toBeUndefined();
+    expect(result.results[1].error).toBeDefined();
   });
 });

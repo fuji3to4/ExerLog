@@ -46,6 +46,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };

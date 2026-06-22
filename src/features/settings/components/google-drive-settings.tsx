@@ -54,7 +54,7 @@ export function GoogleDriveSettings() {
       )}
 
       {status.type === "error" && (
-        <p className="data-management__status">
+        <p className="data-management__status data-management__status--error">
           ❌ {status.message}
         </p>
       )}

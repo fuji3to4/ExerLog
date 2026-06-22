@@ -58,4 +58,18 @@ describe("GoogleDriveSettings", () => {
     renderWithProviders(ctx);
     expect(screen.getByText(/syncing/i)).toBeDefined();
   });
+
+  test("shows error state with error class", () => {
+    const ctx = createMockContext({
+      status: {
+        type: "error",
+        message: "Failed to append rows",
+        partial: true,
+      },
+    });
+    renderWithProviders(ctx);
+    const errorEl = screen.getByText(/failed to append rows/i);
+    expect(errorEl).toBeInTheDocument();
+    expect(errorEl.className).toContain("data-management__status--error");
+  });
 });

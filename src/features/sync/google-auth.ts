@@ -6,6 +6,7 @@ export const GOOGLE_CLIENT_ID =
 export const SCOPES = [
   "https://www.googleapis.com/auth/drive.file",
   "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/userinfo.email",
 ].join(" ");
 
 export interface GoogleToken {
@@ -76,6 +77,23 @@ export async function initTokenClient(): Promise<google.accounts.oauth2.TokenCli
   return tokenClient;
 }
 
+/**
+ * Fetch the user's email address from Google's userinfo endpoint.
+ * Requires the `userinfo.email` scope and a valid access token.
+ */
+async function fetchUserEmail(accessToken: string): Promise<string> {
+  try {
+    const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) return "";
+    const data = (await res.json()) as { email?: string };
+    return data.email ?? "";
+  } catch {
+    return "";
+  }
+}
+
 /** Open sign-in popup. Returns the token on success. */
 export async function requestSignIn(): Promise<GoogleToken> {
   const client = await initTokenClient();
@@ -85,16 +103,18 @@ export async function requestSignIn(): Promise<GoogleToken> {
         reject(new Error(response.error));
         return;
       }
-      // Get the hint from the token response where available
-      const hint = (response as any).hint ?? "";
-      const parsed = parseTokenFromResponse(response, hint || "unknown");
+      const parsed = parseTokenFromResponse(response, "");
       await storeToken(parsed);
       resolve(parsed);
     };
     client.requestAccessToken();
   });
+  // Fetch the user's email now that we have a token (best-effort)
+  const email = await fetchUserEmail(token.accessToken);
+  const withEmail: GoogleToken = { ...token, email };
+  await storeToken(withEmail);
   tokenClient = null; // Reset so next sign-in gets fresh client
-  return token;
+  return withEmail;
 }
 
 /** Sign out: clear stored token. GIS doesn't revoke tokens via client-side, just remove our copy. */
