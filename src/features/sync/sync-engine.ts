@@ -97,6 +97,7 @@ export async function syncAll(
   if (!info) {
     info = await createSpreadsheet(accessToken);
     if (!info) {
+      console.error("[sync] syncAll: could not find or create spreadsheet");
       return {
         success: false,
         results: [

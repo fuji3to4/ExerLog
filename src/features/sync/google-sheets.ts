@@ -25,11 +25,15 @@ export async function findSpreadsheet(
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error("[sync] findSpreadsheet failed", res.status, await res.text());
+      return null;
+    }
     const data = await res.json();
     if (!data.files?.length) return null;
     return { spreadsheetId: data.files[0].id };
-  } catch {
+  } catch (err) {
+    console.error("[sync] findSpreadsheet threw", err);
     return null;
   }
 }
@@ -51,10 +55,14 @@ export async function createSpreadsheet(
       },
       body: JSON.stringify(body),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error("[sync] createSpreadsheet failed", res.status, await res.text());
+      return null;
+    }
     const data = await res.json();
     return { spreadsheetId: data.spreadsheetId };
-  } catch {
+  } catch (err) {
+    console.error("[sync] createSpreadsheet threw", err);
     return null;
   }
 }
