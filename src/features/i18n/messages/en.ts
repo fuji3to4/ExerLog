@@ -191,6 +191,12 @@ export const en = {
   settings_google_drive_syncing: "Syncing...",
   settings_google_drive_last_synced: "Last synced",
 
+  // Sync indicator
+  sync_indicator_sign_in: "Sign in with Google",
+  sync_indicator_disconnect: "Disconnect",
+  sync_indicator_syncing: "Syncing...",
+  sync_indicator_error: "Sync error",
+
   // Common actions
   action_edit: "Edit",
   action_delete: "Delete",

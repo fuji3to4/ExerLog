@@ -191,6 +191,12 @@
   settings_google_drive_syncing: "同期中…",
   settings_google_drive_last_synced: "最終同期",
 
+  // Sync indicator
+  sync_indicator_sign_in: "Google でログイン",
+  sync_indicator_disconnect: "連携を解除",
+  sync_indicator_syncing: "同期中...",
+  sync_indicator_error: "同期エラー",
+
   // Common actions
   action_edit: "編集",
   action_delete: "削除",
