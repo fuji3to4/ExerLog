@@ -51,6 +51,32 @@ describe("scheduleSync", () => {
     expect(mockSyncAll).not.toHaveBeenCalled();
   });
 
+  test("handles errors from trySilentRefresh gracefully", async () => {
+    mockTrySilentRefresh.mockRejectedValue(new Error("network error"));
+
+    scheduleSync();
+    vi.advanceTimersByTime(SYNC_DEBOUNCE_MS);
+
+    // Should not throw — error is caught by try/catch in scheduleSync
+    await vi.waitFor(() => {
+      expect(mockTrySilentRefresh).toHaveBeenCalledTimes(1);
+    });
+    expect(mockSyncAll).not.toHaveBeenCalled();
+  });
+
+  test("handles errors from syncAll gracefully", async () => {
+    mockTrySilentRefresh.mockResolvedValue({ accessToken: "tok" });
+    mockSyncAll.mockRejectedValue(new Error("api error"));
+
+    scheduleSync();
+    vi.advanceTimersByTime(SYNC_DEBOUNCE_MS);
+
+    await vi.waitFor(() => {
+      expect(mockTrySilentRefresh).toHaveBeenCalledTimes(1);
+    });
+    expect(mockSyncAll).toHaveBeenCalledWith("tok", expect.any(Function));
+  });
+
   test("debounces multiple calls within the delay window", async () => {
     mockTrySilentRefresh.mockResolvedValue({ accessToken: "tok" });
     mockSyncAll.mockResolvedValue({ success: true, results: [] });

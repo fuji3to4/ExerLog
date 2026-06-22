@@ -14,9 +14,13 @@ export function scheduleSync(): void {
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(async () => {
     syncTimer = null;
-    const token = await trySilentRefresh();
-    if (!token) return;
-    await syncAll(token.accessToken, () => {});
+    try {
+      const token = await trySilentRefresh();
+      if (!token) return;
+      await syncAll(token.accessToken, () => {});
+    } catch (err) {
+      console.error("[auto-sync] scheduleSync failed", err);
+    }
   }, SYNC_DEBOUNCE_MS);
 }
 
