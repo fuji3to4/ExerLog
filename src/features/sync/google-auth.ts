@@ -146,7 +146,7 @@ export async function trySilentRefresh(): Promise<GoogleToken | null> {
         await storeToken(parsed);
         resolve(parsed);
       };
-      client.requestAccessToken({ hint: stored.email });
+      client.requestAccessToken({ prompt: "none", hint: stored.email });
     });
     return refreshed;
   } catch {
