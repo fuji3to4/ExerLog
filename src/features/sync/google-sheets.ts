@@ -82,8 +82,9 @@ export async function readSheetColumn(
     if (!res.ok) return [];
     const data = await res.json();
     if (!data.values?.length) return [];
-    // Skip header row (index 0), return values
-    return data.values.slice(1).map((row: string[]) => String(row[0] ?? ""));
+    const values = data.values.map((row: string[]) => String(row[0] ?? ""));
+    const shouldSkipHeader = values[0] === "id" || values[0] === "date";
+    return shouldSkipHeader ? values.slice(1) : values;
   } catch {
     return [];
   }
