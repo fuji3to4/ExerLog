@@ -57,7 +57,6 @@ describe("syncTable", () => {
   const config = {
     keyColumn: "id",
     headers: ["id", "name"],
-    // eslint-disable-next-line @typescript-eslint/require-await
     readFromDb: async () => [
       { id: "1", name: "Alice" },
       { id: "2", name: "Bob" },
