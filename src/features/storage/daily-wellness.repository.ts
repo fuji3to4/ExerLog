@@ -1,6 +1,7 @@
 import type { DailyWellnessEntry } from "@/lib/types";
 
 import { localIsoNow } from "@/lib/date/local-iso";
+import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
 
 export type SaveDailyWellnessInput = Pick<
@@ -26,6 +27,9 @@ export function saveDailyWellness(input: SaveDailyWellnessInput) {
     ...input,
     note: input.note.trim(),
     updatedAt: localIsoNow(),
+  }).then((key) => {
+    scheduleSync();
+    return key;
   });
 }
 

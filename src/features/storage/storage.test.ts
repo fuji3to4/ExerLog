@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeEach } from "vitest";
 import {
   listExerciseLogsForDay,
   saveExerciseLog,
@@ -72,4 +73,23 @@ test("replaces same-day exercise logs without duplicate rows under concurrent sa
 
   expect(logs).toHaveLength(1);
   expect(logs[0]?.result).toBe("did");
+});
+
+describe("googleAuth table", () => {
+  beforeEach(async () => {
+    await appDb.googleAuth.clear();
+  });
+
+  test("stores and retrieves key-value pairs", async () => {
+    await appDb.googleAuth.put({ key: "test_key", value: "test_value" });
+    const result = await appDb.googleAuth.get("test_key");
+    expect(result?.value).toBe("test_value");
+  });
+
+  test("deletes key-value pairs", async () => {
+    await appDb.googleAuth.put({ key: "to_delete", value: "data" });
+    await appDb.googleAuth.delete("to_delete");
+    const result = await appDb.googleAuth.get("to_delete");
+    expect(result).toBeUndefined();
+  });
 });

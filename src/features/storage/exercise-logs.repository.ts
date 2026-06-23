@@ -1,6 +1,7 @@
 import type { ExerciseLog } from "@/lib/types";
 
 import { localIsoNow } from "@/lib/date/local-iso";
+import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
 
 export type SaveExerciseLogInput = Pick<
@@ -19,6 +20,9 @@ export async function saveExerciseLog(input: SaveExerciseLogInput) {
       ...input,
       id: existingLog?.id ?? crypto.randomUUID(),
       loggedAt: localIsoNow(),
+    }).then((id) => {
+      scheduleSync();
+      return id;
     });
   });
 }
@@ -29,6 +33,7 @@ export function listExerciseLogsForDay(date: string) {
 
 export async function updateExerciseLog(log: ExerciseLog): Promise<void> {
   await appDb.logs.put(log);
+  scheduleSync();
 }
 
 export function deleteExerciseLog(id: string): Promise<void> {

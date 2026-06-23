@@ -18,6 +18,7 @@ export class AppDb extends Dexie {
   dailyMetrics!: EntityTable<DailyMetricEntry, "id">;
   selfCareCatalog!: EntityTable<SelfCareItem, "id">;
   dailySelfCareLogs!: EntityTable<DailySelfCareEntry, "id">;
+  googleAuth!: EntityTable<{ key: string; value: string }, "key">;
 
   constructor() {
     super("exercise-log-mvp");
@@ -69,6 +70,17 @@ export class AppDb extends Dexie {
       .upgrade(async (tx) => {
         await tx.table("logs").where("result").equals("could_not").delete();
       });
+
+    this.version(5).stores({
+      logs: "++id, date, exerciseId, result, loggedAt, &[date+exerciseId]",
+      conditions: "date, conditionLevel, note, updatedAt",
+      exercises: "id, title, bodyArea, purpose, durationMinutes, intensity",
+      dailyWellness: "date, physicalScore, mentalScore, updatedAt",
+      dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",
+      selfCareCatalog: "id, sortOrder, isArchived",
+      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      googleAuth: "key",
+    });
   }
 }
 
