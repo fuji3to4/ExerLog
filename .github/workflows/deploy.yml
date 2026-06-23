@@ -33,6 +33,7 @@ jobs:
         run: npm run build
         env:
           GITHUB_ACTIONS: true
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
 
       - name: Fix manifest for GitHub Pages
         run: |
