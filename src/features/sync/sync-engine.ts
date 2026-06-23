@@ -84,8 +84,20 @@ export interface SyncAllResult {
   spreadsheetId?: string;
 }
 
+let activeSyncPromise: Promise<any> = Promise.resolve();
+
 /** Sync all 6 tables. Returns aggregate result. */
 export async function syncAll(
+  accessToken: string,
+  onProgress?: SyncProgressCallback,
+): Promise<SyncAllResult> {
+  const execute = () => doSyncAll(accessToken, onProgress);
+  const nextPromise = activeSyncPromise.then(execute, execute);
+  activeSyncPromise = nextPromise;
+  return nextPromise;
+}
+
+async function doSyncAll(
   accessToken: string,
   onProgress?: SyncProgressCallback,
 ): Promise<SyncAllResult> {

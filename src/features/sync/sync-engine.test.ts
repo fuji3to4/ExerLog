@@ -206,4 +206,33 @@ describe("syncAll", () => {
     expect(result.results[0].error).toBeUndefined();
     expect(result.results[1].error).toBeDefined();
   });
+
+  test("queues concurrent calls to syncAll sequentially", async () => {
+    let activeRuns = 0;
+    let maxConcurrentRuns = 0;
+
+    vi.mocked(findSpreadsheet).mockImplementation(async () => {
+      activeRuns++;
+      maxConcurrentRuns = Math.max(maxConcurrentRuns, activeRuns);
+      // Introduce a small delay to allow overlap if concurrent execution were possible
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      activeRuns--;
+      return { spreadsheetId: FAKE_SPREADSHEET_ID };
+    });
+
+    vi.mocked(ensureSheetTabs).mockResolvedValue(true);
+    vi.mocked(readSheetColumn).mockResolvedValue([]);
+    vi.mocked(appendRowsBatched).mockResolvedValue(true);
+
+    // Call syncAll twice concurrently
+    const [res1, res2] = await Promise.all([
+      syncAll(FAKE_TOKEN),
+      syncAll(FAKE_TOKEN),
+    ]);
+
+    expect(res1.success).toBe(true);
+    expect(res2.success).toBe(true);
+    // Since calls are serialized, activeRuns should never exceed 1
+    expect(maxConcurrentRuns).toBe(1);
+  });
 });
