@@ -158,5 +158,5 @@ export async function trySilentRefresh(): Promise<GoogleToken | null> {
 /** Check if a stored token exists and is not expired (within 5-minute buffer). */
 export async function hasValidToken(): Promise<boolean> {
   const token = await loadStoredToken();
-  return token !== null && token.expiresAt > Date.now() + 60000;
+  return token !== null && token.expiresAt > Date.now() + 300000;
 }
