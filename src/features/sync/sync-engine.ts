@@ -115,11 +115,41 @@ export async function syncAll(
     for (let i = 0; i < TABLE_SYNC_CONFIGS.length; i++) {
       const config = TABLE_SYNC_CONFIGS[i];
       const sheetName = SHEET_TABS[i];
-      await writeHeaders(accessToken, info.spreadsheetId, sheetName, config.headers);
+      const ok = await writeHeaders(accessToken, info.spreadsheetId, sheetName, config.headers);
+      if (!ok) {
+        return {
+          success: false,
+          results: [
+            {
+              tableName: sheetName,
+              total: 0,
+              found: 0,
+              appended: 0,
+              error: `Failed to write headers for ${sheetName}`,
+            },
+          ],
+          spreadsheetId: info.spreadsheetId,
+        };
+      }
     }
   } else {
     // Ensure all tabs exist for existing spreadsheet
-    await ensureSheetTabs(accessToken, info.spreadsheetId);
+    const ok = await ensureSheetTabs(accessToken, info.spreadsheetId);
+    if (!ok) {
+      return {
+        success: false,
+        results: [
+          {
+            tableName: "spreadsheet",
+            total: 0,
+            found: 0,
+            appended: 0,
+            error: "Failed to ensure required sheet tabs",
+          },
+        ],
+        spreadsheetId: info.spreadsheetId,
+      };
+    }
   }
 
   // Step 2: Sync each table sequentially
