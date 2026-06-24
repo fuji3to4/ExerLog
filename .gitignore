@@ -9,3 +9,4 @@ public/sw.js
 public/workbox-*.js
 data/
 .claude
+.aider*
