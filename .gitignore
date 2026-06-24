@@ -10,3 +10,5 @@ public/workbox-*.js
 data/
 .claude
 .aider*
+.env.local
+.env.*.local

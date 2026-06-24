@@ -3,6 +3,7 @@
 import { useTranslation } from "@/features/i18n/use-translation";
 
 import { DataManagement } from "./data-management";
+import { GoogleDriveSettings } from "./google-drive-settings";
 import { LibraryManagement } from "./library-management";
 
 export function SettingsScreen() {
@@ -22,6 +23,11 @@ export function SettingsScreen() {
       <section className="card settings-section">
         <h2>{t("settings_data_section_heading")}</h2>
         <DataManagement />
+      </section>
+
+      <section className="card settings-section">
+        <h2>{t("settings_google_drive_section_heading")}</h2>
+        <GoogleDriveSettings />
       </section>
     </>
   );

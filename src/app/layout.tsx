@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { LanguageProvider } from "@/features/i18n/language-provider";
 import { DbInitProvider } from "@/features/storage/db-init-provider";
+import { SyncProvider } from "@/features/sync/SyncProvider";
 
 type RootLayoutProps = {
   children: ReactNode;
@@ -59,7 +60,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
           }}
         />
         <LanguageProvider>
-          <DbInitProvider>{children}</DbInitProvider>
+          <DbInitProvider>
+            <SyncProvider>{children}</SyncProvider>
+          </DbInitProvider>
         </LanguageProvider>
       </body>
     </html>

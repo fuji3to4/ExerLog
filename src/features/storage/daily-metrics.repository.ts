@@ -1,6 +1,7 @@
 import type { DailyMetricEntry } from "@/lib/types";
 
 import { localIsoNow } from "@/lib/date/local-iso";
+import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
 
 export type MetricDraft = Pick<DailyMetricEntry, "metricType" | "value" | "unit">;
@@ -16,12 +17,14 @@ export async function upsertDailyMetric(date: string, metric: MetricDraft) {
       .equals([date, metric.metricType])
       .first();
 
-    return appDb.dailyMetrics.put({
+    const result = await appDb.dailyMetrics.put({
       id: existing?.id ?? crypto.randomUUID(),
       date,
       ...metric,
       recordedAt: localIsoNow(),
     });
+    scheduleSync();
+    return result;
   });
 }
 
@@ -60,5 +63,6 @@ export async function replaceDailyMetrics(date: string, metrics: MetricDraft[]) 
         recordedAt,
       })),
     );
+    scheduleSync();
   });
 }

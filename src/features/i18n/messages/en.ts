@@ -181,6 +181,23 @@ export const en = {
   settings_delete_success_exercises: "All exercises deleted.",
   settings_delete_success_logs: "All logs deleted.",
 
+  // Google Drive sync
+  settings_google_drive_section_heading: "Google Drive",
+  settings_google_drive_heading: "Google Drive sync",
+  settings_google_drive_description: "Sync your data to a Google Sheets spreadsheet on your Google Drive.",
+  settings_google_drive_sign_in: "Sign in with Google",
+  settings_google_drive_sync_now: "Sync now",
+  settings_google_drive_disconnect: "Disconnect",
+  settings_google_drive_syncing: "Syncing...",
+  settings_google_drive_last_synced: "Last synced",
+
+  // Sync indicator
+  sync_indicator_sign_in: "Sign in with Google",
+  sync_indicator_disconnect: "Disconnect",
+  sync_indicator_synced: "Connected",
+  sync_indicator_syncing: "Syncing...",
+  sync_indicator_error: "Sync error",
+
   // Common actions
   action_edit: "Edit",
   action_delete: "Delete",
