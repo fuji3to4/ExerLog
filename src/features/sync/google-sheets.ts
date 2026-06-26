@@ -67,6 +67,26 @@ export async function createSpreadsheet(
   }
 }
 
+/** Read ALL rows from a sheet tab (including header). Returns string[][] with first row = header. */
+export async function readAllRows(
+  accessToken: string,
+  spreadsheetId: string,
+  sheetName: string,
+): Promise<string[][]> {
+  try {
+    const range = encodeURIComponent(`${sheetName}!A:ZZ`);
+    const res = await fetch(
+      `${SHEETS_API}/${spreadsheetId}/values/${range}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.values ?? [];
+  } catch {
+    return [];
+  }
+}
+
 /** Read values from the first column of a sheet tab (skipping header row). */
 export async function readSheetColumn(
   accessToken: string,

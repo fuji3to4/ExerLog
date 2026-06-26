@@ -5,6 +5,7 @@ import {
   readSheetColumn,
   appendRows,
   ensureSheetTabs,
+  readAllRows,
 } from "./google-sheets";
 
 const mockFetch = vi.fn();
@@ -101,6 +102,47 @@ describe("readSheetColumn", () => {
   test("returns empty array on API error", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
     const result = await readSheetColumn(FAKE_TOKEN, "sheet123", "Fail");
+    expect(result).toEqual([]);
+  });
+});
+
+describe("readAllRows", () => {
+  test("returns all rows including header when sheet has data", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          values: [
+            ["id", "date", "exerciseId"],
+            ["1", "2026-01-01", "ex-1"],
+            ["2", "2026-01-02", "ex-2"],
+          ],
+        }),
+    });
+    const result = await readAllRows(FAKE_TOKEN, "sheet123", "ExerciseLogs");
+    expect(result).toEqual([
+      ["id", "date", "exerciseId"],
+      ["1", "2026-01-01", "ex-1"],
+      ["2", "2026-01-02", "ex-2"],
+    ]);
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("ExerciseLogs!A%3AZZ"),
+      expect.any(Object),
+    );
+  });
+
+  test("returns empty array when sheet is empty", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({}),
+    });
+    const result = await readAllRows(FAKE_TOKEN, "sheet123", "EmptySheet");
+    expect(result).toEqual([]);
+  });
+
+  test("returns empty array on API error", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
+    const result = await readAllRows(FAKE_TOKEN, "sheet123", "Fail");
     expect(result).toEqual([]);
   });
 });
