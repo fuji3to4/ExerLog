@@ -9,6 +9,7 @@ vi.mock("./google-sheets", () => ({
   createSpreadsheet: vi.fn(),
   ensureSheetTabs: vi.fn(),
   writeHeaders: vi.fn(),
+  readAllRows: vi.fn(),
   SHEET_TABS: ["TableOne", "TableTwo"],
 }));
 
@@ -26,12 +27,24 @@ vi.mock("./sync-config", async () => {
         headers: ["id", "name"],
         readFromDb: async () => [{ id: "a", name: "A" }],
         toRow: (r: { id: string; name: string }) => [r.id, r.name],
+        fromRow: (row: string[], hdrs: string[]) => ({
+          id: row[hdrs.indexOf("id")],
+          name: row[hdrs.indexOf("name")],
+        }),
+        clearDb: vi.fn().mockResolvedValue(undefined),
+        bulkWriteDb: vi.fn().mockResolvedValue(undefined),
       },
       {
         keyColumn: "id",
         headers: ["id", "value"],
         readFromDb: async () => [{ id: "b", value: 1 }],
         toRow: (r: { id: string; value: number }) => [r.id, String(r.value)],
+        fromRow: (row: string[], hdrs: string[]) => ({
+          id: row[hdrs.indexOf("id")],
+          value: Number(row[hdrs.indexOf("value")]),
+        }),
+        clearDb: vi.fn().mockResolvedValue(undefined),
+        bulkWriteDb: vi.fn().mockResolvedValue(undefined),
       },
     ],
   };
@@ -44,6 +57,7 @@ import {
   createSpreadsheet,
   ensureSheetTabs,
   writeHeaders,
+  readAllRows,
 } from "./google-sheets";
 
 const FAKE_TOKEN = "fake-token";
