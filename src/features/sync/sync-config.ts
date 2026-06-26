@@ -23,9 +23,27 @@ import type {
 } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
 
+/**
+ * Write records one at a time, skipping records that fail (e.g. ConstraintError
+ * from compound unique indexes like &[date+metricType]). This is more robust
+ * than bulkPut which fails atomically when ANY record violates a constraint.
+ */
+async function bulkWriteSafely(table: Table<any, string>, records: any[]): Promise<void> {
+  for (const record of records) {
+    try {
+      await table.put(record);
+    } catch {
+      // Skip records that violate unique constraints
+    }
+  }
+}
+
+// Import Dexie type for the function above
+import type { Table } from "dexie";
+
 export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
   {
-    // ExerciseLogs
+    // ExerciseLogs — unique index: &[date+exerciseId]
     keyColumn: "id",
     headers: ["id", "date", "exerciseId", "result", "loggedAt"],
     readFromDb: () => appDb.logs.toArray(),
@@ -38,10 +56,10 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
       loggedAt: row[headers.indexOf("loggedAt")],
     }),
     clearDb: async () => { await appDb.logs.clear(); },
-    bulkWriteDb: async (records) => { await appDb.logs.bulkPut(records as ExerciseLog[]); },
+    bulkWriteDb: async (records) => { await bulkWriteSafely(appDb.logs, records); },
   },
   {
-    // DailyWellness
+    // DailyWellness — primary key: date (no compound unique index)
     keyColumn: "date",
     headers: ["date", "physicalScore", "mentalScore", "note", "updatedAt"],
     readFromDb: () => appDb.dailyWellness.toArray(),
@@ -63,7 +81,7 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
     bulkWriteDb: async (records) => { await appDb.dailyWellness.bulkPut(records as DailyWellnessEntry[]); },
   },
   {
-    // DailyMetrics
+    // DailyMetrics — unique index: &[date+metricType]
     keyColumn: "id",
     headers: ["id", "date", "metricType", "value", "unit", "recordedAt"],
     readFromDb: () => appDb.dailyMetrics.toArray(),
@@ -84,10 +102,10 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
       recordedAt: row[headers.indexOf("recordedAt")],
     }),
     clearDb: async () => { await appDb.dailyMetrics.clear(); },
-    bulkWriteDb: async (records) => { await appDb.dailyMetrics.bulkPut(records as DailyMetricEntry[]); },
+    bulkWriteDb: async (records) => { await bulkWriteSafely(appDb.dailyMetrics, records); },
   },
   {
-    // DailySelfCare
+    // DailySelfCare — unique index: &[date+selfCareId]
     keyColumn: "id",
     headers: [
       "id",
@@ -126,7 +144,7 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
       };
     },
     clearDb: async () => { await appDb.dailySelfCareLogs.clear(); },
-    bulkWriteDb: async (records) => { await appDb.dailySelfCareLogs.bulkPut(records as DailySelfCareEntry[]); },
+    bulkWriteDb: async (records) => { await bulkWriteSafely(appDb.dailySelfCareLogs, records); },
   },
   {
     // Exercises (master)
