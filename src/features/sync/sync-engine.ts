@@ -5,6 +5,7 @@ import {
   appendRowsBatched,
   ensureSheetTabs,
   writeHeaders,
+  readAllRows,
   SHEET_TABS,
 } from "./google-sheets";
 import type { TableSyncConfig } from "./sync-config";
@@ -76,6 +77,13 @@ export async function syncTable(
 
   onProgress(result);
   return result;
+}
+
+export interface DownloadTableResult {
+  tableName: string;
+  rowsRead: number;
+  rowsWritten: number;
+  error?: string;
 }
 
 export interface SyncAllResult {
@@ -184,4 +192,59 @@ async function doSyncAll(
     results,
     spreadsheetId: info.spreadsheetId,
   };
+}
+
+/** Phase 2: download all rows from each Google Sheet and replace local IndexedDB. */
+export async function downloadAndReplaceAll(
+  accessToken: string,
+  spreadsheetId: string,
+  onProgress?: SyncProgressCallback,
+): Promise<{ success: boolean; results: DownloadTableResult[] }> {
+  const cb = onProgress ?? (() => {});
+  const results: DownloadTableResult[] = [];
+
+  for (let i = 0; i < TABLE_SYNC_CONFIGS.length; i++) {
+    const config = TABLE_SYNC_CONFIGS[i];
+    const sheetName = SHEET_TABS[i];
+    const result: DownloadTableResult = {
+      tableName: sheetName,
+      rowsRead: 0,
+      rowsWritten: 0,
+    };
+
+    try {
+      const allRows = await readAllRows(accessToken, spreadsheetId, sheetName);
+      // allRows[0] is the header; data rows are allRows.slice(1)
+      if (allRows.length <= 1) {
+        // No data rows (only header or empty)
+        await config.clearDb();
+        result.rowsRead = 0;
+        result.rowsWritten = 0;
+        cb({ tableName: sheetName, total: 0, found: 0, appended: 0 });
+        results.push(result);
+        continue;
+      }
+
+      const headers = allRows[0];
+      const dataRows = allRows.slice(1);
+      result.rowsRead = dataRows.length;
+
+      const records = dataRows.map((row) => config.fromRow(row, headers));
+
+      await config.clearDb();
+      if (records.length > 0) {
+        await config.bulkWriteDb(records);
+      }
+      result.rowsWritten = records.length;
+
+      cb({ tableName: sheetName, total: records.length, found: 0, appended: 0 });
+    } catch (err) {
+      result.error = err instanceof Error ? err.message : String(err);
+    }
+
+    results.push(result);
+  }
+
+  const hasError = results.some((r) => r.error);
+  return { success: !hasError, results };
 }

@@ -249,3 +249,80 @@ describe("syncAll", () => {
     expect(maxConcurrentRuns).toBe(1);
   });
 });
+
+describe("downloadAndReplaceAll", () => {
+  test("reads all rows, clears db, and bulk-writes for each table", async () => {
+    // Mock readAllRows: first table = 2 data rows, second table = 1 data row
+    vi.mocked(readAllRows)
+      .mockResolvedValueOnce([
+        ["id", "name"],
+        ["a", "A"],
+        ["c", "C"],
+      ])
+      .mockResolvedValueOnce([
+        ["id", "value"],
+        ["b", "2"],
+      ]);
+
+    const { TABLE_SYNC_CONFIGS } = await import("./sync-config");
+    const { downloadAndReplaceAll } = await import("./sync-engine");
+
+    const result = await downloadAndReplaceAll(FAKE_TOKEN, FAKE_SPREADSHEET_ID);
+
+    expect(result.success).toBe(true);
+    expect(result.results).toHaveLength(2);
+
+    // First table: 2 data rows read, 2 written
+    expect(result.results[0].rowsRead).toBe(2);
+    expect(result.results[0].rowsWritten).toBe(2);
+    // Second table: 1 data row read, 1 written
+    expect(result.results[1].rowsRead).toBe(1);
+    expect(result.results[1].rowsWritten).toBe(1);
+
+    // Verify clearDb and bulkWriteDb were called
+    expect(TABLE_SYNC_CONFIGS[0].clearDb).toHaveBeenCalled();
+    expect(TABLE_SYNC_CONFIGS[0].bulkWriteDb).toHaveBeenCalledWith([
+      { id: "a", name: "A" },
+      { id: "c", name: "C" },
+    ]);
+    expect(TABLE_SYNC_CONFIGS[1].clearDb).toHaveBeenCalled();
+    expect(TABLE_SYNC_CONFIGS[1].bulkWriteDb).toHaveBeenCalledWith([
+      { id: "b", value: 2 },
+    ]);
+  });
+
+  test("handles empty sheet gracefully", async () => {
+    vi.mocked(readAllRows).mockResolvedValue([["id", "name"]]); // header only
+    vi.mocked(readAllRows).mockResolvedValueOnce([]); // empty
+
+    const { downloadAndReplaceAll } = await import("./sync-engine");
+    const result = await downloadAndReplaceAll(FAKE_TOKEN, FAKE_SPREADSHEET_ID);
+
+    expect(result.results[0].rowsRead).toBe(0);
+    expect(result.results[0].rowsWritten).toBe(0);
+    expect(result.results[1].rowsRead).toBe(0);
+    expect(result.results[1].rowsWritten).toBe(0);
+  });
+
+  test("continues to next table when one table's bulkWriteDb throws", async () => {
+    vi.mocked(readAllRows).mockResolvedValue([
+      ["id", "name"],
+      ["a", "A"],
+    ]);
+    vi.mocked(readAllRows).mockResolvedValueOnce([
+      ["id", "value"],
+      ["b", "2"],
+    ]);
+
+    const { TABLE_SYNC_CONFIGS } = await import("./sync-config");
+    // Make second table's bulkWriteDb throw
+    (TABLE_SYNC_CONFIGS[1].bulkWriteDb as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("write failed"));
+
+    const { downloadAndReplaceAll } = await import("./sync-engine");
+    const result = await downloadAndReplaceAll(FAKE_TOKEN, FAKE_SPREADSHEET_ID);
+
+    expect(result.results[0].error).toBeUndefined();
+    expect(result.results[1].error).toContain("write failed");
+    expect(result.success).toBe(false);
+  });
+});
