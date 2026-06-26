@@ -94,12 +94,15 @@ export interface SyncAllResult {
 
 let activeSyncPromise: Promise<any> = Promise.resolve();
 
+export type SyncMode = "upload-only" | "full";
+
 /** Sync all 6 tables. Returns aggregate result. */
 export async function syncAll(
   accessToken: string,
   onProgress?: SyncProgressCallback,
+  mode: SyncMode = "upload-only",
 ): Promise<SyncAllResult> {
-  const execute = () => doSyncAll(accessToken, onProgress);
+  const execute = () => doSyncAll(accessToken, onProgress, mode);
   const nextPromise = activeSyncPromise.then(execute, execute);
   activeSyncPromise = nextPromise;
   return nextPromise;
@@ -108,6 +111,7 @@ export async function syncAll(
 async function doSyncAll(
   accessToken: string,
   onProgress?: SyncProgressCallback,
+  mode: SyncMode = "upload-only",
 ): Promise<SyncAllResult> {
   const cb = onProgress ?? (() => {});
   const results: SyncTableResult[] = [];
@@ -186,9 +190,28 @@ async function doSyncAll(
     results.push(result);
   }
 
-  const hasError = results.some((r) => r.error);
+  // Step 3: Download & replace (only in "full" mode)
+  if (mode === "full" && info.spreadsheetId) {
+    const downloadResult = await downloadAndReplaceAll(
+      accessToken,
+      info.spreadsheetId,
+      cb,
+    );
+    for (const dr of downloadResult.results) {
+      const syncResult: SyncTableResult = {
+        tableName: `Download:${dr.tableName}`,
+        total: dr.rowsRead,
+        found: 0,
+        appended: dr.rowsWritten,
+        error: dr.error,
+      };
+      results.push(syncResult);
+    }
+  }
+
+  const finalHasError = results.some((r) => r.error);
   return {
-    success: !hasError,
+    success: !finalHasError,
     results,
     spreadsheetId: info.spreadsheetId,
   };

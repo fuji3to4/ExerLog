@@ -248,6 +248,42 @@ describe("syncAll", () => {
     // Since calls are serialized, activeRuns should never exceed 1
     expect(maxConcurrentRuns).toBe(1);
   });
+
+  test("syncAll with mode='full' runs downloadAndReplaceAll after upload", async () => {
+    vi.mocked(findSpreadsheet).mockResolvedValue({
+      spreadsheetId: FAKE_SPREADSHEET_ID,
+    });
+    vi.mocked(ensureSheetTabs).mockResolvedValue(true);
+    vi.mocked(readSheetColumn).mockResolvedValue([]);
+    vi.mocked(appendRowsBatched).mockResolvedValue(true);
+    vi.mocked(readAllRows).mockResolvedValue([
+      ["id", "name"],
+      ["a", "A"],
+    ]);
+
+    const result = await syncAll(FAKE_TOKEN, undefined, "full");
+
+    expect(result.success).toBe(true);
+    expect(readAllRows).toHaveBeenCalled();
+    // Upload phase should have run too
+    expect(appendRowsBatched).toHaveBeenCalled();
+    // Should have 2 upload results + 2 download results
+    expect(result.results).toHaveLength(4);
+  });
+
+  test("syncAll with default mode='upload-only' skips downloadAndReplaceAll", async () => {
+    vi.mocked(findSpreadsheet).mockResolvedValue({
+      spreadsheetId: FAKE_SPREADSHEET_ID,
+    });
+    vi.mocked(ensureSheetTabs).mockResolvedValue(true);
+    vi.mocked(readSheetColumn).mockResolvedValue([]);
+    vi.mocked(appendRowsBatched).mockResolvedValue(true);
+
+    const result = await syncAll(FAKE_TOKEN); // no mode param → default
+
+    expect(result.success).toBe(true);
+    expect(readAllRows).not.toHaveBeenCalled();
+  });
 });
 
 describe("downloadAndReplaceAll", () => {
