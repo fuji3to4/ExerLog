@@ -102,7 +102,7 @@ describe("SyncProvider", () => {
       expect(screen.getByTestId("status").textContent).toBe("synced");
     });
     expect(requestSignIn).toHaveBeenCalledTimes(1);
-    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function));
+    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function), "full");
   });
 
   test("syncNow success path transitions status to synced", async () => {
@@ -123,6 +123,7 @@ describe("SyncProvider", () => {
     expect(screen.getByTestId("synced-at").textContent).toMatch(
       /^\d{4}-\d{2}-\d{2}T/,
     );
+    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function), "full");
   });
 
   test("syncNow error path transitions status to error", async () => {
@@ -152,6 +153,7 @@ describe("SyncProvider", () => {
     expect(screen.getByTestId("error-message").textContent).toBe(
       "ExerciseLogs: Permission denied",
     );
+    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function), "full");
   });
 
   test("syncNow transitions through syncing before reaching synced", async () => {
@@ -226,7 +228,7 @@ describe("SyncProvider", () => {
     });
     expect(screen.getByTestId("user-email").textContent).toBe("user@example.com");
     expect(trySilentRefresh).toHaveBeenCalled();
-    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function));
+    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function), "upload-only");
   });
 
   test("on-mount silent refresh with no token leaves status disconnected", async () => {

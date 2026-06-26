@@ -12,7 +12,7 @@ import {
 import type { ReactNode } from "react";
 import { trySilentRefresh, requestSignIn, signOut } from "./google-auth";
 import { syncAll } from "./sync-engine";
-import type { SyncAllResult, SyncTableResult } from "./sync-engine";
+import type { SyncAllResult, SyncTableResult, SyncMode } from "./sync-engine";
 
 export type SyncStatus =
   | { type: "disconnected" }
@@ -52,7 +52,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const syncNow = useCallback(async () => {
+  const syncNow = useCallback(async (mode: SyncMode = "full") => {
     setStatus({ type: "syncing", message: "Starting sync..." });
 
     const onProgress = (result: SyncTableResult) => {
@@ -70,7 +70,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const result: SyncAllResult = await syncAll(token.accessToken, onProgress);
+    const result: SyncAllResult = await syncAll(token.accessToken, onProgress, mode);
 
     if (!mountedRef.current) return;
 
@@ -114,7 +114,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         const token = await trySilentRefresh();
         if (!token) return;
         setUserEmail(token.email);
-        await syncNow();
+        await syncNow("upload-only");
       } catch {
         // Silent failure on mount
       }
