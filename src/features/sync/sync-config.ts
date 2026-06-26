@@ -37,8 +37,8 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
       result: row[headers.indexOf("result")] as ExerciseLogResult,
       loggedAt: row[headers.indexOf("loggedAt")],
     }),
-    clearDb: () => appDb.logs.clear(),
-    bulkWriteDb: (records) => appDb.logs.bulkPut(records as ExerciseLog[]),
+    clearDb: async () => { await appDb.logs.clear(); },
+    bulkWriteDb: async (records) => { await appDb.logs.bulkPut(records as ExerciseLog[]); },
   },
   {
     // DailyWellness
@@ -59,8 +59,8 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
       note: row[headers.indexOf("note")] ?? "",
       updatedAt: row[headers.indexOf("updatedAt")],
     }),
-    clearDb: () => appDb.dailyWellness.clear(),
-    bulkWriteDb: (records) => appDb.dailyWellness.bulkPut(records as DailyWellnessEntry[]),
+    clearDb: async () => { await appDb.dailyWellness.clear(); },
+    bulkWriteDb: async (records) => { await appDb.dailyWellness.bulkPut(records as DailyWellnessEntry[]); },
   },
   {
     // DailyMetrics
@@ -83,8 +83,8 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
       unit: row[headers.indexOf("unit")],
       recordedAt: row[headers.indexOf("recordedAt")],
     }),
-    clearDb: () => appDb.dailyMetrics.clear(),
-    bulkWriteDb: (records) => appDb.dailyMetrics.bulkPut(records as DailyMetricEntry[]),
+    clearDb: async () => { await appDb.dailyMetrics.clear(); },
+    bulkWriteDb: async (records) => { await appDb.dailyMetrics.bulkPut(records as DailyMetricEntry[]); },
   },
   {
     // DailySelfCare
@@ -125,8 +125,8 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
         recordedAt: row[ci("recordedAt")],
       };
     },
-    clearDb: () => appDb.dailySelfCareLogs.clear(),
-    bulkWriteDb: (records) => appDb.dailySelfCareLogs.bulkPut(records as DailySelfCareEntry[]),
+    clearDb: async () => { await appDb.dailySelfCareLogs.clear(); },
+    bulkWriteDb: async (records) => { await appDb.dailySelfCareLogs.bulkPut(records as DailySelfCareEntry[]); },
   },
   {
     // Exercises (master)
@@ -165,8 +165,8 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
       durationMinutes: Number(row[headers.indexOf("durationMinutes")]),
       intensity: row[headers.indexOf("intensity")] as ExerciseIntensity,
     }),
-    clearDb: () => appDb.exercises.clear(),
-    bulkWriteDb: (records) => appDb.exercises.bulkPut(records as ExerciseVideo[]),
+    clearDb: async () => { await appDb.exercises.clear(); },
+    bulkWriteDb: async (records) => { await appDb.exercises.bulkPut(records as ExerciseVideo[]); },
   },
   {
     // SelfCareCatalog (master)
@@ -187,7 +187,7 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
       sortOrder: Number(row[headers.indexOf("sortOrder")]),
       isArchived: row[headers.indexOf("isArchived")] === "TRUE",
     }),
-    clearDb: () => appDb.selfCareCatalog.clear(),
-    bulkWriteDb: (records) => appDb.selfCareCatalog.bulkPut(records as SelfCareItem[]),
+    clearDb: async () => { await appDb.selfCareCatalog.clear(); },
+    bulkWriteDb: async (records) => { await appDb.selfCareCatalog.bulkPut(records as SelfCareItem[]); },
   },
 ];
