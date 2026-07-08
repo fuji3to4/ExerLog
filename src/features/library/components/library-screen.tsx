@@ -75,13 +75,13 @@ export function LibraryScreen() {
 
       <LibraryFilters value={filters} onChange={setFilters} />
 
-      <section className="library-screen__results">
+      <section className="library-screen__results flex flex-wrap gap-4">
         {filteredExercises.map((exercise) => {
           const headingId = `library-${exercise.id}`;
           const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
 
           return (
-            <article key={exercise.id} className="card recommendation-card" aria-labelledby={headingId}>
+            <article key={exercise.id} className="card recommendation-card max-w-[320px]" aria-labelledby={headingId}>
               {thumbnailUrl ? (
                 <div className="recommendation-card__thumbnail">
                   <img src={thumbnailUrl} alt={exercise.title} loading="lazy" />
