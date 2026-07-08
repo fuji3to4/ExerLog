@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { localIsoNow } from "@/lib/date/local-iso";
 import { formatTime } from "@/lib/date/format-timestamp";
 import { useTranslation } from "@/features/i18n/use-translation";
@@ -460,8 +461,34 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
 
   if (!selectedDate || !summary) {
     return (
-      <section className="card day-summary">
-        <h2>{t("history_day_summary_heading")}</h2>
+      <Card className="day-summary">
+        <CardHeader>
+          <CardTitle>{t("history_day_summary_heading")}</CardTitle>
+          <label>
+            <Switch
+              className="ml-2 mr-2"
+              aria-label={t("history_mode_edit")}
+              checked={isEditMode}
+              onCheckedChange={(checked) => setIsEditMode(checked)}
+            />
+            {isEditMode ? t("history_mode_edit") : t("history_mode_view")}
+          </label>
+        </CardHeader>
+        <CardContent>
+          <p>{t("history_day_summary_empty")}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const updatedTime = summary.updatedAt ? formatTime(summary.updatedAt) : "";
+  const metricMap = new Map(summary.metrics.map((metric) => [metric.metricType, metric]));
+  const wellness = summary.wellness;
+
+  return (
+    <Card className="day-summary">
+      <CardHeader>
+        <CardTitle>{t("history_day_summary_heading")}</CardTitle>
         <label>
           <Switch
             className="ml-2 mr-2"
@@ -471,291 +498,271 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
           />
           {isEditMode ? t("history_mode_edit") : t("history_mode_view")}
         </label>
-        
-        <p>{t("history_day_summary_empty")}</p>
-      </section>
-    );
-  }
+      </CardHeader>
 
-  const updatedTime = summary.updatedAt ? formatTime(summary.updatedAt) : "";
-  const metricMap = new Map(summary.metrics.map((metric) => [metric.metricType, metric]));
-  const wellness = summary.wellness;
-
-  return (
-    <section className="card day-summary">
-      <h2>{t("history_day_summary_heading")}</h2>
-      <label>
-        <Switch
-          className="ml-2 mr-2"
-          aria-label={t("history_mode_edit")}
-          checked={isEditMode}
-          onCheckedChange={(checked) => setIsEditMode(checked)}
-        />
-        {isEditMode ? t("history_mode_edit") : t("history_mode_view")}
-      </label>
-      
-
-      <div className="day-summary__section">
-        <h3>{t("history_exercises_heading")}</h3>
-        {summary.logs.length === 0 ? (
-          <p>{t("history_no_exercises")}</p>
-        ) : (
-          <ul className="day-summary__list">
-            {summary.logs.map((log) => {
-              const logTime = formatTime(log.loggedAt);
-              return (
-                <li key={log.id} className="day-summary__item">
-                  <span>{log.title}</span>
-                  {logTime && (
-                    <span className="day-summary__time">{logTime}</span>
-                  )}
-                  <span className="day-summary__result">{formatResult(log.result)}</span>
-                  {isEditMode && (
-                    <div className="day-summary__item-actions">
-                      <button
-                        type="button"
-                        className="day-summary__action-btn"
-                        onClick={() =>
-                          setEditingLog({
-                            id: log.id,
-                            exerciseId: log.exerciseId,
-                            result: log.result,
-                            loggedAt: log.loggedAt,
-                            date: selectedDate,
-                          })
-                        }
-                      >
-                        {t("action_edit")}
-                      </button>
-                      <button
-                        type="button"
-                        className="day-summary__action-btn day-summary__action-btn--danger"
-                        onClick={() => void handleDeleteLog(log.id)}
-                      >
-                        {t("action_delete")}
-                      </button>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      {wellness || isEditMode ? (
+      <CardContent>
         <div className="day-summary__section">
-          <h3>{t("history_wellness_heading")}</h3>
-          {wellness ? (
-            <>
-              <p>
-                <span>{t("self_care_physical_label")}</span>:{" "}
-                <span>{`${wellness.physicalScore} / 5`}</span>
-              </p>
-              <p>
-                <span>{t("self_care_mental_label")}</span>:{" "}
-                <span>{`${wellness.mentalScore} / 5`}</span>
-              </p>
-              {wellness.note ? <p>{wellness.note}</p> : null}
-            </>
-          ) : null}
-          {isEditMode && (
-            <div className="day-summary__item-actions">
-              {wellness ? (
-                <>
+          <h3>{t("history_exercises_heading")}</h3>
+          {summary.logs.length === 0 ? (
+            <p>{t("history_no_exercises")}</p>
+          ) : (
+            <ul className="day-summary__list">
+              {summary.logs.map((log) => {
+                const logTime = formatTime(log.loggedAt);
+                return (
+                  <li key={log.id} className="day-summary__item">
+                    <span>{log.title}</span>
+                    {logTime && (
+                      <span className="day-summary__time">{logTime}</span>
+                    )}
+                    <span className="day-summary__result">{formatResult(log.result)}</span>
+                    {isEditMode && (
+                      <div className="day-summary__item-actions">
+                        <button
+                          type="button"
+                          className="day-summary__action-btn"
+                          onClick={() =>
+                            setEditingLog({
+                              id: log.id,
+                              exerciseId: log.exerciseId,
+                              result: log.result,
+                              loggedAt: log.loggedAt,
+                              date: selectedDate,
+                            })
+                          }
+                        >
+                          {t("action_edit")}
+                        </button>
+                        <button
+                          type="button"
+                          className="day-summary__action-btn day-summary__action-btn--danger"
+                          onClick={() => void handleDeleteLog(log.id)}
+                        >
+                          {t("action_delete")}
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {wellness || isEditMode ? (
+          <div className="day-summary__section">
+            <h3>{t("history_wellness_heading")}</h3>
+            {wellness ? (
+              <>
+                <p>
+                  <span>{t("self_care_physical_label")}</span>:{" "}
+                  <span>{`${wellness.physicalScore} / 5`}</span>
+                </p>
+                <p>
+                  <span>{t("self_care_mental_label")}</span>:{" "}
+                  <span>{`${wellness.mentalScore} / 5`}</span>
+                </p>
+                {wellness.note ? <p>{wellness.note}</p> : null}
+              </>
+            ) : null}
+            {isEditMode && (
+              <div className="day-summary__item-actions">
+                {wellness ? (
+                  <>
+                    <button
+                      type="button"
+                      className="day-summary__action-btn"
+                      onClick={() =>
+                        setEditingWellness({
+                          physicalScore: wellness.physicalScore,
+                          mentalScore: wellness.mentalScore,
+                          note: wellness.note ?? "",
+                        })
+                      }
+                    >
+                      {t("history_wellness_edit")}
+                    </button>
+                    <button
+                      type="button"
+                      className="day-summary__action-btn day-summary__action-btn--danger"
+                      onClick={() => void handleDeleteWellness()}
+                    >
+                      {t("history_wellness_delete")}
+                    </button>
+                  </>
+                ) : (
                   <button
                     type="button"
                     className="day-summary__action-btn"
                     onClick={() =>
                       setEditingWellness({
-                        physicalScore: wellness.physicalScore,
-                        mentalScore: wellness.mentalScore,
-                        note: wellness.note ?? "",
+                        physicalScore: 3,
+                        mentalScore: 3,
+                        note: "",
                       })
                     }
                   >
-                    {t("history_wellness_edit")}
+                    {t("history_wellness_add")}
                   </button>
-                  <button
-                    type="button"
-                    className="day-summary__action-btn day-summary__action-btn--danger"
-                    onClick={() => void handleDeleteWellness()}
-                  >
-                    {t("history_wellness_delete")}
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="day-summary__action-btn"
-                  onClick={() =>
-                    setEditingWellness({
-                      physicalScore: 3,
-                      mentalScore: 3,
-                      note: "",
-                    })
-                  }
-                >
-                  {t("history_wellness_add")}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      ) : null}
+                )}
+              </div>
+            )}
+          </div>
+        ) : null}
 
-      {summary.metrics.length > 0 || isEditMode ? (
-        <div className="day-summary__section">
-          <h3>{t("history_metrics_heading")}</h3>
-          <ul className="day-summary__list">
-            {(isEditMode
-              ? METRIC_FIELDS
-              : summary.metrics.map((metric) => ({
-                  metricType: metric.metricType,
-                  unit: metric.unit,
-                }))
-            ).map((field) => {
-              const metric = metricMap.get(field.metricType);
+        {summary.metrics.length > 0 || isEditMode ? (
+          <div className="day-summary__section">
+            <h3>{t("history_metrics_heading")}</h3>
+            <ul className="day-summary__list">
+              {(isEditMode
+                ? METRIC_FIELDS
+                : summary.metrics.map((metric) => ({
+                    metricType: metric.metricType,
+                    unit: metric.unit,
+                  }))
+              ).map((field) => {
+                const metric = metricMap.get(field.metricType);
 
-              return (
-                <li key={field.metricType} className="day-summary__item">
-                  <span>{formatMetricLabel(field.metricType)}</span>
-                  {metric ? <span>{`${metric.value} ${metric.unit}`}</span> : null}
-                  {isEditMode && metric ? (
-                    <div className="day-summary__item-actions">
+                return (
+                  <li key={field.metricType} className="day-summary__item">
+                    <span>{formatMetricLabel(field.metricType)}</span>
+                    {metric ? <span>{`${metric.value} ${metric.unit}`}</span> : null}
+                    {isEditMode && metric ? (
+                      <div className="day-summary__item-actions">
+                        <button
+                          type="button"
+                          className="day-summary__action-btn"
+                          onClick={() =>
+                            setEditingMetric({
+                              metricType: metric.metricType,
+                              value: String(metric.value),
+                              unit: metric.unit,
+                            })
+                          }
+                        >
+                          {t("action_edit")}
+                        </button>
+                        <button
+                          type="button"
+                          className="day-summary__action-btn day-summary__action-btn--danger"
+                          onClick={() => void handleDeleteMetric(metric.metricType)}
+                        >
+                          {t(getMetricDeleteKey(metric.metricType))}
+                        </button>
+                      </div>
+                    ) : null}
+                    {isEditMode && !metric ? (
                       <button
                         type="button"
                         className="day-summary__action-btn"
                         onClick={() =>
                           setEditingMetric({
-                            metricType: metric.metricType,
-                            value: String(metric.value),
-                            unit: metric.unit,
+                            metricType: field.metricType,
+                            value: "",
+                            unit: field.unit,
                           })
                         }
                       >
-                        {t("action_edit")}
+                        {t(getMetricAddKey(field.metricType))}
                       </button>
-                      <button
-                        type="button"
-                        className="day-summary__action-btn day-summary__action-btn--danger"
-                        onClick={() => void handleDeleteMetric(metric.metricType)}
-                      >
-                        {t(getMetricDeleteKey(metric.metricType))}
-                      </button>
-                    </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : null}
+
+        {summary.selfCareLogs.length > 0 ? (
+          <div className="day-summary__section">
+            <h3>{t("history_self_care_heading")}</h3>
+            <ul className="day-summary__list">
+              {summary.selfCareLogs.map((entry) => (
+                <li key={entry.selfCareId} className="day-summary__item">
+                  <span>{entry.title}</span>
+                  {entry.isDone ? <p>{t("self_care_done_label")}</p> : null}
+                  {entry.count !== null ? <p>{`${t("self_care_count_label")}: ${entry.count}`}</p> : null}
+                  {entry.minutes !== null ? (
+                    <p>{`${t("self_care_minutes_label")}: ${entry.minutes}`}</p>
                   ) : null}
-                  {isEditMode && !metric ? (
-                    <button
-                      type="button"
-                      className="day-summary__action-btn"
-                      onClick={() =>
-                        setEditingMetric({
-                          metricType: field.metricType,
-                          value: "",
-                          unit: field.unit,
-                        })
-                      }
-                    >
-                      {t(getMetricAddKey(field.metricType))}
-                    </button>
-                  ) : null}
+                  {entry.note ? <p>{entry.note}</p> : null}
                 </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
-      {summary.selfCareLogs.length > 0 ? (
-        <div className="day-summary__section">
-          <h3>{t("history_self_care_heading")}</h3>
-          <ul className="day-summary__list">
-            {summary.selfCareLogs.map((entry) => (
-              <li key={entry.selfCareId} className="day-summary__item">
-                <span>{entry.title}</span>
-                {entry.isDone ? <p>{t("self_care_done_label")}</p> : null}
-                {entry.count !== null ? <p>{`${t("self_care_count_label")}: ${entry.count}`}</p> : null}
-                {entry.minutes !== null ? (
-                  <p>{`${t("self_care_minutes_label")}: ${entry.minutes}`}</p>
-                ) : null}
-                {entry.note ? <p>{entry.note}</p> : null}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+        {summary.conditionLevel ? (
+          <div className="day-summary__section">
+            <h3>{t("history_condition_heading")}</h3>
+            <p>{formatCondition(summary.conditionLevel)}</p>
+            {summary.note ? <p>{summary.note}</p> : null}
+            {updatedTime && (
+              <p className="day-summary__time">{updatedTime}</p>
+            )}
+            {isEditMode && (
+              <div className="day-summary__item-actions">
+                <button
+                  type="button"
+                  className="day-summary__action-btn"
+                  onClick={() =>
+                    setEditingCondition({
+                      conditionLevel: summary.conditionLevel!,
+                      note: summary.note,
+                    })
+                  }
+                >
+                  {t("action_edit")}
+                </button>
+                <button
+                  type="button"
+                  className="day-summary__action-btn day-summary__action-btn--danger"
+                  onClick={() => void handleDeleteCondition()}
+                >
+                  {t("action_delete")}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : null}
 
-      {summary.conditionLevel ? (
-        <div className="day-summary__section">
-          <h3>{t("history_condition_heading")}</h3>
-          <p>{formatCondition(summary.conditionLevel)}</p>
-          {summary.note ? <p>{summary.note}</p> : null}
-          {updatedTime && (
-            <p className="day-summary__time">{updatedTime}</p>
-          )}
-          {isEditMode && (
-            <div className="day-summary__item-actions">
-              <button
-                type="button"
-                className="day-summary__action-btn"
-                onClick={() =>
-                  setEditingCondition({
-                    conditionLevel: summary.conditionLevel!,
-                    note: summary.note,
-                  })
-                }
-              >
-                {t("action_edit")}
-              </button>
-              <button
-                type="button"
-                className="day-summary__action-btn day-summary__action-btn--danger"
-                onClick={() => void handleDeleteCondition()}
-              >
-                {t("action_delete")}
-              </button>
-            </div>
-          )}
-        </div>
-      ) : null}
+        {isEditMode && editingLog && (
+          <EditLogModal
+            state={editingLog}
+            exercises={exercises}
+            onChange={setEditingLog}
+            onSave={() => void handleSaveLog()}
+            onCancel={() => setEditingLog(null)}
+          />
+        )}
 
-      {isEditMode && editingLog && (
-        <EditLogModal
-          state={editingLog}
-          exercises={exercises}
-          onChange={setEditingLog}
-          onSave={() => void handleSaveLog()}
-          onCancel={() => setEditingLog(null)}
-        />
-      )}
+        {isEditMode && editingCondition && (
+          <EditConditionModal
+            state={editingCondition}
+            onChange={setEditingCondition}
+            onSave={() => void handleSaveCondition()}
+            onCancel={() => setEditingCondition(null)}
+          />
+        )}
 
-      {isEditMode && editingCondition && (
-        <EditConditionModal
-          state={editingCondition}
-          onChange={setEditingCondition}
-          onSave={() => void handleSaveCondition()}
-          onCancel={() => setEditingCondition(null)}
-        />
-      )}
+        {isEditMode && editingMetric && (
+          <EditMetricModal
+            state={editingMetric}
+            onChange={setEditingMetric}
+            onSave={() => void handleSaveMetric()}
+            onCancel={() => setEditingMetric(null)}
+          />
+        )}
 
-      {isEditMode && editingMetric && (
-        <EditMetricModal
-          state={editingMetric}
-          onChange={setEditingMetric}
-          onSave={() => void handleSaveMetric()}
-          onCancel={() => setEditingMetric(null)}
-        />
-      )}
-
-      {isEditMode && editingWellness && (
-        <EditWellnessModal
-          state={editingWellness}
-          onChange={setEditingWellness}
-          onSave={() => void handleSaveWellness()}
-          onCancel={() => setEditingWellness(null)}
-        />
-      )}
-    </section>
+        {isEditMode && editingWellness && (
+          <EditWellnessModal
+            state={editingWellness}
+            onChange={setEditingWellness}
+            onSave={() => void handleSaveWellness()}
+            onCancel={() => setEditingWellness(null)}
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }

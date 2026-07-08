@@ -1,0 +1,94 @@
+<h2>PC版レイアウトの改善</h2>
+<p class="subtitle">現在の問題：カードが横に間延びしている</p>
+
+<div class="section">
+  <h3>現在の問題点</h3>
+  <div class="mockup">
+    <div class="mockup-header">現在: max-w-none で全幅に伸びる</div>
+    <div class="mockup-body" style="padding: 16px;">
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; width: 100%;">
+        <div style="background: #f0f0f0; padding: 20px; border-radius: 8px; min-height: 200px;">
+          <div style="font-weight: bold; margin-bottom: 8px;">Today</div>
+          <div style="background: #ddd; height: 150px; border-radius: 4px;"></div>
+        </div>
+        <div style="background: #f0f0f0; padding: 20px; border-radius: 8px; min-height: 200px;">
+          <div style="font-weight: bold; margin-bottom: 8px;">History</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div style="background: #ddd; height: 150px; border-radius: 4px;"></div>
+            <div style="background: #ddd; height: 150px; border-radius: 4px;"></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; color: #666; font-size: 14px;">
+        ← カードが画面幅に応じて無制限に広がる →
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>どのアプローチが良いですか？</h3>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>max-w-[1200px] で中央揃え</h3>
+      <p>シンプル。コンテンツを1200pxで止め、左右に余白。</p>
+      <div style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 13px;">
+        ✅ 少ない変更で済む<br>
+        ❌ 画面サイズに応じた柔軟性は低い
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>flex + 各カードに max-w</h3>
+      <p>各カードに個別の最大幅を設定（Today: 400px, History: 800px）</p>
+      <div style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 13px;">
+        ✅ カードのサイズを最適化できる<br>
+        ❌ 少し複雑
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>max-w-screen-xl (1280px) + gap</h3>
+      <p>Tailwindの組み込みクラスでシンプルに制限</p>
+      <div style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 13px;">
+        ✅ Tailwindらしくシンプル<br>
+        ❌ カード個別の調整は不可
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 32px;">
+  <h3>推奨：Option B のイメージ</h3>
+  <div class="mockup">
+    <div class="mockup-header">改善後: flex + max-w で各カードを制限</div>
+    <div class="mockup-body" style="padding: 16px;">
+      <div style="display: flex; gap: 24px; justify-content: center; max-width: 1200px; margin: 0 auto;">
+        <div style="background: #f0f0f0; padding: 20px; border-radius: 8px; width: 350px; flex-shrink: 0;">
+          <div style="font-weight: bold; margin-bottom: 8px;">Today</div>
+          <div style="background: #ddd; height: 150px; border-radius: 4px;"></div>
+        </div>
+        <div style="background: #f0f0f0; padding: 20px; border-radius: 8px; flex: 1; min-width: 0;">
+          <div style="font-weight: bold; margin-bottom: 8px;">History</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div style="background: #ddd; height: 150px; border-radius: 4px;"></div>
+            <div style="background: #ddd; height: 150px; border-radius: 4px;"></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; color: #666; font-size: 14px;">
+        → Todayは固定幅、Historyは残りを表示 →
+      </div>
+    </div>
+  </div>
+</div>

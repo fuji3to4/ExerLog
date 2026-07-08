@@ -1,21 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
-
-import { DaySummary } from "./day-summary";
 import { HistoryCalendar } from "./history-calendar";
 import { HistoryGraphs } from "./history-graphs";
 import { getHistoryDaySummary, listCompletedDaysInMonth, type HistoryDaySummary } from "../history-query";
 import { toDayKey } from "@/lib/date/day-key";
+import { DaySummary } from "./day-summary";
 
-type HistoryScreenProps = {
+type HistoryDashboardProps = {
   month?: string;
 };
-
-type HistoryMode = "summary" | "graph";
 
 function shiftMonth(month: string, delta: number): string {
   const [year, m] = month.split("-").map(Number);
@@ -23,13 +19,12 @@ function shiftMonth(month: string, delta: number): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) {
+export function HistoryDashboard({ month: initialMonth }: HistoryDashboardProps = {}) {
   const today = toDayKey(new Date());
   const [currentMonth, setCurrentMonth] = useState(() => initialMonth ?? today.slice(0, 7));
   const [completedDays, setCompletedDays] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(() => initialMonth ? null : today);
   const [summary, setSummary] = useState<HistoryDaySummary | null>(null);
-  const [mode, setMode] = useState<HistoryMode>("summary");
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -93,7 +88,7 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
   }
 
   return (
-    <>
+    <div className="space-y-6">
       <Card className="page-header">
         <CardHeader>
           <CardTitle>{t("history_heading")}</CardTitle>
@@ -101,25 +96,8 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
         </CardHeader>
       </Card>
 
-      <div className="history-screen__mode-toggle">
-        <button
-          type="button"
-          onClick={() => setMode("summary")}
-          className={`history-screen__mode-btn ${mode === "summary" ? "is-active" : ""}`}
-        >
-          {t("history_mode_summary")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("graph")}
-          className={`history-screen__mode-btn ${mode === "graph" ? "is-active" : ""}`}
-        >
-          {t("history_mode_graphs")}
-        </button>
-      </div>
-
-      {mode === "summary" && (
-        <>
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-4">
           <HistoryCalendar
             month={currentMonth}
             completedDays={completedDays}
@@ -128,12 +106,13 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}
           />
-
           <DaySummary selectedDate={selectedDate} summary={summary} onChanged={() => void handleSummaryChanged()} />
-        </>
-      )}
+        </div>
 
-      {mode === "graph" && <HistoryGraphs />}
-    </>
+        <div>
+          <HistoryGraphs />
+        </div>
+      </div>
+    </div>
   );
 }

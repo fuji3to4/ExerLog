@@ -47,16 +47,21 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
         </Card>
       ) : (
         <>
-          <WellnessCard
-            physicalScore={physicalScore}
-            mentalScore={mentalScore}
-            note={note}
-            onPhysicalScoreChange={setPhysicalScore}
-            onMentalScoreChange={setMentalScore}
-            onNoteChange={setNote}
-          />
-
-          <MetricsCard metrics={metrics} onMetricChange={setMetric} />
+          <div className="flex flex-col gap-4 lg:flex-row lg:justify-center">
+            <div className="lg:max-w-[400px] lg:w-full">
+              <WellnessCard
+                physicalScore={physicalScore}
+                mentalScore={mentalScore}
+                note={note}
+                onPhysicalScoreChange={setPhysicalScore}
+                onMentalScoreChange={setMentalScore}
+                onNoteChange={setNote}
+              />
+            </div>
+            <div className="lg:max-w-[400px] lg:w-full">
+              <MetricsCard metrics={metrics} onMetricChange={setMetric} />
+            </div>
+          </div>
 
           <Card className="grid gap-4">
             <CardContent className="pt-0">

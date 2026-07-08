@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
 import { deleteExerciseLogByDateAndExercise, listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
@@ -66,49 +67,53 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
   }, [exercise.id]);
 
   return (
-    <section className="card exercise-detail">
+    <Card className="exercise-detail">
       {thumbnailUrl ? (
         <div className="exercise-detail__thumbnail">
           <img src={thumbnailUrl} alt={exercise.title} />
         </div>
       ) : null}
-      <div className="exercise-detail__header">
-        <div className="exercise-detail__heading">
-          <h1>{exercise.title}</h1>
-          <p>{exercise.description}</p>
+      <CardHeader>
+        <div className="exercise-detail__header">
+          <div className="exercise-detail__heading">
+            <CardTitle>{exercise.title}</CardTitle>
+            <p>{exercise.description}</p>
+          </div>
+          <a href={exercise.videoUrl} className="today-screen__primary-button" target="_blank" rel="noreferrer">
+            {t("action_watch_video")}
+          </a>
         </div>
-        <a href={exercise.videoUrl} className="today-screen__primary-button" target="_blank" rel="noreferrer">
-          {t("action_watch_video")}
-        </a>
-      </div>
+      </CardHeader>
 
-      <dl className="recommendation-card__meta">
-        <div>
-          <dt>{t("meta_purpose")}</dt>
-          <dd>{formatPurpose(exercise.purpose)}</dd>
-        </div>
-        <div>
-          <dt>{t("meta_duration")}</dt>
-          <dd>{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
-        </div>
-        <div>
-          <dt>{t("meta_intensity")}</dt>
-          <dd>{formatIntensity(exercise.intensity)}</dd>
-        </div>
-        <div>
-          <dt>{t("meta_body_area")}</dt>
-          <dd>{formatBodyArea(exercise.bodyArea)}</dd>
-        </div>
-      </dl>
+      <CardContent>
+        <dl className="recommendation-card__meta">
+          <div>
+            <dt>{t("meta_purpose")}</dt>
+            <dd>{formatPurpose(exercise.purpose)}</dd>
+          </div>
+          <div>
+            <dt>{t("meta_duration")}</dt>
+            <dd>{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
+          </div>
+          <div>
+            <dt>{t("meta_intensity")}</dt>
+            <dd>{formatIntensity(exercise.intensity)}</dd>
+          </div>
+          <div>
+            <dt>{t("meta_body_area")}</dt>
+            <dd>{formatBodyArea(exercise.bodyArea)}</dd>
+          </div>
+        </dl>
 
-      {!isHydrated ? (
-        <div className="exercise-detail__loading" aria-live="polite">
-          <h2>{t("detail_loading_heading")}</h2>
-          <p>{t("detail_loading_text")}</p>
-        </div>
-      ) : (
-        <ExerciseLogActions result={result} onLog={(nextResult) => void handleLog(nextResult)} onClear={() => void handleClear()} />
-      )}
-    </section>
+        {!isHydrated ? (
+          <div className="exercise-detail__loading" aria-live="polite">
+            <h2>{t("detail_loading_heading")}</h2>
+            <p>{t("detail_loading_text")}</p>
+          </div>
+        ) : (
+          <ExerciseLogActions result={result} onLog={(nextResult) => void handleLog(nextResult)} onClear={() => void handleClear()} />
+        )}
+      </CardContent>
+    </Card>
   );
 }

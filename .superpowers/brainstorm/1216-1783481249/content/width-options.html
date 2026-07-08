@@ -1,0 +1,56 @@
+<h2>カードの最大幅を設定</h2>
+<p class="subtitle">各カードに最適な幅を選びましょう</p>
+
+<div class="section">
+  <h3>TodayScreen の最大幅</h3>
+  <div class="mockup">
+    <div class="mockup-header">TodayScreen - コンパクトに表示</div>
+    <div class="mockup-body" style="padding: 16px;">
+      <div style="display: flex; gap: 24px; justify-content: center;">
+        <div style="background: #e8f4f8; padding: 20px; border-radius: 8px; border: 2px solid #31507d;">
+          <div style="font-weight: bold; margin-bottom: 8px; color: #31507d;">TodayScreen</div>
+          <div style="background: #ddd; height: 120px; border-radius: 4px;"></div>
+          <div style="margin-top: 8px; font-size: 14px;">
+            幅: <strong>350px</strong> (推奨)
+          </div>
+        </div>
+        <div style="background: #f0f0f0; padding: 20px; border-radius: 8px; opacity: 0.5;">
+          <div style="font-weight: bold; margin-bottom: 8px;">History</div>
+          <div style="background: #ddd; height: 120px; border-radius: 4px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="300" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>300px - コンパクト</h3>
+      <p>スマホと近い幅。サイドバーと History の間に隙間が生まれる</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="350" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>350px - バランス型（推奨）</h3>
+      <p>コンポーネントが快適に表示され、History にも十分なスペース</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="400" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>400px - ゆとり型</h3>
+      <p>余裕を持って表示。PC画面が大きい場合に有効</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 32px;">
+  <h3>HistoryDashboard の最大幅</h3>
+  <p>History は残りのスペースを使用するため、個別の max-w は不要です。<br>
+  flex: 1 で自動的に調整されます。</p>
+</div>

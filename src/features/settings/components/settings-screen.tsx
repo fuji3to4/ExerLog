@@ -1,5 +1,6 @@
 "use client";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 import { DataManagement } from "./data-management";
@@ -10,25 +11,39 @@ export function SettingsScreen() {
   const { t } = useTranslation();
 
   return (
-    <>
-      <section className="card page-header">
-        <h1>{t("settings_heading")}</h1>
-      </section>
+    <div className="flex flex-col gap-4 lg:items-center">
+      <Card className="page-header w-full">
+        <CardHeader>
+          <CardTitle>{t("settings_heading")}</CardTitle>
+        </CardHeader>
+      </Card>
 
-      <section className="card settings-section">
-        <h2>{t("settings_library_section_heading")}</h2>
-        <LibraryManagement />
-      </section>
+      <Card className="settings-section w-full">
+        <CardHeader>
+          <CardTitle>{t("settings_library_section_heading")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LibraryManagement />
+        </CardContent>
+      </Card>
 
-      <section className="card settings-section">
-        <h2>{t("settings_data_section_heading")}</h2>
-        <DataManagement />
-      </section>
+      <Card className="settings-section w-full">
+        <CardHeader>
+          <CardTitle>{t("settings_data_section_heading")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DataManagement />
+        </CardContent>
+      </Card>
 
-      <section className="card settings-section">
-        <h2>{t("settings_google_drive_section_heading")}</h2>
-        <GoogleDriveSettings />
-      </section>
-    </>
+      <Card className="settings-section w-full">
+        <CardHeader>
+          <CardTitle>{t("settings_google_drive_section_heading")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <GoogleDriveSettings />
+        </CardContent>
+      </Card>
+    </div>
   );
 }
