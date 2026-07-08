@@ -10,25 +10,25 @@ export function SettingsScreen() {
   const { t } = useTranslation();
 
   return (
-    <>
-      <section className="card page-header">
+    <div className="flex flex-col gap-4 lg:items-center">
+      <section className="card page-header w-full lg:max-w-[400px]">
         <h1>{t("settings_heading")}</h1>
       </section>
 
-      <section className="card settings-section">
+      <section className="card settings-section w-full lg:max-w-[400px]">
         <h2>{t("settings_library_section_heading")}</h2>
         <LibraryManagement />
       </section>
 
-      <section className="card settings-section">
+      <section className="card settings-section w-full lg:max-w-[400px]">
         <h2>{t("settings_data_section_heading")}</h2>
         <DataManagement />
       </section>
 
-      <section className="card settings-section">
+      <section className="card settings-section w-full lg:max-w-[400px]">
         <h2>{t("settings_google_drive_section_heading")}</h2>
         <GoogleDriveSettings />
       </section>
-    </>
+    </div>
   );
 }
