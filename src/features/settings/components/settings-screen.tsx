@@ -12,13 +12,13 @@ export function SettingsScreen() {
 
   return (
     <div className="flex flex-col gap-4 lg:items-center">
-      <Card className="page-header w-full lg:max-w-[400px]">
+      <Card className="page-header w-full">
         <CardHeader>
           <CardTitle>{t("settings_heading")}</CardTitle>
         </CardHeader>
       </Card>
 
-      <Card className="settings-section w-full lg:max-w-[400px]">
+      <Card className="settings-section w-full">
         <CardHeader>
           <CardTitle>{t("settings_library_section_heading")}</CardTitle>
         </CardHeader>
@@ -27,7 +27,7 @@ export function SettingsScreen() {
         </CardContent>
       </Card>
 
-      <Card className="settings-section w-full lg:max-w-[400px]">
+      <Card className="settings-section w-full">
         <CardHeader>
           <CardTitle>{t("settings_data_section_heading")}</CardTitle>
         </CardHeader>
@@ -36,7 +36,7 @@ export function SettingsScreen() {
         </CardContent>
       </Card>
 
-      <Card className="settings-section w-full lg:max-w-[400px]">
+      <Card className="settings-section w-full">
         <CardHeader>
           <CardTitle>{t("settings_google_drive_section_heading")}</CardTitle>
         </CardHeader>
