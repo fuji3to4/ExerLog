@@ -10,12 +10,12 @@ export default function HomePage() {
         <TodayScreen />
       </div>
 
-      {/* PC: Show TodayScreen + HistoryDashboard in 1:2 ratio */}
-      <div className="hidden lg:grid lg:grid-cols-3 lg:gap-6">
-        <div className="lg:col-span-1">
+      {/* PC: flex layout with max-widths */}
+      <div className="hidden lg:flex lg:gap-6 lg:justify-center">
+        <div className="lg:max-w-[350px] lg:w-full">
           <TodayScreen />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:flex-1 lg:min-w-0">
           <HistoryDashboard />
         </div>
       </div>
