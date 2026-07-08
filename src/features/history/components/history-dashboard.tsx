@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { HistoryCalendar } from "./history-calendar";
 import { HistoryGraphs } from "./history-graphs";
@@ -88,10 +89,12 @@ export function HistoryDashboard({ month: initialMonth }: HistoryDashboardProps 
 
   return (
     <div className="space-y-6">
-      <section className="card page-header">
-        <h1>{t("history_heading")}</h1>
-        <p>{t("history_subheading")}</p>
-      </section>
+      <Card className="page-header">
+        <CardHeader>
+          <CardTitle>{t("history_heading")}</CardTitle>
+          <p>{t("history_subheading")}</p>
+        </CardHeader>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">

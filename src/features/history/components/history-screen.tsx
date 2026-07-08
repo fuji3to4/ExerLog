@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 import { DaySummary } from "./day-summary";
@@ -93,10 +94,12 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
 
   return (
     <>
-      <section className="card page-header">
-        <h1>{t("history_heading")}</h1>
-        <p>{t("history_subheading")}</p>
-      </section>
+      <Card className="page-header">
+        <CardHeader>
+          <CardTitle>{t("history_heading")}</CardTitle>
+          <p>{t("history_subheading")}</p>
+        </CardHeader>
+      </Card>
 
       <div className="history-screen__mode-toggle">
         <button

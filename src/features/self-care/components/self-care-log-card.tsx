@@ -1,5 +1,6 @@
 import type { ChangeEvent } from "react";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { SelfCareItem } from "@/lib/types";
 
@@ -16,9 +17,11 @@ export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCa
 
   return (
     <section className="self-care-screen__section">
-      <div className="card gap-2">
-        <h2>{t("self_care_logs_heading")}</h2>
-      </div>
+      <Card className="gap-2">
+        <CardHeader>
+          <CardTitle>{t("self_care_logs_heading")}</CardTitle>
+        </CardHeader>
+      </Card>
 
       <div className="self-care-screen__log-list">
         {items.map((item) => {
@@ -30,61 +33,65 @@ export function SelfCareLogCard({ items, entries, onEntryChange }: SelfCareLogCa
           };
 
           return (
-            <article key={item.id} className="card self-care-log-card">
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
+            <Card key={item.id} className="self-care-log-card">
+              <CardHeader>
+                <CardTitle>{item.title}</CardTitle>
+                <p>{item.description}</p>
+              </CardHeader>
 
-              <label className="self-care-screen__checkbox">
-                <input
-                  type="checkbox"
-                  checked={entry.isDone}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                    onEntryChange(item.id, { isDone: event.target.checked })
-                  }
-                />
-                <span>{t("result_did")}</span>
-              </label>
-
-              <div className="self-care-log-card__metrics">
-                <label className="self-care-screen__field">
-                  <span>#</span>
+              <CardContent>
+                <label className="self-care-screen__checkbox">
                   <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    value={entry.count}
+                    type="checkbox"
+                    checked={entry.isDone}
                     onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                      onEntryChange(item.id, { count: event.target.value })
+                      onEntryChange(item.id, { isDone: event.target.checked })
+                    }
+                  />
+                  <span>{t("result_did")}</span>
+                </label>
+
+                <div className="self-care-log-card__metrics">
+                  <label className="self-care-screen__field">
+                    <span>#</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={entry.count}
+                      onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                        onEntryChange(item.id, { count: event.target.value })
+                      }
+                    />
+                  </label>
+
+                  <label className="self-care-screen__field">
+                    <span>{t("settings_form_duration_label")}</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={entry.minutes}
+                      onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                        onEntryChange(item.id, { minutes: event.target.value })
+                      }
+                    />
+                  </label>
+                </div>
+
+                <label className="self-care-screen__field">
+                  <span>{t("condition_note_label")}</span>
+                  <textarea
+                    rows={3}
+                    value={entry.note}
+                    placeholder={t("condition_note_placeholder")}
+                    onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+                      onEntryChange(item.id, { note: event.target.value })
                     }
                   />
                 </label>
-
-                <label className="self-care-screen__field">
-                  <span>{t("settings_form_duration_label")}</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    value={entry.minutes}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                      onEntryChange(item.id, { minutes: event.target.value })
-                    }
-                  />
-                </label>
-              </div>
-
-              <label className="self-care-screen__field">
-                <span>{t("condition_note_label")}</span>
-                <textarea
-                  rows={3}
-                  value={entry.note}
-                  placeholder={t("condition_note_placeholder")}
-                  onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-                    onEntryChange(item.id, { note: event.target.value })
-                  }
-                />
-              </label>
-            </article>
+              </CardContent>
+            </Card>
           );
         })}
       </div>

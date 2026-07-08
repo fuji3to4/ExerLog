@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { buildHistoryGraphSeries, type GraphMetricSelection, type GraphSeries } from "@/features/history/history-graph-query";
 import { toDayKey } from "@/lib/date/day-key";
@@ -76,49 +77,53 @@ export function HistoryGraphs() {
   const hasData = series && series.points.length > 0;
 
   return (
-    <section className="card">
-      <h2>{t("history_graphs_heading")}</h2>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("history_graphs_heading")}</CardTitle>
+      </CardHeader>
 
-      <div className="history-screen__chart-container" style={{ marginBottom: "1rem" }}>
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-          <label htmlFor="metric-selector" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ fontWeight: "600" }}>{t("history_graph_metric_label")}</span>
-            <select
-              id="metric-selector"
-              value={JSON.stringify(selectedMetric)}
-              onChange={(e) => setSelectedMetric(JSON.parse(e.currentTarget.value))}
-            >
-              {METRIC_OPTIONS.map((option, index) => (
-                <option key={index} value={JSON.stringify(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="history-screen__date-presets">
-            {(["7d", "30d", "90d", "all"] as const).map((preset) => (
-              <button
-                key={preset}
-                onClick={() => setDateRangePreset(preset)}
-                className={`history-screen__preset-btn ${dateRangePreset === preset ? "is-active" : ""}`}
+      <CardContent>
+        <div className="history-screen__chart-container" style={{ marginBottom: "1rem" }}>
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+            <label htmlFor="metric-selector" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ fontWeight: "600" }}>{t("history_graph_metric_label")}</span>
+              <select
+                id="metric-selector"
+                value={JSON.stringify(selectedMetric)}
+                onChange={(e) => setSelectedMetric(JSON.parse(e.currentTarget.value))}
               >
-                {preset}
-              </button>
-            ))}
+                {METRIC_OPTIONS.map((option, index) => (
+                  <option key={index} value={JSON.stringify(option.value)}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="history-screen__date-presets">
+              {(["7d", "30d", "90d", "all"] as const).map((preset) => (
+                <button
+                  key={preset}
+                  onClick={() => setDateRangePreset(preset)}
+                  className={`history-screen__preset-btn ${dateRangePreset === preset ? "is-active" : ""}`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {loading && <p className="history-screen__chart-loading">Loading...</p>}
+        {loading && <p className="history-screen__chart-loading">Loading...</p>}
 
-      {!loading && hasData && series && (
-        <div className="history-screen__chart-wrapper">
-          <HistoryChart series={series} />
-        </div>
-      )}
+        {!loading && hasData && series && (
+          <div className="history-screen__chart-wrapper">
+            <HistoryChart series={series} />
+          </div>
+        )}
 
-      {!loading && !hasData && <p className="history-screen__chart-empty">{t("history_graphs_empty")}</p>}
-    </section>
+        {!loading && !hasData && <p className="history-screen__chart-empty">{t("history_graphs_empty")}</p>}
+      </CardContent>
+    </Card>
   );
 }

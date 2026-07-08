@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getExerciseById } from "@/features/storage/exercise-catalog.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { ExerciseVideo } from "@/lib/types";
@@ -30,18 +31,24 @@ export function ExerciseDetailLoader({ exerciseId }: ExerciseDetailLoaderProps) 
 
   if (exercise === undefined) {
     return (
-      <section className="card">
-        <h2>{t("detail_loading_heading")}</h2>
-        <p>{t("detail_loading_text")}</p>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("detail_loading_heading")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{t("detail_loading_text")}</p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (exercise === null) {
     return (
-      <section className="card">
-        <p>{t("exercise_not_found")}</p>
-      </section>
+      <Card>
+        <CardContent>
+          <p>{t("exercise_not_found")}</p>
+        </CardContent>
+      </Card>
     );
   }
 

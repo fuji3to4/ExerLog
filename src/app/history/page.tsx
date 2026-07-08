@@ -12,7 +12,7 @@ export default function HistoryPage() {
 
       {/* PC: flex layout with max-widths */}
       <div className="hidden lg:flex lg:gap-6 lg:justify-center">
-        <div className="lg:max-w-[350px] lg:w-full">
+        <div className="lg:w-full">
           <HistoryDashboard />
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildMonthGrid } from "@/lib/date/month-grid";
 import { useTranslation } from "@/features/i18n/use-translation";
 
@@ -46,68 +47,70 @@ export function HistoryCalendar({
   }
 
   return (
-    <section className="card history-calendar">
-      <div className="history-calendar__header">
-        <h2>{t("history_calendar_heading")}</h2>
+    <Card className="history-calendar">
+      <CardHeader>
+        <CardTitle>{t("history_calendar_heading")}</CardTitle>
         <p>{t("history_calendar_text")}</p>
-      </div>
+      </CardHeader>
 
-      <div className="history-calendar__nav">
-        <button
-          type="button"
-          className="history-calendar__nav-btn"
-          aria-label={t("history_calendar_prev_month")}
-          onClick={onPrevMonth}
-        >
-          ‹
-        </button>
-        <span className="history-calendar__month-label">
-          {getMonthLabel(month, locale)}
-        </span>
-        <button
-          type="button"
-          className="history-calendar__nav-btn"
-          aria-label={t("history_calendar_next_month")}
-          onClick={onNextMonth}
-        >
-          ›
-        </button>
-      </div>
-
-      <div className="history-calendar__weekdays">
-        {WEEKDAY_INDICES.map((i) => (
-          <span key={i} className="history-calendar__weekday">
-            {getWeekdayLabel(i, locale)}
+      <CardContent>
+        <div className="history-calendar__nav">
+          <button
+            type="button"
+            className="history-calendar__nav-btn"
+            aria-label={t("history_calendar_prev_month")}
+            onClick={onPrevMonth}
+          >
+            ‹
+          </button>
+          <span className="history-calendar__month-label">
+            {getMonthLabel(month, locale)}
           </span>
-        ))}
-      </div>
+          <button
+            type="button"
+            className="history-calendar__nav-btn"
+            aria-label={t("history_calendar_next_month")}
+            onClick={onNextMonth}
+          >
+            ›
+          </button>
+        </div>
 
-      <div className="history-calendar__grid">
-        {buildMonthGrid(month).map((day) => {
-          const isCompleted = completedDaySet.has(day.date);
-          const isSelected = selectedDate === day.date;
-          const className = [
-            "history-calendar__day",
-            isCompleted ? "is-completed" : "",
-            isSelected ? "is-selected" : "",
-            day.inMonth ? "" : "is-outside-month",
-          ]
-            .filter(Boolean)
-            .join(" ");
+        <div className="history-calendar__weekdays">
+          {WEEKDAY_INDICES.map((i) => (
+            <span key={i} className="history-calendar__weekday">
+              {getWeekdayLabel(i, locale)}
+            </span>
+          ))}
+        </div>
 
-          return (
-            <button
-              key={day.date}
-              type="button"
-              className={className}
-              aria-label={formatCalendarLabel(day.date, isCompleted)}
-              onClick={() => onSelectDate(day.date)}
-            >
-              <span>{day.dayOfMonth}</span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
+        <div className="history-calendar__grid">
+          {buildMonthGrid(month).map((day) => {
+            const isCompleted = completedDaySet.has(day.date);
+            const isSelected = selectedDate === day.date;
+            const className = [
+              "history-calendar__day",
+              isCompleted ? "is-completed" : "",
+              isSelected ? "is-selected" : "",
+              day.inMonth ? "" : "is-outside-month",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
+            return (
+              <button
+                key={day.date}
+                type="button"
+                className={className}
+                aria-label={formatCalendarLabel(day.date, isCompleted)}
+                onClick={() => onSelectDate(day.date)}
+              >
+                <span>{day.dayOfMonth}</span>
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

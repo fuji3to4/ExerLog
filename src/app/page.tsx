@@ -12,7 +12,7 @@ export default function HomePage() {
 
       {/* PC: flex layout with max-widths */}
       <div className="hidden lg:flex lg:gap-6 lg:justify-center">
-        <div className="lg:max-w-[350px] lg:w-full">
+        <div className="lg:max-w-[400px] lg:w-full">
           <TodayScreen />
         </div>
         <div className="lg:flex-1 lg:min-w-0">

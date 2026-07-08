@@ -1,5 +1,6 @@
 "use client";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 type LibraryFiltersValue = {
@@ -80,49 +81,51 @@ export function LibraryFilters({ value, onChange }: LibraryFiltersProps) {
   ];
 
   return (
-    <section className="card library-filters">
-      <div className="library-filters__heading">
-        <h2>{t("library_filters_heading")}</h2>
+    <Card className="library-filters">
+      <CardHeader>
+        <CardTitle>{t("library_filters_heading")}</CardTitle>
         <p>{t("library_filters_subheading")}</p>
-      </div>
+      </CardHeader>
 
-      <label className="library-filters__field" htmlFor="search-exercises">
-        <span>{t("library_search_label")}</span>
-        <input
-          id="search-exercises"
-          type="search"
-          value={value.search}
-          placeholder={t("library_search_placeholder")}
-          onChange={(event) => onChange({ ...value, search: event.target.value })}
-        />
-      </label>
+      <CardContent>
+        <label className="library-filters__field" htmlFor="search-exercises">
+          <span>{t("library_search_label")}</span>
+          <input
+            id="search-exercises"
+            type="search"
+            value={value.search}
+            placeholder={t("library_search_placeholder")}
+            onChange={(event) => onChange({ ...value, search: event.target.value })}
+          />
+        </label>
 
-      <div className="library-filters__grid">
-        <FilterSelect
-          label={t("meta_body_area")}
-          value={value.bodyArea}
-          options={bodyAreaOptions}
-          onChange={(nextValue) => onChange({ ...value, bodyArea: nextValue })}
-        />
-        <FilterSelect
-          label={t("meta_purpose")}
-          value={value.purpose}
-          options={purposeOptions}
-          onChange={(nextValue) => onChange({ ...value, purpose: nextValue })}
-        />
-        <FilterSelect
-          label={t("meta_duration")}
-          value={value.duration}
-          options={durationOptions}
-          onChange={(nextValue) => onChange({ ...value, duration: nextValue })}
-        />
-        <FilterSelect
-          label={t("meta_intensity")}
-          value={value.intensity}
-          options={intensityOptions}
-          onChange={(nextValue) => onChange({ ...value, intensity: nextValue })}
-        />
-      </div>
-    </section>
+        <div className="library-filters__grid">
+          <FilterSelect
+            label={t("meta_body_area")}
+            value={value.bodyArea}
+            options={bodyAreaOptions}
+            onChange={(nextValue) => onChange({ ...value, bodyArea: nextValue })}
+          />
+          <FilterSelect
+            label={t("meta_purpose")}
+            value={value.purpose}
+            options={purposeOptions}
+            onChange={(nextValue) => onChange({ ...value, purpose: nextValue })}
+          />
+          <FilterSelect
+            label={t("meta_duration")}
+            value={value.duration}
+            options={durationOptions}
+            onChange={(nextValue) => onChange({ ...value, duration: nextValue })}
+          />
+          <FilterSelect
+            label={t("meta_intensity")}
+            value={value.intensity}
+            options={intensityOptions}
+            onChange={(nextValue) => onChange({ ...value, intensity: nextValue })}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { ExerciseVideo } from "@/lib/types";
@@ -68,20 +69,22 @@ export function LibraryScreen() {
 
   return (
     <>
-      <section className="card page-header">
-        <h1>{t("library_heading")}</h1>
-        <p>{t("library_subheading")}</p>
-      </section>
+      <Card className="page-header">
+        <CardHeader>
+          <CardTitle>{t("library_heading")}</CardTitle>
+          <p>{t("library_subheading")}</p>
+        </CardHeader>
+      </Card>
 
       <LibraryFilters value={filters} onChange={setFilters} />
 
-      <section className="library-screen__results flex flex-wrap gap-4">
+      <section className="library-screen__results flex flex-wrap gap-4 justify-center">
         {filteredExercises.map((exercise) => {
           const headingId = `library-${exercise.id}`;
           const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
 
           return (
-            <article key={exercise.id} className="card recommendation-card max-w-[320px]" aria-labelledby={headingId}>
+            <Card key={exercise.id} className="recommendation-card max-w-[400px]" aria-labelledby={headingId}>
               {thumbnailUrl ? (
                 <div className="recommendation-card__thumbnail">
                   <img src={thumbnailUrl} alt={exercise.title} loading="lazy" />
@@ -119,7 +122,7 @@ export function LibraryScreen() {
                   <dd>{formatPurpose(exercise.purpose)}</dd>
                 </div>
               </dl>
-            </article>
+            </Card>
           );
         })}
       </section>
