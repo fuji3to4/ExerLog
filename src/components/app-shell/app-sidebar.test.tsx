@@ -17,6 +17,35 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
+// Mock SyncProvider
+vi.mock("@/features/sync/SyncProvider", () => ({
+  useSync: () => ({
+    status: { type: "disconnected" },
+    userEmail: null,
+    signIn: vi.fn(),
+    disconnect: vi.fn(),
+  }),
+}));
+
+// Mock useTranslation
+vi.mock("@/features/i18n/use-translation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    language: "en",
+    messages: {
+      language_ja: "Japanese",
+      language_en: "English",
+      language_label: "Language",
+    },
+    setLanguage: vi.fn(),
+  }),
+}));
+
+// Mock usePathname
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+}));
+
 describe("AppSidebar", () => {
   it("renders all navigation items", () => {
     render(
