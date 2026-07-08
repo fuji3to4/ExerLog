@@ -39,7 +39,7 @@ export function AppShell({ children, currentPath }: AppShellProps) {
           </div>
 
           {/* Main Content */}
-          <main className="mx-auto grid w-full max-w-screen-sm gap-4 px-4 pb-28 pt-4 lg:max-w-none lg:px-8 lg:pb-8">
+          <main className="mx-auto w-full max-w-screen-sm gap-4 px-4 pb-28 pt-4 lg:max-w-screen-xl lg:px-8 lg:pb-8">
             {children}
           </main>
         </div>
