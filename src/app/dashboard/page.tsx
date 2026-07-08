@@ -1,28 +1,19 @@
 import { AppShell } from "@/components/app-shell/app-shell";
-import { TodayScreen } from "@/features/today/components/today-screen";
 import { DashboardLayout } from "@/components/app-shell/dashboard-layout";
 import { TodaySummaryCard } from "@/features/dashboard/components/today-summary-card";
 import { GraphStatsCard } from "@/features/dashboard/components/graph-stats-card";
 import { RecommendedVideosCard } from "@/features/dashboard/components/recommended-videos-card";
 import { RecentHistoryCard } from "@/features/dashboard/components/recent-history-card";
 
-export default function HomePage() {
+export default function DashboardPage() {
   return (
-    <AppShell currentPath="/">
-      {/* Mobile: Show TodayScreen */}
-      <div className="lg:hidden">
-        <TodayScreen />
-      </div>
-
-      {/* PC: Show Dashboard */}
-      <div className="hidden lg:block">
-        <DashboardLayout>
-          <TodaySummaryCard />
-          <GraphStatsCard />
-          <RecommendedVideosCard />
-          <RecentHistoryCard />
-        </DashboardLayout>
-      </div>
+    <AppShell currentPath="/dashboard">
+      <DashboardLayout>
+        <TodaySummaryCard />
+        <GraphStatsCard />
+        <RecommendedVideosCard />
+        <RecentHistoryCard />
+      </DashboardLayout>
     </AppShell>
   );
 }
