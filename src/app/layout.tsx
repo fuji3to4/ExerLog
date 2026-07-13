@@ -5,6 +5,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/features/i18n/language-provider";
 import { DbInitProvider } from "@/features/storage/db-init-provider";
 import { SyncProvider } from "@/features/sync/SyncProvider";
+import { ThemeProvider } from "@/features/settings/theme-provider";
 
 type RootLayoutProps = {
   children: ReactNode;
@@ -43,6 +44,12 @@ export const viewport: Viewport = {
   themeColor: "#f3f0ee",
 };
 
+const THEME_COLORS: Record<string, string> = {
+  warm: "#f3f0ee",
+  cool: "#eef3f7",
+  dark: "#161b22",
+};
+
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="ja" suppressHydrationWarning>
@@ -51,19 +58,29 @@ export default function RootLayout({ children }: RootLayoutProps) {
           dangerouslySetInnerHTML={{
             __html: `
               (function () {
-                var value = localStorage.getItem("exerlog-language");
-                var language = value === "en" ? "en" : "ja";
+                var langValue = localStorage.getItem("exerlog-language");
+                var language = langValue === "en" ? "en" : "ja";
                 document.documentElement.lang = language;
                 document.documentElement.dataset.language = language;
+
+                var themeValue = localStorage.getItem("exerlog-theme");
+                var theme = themeValue === "cool" || themeValue === "dark" ? themeValue : "warm";
+                document.documentElement.dataset.theme = theme;
+                var meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) {
+                  meta.setAttribute("content", ${JSON.stringify(THEME_COLORS)}[theme] || "#f3f0ee");
+                }
               })();
             `,
           }}
         />
-        <LanguageProvider>
-          <DbInitProvider>
-            <SyncProvider>{children}</SyncProvider>
-          </DbInitProvider>
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <DbInitProvider>
+              <SyncProvider>{children}</SyncProvider>
+            </DbInitProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

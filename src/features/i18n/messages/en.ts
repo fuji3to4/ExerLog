@@ -138,6 +138,10 @@ export const en = {
   // Settings screen
   nav_settings: "Settings",
   settings_heading: "Settings",
+  settings_theme_section_heading: "Theme",
+  theme_warm: "Warm",
+  theme_cool: "Cool",
+  theme_dark: "Dark",
   settings_library_section_heading: "Library Management",
   settings_data_section_heading: "Data Management",
 

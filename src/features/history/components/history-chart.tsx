@@ -25,10 +25,10 @@ const CustomTooltip = ({ active, payload, label, unit }: any) => {
   if (active && payload && payload.length) {
     const displayDate = typeof label === "number" ? formatTimestampToMD(label) : label;
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-2 shadow-md">
-        <p className="text-xs text-gray-500">{displayDate}</p>
-        <p className="text-sm font-bold text-gray-900">
-          {payload[0].value} <span className="text-xs font-normal text-gray-500">{unit}</span>
+      <div className="rounded-lg border bg-popover p-2 shadow-md">
+        <p className="text-xs text-muted-foreground">{displayDate}</p>
+        <p className="text-sm font-bold text-foreground">
+          {payload[0].value} <span className="text-xs font-normal text-muted-foreground">{unit}</span>
         </p>
       </div>
     );
@@ -48,7 +48,7 @@ export function HistoryChart({ series }: HistoryChartProps) {
 
   return (
     <div
-      className="relative min-h-[250px] min-w-[300px] rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+      className="relative min-h-[250px] min-w-[300px] rounded-xl border bg-popover p-4 shadow-sm"
       style={{ resize: "both", overflow: "hidden", height: "350px" }}
     >
       <ResponsiveContainer width="100%" height="100%">

@@ -37,7 +37,7 @@ export function MetricsCard({ metrics, onMetricChange }: MetricsCardProps) {
           {fields.map((field) => (
             <label key={field.metricType} className="grid gap-2 font-semibold">
               <span className="text-sm text-muted-foreground">{t(field.labelKey)}</span>
-              <div className="flex items-center overflow-hidden rounded-2xl border border-input bg-white/95">
+              <div className="flex items-center overflow-hidden rounded-2xl border border-input bg-popover">
                 <Input
                   type="number"
                   inputMode="decimal"

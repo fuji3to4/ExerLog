@@ -6,6 +6,7 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { DataManagement } from "./data-management";
 import { GoogleDriveSettings } from "./google-drive-settings";
 import { LibraryManagement } from "./library-management";
+import { ThemeSwitcher } from "./theme-switcher";
 
 export function SettingsScreen() {
   const { t } = useTranslation();
@@ -16,6 +17,15 @@ export function SettingsScreen() {
         <CardHeader>
           <CardTitle>{t("settings_heading")}</CardTitle>
         </CardHeader>
+      </Card>
+
+      <Card className="settings-section w-full">
+        <CardHeader>
+          <CardTitle>{t("settings_theme_section_heading")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ThemeSwitcher />
+        </CardContent>
       </Card>
 
       <Card className="settings-section w-full">

@@ -1,0 +1,36 @@
+
+ RUN  v3.0.8 E:/Data/App/www/ExerLog
+
+ 笶ｯ src/app/globals-theme.test.ts (8 tests | 1 failed) 16ms
+   笨・globals.css warm theme contract > defines shadcn-compatible warm tokens in :root
+   笨・globals.css warm theme contract > keeps compatibility aliases mapped from shadcn tokens
+   笨・globals.css warm theme contract > does not include legacy dark nav hard-coded colors
+   ﾃ・globals.css warm theme contract > uses tokenized warm styles for base surfaces and key controls 6ms
+     竊・Expected to find a CSS block for ".card" matching the provided condition.
+   笨・globals.css warm theme contract > wires Sofia Sans and warm theme color in layout
+   笨・globals.css warm theme contract > defines a cool theme override block
+   笨・globals.css warm theme contract > defines a dark theme override block
+   笨・globals.css warm theme contract > initializes data-theme from localStorage in layout
+ 笨・.claude/worktrees/google-drive-sync/src/app/globals-theme.test.ts (5 tests) 93ms
+
+竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ Failed Tests 1 竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ
+
+ FAIL  src/app/globals-theme.test.ts > globals.css warm theme contract > uses tokenized warm styles for base surfaces and key controls
+Error: Expected to find a CSS block for ".card" matching the provided condition.
+ 笶ｯ getCssBlock src/app/globals-theme.test.ts:41:9
+     39|   }
+     40| 
+     41|   throw new Error(
+       |         ^
+     42|     `Expected to find a CSS block for "${selector}"${options?.matches 窶ｦ
+     43|   );
+ 笶ｯ src/app/globals-theme.test.ts:143:7
+
+竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ[1/1]竡ｯ
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 12 passed (13)
+   Start at  11:14:39
+   Duration  22.68s (transform 557ms, setup 11.55s, collect 364ms, tests 109ms, environment 30.14s, prepare 1.96s)
+

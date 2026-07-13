@@ -138,6 +138,10 @@
   // Settings screen
   nav_settings: "設定",
   settings_heading: "設定",
+  settings_theme_section_heading: "テーマ",
+  theme_warm: "ウォーム",
+  theme_cool: "クール",
+  theme_dark: "ダーク",
   settings_library_section_heading: "ライブラリ管理",
   settings_data_section_heading: "データ管理",
 

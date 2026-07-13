@@ -364,4 +364,30 @@ describe("globals.css warm theme contract", () => {
     expect(layoutTsx).toContain("themeColor: \"#f3f0ee\"");
   });
 
+  test("defines a cool theme override block", () => {
+    const globalsCss = getGlobalsCss();
+    const coolBlock = getCssBlock(globalsCss, "[data-theme=\"cool\"]");
+
+    expectDeclaration(coolBlock, "--background", "210 30% 96%");
+    expectDeclaration(coolBlock, "--primary", "200 45% 42%");
+    expectDeclaration(coolBlock, "color-scheme", "light");
+  });
+
+  test("defines a dark theme override block", () => {
+    const globalsCss = getGlobalsCss();
+    const darkBlock = getCssBlock(globalsCss, "[data-theme=\"dark\"]");
+
+    expectDeclaration(darkBlock, "--background", "222 30% 12%");
+    expectDeclaration(darkBlock, "--foreground", "210 20% 92%");
+    expectDeclaration(darkBlock, "color-scheme", "dark");
+  });
+
+  test("initializes data-theme from localStorage in layout", () => {
+    const layoutTsx = readLayoutTsx();
+
+    expect(layoutTsx).toContain("exerlog-theme");
+    expect(layoutTsx).toContain("dataset.theme");
+    expect(layoutTsx).toContain("ThemeProvider");
+  });
+
 });

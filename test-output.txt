@@ -1,0 +1,82 @@
+
+ RUN  v3.0.8 E:/Data/App/www/ExerLog
+
+ 笨・src/app/globals-theme.test.ts > globals.css warm theme contract > defines shadcn-compatible warm tokens in :root
+ 笨・src/app/globals-theme.test.ts > globals.css warm theme contract > keeps compatibility aliases mapped from shadcn tokens
+ 笨・src/app/globals-theme.test.ts > globals.css warm theme contract > does not include legacy dark nav hard-coded colors
+ ﾃ・src/app/globals-theme.test.ts > globals.css warm theme contract > uses tokenized warm styles for base surfaces and key controls
+   竊・Expected to find a CSS block for ".card" matching the provided condition.
+ 笨・src/app/globals-theme.test.ts > globals.css warm theme contract > wires Sofia Sans and warm theme color in layout
+ 笨・src/app/globals-theme.test.ts > globals.css warm theme contract > defines a cool theme override block
+ 笨・src/app/globals-theme.test.ts > globals.css warm theme contract > defines a dark theme override block
+ 笨・src/app/globals-theme.test.ts > globals.css warm theme contract > initializes data-theme from localStorage in layout
+ ﾃ・src/app/exercises/page.test.tsx > query-based exercise page renders a user-created exercise id
+   竊・useSync must be used within a SyncProvider
+ ﾃ・src/app/exercises/[exerciseId]/page.test.tsx > exercise detail page shows video, metadata, and logging actions
+   竊・useSync must be used within a SyncProvider
+ ﾃ・src/app/exercises/[exerciseId]/page.test.tsx > exercise detail logging persists the selected result
+   竊・useSync must be used within a SyncProvider
+ ﾃ・src/app/exercises/[exerciseId]/page.test.tsx > exercise detail hydrates an existing log state on first render
+   竊・useSync must be used within a SyncProvider
+ ﾃ・src/app/exercises/[exerciseId]/page.test.tsx > keeps imported content raw on the detail screen
+   竊・useSync must be used within a SyncProvider
+ ﾃ・src/app/exercises/[exerciseId]/page.test.tsx > exercise detail page shows a derived thumbnail and keeps the external watch action
+   竊・useSync must be used within a SyncProvider
+ ﾃ・src/app/self-care/page.test.tsx > renders the self care route inside the app shell
+   竊・useSync must be used within a SyncProvider
+ ﾃ・src/app/self-care/page.test.tsx > renders english self care copy when english is selected
+   竊・useSync must be used within a SyncProvider
+ ﾃ・src/app/page.test.tsx > renders the today screen for the home route
+   竊・useSync must be used within a SyncProvider
+ 笨・src/app/page.test.tsx > layout includes installable app metadata
+
+竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ Failed Tests 10 竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ
+
+ FAIL  src/app/globals-theme.test.ts > globals.css warm theme contract > uses tokenized warm styles for base surfaces and key controls
+Error: Expected to find a CSS block for ".card" matching the provided condition.
+ 笶ｯ getCssBlock src/app/globals-theme.test.ts:41:9
+     39|   }
+     40| 
+     41|   throw new Error(
+       |         ^
+     42|     `Expected to find a CSS block for "${selector}"${options?.matches 窶ｦ
+     43|   );
+ 笶ｯ src/app/globals-theme.test.ts:143:7
+
+竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ[1/10]竡ｯ
+
+ FAIL  src/app/page.test.tsx > renders the today screen for the home route
+ FAIL  src/app/exercises/page.test.tsx > query-based exercise page renders a user-created exercise id
+ FAIL  src/app/self-care/page.test.tsx > renders the self care route inside the app shell
+ FAIL  src/app/self-care/page.test.tsx > renders english self care copy when english is selected
+ FAIL  src/app/exercises/[exerciseId]/page.test.tsx > exercise detail page shows video, metadata, and logging actions
+ FAIL  src/app/exercises/[exerciseId]/page.test.tsx > exercise detail logging persists the selected result
+ FAIL  src/app/exercises/[exerciseId]/page.test.tsx > exercise detail hydrates an existing log state on first render
+ FAIL  src/app/exercises/[exerciseId]/page.test.tsx > keeps imported content raw on the detail screen
+ FAIL  src/app/exercises/[exerciseId]/page.test.tsx > exercise detail page shows a derived thumbnail and keeps the external watch action
+Error: useSync must be used within a SyncProvider
+ 笶ｯ useSync src/features/sync/SyncProvider.tsx:36:11
+     34|   const ctx = useContext(SyncContext);
+     35|   if (!ctx) {
+     36|     throw new Error("useSync must be used within a SyncProvider");
+       |           ^
+     37|   }
+     38|   return ctx;
+ 笶ｯ AppSidebar src/components/app-shell/app-sidebar.tsx:36:53
+ 笶ｯ Object.react-stack-bottom-frame node_modules/react-dom/cjs/react-dom-client.development.js:22428:20
+ 笶ｯ renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:5757:22
+ 笶ｯ updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:8018:19
+ 笶ｯ beginWork node_modules/react-dom/cjs/react-dom-client.development.js:9683:18
+ 笶ｯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:543:16
+ 笶ｯ performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:15052:22
+ 笶ｯ workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:14870:41
+ 笶ｯ renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:14850:11
+
+竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ竡ｯ[2/10]竡ｯ
+
+
+ Test Files  5 failed (5)
+      Tests  10 failed | 8 passed (18)
+   Start at  10:41:27
+   Duration  17.72s (transform 1.03s, setup 613ms, collect 38.84s, tests 221ms, environment 2.44s, prepare 673ms)
+
