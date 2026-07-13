@@ -1,6 +1,6 @@
 # ExerLog
 
-A simple exercise logging PWA. Track your daily condition and workout results with minimal friction.
+A local-first exercise & wellness tracking PWA. Log your daily condition, track wellness metrics, record self-care activities, and review history — all stored locally in your browser.
 
 **[→ Open App](https://fuji3to4.github.io/ExerLog/)**
 
@@ -8,27 +8,37 @@ A simple exercise logging PWA. Track your daily condition and workout results wi
 
 ## Features
 
-- **Today** — Log your daily condition (mood + notes) and record recommended exercises in one tap
-- **Library** — Browse, search, and filter the full exercise catalog with video links and details
-- **History** — Review past days from a calendar, edit or delete logged exercises and conditions
+- **Today** — Log your daily wellness (physical/mental scores + notes), record recommended exercises, and complete self-care items in one place
+- **Self-Care** — Track stretch, walking, bath, meditation and other self-care activities with counts, minutes, and notes
+- **Library** — Browse, search, and filter the full exercise catalog with video links and details; dedicated exercise detail pages
+- **History** — Review past days via calendar, view graphs (weight, body fat, wellness scores over time), edit or delete logged exercises and conditions
 - **Settings / Data Management**
   - Add, edit, and delete custom exercises
-  - Export exercises, logs, and conditions as CSV
+  - Export exercises, exercise logs, conditions, wellness entries, and metrics as CSV
   - Import exercises from CSV
   - Bulk delete all exercises or all logs (two-step confirmation)
-- **PWA** — Install to home screen, works offline
+  - **Google Drive sync** — Sign in with Google and auto-sync all data to Google Sheets (30s debounce, works on every save)
+  - **Theme switcher** — Choose between Warm, Cool, and Dark themes
 - **i18n** — Japanese / English language toggle
+- **PWA** — Install to home screen, works offline
+- **PC Dashboard** — Responsive layout with sidebar navigation on desktop, bottom nav on mobile; today view and history dashboard side-by-side on larger screens
 
 ## Tech Stack
 
 | | |
 |---|---|
 | Framework | Next.js 15 (App Router, static export) |
-| UI | React 19 |
+| UI | React 19, shadcn/ui (Radix primitives), Tailwind CSS |
+| Charts | Recharts (history graphs) |
 | Storage | IndexedDB (Dexie.js) |
+| Sync | Google Sheets API (OAuth 2.0) |
 | PWA | next-pwa |
 | Testing | Vitest + Testing Library |
 | Deploy | GitHub Pages (GitHub Actions) |
+
+## Design
+
+The UI is inspired by the Mastercard design system — warm cream canvas, generous pill-shaped radii, and an editorial magazine feel. Sofia Sans serves as the primary typeface.
 
 ## Local Development
 
@@ -48,7 +58,7 @@ npm run test
 
 ## Data Privacy
 
-All data is stored locally in the browser's IndexedDB. Nothing is sent to any server.
+All data is stored locally in the browser's IndexedDB. Google Drive sync is optional and opt-in — data is only sent to Google Sheets when you explicitly sign in and enable sync.
 
 ## License
 
