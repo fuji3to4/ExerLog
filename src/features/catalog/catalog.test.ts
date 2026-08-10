@@ -1,4 +1,4 @@
-import { exerciseCatalog } from "./exercise-catalog";
+import { exerciseCatalog } from "./exercise-catalog.default";
 
 test("catalog matches the planned exercise seed data exactly", () => {
   expect([...exerciseCatalog].sort((left, right) => left.id.localeCompare(right.id))).toEqual([

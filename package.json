@@ -45,9 +45,12 @@
   },
   "scripts": {
     "dev": "next dev",
+    "predev": "node scripts/generate-exercise-catalog.js",
     "build": "next build",
+    "prebuild": "node scripts/generate-exercise-catalog.js",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "pretest": "node scripts/generate-exercise-catalog.js"
   }
 }
