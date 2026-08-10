@@ -2,15 +2,7 @@
 
 const Papa = require("papaparse");
 
-const REQUIRED_STRING_FIELDS = [
-  "id",
-  "title",
-  "description",
-  "videoUrl",
-  "thumbnailUrl",
-  "bodyArea",
-  "purpose",
-];
+const REQUIRED_STRING_FIELDS = ["id", "title", "videoUrl", "bodyArea", "purpose"];
 
 const VALID_INTENSITIES = ["low", "medium", "high"];
 
@@ -76,9 +68,9 @@ function parseCsvToCatalog(csvText) {
     rows.push({
       id: record.id,
       title: record.title,
-      description: record.description,
+      description: record.description || "",
       videoUrl: record.videoUrl,
-      thumbnailUrl: record.thumbnailUrl,
+      thumbnailUrl: record.thumbnailUrl || "",
       bodyArea: record.bodyArea,
       purpose: record.purpose,
       durationMinutes,

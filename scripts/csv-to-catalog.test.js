@@ -45,13 +45,37 @@ test("strips a leading UTF-8 BOM before parsing", () => {
 test("reports missing required fields", () => {
   const csv = [
     HEADER,
-    ",Walk,,https://example.com/v,/thumb.jpg,full-body,endurance,10,medium",
+    ",Walk,A short walk.,https://example.com/v,/thumb.jpg,,endurance,10,medium",
   ].join("\n");
 
   const { rows, errors } = parseCsvToCatalog(csv);
 
   expect(rows).toEqual([]);
-  expect(errors).toEqual(['row 2: missing "id", missing "description"']);
+  expect(errors).toEqual(['row 2: missing "id", missing "bodyArea"']);
+});
+
+test("allows a blank description and thumbnailUrl", () => {
+  const csv = [
+    HEADER,
+    "walk-1,Walk,,https://example.com/v,,full-body,endurance,10,medium",
+  ].join("\n");
+
+  const { rows, errors } = parseCsvToCatalog(csv);
+
+  expect(errors).toEqual([]);
+  expect(rows).toEqual([
+    {
+      id: "walk-1",
+      title: "Walk",
+      description: "",
+      videoUrl: "https://example.com/v",
+      thumbnailUrl: "",
+      bodyArea: "full-body",
+      purpose: "endurance",
+      durationMinutes: 10,
+      intensity: "medium",
+    },
+  ]);
 });
 
 test("reports an invalid intensity value", () => {
