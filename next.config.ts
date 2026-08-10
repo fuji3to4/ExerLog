@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import createPWA from "next-pwa";
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
-const basePath = isGitHubActions ? "/ExerLog" : "";
+const basePath = isGitHubActions ? "/ExerLog" : "/ExerLog";
 
 const withPWA = createPWA({
   dest: "public",
