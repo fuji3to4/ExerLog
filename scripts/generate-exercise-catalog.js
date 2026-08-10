@@ -17,7 +17,7 @@ const DEFAULT_OUTPUT_PATH = path.join(
 const FALLBACK_CONTENT = 'export { exerciseCatalog } from "./exercise-catalog.default";\n';
 
 function buildGeneratedContent(rows) {
-  return `import type { ExerciseVideo } from "@/lib/types";\n\nexport const exerciseCatalog: ExerciseVideo[] = ${JSON.stringify(
+  return `// AUTO-GENERATED from public/exercises.csv by scripts/generate-exercise-catalog.js — DO NOT EDIT.\nimport type { ExerciseVideo } from "@/lib/types";\n\nexport const exerciseCatalog: ExerciseVideo[] = ${JSON.stringify(
     rows,
     null,
     2
@@ -35,6 +35,10 @@ function run({ csvPath = DEFAULT_CSV_PATH, outputPath = DEFAULT_OUTPUT_PATH } = 
 
   if (errors.length > 0) {
     throw new Error(`Invalid data in ${csvPath}:\n${errors.map((e) => `  - ${e}`).join("\n")}`);
+  }
+
+  if (rows.length === 0) {
+    throw new Error(`No valid exercise rows found in ${csvPath}`);
   }
 
   fs.writeFileSync(outputPath, buildGeneratedContent(rows), "utf8");

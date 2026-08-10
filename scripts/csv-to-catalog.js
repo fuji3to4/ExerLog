@@ -15,7 +15,7 @@ const REQUIRED_STRING_FIELDS = [
 const VALID_INTENSITIES = ["low", "medium", "high"];
 
 function parseCsvToCatalog(csvText) {
-  const withoutBom = csvText.replace(/^﻿/, "");
+  const withoutBom = csvText.replace(/^\uFEFF/, "");
   const parsed = Papa.parse(withoutBom, {
     header: true,
     skipEmptyLines: true,
@@ -25,9 +25,22 @@ function parseCsvToCatalog(csvText) {
   const errors = [];
   const seenIds = new Set();
 
+  if (parsed.errors.length > 0) {
+    parsed.errors.forEach((err) => {
+      const rowNumber = typeof err.row === "number" ? err.row + 2 : undefined;
+      errors.push(
+        rowNumber !== undefined ? `row ${rowNumber}: ${err.message}` : err.message
+      );
+    });
+  }
+
   parsed.data.forEach((record, index) => {
     const rowNumber = index + 2; // +1 for header row, +1 for 0-based index
     const rowErrors = [];
+
+    if (record.__parsed_extra && record.__parsed_extra.length > 0) {
+      rowErrors.push(`has more columns than the header (check for an unescaped comma)`);
+    }
 
     for (const field of REQUIRED_STRING_FIELDS) {
       if (!record[field] || record[field].trim() === "") {

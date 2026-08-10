@@ -29,7 +29,7 @@ test("parses a valid CSV into ExerciseVideo rows", () => {
 
 test("strips a leading UTF-8 BOM before parsing", () => {
   const csv =
-    "﻿" +
+    "\uFEFF" +
     [
       HEADER,
       "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,10,medium",
@@ -91,6 +91,22 @@ test("reports duplicate ids", () => {
 
   expect(rows).toHaveLength(1);
   expect(errors).toEqual(['row 3: duplicate "id" value "walk-1"']);
+});
+
+test("reports a row with an unescaped comma that adds an extra column past the header", () => {
+  // The trailing ", extra note" simulates an unescaped comma accidentally
+  // added inside the last field, producing one more column than the header.
+  const csv = [
+    HEADER,
+    "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,10,medium,extra note",
+  ].join("\n");
+
+  const { rows, errors } = parseCsvToCatalog(csv);
+
+  expect(rows).toEqual([]);
+  expect(errors).toContain(
+    'row 2: has more columns than the header (check for an unescaped comma)'
+  );
 });
 
 test("collects errors from multiple bad rows", () => {

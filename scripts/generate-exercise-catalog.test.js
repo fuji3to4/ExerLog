@@ -26,6 +26,9 @@ test("writes a generated catalog file from a valid CSV", () => {
   run({ csvPath, outputPath });
 
   const output = fs.readFileSync(outputPath, "utf8");
+  expect(output).toContain(
+    "// AUTO-GENERATED from public/exercises.csv by scripts/generate-exercise-catalog.js — DO NOT EDIT."
+  );
   expect(output).toContain('import type { ExerciseVideo } from "@/lib/types";');
   expect(output).toContain('"id": "walk-1"');
   expect(output).toContain("export const exerciseCatalog: ExerciseVideo[] =");
@@ -55,5 +58,15 @@ test("throws with all row errors when the CSV is invalid", () => {
   );
 
   expect(() => run({ csvPath, outputPath })).toThrow(/invalid "intensity" value "extreme"/);
+  expect(fs.existsSync(outputPath)).toBe(false);
+});
+
+test("throws when the CSV has no data rows", () => {
+  const dir = makeTempDir();
+  const csvPath = path.join(dir, "exercises.csv");
+  const outputPath = path.join(dir, "exercise-catalog.ts");
+  fs.writeFileSync(csvPath, `${HEADER}\n`, "utf8");
+
+  expect(() => run({ csvPath, outputPath })).toThrow(/No valid exercise rows found/);
   expect(fs.existsSync(outputPath)).toBe(false);
 });

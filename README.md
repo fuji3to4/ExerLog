@@ -56,6 +56,10 @@ npm run build   # outputs static files to out/
 npm run test
 ```
 
+## Exercise Catalog Data
+
+The built-in exercise catalog (`src/features/catalog/exercise-catalog.ts`) is generated at build time from `public/exercises.csv`, falling back to `src/features/catalog/exercise-catalog.default.ts` if the CSV is absent. Generation runs automatically via `predev`/`prebuild`/`pretest` (`scripts/generate-exercise-catalog.js`), so `exercise-catalog.ts` is gitignored and should never be hand-edited — changes go in `exercises.csv` instead.
+
 ## Data Privacy
 
 All data is stored locally in the browser's IndexedDB. Google Drive sync is optional and opt-in — data is only sent to Google Sheets when you explicitly sign in and enable sync.
