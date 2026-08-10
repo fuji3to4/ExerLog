@@ -129,6 +129,7 @@ export const en = {
   action_watch: "Watch",
   action_watch_aria: "Watch {title}",
   action_watch_video: "Watch video",
+  action_play_video_aria: "Play {title}",
 
   // Detail screen
   detail_loading_heading: "Loading today's log...",

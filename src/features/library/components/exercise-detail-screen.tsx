@@ -7,7 +7,7 @@ import { ExerciseLogActions } from "@/features/logging/components/exercise-log-a
 import { deleteExerciseLogByDateAndExercise, listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
-import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
+import { getYouTubeEmbedUrl, resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 type ExerciseDetailScreenProps = {
@@ -17,8 +17,10 @@ type ExerciseDetailScreenProps = {
 export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
   const [result, setResult] = useState<ExerciseLogResult | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
   const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
+  const embedUrl = getYouTubeEmbedUrl(exercise.videoUrl);
 
   useEffect(() => {
     let isActive = true;
@@ -70,7 +72,26 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
     <Card className="exercise-detail">
       {thumbnailUrl ? (
         <div className="exercise-detail__thumbnail">
-          <img src={thumbnailUrl} alt={exercise.title} />
+          {isPlaying && embedUrl ? (
+            <iframe
+              src={embedUrl}
+              title={exercise.title}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          ) : embedUrl ? (
+            <button
+              type="button"
+              className="exercise-detail__play-button"
+              onClick={() => setIsPlaying(true)}
+              aria-label={t("action_play_video_aria", { title: exercise.title })}
+            >
+              <img src={thumbnailUrl} alt={exercise.title} />
+              <span className="exercise-detail__play-icon" aria-hidden="true" />
+            </button>
+          ) : (
+            <img src={thumbnailUrl} alt={exercise.title} />
+          )}
         </div>
       ) : null}
       <CardHeader>
@@ -79,9 +100,11 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
             <CardTitle>{exercise.title}</CardTitle>
             <p>{exercise.description}</p>
           </div>
-          <a href={exercise.videoUrl} className="today-screen__primary-button" target="_blank" rel="noreferrer">
-            {t("action_watch_video")}
-          </a>
+          {!embedUrl ? (
+            <a href={exercise.videoUrl} className="today-screen__primary-button" target="_blank" rel="noreferrer">
+              {t("action_watch_video")}
+            </a>
+          ) : null}
         </div>
       </CardHeader>
 

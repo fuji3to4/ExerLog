@@ -13,4 +13,5 @@ data/
 .env.local
 .env.*.local
 .env
+public/exercises.csv
 src/features/catalog/exercise-catalog.ts

@@ -129,6 +129,7 @@
   action_watch: "見る",
   action_watch_aria: "{title}を見る",
   action_watch_video: "動画を見る",
+  action_play_video_aria: "{title}の動画を再生",
 
   // Detail screen
   detail_loading_heading: "今日のログを読み込み中...",

@@ -31,6 +31,35 @@ export function getYouTubeThumbnailUrl(rawUrl: string): string | null {
   return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
 }
 
+export function getYouTubeEmbedUrl(rawUrl: string): string | null {
+  const videoId = getYouTubeVideoId(rawUrl);
+
+  if (!videoId) {
+    return null;
+  }
+
+  const sourceParams = new URL(rawUrl).searchParams;
+  const start = sourceParams.get("start");
+  const end = sourceParams.get("end");
+
+  const embedParams = new URLSearchParams({ autoplay: "1" });
+
+  if (start) {
+    embedParams.set("start", start);
+  }
+
+  if (end) {
+    embedParams.set("end", end);
+  }
+
+  if (start || end) {
+    embedParams.set("loop", "1");
+    embedParams.set("playlist", videoId);
+  }
+
+  return `https://www.youtube.com/embed/${videoId}?${embedParams.toString()}`;
+}
+
 export function resolveExerciseThumbnailUrl(
   exercise: Pick<ExerciseVideo, "videoUrl" | "thumbnailUrl">,
 ): string | null {

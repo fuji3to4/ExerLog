@@ -32,5 +32,5 @@ test("query-based exercise page renders a user-created exercise id", async () =>
   renderWithLanguage(await ExercisesPage(), { initialLanguage: "en" });
 
   expect(await screen.findByRole("heading", { name: "UUID Exercise" })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /watch video/i })).toHaveAttribute("href", "https://youtu.be/dQw4w9WgXcQ");
+  expect(screen.getByRole("button", { name: /play uuid exercise/i })).toBeInTheDocument();
 });

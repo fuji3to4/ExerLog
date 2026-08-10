@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { getYouTubeThumbnailUrl, getYouTubeVideoId, resolveExerciseThumbnailUrl } from "./youtube";
+import { getYouTubeEmbedUrl, getYouTubeThumbnailUrl, getYouTubeVideoId, resolveExerciseThumbnailUrl } from "./youtube";
 
 describe("getYouTubeVideoId", () => {
   test("reads a standard watch URL", () => {
@@ -51,4 +51,22 @@ test("returns null when neither a custom thumbnail nor a YouTube URL is availabl
       thumbnailUrl: "",
     }),
   ).toBeNull();
+});
+
+describe("getYouTubeEmbedUrl", () => {
+  test("builds an autoplaying embed URL for a plain watch URL", () => {
+    expect(getYouTubeEmbedUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(
+      "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1",
+    );
+  });
+
+  test("carries start/end over and loops the segment via loop and playlist params", () => {
+    expect(getYouTubeEmbedUrl("https://www.youtube.com/watch?v=equcr3cpxNQ&start=4&end=45")).toBe(
+      "https://www.youtube.com/embed/equcr3cpxNQ?autoplay=1&start=4&end=45&loop=1&playlist=equcr3cpxNQ",
+    );
+  });
+
+  test("returns null for a non-YouTube URL", () => {
+    expect(getYouTubeEmbedUrl("https://example.com/video.mp4")).toBeNull();
+  });
 });
