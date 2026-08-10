@@ -12,3 +12,4 @@ data/
 .aider*
 .env.local
 .env.*.local
+src/features/catalog/exercise-catalog.ts

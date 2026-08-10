@@ -1,0 +1,7 @@
+﻿id,title,description,videoUrl,thumbnailUrl,bodyArea,purpose,durationMinutes,intensity
+shoulder-roll-4,Shoulder Rolls,A light upper-body warm-up to ease shoulder stiffness.,https://www.youtube.com/watch?v=example4,/thumbnails/shoulder-roll.jpg,upper-body,warmup,4,low
+hip-mobility-6,Hip Mobility,Gentle standing mobility for hips and lower body comfort.,https://www.youtube.com/watch?v=example5,/thumbnails/hip-mobility.jpg,lower-body,mobility,6,medium
+seated-calf-raise-5,Seated Calf Raise,A simple seated movement for light lower-body activation.,https://www.youtube.com/watch?v=example6,/thumbnails/seated-calf-raise.jpg,lower-body,strength,5,high
+neck-mobility-5,Neck Mobility,Gentle seated mobility work for the neck and shoulders.,https://www.youtube.com/watch?v=example1,/thumbnails/neck-mobility.jpg,upper-body,mobility,5,low
+breathing-reset-3,Breathing Reset,A short calming reset for days with lower energy.,https://www.youtube.com/watch?v=example2,/thumbnails/breathing-reset.jpg,full-body,recovery,3,low
+walk-in-place-10,Walk in Place,A simple standing exercise for light activity.,https://www.youtube.com/watch?v=example3,/thumbnails/walk-in-place.jpg,full-body,endurance,10,medium
