@@ -48,6 +48,7 @@
     "predev": "node scripts/generate-exercise-catalog.js",
     "build": "next build",
     "prebuild": "node scripts/generate-exercise-catalog.js",
+    "postbuild": "node scripts/fix-manifest-base-path.js",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",

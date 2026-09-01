@@ -11,7 +11,7 @@ type RootLayoutProps = {
   children: ReactNode;
 };
 
-const base = process.env.GITHUB_ACTIONS === "true" ? "/ExerLog" : "";
+const base = process.env.GITHUB_ACTIONS === "true" ? "/ExerLog" : "/ExerLog";
 const sofiaSans = Sofia_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
