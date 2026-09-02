@@ -11,7 +11,6 @@ export async function seedIfEmpty(): Promise<void> {
 }
 
 export async function listAllExercises(): Promise<ExerciseVideo[]> {
-  await seedIfEmpty();
   return appDb.exercises.toArray();
 }
 

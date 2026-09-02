@@ -3,15 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { localIsoNow } from "@/lib/date/local-iso";
 import { formatTime } from "@/lib/date/format-timestamp";
 import { useTranslation } from "@/features/i18n/use-translation";
-import { deleteDailyCondition, updateDailyCondition } from "@/features/storage/daily-condition.repository";
 import { deleteDailyMetric, upsertDailyMetric } from "@/features/storage/daily-metrics.repository";
 import { deleteDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
 import { deleteExerciseLog, updateExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
-import type { ConditionLevel, ExerciseLogResult, ExerciseVideo, MetricType, WellnessScore } from "@/lib/types";
+import type { ExerciseLogResult, ExerciseVideo, MetricType, WellnessScore } from "@/lib/types";
 
 import type { HistoryDaySummary } from "../history-query";
 import { WellnessScoreInput } from "@/features/self-care/components/wellness-score-input";
@@ -30,11 +28,6 @@ type EditLogState = {
   result: ExerciseLogResult;
   loggedAt: string;
   date: string;
-};
-
-type EditConditionState = {
-  conditionLevel: ConditionLevel;
-  note: string;
 };
 
 type EditMetricState = {
@@ -130,70 +123,6 @@ function EditLogModal({
             <option value="did">{t("result_did")}</option>
             <option value="partial">{t("result_partial")}</option>
           </select>
-        </div>
-
-        <div className="modal__actions">
-          <button
-            type="button"
-            className="settings-action-button settings-action-button--secondary"
-            onClick={onCancel}
-          >
-            {t("history_edit_cancel")}
-          </button>
-          <button type="button" className="settings-action-button" onClick={onSave}>
-            {t("history_edit_save")}
-          </button>
-        </div>
-      </div>
-    </dialog>
-  );
-}
-
-function EditConditionModal({
-  state,
-  onChange,
-  onSave,
-  onCancel,
-}: {
-  state: EditConditionState;
-  onChange: (next: EditConditionState) => void;
-  onSave: () => void;
-  onCancel: () => void;
-}) {
-  const { t } = useTranslation();
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
-
-  return (
-    <dialog ref={dialogRef} className="modal" onCancel={onCancel}>
-      <div className="modal__content">
-        <h2>{t("history_edit_heading_condition")}</h2>
-
-        <div className="modal__field">
-          <label htmlFor="edit-condition-level">{t("history_condition_heading")}</label>
-          <select
-            id="edit-condition-level"
-            value={state.conditionLevel}
-            onChange={(e) => onChange({ ...state, conditionLevel: e.target.value as ConditionLevel })}
-          >
-            <option value="good">{t("condition_good")}</option>
-            <option value="okay">{t("condition_okay")}</option>
-            <option value="tired">{t("condition_tired")}</option>
-          </select>
-        </div>
-
-        <div className="modal__field">
-          <label htmlFor="edit-condition-note">{t("condition_note_label")}</label>
-          <textarea
-            id="edit-condition-note"
-            value={state.note}
-            onChange={(e) => onChange({ ...state, note: e.target.value })}
-          />
         </div>
 
         <div className="modal__actions">
@@ -343,7 +272,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingLog, setEditingLog] = useState<EditLogState | null>(null);
-  const [editingCondition, setEditingCondition] = useState<EditConditionState | null>(null);
   const [editingMetric, setEditingMetric] = useState<EditMetricState | null>(null);
   const [editingWellness, setEditingWellness] = useState<EditWellnessState | null>(null);
 
@@ -354,12 +282,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
   function formatResult(result: HistoryDaySummary["logs"][number]["result"]) {
     if (result === "did") return t("result_did");
     return t("result_partial");
-  }
-
-  function formatCondition(level: NonNullable<HistoryDaySummary["conditionLevel"]>) {
-    if (level === "good") return t("condition_good");
-    if (level === "okay") return t("condition_okay");
-    return t("condition_tired");
   }
 
   function formatMetricLabel(metricType: MetricType) {
@@ -394,25 +316,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
       loggedAt: editingLog.loggedAt,
     });
     setEditingLog(null);
-    onChanged?.();
-  }
-
-  async function handleDeleteCondition() {
-    if (!selectedDate) return;
-    if (!window.confirm(t("history_condition_delete_confirm"))) return;
-    await deleteDailyCondition(selectedDate);
-    onChanged?.();
-  }
-
-  async function handleSaveCondition() {
-    if (!editingCondition || !selectedDate) return;
-    await updateDailyCondition({
-      date: selectedDate,
-      conditionLevel: editingCondition.conditionLevel,
-      note: editingCondition.note,
-      updatedAt: localIsoNow(),
-    });
-    setEditingCondition(null);
     onChanged?.();
   }
 
@@ -481,7 +384,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
     );
   }
 
-  const updatedTime = summary.updatedAt ? formatTime(summary.updatedAt) : "";
   const metricMap = new Map(summary.metrics.map((metric) => [metric.metricType, metric]));
   const wellness = summary.wellness;
 
@@ -692,40 +594,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
           </div>
         ) : null}
 
-        {summary.conditionLevel ? (
-          <div className="day-summary__section">
-            <h3>{t("history_condition_heading")}</h3>
-            <p>{formatCondition(summary.conditionLevel)}</p>
-            {summary.note ? <p>{summary.note}</p> : null}
-            {updatedTime && (
-              <p className="day-summary__time">{updatedTime}</p>
-            )}
-            {isEditMode && (
-              <div className="day-summary__item-actions">
-                <button
-                  type="button"
-                  className="day-summary__action-btn"
-                  onClick={() =>
-                    setEditingCondition({
-                      conditionLevel: summary.conditionLevel!,
-                      note: summary.note,
-                    })
-                  }
-                >
-                  {t("action_edit")}
-                </button>
-                <button
-                  type="button"
-                  className="day-summary__action-btn day-summary__action-btn--danger"
-                  onClick={() => void handleDeleteCondition()}
-                >
-                  {t("action_delete")}
-                </button>
-              </div>
-            )}
-          </div>
-        ) : null}
-
         {isEditMode && editingLog && (
           <EditLogModal
             state={editingLog}
@@ -733,15 +601,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
             onChange={setEditingLog}
             onSave={() => void handleSaveLog()}
             onCancel={() => setEditingLog(null)}
-          />
-        )}
-
-        {isEditMode && editingCondition && (
-          <EditConditionModal
-            state={editingCondition}
-            onChange={setEditingCondition}
-            onSave={() => void handleSaveCondition()}
-            onCancel={() => setEditingCondition(null)}
           />
         )}
 

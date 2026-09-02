@@ -12,10 +12,6 @@ vi.mock("@/features/storage/exercise-logs.repository", () => ({
   deleteExerciseLog: vi.fn(),
   updateExerciseLog: vi.fn(),
 }));
-vi.mock("@/features/storage/daily-condition.repository", () => ({
-  deleteDailyCondition: vi.fn(),
-  updateDailyCondition: vi.fn(),
-}));
 vi.mock("@/features/storage/daily-metrics.repository", () => ({
   upsertDailyMetric: vi.fn(),
   deleteDailyMetric: vi.fn(),
@@ -26,9 +22,6 @@ vi.mock("@/features/storage/daily-wellness.repository", () => ({
 }));
 vi.mock("@/features/storage/exercise-catalog.repository", () => ({
   listAllExercises: vi.fn().mockResolvedValue([]),
-}));
-vi.mock("@/lib/date/local-iso", () => ({
-  localIsoNow: vi.fn().mockReturnValue("2024-01-15T09:00:00+09:00"),
 }));
 
 beforeEach(() => {
@@ -51,9 +44,6 @@ const baseLog = {
 
 const makeSummary = (overrides = {}) => ({
   logs: [baseLog],
-  conditionLevel: "good" as const,
-  note: "Felt great",
-  updatedAt: "2024-01-15T09:30:00+09:00",
   wellness: null,
   metrics: [],
   selfCareLogs: [],
@@ -67,29 +57,6 @@ describe("DaySummary timestamps", () => {
     });
     const list = screen.getByRole("list");
     expect(within(list).getByText(/\d{2}:\d{2}/)).toBeInTheDocument();
-  });
-
-  it("renders updatedAt time in the condition section when present", async () => {
-    await act(async () => {
-      render(<DaySummary selectedDate="2024-01-15" summary={makeSummary()} />);
-    });
-    const conditionHeading = screen.getByText("history_condition_heading");
-    const conditionSection = conditionHeading.closest("div")!;
-    expect(within(conditionSection).getByText(/\d{2}:\d{2}/)).toBeInTheDocument();
-  });
-
-  it("does not render updatedAt time in condition section when updatedAt is null", async () => {
-    await act(async () => {
-      render(
-        <DaySummary
-          selectedDate="2024-01-15"
-          summary={makeSummary({ updatedAt: null })}
-        />
-      );
-    });
-    const conditionHeading = screen.getByText("history_condition_heading");
-    const conditionSection = conditionHeading.closest("div")!;
-    expect(within(conditionSection).queryByText(/\d{2}:\d{2}/)).toBeNull();
   });
 
   it("renders wellness, metrics, and self-care sections when data exists", async () => {
@@ -161,8 +128,8 @@ describe("DaySummary timestamps", () => {
 
     expect(screen.getByRole("checkbox", { name: "history_mode_edit" })).toBeChecked();
     expect(screen.getByText("history_mode_edit")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "action_edit" }).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByRole("button", { name: "action_delete" }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByRole("button", { name: "action_edit" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "action_delete" })).toHaveLength(1);
   });
 
   it("shows metric add controls when metric missing in edit mode", async () => {

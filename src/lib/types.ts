@@ -28,13 +28,6 @@ export type ExerciseLog = {
   loggedAt: string;
 };
 
-export type DailyConditionEntry = {
-  date: string;
-  conditionLevel: ConditionLevel;
-  note: string;
-  updatedAt: string;
-};
-
 export type DailyWellnessEntry = {
   date: string;
   physicalScore: WellnessScore;

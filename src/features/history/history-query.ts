@@ -1,4 +1,3 @@
-import { getDailyCondition } from "@/features/storage/daily-condition.repository";
 import { listDailyMetricsByDate } from "@/features/storage/daily-metrics.repository";
 import { listDailySelfCareEntriesByDate } from "@/features/storage/daily-self-care.repository";
 import { getDailyWellness } from "@/features/storage/daily-wellness.repository";
@@ -39,9 +38,6 @@ type HistoryDaySelfCareLog = {
 
 export type HistoryDaySummary = {
   logs: HistoryDayLog[];
-  conditionLevel: "good" | "okay" | "tired" | null;
-  note: string;
-  updatedAt: string | null;
   wellness: HistoryDayWellness | null;
   metrics: HistoryDayMetric[];
   selfCareLogs: HistoryDaySelfCareLog[];
@@ -54,9 +50,8 @@ export async function listCompletedDaysInMonth(month: string) {
 }
 
 export async function getHistoryDaySummary(date: string): Promise<HistoryDaySummary> {
-  const [logs, condition, exercises, wellness, metrics, selfCareLogs, selfCareItems] = await Promise.all([
+  const [logs, exercises, wellness, metrics, selfCareLogs, selfCareItems] = await Promise.all([
     listExerciseLogsForDay(date),
-    getDailyCondition(date),
     listAllExercises(),
     getDailyWellness(date),
     listDailyMetricsByDate(date),
@@ -75,9 +70,6 @@ export async function getHistoryDaySummary(date: string): Promise<HistoryDaySumm
       result: log.result,
       loggedAt: log.loggedAt,
     })),
-    conditionLevel: condition?.conditionLevel ?? null,
-    note: condition?.note ?? "",
-    updatedAt: condition?.updatedAt ?? null,
     wellness: wellness
       ? {
           physicalScore: wellness.physicalScore,

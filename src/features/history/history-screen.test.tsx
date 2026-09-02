@@ -4,7 +4,6 @@ import { beforeEach, expect, test, vi } from "vitest";
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { selfCareCatalog } from "@/features/catalog/self-care-catalog";
-import { saveDailyCondition } from "@/features/storage/daily-condition.repository";
 import { replaceDailyMetrics } from "@/features/storage/daily-metrics.repository";
 import { replaceDailySelfCareEntries } from "@/features/storage/daily-self-care.repository";
 import { appDb } from "@/features/storage/app-db";
@@ -16,7 +15,6 @@ import { HistoryScreen } from "./components/history-screen";
 
 beforeEach(async () => {
   await appDb.logs.clear();
-  await appDb.conditions.clear();
   await appDb.exercises.clear();
   await appDb.exercises.bulkAdd(exerciseCatalog);
   await appDb.dailyWellness.clear();
@@ -33,12 +31,6 @@ beforeEach(async () => {
 });
 
 async function seedLogsForHistory() {
-  await saveDailyCondition({
-    date: "2026-03-23",
-    conditionLevel: "tired",
-    note: "Legs feel heavy",
-  });
-
   await saveExerciseLog({
     date: "2026-03-23",
     exerciseId: "neck-mobility-5",
@@ -83,8 +75,6 @@ test("marks days with exercise logs in the calendar and shows the selected day s
 
   expect(await screen.findByText(/neck mobility/i)).toBeInTheDocument();
   expect(screen.getByText(/did it/i)).toBeInTheDocument();
-  expect(screen.getByText(/tired/i)).toBeInTheDocument();
-  expect(screen.getByText(/legs feel heavy/i)).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /wellness/i })).toBeInTheDocument();
   expect(screen.getByText("4 / 5")).toBeInTheDocument();
   expect(screen.getByText(/needed a slow start/i)).toBeInTheDocument();
@@ -110,7 +100,6 @@ test("uses Japanese calendar labels and summary copy by default", async () => {
   expect(await screen.findByRole("heading", { name: /1日のまとめ/i })).toBeInTheDocument();
   expect(await screen.findByText("Neck Mobility")).toBeInTheDocument();
   expect(screen.getByText(/できた/i)).toBeInTheDocument();
-  expect(screen.getByText(/疲れている/i)).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /ウェルネス/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /測定値/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /セルフケア/i })).toBeInTheDocument();
@@ -208,15 +197,15 @@ test("shows edit-mode controls and saves edits for a selected completed past day
 
   const daySummary = await screen.findByRole("heading", { name: /day summary/i });
   const summaryCard = daySummary.closest("section");
-  const conditionHeading = screen.getByRole("heading", { name: "Condition" });
-  const conditionSection = conditionHeading.closest("div");
+  const wellnessHeading = screen.getByRole("heading", { name: "Wellness" });
+  const wellnessSection = wellnessHeading.closest("div");
 
   expect(summaryCard).not.toBeNull();
-  expect(conditionSection).not.toBeNull();
+  expect(wellnessSection).not.toBeNull();
   expect(within(summaryCard!).getAllByRole("button", { name: "Edit" }).length).toBeGreaterThan(0);
   expect(within(summaryCard!).getByRole("button", { name: "Delete wellness" })).toBeInTheDocument();
 
-  await user.click(within(conditionSection!).getByRole("button", { name: "Edit" }));
+  await user.click(within(wellnessSection!).getByRole("button", { name: "Edit wellness" }));
   await user.clear(screen.getByLabelText("Note"));
   await user.type(screen.getByLabelText("Note"), "Recovered after stretching");
   await user.click(screen.getByRole("button", { name: "Save" }));

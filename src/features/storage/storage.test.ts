@@ -3,34 +3,10 @@ import {
   listExerciseLogsForDay,
   saveExerciseLog,
 } from "./exercise-logs.repository";
-import {
-  getDailyCondition,
-  saveDailyCondition,
-} from "./daily-condition.repository";
 import { appDb } from "./app-db";
 
 beforeEach(async () => {
   await appDb.logs.clear();
-  await appDb.conditions.clear();
-});
-
-test("upserts one daily condition per day", async () => {
-  await saveDailyCondition({
-    date: "2026-03-23",
-    conditionLevel: "okay",
-    note: "",
-  });
-  await saveDailyCondition({
-    date: "2026-03-23",
-    conditionLevel: "tired",
-    note: "legs feel heavy",
-  });
-
-  const entry = await getDailyCondition("2026-03-23");
-
-  expect(entry?.conditionLevel).toBe("tired");
-  expect(entry?.note).toBe("legs feel heavy");
-  expect(entry?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
 });
 
 test("stores one log result per exercise and day", async () => {

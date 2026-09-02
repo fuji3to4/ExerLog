@@ -8,7 +8,6 @@ import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/feat
 import { clearAllExerciseLogs } from "@/features/storage/exercise-logs.repository";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
 import {
-  generateConditionsCsv,
   generateDailyMetricsCsv,
   generateDailyWellnessCsv,
   generateExerciseLogsCsv,
@@ -130,11 +129,6 @@ export function DataManagement() {
     downloadCsv("daily-metrics.csv", generateDailyMetricsCsv(entries));
   }
 
-  async function handleExportLegacyConditions() {
-    const conditions = await appDb.conditions.toArray();
-    downloadCsv("conditions.csv", generateConditionsCsv(conditions));
-  }
-
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -238,13 +232,6 @@ export function DataManagement() {
             onClick={() => void handleExportDailyMetrics()}
           >
             {t("settings_export_daily_metrics")}
-          </button>
-          <button
-            type="button"
-            className="settings-action-button settings-action-button--secondary"
-            onClick={() => void handleExportLegacyConditions()}
-          >
-            {t("settings_export_conditions_legacy")}
           </button>
         </div>
         <BulkDeleteButton

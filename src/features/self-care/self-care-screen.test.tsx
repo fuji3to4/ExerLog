@@ -140,7 +140,7 @@ test("renders wellness save controls even when only condition screen translation
     today_loading_heading: "Loading today's log...",
     today_loading_text: "Checking your saved condition and exercise results for this day.",
     condition_heading: "Daily condition",
-    history_condition_heading: "Condition",
+    self_care_condition_heading: "Condition",
     history_exercises_heading: "Exercises",
     meta_intensity: "Intensity",
     result_did: "Did it",

@@ -1,7 +1,6 @@
 import Dexie, { type EntityTable } from "dexie";
 
 import type {
-  DailyConditionEntry,
   DailyMetricEntry,
   DailySelfCareEntry,
   DailyWellnessEntry,
@@ -12,7 +11,6 @@ import type {
 
 export class AppDb extends Dexie {
   logs!: EntityTable<ExerciseLog, "id">;
-  conditions!: EntityTable<DailyConditionEntry, "date">;
   exercises!: EntityTable<ExerciseVideo, "id">;
   dailyWellness!: EntityTable<DailyWellnessEntry, "date">;
   dailyMetrics!: EntityTable<DailyMetricEntry, "id">;
@@ -74,6 +72,17 @@ export class AppDb extends Dexie {
     this.version(5).stores({
       logs: "++id, date, exerciseId, result, loggedAt, &[date+exerciseId]",
       conditions: "date, conditionLevel, note, updatedAt",
+      exercises: "id, title, bodyArea, purpose, durationMinutes, intensity",
+      dailyWellness: "date, physicalScore, mentalScore, updatedAt",
+      dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",
+      selfCareCatalog: "id, sortOrder, isArchived",
+      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      googleAuth: "key",
+    });
+
+    this.version(6).stores({
+      logs: "++id, date, exerciseId, result, loggedAt, &[date+exerciseId]",
+      conditions: null,
       exercises: "id, title, bodyArea, purpose, durationMinutes, intensity",
       dailyWellness: "date, physicalScore, mentalScore, updatedAt",
       dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",

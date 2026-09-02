@@ -1,5 +1,4 @@
 import type {
-  DailyConditionEntry,
   DailyMetricEntry,
   DailyWellnessEntry,
   ExerciseLog,
@@ -56,17 +55,6 @@ export function generateDailyMetricsCsv(entries: DailyMetricEntry[]): string {
         entry.unit,
         formatTimestampForCsv(entry.recordedAt),
       ].map(escapeCsvField).join(","),
-    ),
-  ];
-  return rows.join("\n");
-}
-
-export function generateConditionsCsv(conditions: DailyConditionEntry[]): string {
-  const headers = ["date", "conditionLevel", "note", "updatedAt"];
-  const rows = [
-    headers.join(","),
-    ...conditions.map((c) =>
-      [c.date, c.conditionLevel, c.note, formatTimestampForCsv(c.updatedAt)].map(escapeCsvField).join(","),
     ),
   ];
   return rows.join("\n");

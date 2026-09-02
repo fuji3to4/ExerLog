@@ -12,7 +12,6 @@ import ExerciseDetailPage from "./page";
 
 beforeEach(async () => {
   await appDb.logs.clear();
-  await appDb.conditions.clear();
   await appDb.exercises.clear();
   await appDb.exercises.bulkAdd(exerciseCatalog);
 });
