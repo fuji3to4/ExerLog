@@ -1,6 +1,13 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
+
+vi.mock("@/features/sync/auto-sync", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/sync/auto-sync")>()),
+  scheduleSync: vi.fn(),
+}));
+
+import { CelebrationProvider } from "@/features/feedback/celebration";
 
 import { appDb } from "@/features/storage/app-db";
 import { renderWithLanguage } from "@/test/render-with-language";
@@ -9,7 +16,7 @@ import type { ExerciseVideo } from "@/lib/types";
 import { ExerciseDetailScreen } from "./exercise-detail-screen";
 
 beforeEach(async () => {
-  await appDb.logs.clear();
+  await Promise.all([appDb.exerciseLogs.clear(), appDb.watchEvents.clear(), appDb.tombstones.clear()]);
 });
 
 const youtubeExercise: ExerciseVideo = {
@@ -68,4 +75,59 @@ test("falls back to the external watch link when the video isn't embeddable", as
     "https://example.com/video.mp4",
   );
   expect(screen.queryByRole("button", { name: /play/i })).not.toBeInTheDocument();
+});
+
+test("pressing play records a watch event", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(<ExerciseDetailScreen exercise={youtubeExercise} />, { initialLanguage: "en" });
+
+  await user.click(await screen.findByRole("button", { name: /play neck mobility/i }));
+  expect(await appDb.watchEvents.count()).toBe(1);
+  expect((await appDb.watchEvents.toArray())[0].exerciseId).toBe("neck-mobility-5");
+});
+
+test("repeated plays are deduped to a single watch event", async () => {
+  const { recordWatchEvent } = await import("@/features/storage/watch-events.repository");
+  await recordWatchEvent({ exerciseId: "neck-mobility-5" });
+  const user = userEvent.setup();
+
+  renderWithLanguage(<ExerciseDetailScreen exercise={youtubeExercise} />, { initialLanguage: "en" });
+
+  await user.click(await screen.findByRole("button", { name: /play neck mobility/i }));
+  expect(await appDb.watchEvents.count()).toBe(1);
+});
+
+test("the external watch link records a watch event", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(<ExerciseDetailScreen exercise={nonEmbeddableExercise} />, { initialLanguage: "en" });
+
+  const link = await screen.findByRole("link", { name: /watch video/i });
+  link.addEventListener("click", (event) => event.preventDefault());
+  await user.click(link);
+
+  expect(await appDb.watchEvents.count()).toBe(1);
+});
+
+test("pressing did logs the exercise with its duration, celebrates, and can repeat", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(
+    <CelebrationProvider>
+      <ExerciseDetailScreen exercise={youtubeExercise} />
+    </CelebrationProvider>,
+    { initialLanguage: "en" },
+  );
+
+  await user.click(await screen.findByRole("button", { name: "Did it" }));
+
+  expect(await screen.findByText(/Nice work! 5:00 done/)).toBeInTheDocument();
+  const logs = await appDb.exerciseLogs.toArray();
+  expect(logs).toHaveLength(1);
+  expect(logs[0].durationSeconds).toBe(300);
+  expect(logs[0].result).toBe("did");
+
+  await user.click(screen.getByRole("button", { name: "Did it" }));
+  await waitFor(async () => expect(await appDb.exerciseLogs.count()).toBe(2));
 });
