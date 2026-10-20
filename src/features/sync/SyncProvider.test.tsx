@@ -1,5 +1,6 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { LanguageProvider } from "@/features/i18n/language-provider";
 import { SyncProvider, useSync } from "./SyncProvider";
 
 // Mock dependencies
@@ -67,9 +68,11 @@ beforeEach(() => {
 describe("SyncProvider", () => {
   test("provides disconnected status by default", () => {
     render(
-      <SyncProvider>
-        <TestConsumer />
-      </SyncProvider>,
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
     );
     expect(screen.getByTestId("status").textContent).toBe("disconnected");
     expect(screen.getByTestId("user-email").textContent).toBe("");
@@ -88,9 +91,11 @@ describe("SyncProvider", () => {
     vi.mocked(syncAll).mockResolvedValue(makeResult());
 
     render(
-      <SyncProvider>
-        <TestConsumer />
-      </SyncProvider>,
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
     );
 
     fireEvent.click(screen.getByTestId("sign-in"));
@@ -102,7 +107,7 @@ describe("SyncProvider", () => {
       expect(screen.getByTestId("status").textContent).toBe("synced");
     });
     expect(requestSignIn).toHaveBeenCalledTimes(1);
-    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function), "full");
+    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function));
   });
 
   test("syncNow success path transitions status to synced", async () => {
@@ -110,9 +115,11 @@ describe("SyncProvider", () => {
     vi.mocked(syncAll).mockResolvedValue(makeResult());
 
     render(
-      <SyncProvider>
-        <TestConsumer />
-      </SyncProvider>,
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
     );
 
     fireEvent.click(screen.getByTestId("sync-now"));
@@ -123,7 +130,7 @@ describe("SyncProvider", () => {
     expect(screen.getByTestId("synced-at").textContent).toMatch(
       /^\d{4}-\d{2}-\d{2}T/,
     );
-    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function), "full");
+    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function));
   });
 
   test("syncNow error path transitions status to error", async () => {
@@ -131,18 +138,18 @@ describe("SyncProvider", () => {
     const errorResults: SyncTableResult[] = [
       {
         tableName: "ExerciseLogs",
-        total: 3,
-        found: 1,
-        appended: 0,
+        rowCount: 0,
         error: "Permission denied",
       },
     ];
     vi.mocked(syncAll).mockResolvedValue(makeResult({ success: false, results: errorResults }));
 
     render(
-      <SyncProvider>
-        <TestConsumer />
-      </SyncProvider>,
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
     );
 
     fireEvent.click(screen.getByTestId("sync-now"));
@@ -153,7 +160,7 @@ describe("SyncProvider", () => {
     expect(screen.getByTestId("error-message").textContent).toBe(
       "ExerciseLogs: Permission denied",
     );
-    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function), "full");
+    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function));
   });
 
   test("syncNow transitions through syncing before reaching synced", async () => {
@@ -167,9 +174,11 @@ describe("SyncProvider", () => {
     );
 
     render(
-      <SyncProvider>
-        <TestConsumer />
-      </SyncProvider>,
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
     );
 
     fireEvent.click(screen.getByTestId("sync-now"));
@@ -177,12 +186,38 @@ describe("SyncProvider", () => {
     await waitFor(() => {
       expect(screen.getByTestId("status").textContent).toBe("syncing");
     });
-    expect(screen.getByTestId("syncing-message").textContent).toBe("Starting sync...");
+    expect(screen.getByTestId("syncing-message").textContent).toBe("同期を開始しています…");
 
     resolveSync(makeResult());
 
     await waitFor(() => {
       expect(screen.getByTestId("status").textContent).toBe("synced");
+    });
+  });
+
+  test("syncNow shows a translated per-table progress message", async () => {
+    vi.mocked(trySilentRefresh).mockResolvedValue(FAKE_TOKEN);
+    vi.mocked(syncAll).mockImplementation(
+      (_token, onProgress) =>
+        new Promise<SyncAllResult>(() => {
+          onProgress?.({ tableName: "ExerciseLogs", rowCount: 3 });
+        }),
+    );
+
+    render(
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("sync-now"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("syncing-message").textContent).toBe(
+        "ExerciseLogs を同期しました（3件）",
+      );
     });
   });
 
@@ -193,9 +228,11 @@ describe("SyncProvider", () => {
     vi.mocked(syncAll).mockResolvedValue(makeResult());
 
     render(
-      <SyncProvider>
-        <TestConsumer />
-      </SyncProvider>,
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
     );
 
     // First sign in to populate userEmail
@@ -218,9 +255,11 @@ describe("SyncProvider", () => {
     vi.mocked(syncAll).mockResolvedValue(makeResult());
 
     render(
-      <SyncProvider>
-        <TestConsumer />
-      </SyncProvider>,
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
     );
 
     await waitFor(() => {
@@ -228,16 +267,18 @@ describe("SyncProvider", () => {
     });
     expect(screen.getByTestId("user-email").textContent).toBe("user@example.com");
     expect(trySilentRefresh).toHaveBeenCalled();
-    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function), "upload-only");
+    expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function));
   });
 
   test("on-mount silent refresh with no token leaves status disconnected", async () => {
     vi.mocked(trySilentRefresh).mockResolvedValue(null);
 
     render(
-      <SyncProvider>
-        <TestConsumer />
-      </SyncProvider>,
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
     );
 
     // Give the mount effect a chance to run; status should remain disconnected

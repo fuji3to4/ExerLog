@@ -1,211 +1,323 @@
-/** Map of sheet tab name → { keyColumn, headers, readFromDb, toRow, fromRow, clearDb, bulkWriteDb } */
-export interface TableSyncConfig {
-  keyColumn: string;
-  headers: string[];
-  readFromDb: () => Promise<any[]>;
-  toRow: (record: any) => string[];
-  fromRow: (row: string[], headers: string[]) => any;
-  clearDb: () => Promise<void>;
-  bulkWriteDb: (records: any[]) => Promise<void>;
-}
+import type { Table } from "dexie";
 
 import type {
-  LegacyExerciseLog,
-  ExerciseVideo,
-  DailyWellnessEntry,
   DailyMetricEntry,
   DailySelfCareEntry,
-  SelfCareItem,
-  ExerciseLogResult,
-  WellnessScore,
-  MetricType,
   ExerciseIntensity,
+  ExerciseLog,
+  ExerciseLogResult,
+  ExerciseVideo,
+  MetricType,
+  SelfCareItem,
+  Tombstone,
+  WatchEvent,
+  WellnessEntry,
+  WellnessScore,
 } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
+import type { SheetTab } from "./google-sheets";
 
-/**
- * Write records one at a time, skipping records that fail (e.g. ConstraintError
- * from compound unique indexes like &[date+metricType]). This is more robust
- * than bulkPut which fails atomically when ANY record violates a constraint.
- */
-async function bulkWriteSafely(table: Table<any, string>, records: any[]): Promise<void> {
-  for (const record of records) {
-    try {
-      await table.put(record);
-    } catch {
-      // Skip records that violate unique constraints
-    }
+/** How one Dexie table is mirrored to one sheet tab. */
+export interface TableSyncConfig {
+  tabName: SheetTab;
+  keyColumn: string;
+  /** Field used for last-writer-wins; null means local always wins. */
+  updatedAtKey: string | null;
+  /** Whether tombstones for this tab remove records (false only for Tombstones). */
+  deletable: boolean;
+  headers: string[];
+  toRow: (record: any) => string[];
+  fromRow: (row: string[], headers: string[]) => any;
+  readFromDb: () => Promise<any[]>;
+  /**
+   * Replace the whole local table with `records`. Writes straight to Dexie
+   * (no repositories) so syncing never records tombstones or schedules a sync.
+   */
+  replaceDb: (records: any[]) => Promise<void>;
+}
+
+/** Every Dexie table touched by sync; the merge transaction is opened over these. */
+export function syncedDbTables(): Table<any, any>[] {
+  return [
+    appDb.exerciseLogs,
+    appDb.wellnessEntries,
+    appDb.watchEvents,
+    appDb.dailyMetrics,
+    appDb.dailySelfCareLogs,
+    appDb.exercises,
+    appDb.selfCareCatalog,
+    appDb.tombstones,
+  ];
+}
+
+function cell(row: string[], headers: string[], column: string): string {
+  return row[headers.indexOf(column)] ?? "";
+}
+
+function nullableNumber(value: string): number | null {
+  return value === "" ? null : Number(value);
+}
+
+async function replaceTable<T>(table: Table<T, any>, records: T[]): Promise<void> {
+  await table.clear();
+  if (records.length > 0) {
+    await table.bulkPut(records);
   }
 }
 
-// Import Dexie type for the function above
-import type { Table } from "dexie";
+/**
+ * Keeps one record per `uniqueKey` (the latest by `timeKey`) so that a merge of
+ * two devices' records cannot violate a compound unique index such as
+ * &[date+metricType].
+ */
+function keepLatestPerKey<T extends Record<string, any>>(
+  records: T[],
+  uniqueKey: (record: T) => string,
+  timeKey: keyof T,
+): T[] {
+  const byKey = new Map<string, T>();
+  for (const record of records) {
+    const key = uniqueKey(record);
+    const current = byKey.get(key);
+    if (!current || Date.parse(record[timeKey]) > Date.parse(current[timeKey])) {
+      byKey.set(key, record);
+    }
+  }
+  return [...byKey.values()];
+}
 
+const exerciseLogsConfig: TableSyncConfig = {
+  tabName: "ExerciseLogs",
+  keyColumn: "id",
+  updatedAtKey: "updatedAt",
+  deletable: true,
+  headers: ["id", "date", "exerciseId", "result", "performedAt", "durationSeconds", "updatedAt"],
+  toRow: (r: ExerciseLog) => [
+    r.id,
+    r.date,
+    r.exerciseId,
+    r.result,
+    r.performedAt,
+    String(r.durationSeconds),
+    r.updatedAt,
+  ],
+  fromRow: (row, headers): ExerciseLog => ({
+    id: cell(row, headers, "id"),
+    date: cell(row, headers, "date"),
+    exerciseId: cell(row, headers, "exerciseId"),
+    result: cell(row, headers, "result") as ExerciseLogResult,
+    performedAt: cell(row, headers, "performedAt"),
+    durationSeconds: Number(cell(row, headers, "durationSeconds")),
+    updatedAt: cell(row, headers, "updatedAt"),
+  }),
+  readFromDb: () => appDb.exerciseLogs.toArray(),
+  replaceDb: (records) => replaceTable(appDb.exerciseLogs, records as ExerciseLog[]),
+};
+
+const wellnessEntriesConfig: TableSyncConfig = {
+  tabName: "WellnessEntries",
+  keyColumn: "id",
+  updatedAtKey: "updatedAt",
+  deletable: true,
+  headers: ["id", "date", "recordedAt", "physicalScore", "mentalScore", "note", "updatedAt"],
+  toRow: (r: WellnessEntry) => [
+    r.id,
+    r.date,
+    r.recordedAt,
+    String(r.physicalScore),
+    String(r.mentalScore),
+    r.note ?? "",
+    r.updatedAt,
+  ],
+  fromRow: (row, headers): WellnessEntry => ({
+    id: cell(row, headers, "id"),
+    date: cell(row, headers, "date"),
+    recordedAt: cell(row, headers, "recordedAt"),
+    physicalScore: Number(cell(row, headers, "physicalScore")) as WellnessScore,
+    mentalScore: Number(cell(row, headers, "mentalScore")) as WellnessScore,
+    note: cell(row, headers, "note"),
+    updatedAt: cell(row, headers, "updatedAt"),
+  }),
+  readFromDb: () => appDb.wellnessEntries.toArray(),
+  replaceDb: (records) => replaceTable(appDb.wellnessEntries, records as WellnessEntry[]),
+};
+
+const watchEventsConfig: TableSyncConfig = {
+  tabName: "WatchEvents",
+  keyColumn: "id",
+  updatedAtKey: "updatedAt",
+  deletable: true,
+  headers: ["id", "date", "exerciseId", "watchedAt", "updatedAt"],
+  toRow: (r: WatchEvent) => [r.id, r.date, r.exerciseId, r.watchedAt, r.updatedAt],
+  fromRow: (row, headers): WatchEvent => ({
+    id: cell(row, headers, "id"),
+    date: cell(row, headers, "date"),
+    exerciseId: cell(row, headers, "exerciseId"),
+    watchedAt: cell(row, headers, "watchedAt"),
+    updatedAt: cell(row, headers, "updatedAt"),
+  }),
+  readFromDb: () => appDb.watchEvents.toArray(),
+  replaceDb: (records) => replaceTable(appDb.watchEvents, records as WatchEvent[]),
+};
+
+const dailyMetricsConfig: TableSyncConfig = {
+  tabName: "DailyMetrics",
+  keyColumn: "id",
+  updatedAtKey: "recordedAt",
+  deletable: true,
+  headers: ["id", "date", "metricType", "value", "unit", "recordedAt"],
+  toRow: (r: DailyMetricEntry) => [r.id, r.date, r.metricType, String(r.value), r.unit, r.recordedAt],
+  fromRow: (row, headers): DailyMetricEntry => ({
+    id: cell(row, headers, "id"),
+    date: cell(row, headers, "date"),
+    metricType: cell(row, headers, "metricType") as MetricType,
+    value: Number(cell(row, headers, "value")),
+    unit: cell(row, headers, "unit"),
+    recordedAt: cell(row, headers, "recordedAt"),
+  }),
+  readFromDb: () => appDb.dailyMetrics.toArray(),
+  // Unique index &[date+metricType]
+  replaceDb: (records) =>
+    replaceTable(
+      appDb.dailyMetrics,
+      keepLatestPerKey(
+        records as DailyMetricEntry[],
+        (r) => `${r.date}|${r.metricType}`,
+        "recordedAt",
+      ),
+    ),
+};
+
+const dailySelfCareConfig: TableSyncConfig = {
+  tabName: "DailySelfCare",
+  keyColumn: "id",
+  updatedAtKey: "recordedAt",
+  deletable: true,
+  headers: ["id", "date", "selfCareId", "isDone", "count", "minutes", "note", "recordedAt"],
+  toRow: (r: DailySelfCareEntry) => [
+    r.id,
+    r.date,
+    r.selfCareId,
+    r.isDone ? "TRUE" : "FALSE",
+    r.count != null ? String(r.count) : "",
+    r.minutes != null ? String(r.minutes) : "",
+    r.note ?? "",
+    r.recordedAt,
+  ],
+  fromRow: (row, headers): DailySelfCareEntry => ({
+    id: cell(row, headers, "id"),
+    date: cell(row, headers, "date"),
+    selfCareId: cell(row, headers, "selfCareId"),
+    isDone: cell(row, headers, "isDone") === "TRUE",
+    count: nullableNumber(cell(row, headers, "count")),
+    minutes: nullableNumber(cell(row, headers, "minutes")),
+    note: cell(row, headers, "note"),
+    recordedAt: cell(row, headers, "recordedAt"),
+  }),
+  readFromDb: () => appDb.dailySelfCareLogs.toArray(),
+  // Unique index &[date+selfCareId]
+  replaceDb: (records) =>
+    replaceTable(
+      appDb.dailySelfCareLogs,
+      keepLatestPerKey(
+        records as DailySelfCareEntry[],
+        (r) => `${r.date}|${r.selfCareId}`,
+        "recordedAt",
+      ),
+    ),
+};
+
+const exercisesConfig: TableSyncConfig = {
+  tabName: "Exercises",
+  keyColumn: "id",
+  updatedAtKey: null,
+  deletable: true,
+  headers: [
+    "id",
+    "title",
+    "description",
+    "videoUrl",
+    "thumbnailUrl",
+    "bodyArea",
+    "purpose",
+    "durationSeconds",
+    "intensity",
+  ],
+  toRow: (r: ExerciseVideo) => [
+    r.id,
+    r.title,
+    r.description ?? "",
+    r.videoUrl,
+    r.thumbnailUrl ?? "",
+    r.bodyArea,
+    r.purpose,
+    String(r.durationSeconds),
+    r.intensity,
+  ],
+  fromRow: (row, headers): ExerciseVideo => ({
+    id: cell(row, headers, "id"),
+    title: cell(row, headers, "title"),
+    description: cell(row, headers, "description"),
+    videoUrl: cell(row, headers, "videoUrl"),
+    thumbnailUrl: cell(row, headers, "thumbnailUrl"),
+    bodyArea: cell(row, headers, "bodyArea"),
+    purpose: cell(row, headers, "purpose"),
+    durationSeconds: Number(cell(row, headers, "durationSeconds")),
+    intensity: cell(row, headers, "intensity") as ExerciseIntensity,
+  }),
+  readFromDb: () => appDb.exercises.toArray(),
+  replaceDb: (records) => replaceTable(appDb.exercises, records as ExerciseVideo[]),
+};
+
+const selfCareCatalogConfig: TableSyncConfig = {
+  tabName: "SelfCareCatalog",
+  keyColumn: "id",
+  updatedAtKey: null,
+  deletable: true,
+  headers: ["id", "title", "description", "sortOrder", "isArchived"],
+  toRow: (r: SelfCareItem) => [
+    r.id,
+    r.title,
+    r.description ?? "",
+    String(r.sortOrder),
+    r.isArchived ? "TRUE" : "FALSE",
+  ],
+  fromRow: (row, headers): SelfCareItem => ({
+    id: cell(row, headers, "id"),
+    title: cell(row, headers, "title"),
+    description: cell(row, headers, "description"),
+    sortOrder: Number(cell(row, headers, "sortOrder")),
+    isArchived: cell(row, headers, "isArchived") === "TRUE",
+  }),
+  readFromDb: () => appDb.selfCareCatalog.toArray(),
+  replaceDb: (records) => replaceTable(appDb.selfCareCatalog, records as SelfCareItem[]),
+};
+
+const tombstonesConfig: TableSyncConfig = {
+  tabName: "Tombstones",
+  keyColumn: "id",
+  updatedAtKey: "deletedAt",
+  deletable: false,
+  headers: ["id", "table", "recordId", "deletedAt"],
+  toRow: (r: Tombstone) => [r.id, r.table, r.recordId, r.deletedAt],
+  fromRow: (row, headers): Tombstone => ({
+    id: cell(row, headers, "id"),
+    table: cell(row, headers, "table"),
+    recordId: cell(row, headers, "recordId"),
+    deletedAt: cell(row, headers, "deletedAt"),
+  }),
+  readFromDb: () => appDb.tombstones.toArray(),
+  replaceDb: (records) => replaceTable(appDb.tombstones, records as Tombstone[]),
+};
+
+/** One entry per sheet tab, in SHEET_TABS order. */
 export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
-  {
-    // ExerciseLogs — unique index: &[date+exerciseId]
-    keyColumn: "id",
-    headers: ["id", "date", "exerciseId", "result", "loggedAt"],
-    readFromDb: () => appDb.logs.toArray(),
-    toRow: (r) => [r.id, r.date, r.exerciseId, r.result, r.loggedAt],
-    fromRow: (row, headers) => ({
-      id: String(row[headers.indexOf("id")]),
-      date: row[headers.indexOf("date")],
-      exerciseId: row[headers.indexOf("exerciseId")],
-      result: row[headers.indexOf("result")] as ExerciseLogResult,
-      loggedAt: row[headers.indexOf("loggedAt")],
-    }),
-    clearDb: async () => { await appDb.logs.clear(); },
-    bulkWriteDb: async (records) => { await bulkWriteSafely(appDb.logs, records); },
-  },
-  {
-    // DailyWellness — primary key: date (no compound unique index)
-    keyColumn: "date",
-    headers: ["date", "physicalScore", "mentalScore", "note", "updatedAt"],
-    readFromDb: () => appDb.dailyWellness.toArray(),
-    toRow: (r) => [
-      r.date,
-      String(r.physicalScore),
-      String(r.mentalScore),
-      r.note ?? "",
-      r.updatedAt,
-    ],
-    fromRow: (row, headers) => ({
-      date: row[headers.indexOf("date")],
-      physicalScore: Number(row[headers.indexOf("physicalScore")]) as WellnessScore,
-      mentalScore: Number(row[headers.indexOf("mentalScore")]) as WellnessScore,
-      note: row[headers.indexOf("note")] ?? "",
-      updatedAt: row[headers.indexOf("updatedAt")],
-    }),
-    clearDb: async () => { await appDb.dailyWellness.clear(); },
-    bulkWriteDb: async (records) => { await appDb.dailyWellness.bulkPut(records as DailyWellnessEntry[]); },
-  },
-  {
-    // DailyMetrics — unique index: &[date+metricType]
-    keyColumn: "id",
-    headers: ["id", "date", "metricType", "value", "unit", "recordedAt"],
-    readFromDb: () => appDb.dailyMetrics.toArray(),
-    toRow: (r) => [
-      r.id,
-      r.date,
-      r.metricType,
-      String(r.value),
-      r.unit,
-      r.recordedAt,
-    ],
-    fromRow: (row, headers) => ({
-      id: String(row[headers.indexOf("id")]),
-      date: row[headers.indexOf("date")],
-      metricType: row[headers.indexOf("metricType")] as MetricType,
-      value: Number(row[headers.indexOf("value")]),
-      unit: row[headers.indexOf("unit")],
-      recordedAt: row[headers.indexOf("recordedAt")],
-    }),
-    clearDb: async () => { await appDb.dailyMetrics.clear(); },
-    bulkWriteDb: async (records) => { await bulkWriteSafely(appDb.dailyMetrics, records); },
-  },
-  {
-    // DailySelfCare — unique index: &[date+selfCareId]
-    keyColumn: "id",
-    headers: [
-      "id",
-      "date",
-      "selfCareId",
-      "isDone",
-      "count",
-      "minutes",
-      "note",
-      "recordedAt",
-    ],
-    readFromDb: () => appDb.dailySelfCareLogs.toArray(),
-    toRow: (r) => [
-      r.id,
-      r.date,
-      r.selfCareId,
-      r.isDone ? "TRUE" : "FALSE",
-      r.count != null ? String(r.count) : "",
-      r.minutes != null ? String(r.minutes) : "",
-      r.note ?? "",
-      r.recordedAt,
-    ],
-    fromRow: (row, headers) => {
-      const ci = (col: string) => headers.indexOf(col);
-      const rawCount = row[ci("count")];
-      const rawMinutes = row[ci("minutes")];
-      return {
-        id: String(row[ci("id")]),
-        date: row[ci("date")],
-        selfCareId: row[ci("selfCareId")],
-        isDone: row[ci("isDone")] === "TRUE",
-        count: rawCount ? Number(rawCount) : null,
-        minutes: rawMinutes ? Number(rawMinutes) : null,
-        note: row[ci("note")] ?? "",
-        recordedAt: row[ci("recordedAt")],
-      };
-    },
-    clearDb: async () => { await appDb.dailySelfCareLogs.clear(); },
-    bulkWriteDb: async (records) => { await bulkWriteSafely(appDb.dailySelfCareLogs, records); },
-  },
-  {
-    // Exercises (master)
-    keyColumn: "id",
-    headers: [
-      "id",
-      "title",
-      "description",
-      "videoUrl",
-      "thumbnailUrl",
-      "bodyArea",
-      "purpose",
-      "durationSeconds",
-      "intensity",
-    ],
-    readFromDb: () => appDb.exercises.toArray(),
-    toRow: (r) => [
-      r.id,
-      r.title,
-      r.description ?? "",
-      r.videoUrl,
-      r.thumbnailUrl ?? "",
-      r.bodyArea,
-      r.purpose,
-      String(r.durationSeconds),
-      r.intensity,
-    ],
-    fromRow: (row, headers) => ({
-      id: row[headers.indexOf("id")],
-      title: row[headers.indexOf("title")],
-      description: row[headers.indexOf("description")] ?? "",
-      videoUrl: row[headers.indexOf("videoUrl")],
-      thumbnailUrl: row[headers.indexOf("thumbnailUrl")] ?? "",
-      bodyArea: row[headers.indexOf("bodyArea")],
-      purpose: row[headers.indexOf("purpose")],
-      durationSeconds: Number(row[headers.indexOf("durationSeconds")]),
-      intensity: row[headers.indexOf("intensity")] as ExerciseIntensity,
-    }),
-    clearDb: async () => { await appDb.exercises.clear(); },
-    bulkWriteDb: async (records) => { await appDb.exercises.bulkPut(records as ExerciseVideo[]); },
-  },
-  {
-    // SelfCareCatalog (master)
-    keyColumn: "id",
-    headers: ["id", "title", "description", "sortOrder", "isArchived"],
-    readFromDb: () => appDb.selfCareCatalog.toArray(),
-    toRow: (r) => [
-      r.id,
-      r.title,
-      r.description ?? "",
-      String(r.sortOrder),
-      r.isArchived ? "TRUE" : "FALSE",
-    ],
-    fromRow: (row, headers) => ({
-      id: row[headers.indexOf("id")],
-      title: row[headers.indexOf("title")],
-      description: row[headers.indexOf("description")] ?? "",
-      sortOrder: Number(row[headers.indexOf("sortOrder")]),
-      isArchived: row[headers.indexOf("isArchived")] === "TRUE",
-    }),
-    clearDb: async () => { await appDb.selfCareCatalog.clear(); },
-    bulkWriteDb: async (records) => { await appDb.selfCareCatalog.bulkPut(records as SelfCareItem[]); },
-  },
+  exerciseLogsConfig,
+  wellnessEntriesConfig,
+  watchEventsConfig,
+  dailyMetricsConfig,
+  dailySelfCareConfig,
+  exercisesConfig,
+  selfCareCatalogConfig,
+  tombstonesConfig,
 ];

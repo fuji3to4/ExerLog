@@ -199,6 +199,8 @@ export const en = {
   sync_indicator_synced: "Connected",
   sync_indicator_syncing: "Syncing...",
   sync_indicator_error: "Sync error",
+  sync_status_starting: "Starting sync…",
+  sync_status_table: "Synced {table} ({count} rows)",
 
   // Common actions
   action_edit: "Edit",

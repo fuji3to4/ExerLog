@@ -2,10 +2,9 @@ import { describe, expect, test, vi, beforeEach } from "vitest";
 import {
   findSpreadsheet,
   createSpreadsheet,
-  readSheetColumn,
-  appendRows,
   ensureSheetTabs,
   readAllRows,
+  replaceAllRows,
 } from "./google-sheets";
 
 const mockFetch = vi.fn();
@@ -62,47 +61,17 @@ describe("createSpreadsheet", () => {
     const result = await createSpreadsheet(FAKE_TOKEN);
     expect(result).not.toBeNull();
     expect(result!.spreadsheetId).toBe("new123");
-    // Check that the body includes all 6 sheet titles
     const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(callBody.sheets).toHaveLength(6);
     expect(callBody.sheets.map((s: any) => s.properties.title)).toEqual([
       "ExerciseLogs",
-      "DailyWellness",
+      "WellnessEntries",
+      "WatchEvents",
       "DailyMetrics",
       "DailySelfCare",
       "Exercises",
       "SelfCareCatalog",
+      "Tombstones",
     ]);
-  });
-});
-
-describe("readSheetColumn", () => {
-  test("returns values from the first column", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          values: [["id"], ["a"], ["b"], ["c"]],
-        }),
-    });
-    const result = await readSheetColumn(FAKE_TOKEN, "sheet123", "ExerciseLogs");
-    // Header row is excluded
-    expect(result).toEqual(["a", "b", "c"]);
-  });
-
-  test("returns empty array when sheet is empty or missing", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({}),
-    });
-    const result = await readSheetColumn(FAKE_TOKEN, "sheet123", "EmptySheet");
-    expect(result).toEqual([]);
-  });
-
-  test("returns empty array on API error", async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
-    const result = await readSheetColumn(FAKE_TOKEN, "sheet123", "Fail");
-    expect(result).toEqual([]);
   });
 });
 
@@ -140,30 +109,9 @@ describe("readAllRows", () => {
     expect(result).toEqual([]);
   });
 
-  test("returns empty array on API error", async () => {
+  test("throws on API error so a failed read is never mistaken for an empty sheet", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
-    const result = await readAllRows(FAKE_TOKEN, "sheet123", "Fail");
-    expect(result).toEqual([]);
-  });
-});
-
-describe("appendRows", () => {
-  test("sends values to the sheets append endpoint", async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) });
-    const headers = ["id", "date"];
-    const rows = [
-      ["1", "2026-01-01"],
-      ["2", "2026-01-02"],
-    ];
-    await appendRows(FAKE_TOKEN, "sheet123", "ExerciseLogs", headers, rows);
-    const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(callBody.values).toEqual([["1", "2026-01-01"], ["2", "2026-01-02"]]);
-  });
-
-  test("skips API call when rows are empty", async () => {
-    mockFetch.mockReset();
-    await appendRows(FAKE_TOKEN, "sheet123", "ExerciseLogs", ["id"], []);
-    expect(mockFetch).not.toHaveBeenCalled();
+    await expect(readAllRows(FAKE_TOKEN, "sheet123", "Fail")).rejects.toThrow();
   });
 });
 
@@ -188,7 +136,15 @@ describe("ensureSheetTabs", () => {
     const result = await ensureSheetTabs(FAKE_TOKEN, "sheet123");
     expect(result).toBe(true);
     const batchBody = JSON.parse(mockFetch.mock.calls[1][1].body);
-    expect(batchBody.requests).toHaveLength(4); // 4 missing tabs
+    expect(batchBody.requests.map((r: any) => r.addSheet.properties.title)).toEqual([
+      "WellnessEntries",
+      "WatchEvents",
+      "DailyMetrics",
+      "DailySelfCare",
+      "Exercises",
+      "SelfCareCatalog",
+      "Tombstones",
+    ]);
   });
 
   test("succeeds when all tabs exist", async () => {
@@ -198,16 +154,62 @@ describe("ensureSheetTabs", () => {
         Promise.resolve({
           sheets: [
             { properties: { title: "ExerciseLogs" } },
-            { properties: { title: "DailyWellness" } },
+            { properties: { title: "WellnessEntries" } },
+            { properties: { title: "WatchEvents" } },
             { properties: { title: "DailyMetrics" } },
             { properties: { title: "DailySelfCare" } },
             { properties: { title: "Exercises" } },
             { properties: { title: "SelfCareCatalog" } },
+            { properties: { title: "Tombstones" } },
           ],
         }),
     });
     const result = await ensureSheetTabs(FAKE_TOKEN, "sheet123");
     expect(result).toBe(true);
     expect(mockFetch).toHaveBeenCalledTimes(1); // No batchUpdate call
+  });
+});
+describe("replaceAllRows", () => {
+  test("clears the tab, then writes every row (header included) as RAW", async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
+    const rows = [
+      ["id", "date"],
+      ["1", "2026-10-20"],
+    ];
+
+    const ok = await replaceAllRows(FAKE_TOKEN, "sheet123", "ExerciseLogs", rows);
+
+    expect(ok).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const [clearUrl, clearInit] = mockFetch.mock.calls[0];
+    expect(clearUrl).toBe(
+      "https://sheets.googleapis.com/v4/spreadsheets/sheet123/values/ExerciseLogs!A%3AZZ:clear",
+    );
+    expect(clearInit.method).toBe("POST");
+    const [putUrl, putInit] = mockFetch.mock.calls[1];
+    expect(putUrl).toBe(
+      "https://sheets.googleapis.com/v4/spreadsheets/sheet123/values/ExerciseLogs!A1?valueInputOption=RAW",
+    );
+    expect(putInit.method).toBe("PUT");
+    expect(JSON.parse(putInit.body)).toEqual({ values: rows });
+  });
+
+  test("returns false and skips the write when clearing fails", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, text: () => Promise.resolve("err") });
+
+    const ok = await replaceAllRows(FAKE_TOKEN, "sheet123", "ExerciseLogs", [["id"]]);
+
+    expect(ok).toBe(false);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("returns false when the write fails", async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) })
+      .mockResolvedValueOnce({ ok: false, status: 500, text: () => Promise.resolve("err") });
+
+    const ok = await replaceAllRows(FAKE_TOKEN, "sheet123", "ExerciseLogs", [["id"]]);
+
+    expect(ok).toBe(false);
   });
 });

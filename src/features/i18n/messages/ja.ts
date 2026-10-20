@@ -199,6 +199,8 @@
   sync_indicator_synced: "接続済み",
   sync_indicator_syncing: "同期中...",
   sync_indicator_error: "同期エラー",
+  sync_status_starting: "同期を開始しています…",
+  sync_status_table: "{table} を同期しました（{count}件）",
 
   // Common actions
   action_edit: "編集",

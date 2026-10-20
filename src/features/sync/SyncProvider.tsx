@@ -10,9 +10,10 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
+import { useTranslation } from "@/features/i18n/use-translation";
 import { trySilentRefresh, requestSignIn, signOut } from "./google-auth";
 import { syncAll } from "./sync-engine";
-import type { SyncAllResult, SyncTableResult, SyncMode } from "./sync-engine";
+import type { SyncAllResult, SyncTableResult } from "./sync-engine";
 
 export type SyncStatus =
   | { type: "disconnected" }
@@ -44,6 +45,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SyncStatus>({ type: "disconnected" });
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const mountedRef = useRef(true);
+  const { t } = useTranslation();
+  // Kept in a ref so a language switch does not recreate syncNow (and re-run the mount sync).
+  const tRef = useRef(t);
+  tRef.current = t;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -52,14 +57,17 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const syncNow = useCallback(async (mode: SyncMode = "full") => {
-    setStatus({ type: "syncing", message: "Starting sync..." });
+  const syncNow = useCallback(async () => {
+    setStatus({ type: "syncing", message: tRef.current("sync_status_starting") });
 
     const onProgress = (result: SyncTableResult) => {
       if (!mountedRef.current) return;
       setStatus({
         type: "syncing",
-        message: `Synced ${result.tableName} (${result.appended} new rows)`,
+        message: tRef.current("sync_status_table", {
+          table: result.tableName,
+          count: result.rowCount,
+        }),
       });
     };
 
@@ -70,7 +78,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const result: SyncAllResult = await syncAll(token.accessToken, onProgress, mode);
+    const result: SyncAllResult = await syncAll(token.accessToken, onProgress);
 
     if (!mountedRef.current) return;
 
@@ -114,7 +122,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         const token = await trySilentRefresh();
         if (!token) return;
         setUserEmail(token.email);
-        await syncNow("upload-only");
+        await syncNow();
       } catch {
         // Silent failure on mount
       }

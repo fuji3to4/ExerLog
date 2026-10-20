@@ -3,11 +3,13 @@ const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
 
 export const SHEET_TABS = [
   "ExerciseLogs",
-  "DailyWellness",
+  "WellnessEntries",
+  "WatchEvents",
   "DailyMetrics",
   "DailySelfCare",
   "Exercises",
   "SelfCareCatalog",
+  "Tombstones",
 ] as const;
 
 export type SheetTab = (typeof SHEET_TABS)[number];
@@ -38,7 +40,7 @@ export async function findSpreadsheet(
   }
 }
 
-/** Create a new spreadsheet with all 6 sheet tabs. */
+/** Create a new spreadsheet with every sheet tab. */
 export async function createSpreadsheet(
   accessToken: string,
 ): Promise<SpreadsheetInfo | null> {
@@ -67,50 +69,29 @@ export async function createSpreadsheet(
   }
 }
 
-/** Read ALL rows from a sheet tab (including header). Returns string[][] with first row = header. */
+/**
+ * Read ALL rows from a sheet tab (including header). Returns string[][] with
+ * first row = header, or [] for an empty tab. Throws when the request fails so
+ * that a failed read is never mistaken for an empty sheet.
+ */
 export async function readAllRows(
   accessToken: string,
   spreadsheetId: string,
   sheetName: string,
 ): Promise<string[][]> {
-  try {
-    const range = encodeURIComponent(`${sheetName}!A:ZZ`);
-    const res = await fetch(
-      `${SHEETS_API}/${spreadsheetId}/values/${range}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.values ?? [];
-  } catch {
-    return [];
+  const range = encodeURIComponent(`${sheetName}!A:ZZ`);
+  const res = await fetch(
+    `${SHEETS_API}/${spreadsheetId}/values/${range}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to read ${sheetName} (HTTP ${res.status})`);
   }
+  const data = await res.json();
+  return data.values ?? [];
 }
 
-/** Read values from the first column of a sheet tab (skipping header row). */
-export async function readSheetColumn(
-  accessToken: string,
-  spreadsheetId: string,
-  sheetName: string,
-): Promise<string[]> {
-  try {
-    const range = encodeURIComponent(`${sheetName}!A:A`);
-    const res = await fetch(
-      `${SHEETS_API}/${spreadsheetId}/values/${range}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (!data.values?.length) return [];
-    const values = data.values.map((row: string[]) => String(row[0] ?? ""));
-    const shouldSkipHeader = values[0] === "id" || values[0] === "date";
-    return shouldSkipHeader ? values.slice(1) : values;
-  } catch {
-    return [];
-  }
-}
-
-/** Ensure all 6 sheet tabs exist. Creates missing ones via batchUpdate. */
+/** Ensure every sheet tab exists. Creates missing ones via batchUpdate. */
 export async function ensureSheetTabs(
   accessToken: string,
   spreadsheetId: string,
@@ -149,47 +130,35 @@ export async function ensureSheetTabs(
   }
 }
 
-/** Write header row to a sheet tab. Used after creating a new sheet. */
-export async function writeHeaders(
+/**
+ * Replace the whole content of a sheet tab: clear A:ZZ, then write `rows`
+ * (header row included) starting at A1. RAW keeps every value a plain string.
+ */
+export async function replaceAllRows(
   accessToken: string,
   spreadsheetId: string,
   sheetName: string,
-  headers: string[],
-): Promise<boolean> {
-  try {
-    const range = encodeURIComponent(`${sheetName}!A1`);
-    const res = await fetch(
-      `${SHEETS_API}/${spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ values: [headers] }),
-      },
-    );
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-/** Append rows to a sheet tab. Skips empty rows arrays. */
-export async function appendRows(
-  accessToken: string,
-  spreadsheetId: string,
-  sheetName: string,
-  headers: string[],
   rows: string[][],
 ): Promise<boolean> {
-  if (rows.length === 0) return true;
   try {
-    const range = encodeURIComponent(`${sheetName}!A1`);
-    const res = await fetch(
-      `${SHEETS_API}/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED`,
+    const clearRange = encodeURIComponent(`${sheetName}!A:ZZ`);
+    const clearRes = await fetch(
+      `${SHEETS_API}/${spreadsheetId}/values/${clearRange}:clear`,
       {
         method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+    if (!clearRes.ok) {
+      console.error("[sync] replaceAllRows clear failed", sheetName, clearRes.status);
+      return false;
+    }
+
+    const writeRange = encodeURIComponent(`${sheetName}!A1`);
+    const writeRes = await fetch(
+      `${SHEETS_API}/${spreadsheetId}/values/${writeRange}?valueInputOption=RAW`,
+      {
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
@@ -197,25 +166,13 @@ export async function appendRows(
         body: JSON.stringify({ values: rows }),
       },
     );
-    return res.ok;
-  } catch {
+    if (!writeRes.ok) {
+      console.error("[sync] replaceAllRows write failed", sheetName, writeRes.status);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[sync] replaceAllRows threw", err);
     return false;
   }
-}
-
-/** Batch append: split rows into batches of 10 to stay under API limits. */
-export async function appendRowsBatched(
-  accessToken: string,
-  spreadsheetId: string,
-  sheetName: string,
-  headers: string[],
-  rows: string[][],
-): Promise<boolean> {
-  const BATCH_SIZE = 10;
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const batch = rows.slice(i, i + BATCH_SIZE);
-    const ok = await appendRows(accessToken, spreadsheetId, sheetName, headers, batch);
-    if (!ok) return false;
-  }
-  return true;
 }

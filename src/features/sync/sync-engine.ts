@@ -1,90 +1,23 @@
+import type { Tombstone } from "@/lib/types";
+import { appDb } from "@/features/storage/app-db";
 import {
-  findSpreadsheet,
   createSpreadsheet,
-  readSheetColumn,
-  appendRowsBatched,
   ensureSheetTabs,
-  writeHeaders,
+  findSpreadsheet,
   readAllRows,
-  SHEET_TABS,
+  replaceAllRows,
 } from "./google-sheets";
+import { mergeRecords } from "./merge-records";
 import type { TableSyncConfig } from "./sync-config";
-import { TABLE_SYNC_CONFIGS } from "./sync-config";
+import { syncedDbTables, TABLE_SYNC_CONFIGS } from "./sync-config";
 
 export interface SyncTableResult {
   tableName: string;
-  total: number;
-  found: number;
-  appended: number;
+  rowCount: number;
   error?: string;
 }
 
 export type SyncProgressCallback = (result: SyncTableResult) => void;
-
-/** Sync a single table: compare keys, append missing rows. */
-export async function syncTable(
-  accessToken: string,
-  spreadsheetId: string,
-  tableName: string,
-  config: TableSyncConfig,
-  onProgress: SyncProgressCallback,
-): Promise<SyncTableResult> {
-  const result: SyncTableResult = {
-    tableName,
-    total: 0,
-    found: 0,
-    appended: 0,
-  };
-
-  try {
-    const allRecords = await config.readFromDb();
-    result.total = allRecords.length;
-
-    if (allRecords.length === 0) {
-      onProgress(result);
-      return result;
-    }
-
-    const sheetKeys = await readSheetColumn(
-      accessToken,
-      spreadsheetId,
-      tableName,
-    );
-    const existingKeys = new Set(sheetKeys);
-    result.found = existingKeys.size;
-
-    const newRows = allRecords
-      .filter((r) => !existingKeys.has(String(r[config.keyColumn])))
-      .map(config.toRow);
-
-    if (newRows.length > 0) {
-      const ok = await appendRowsBatched(
-        accessToken,
-        spreadsheetId,
-        tableName,
-        config.headers,
-        newRows,
-      );
-      if (!ok) {
-        result.error = `Failed to append ${newRows.length} row(s) to ${tableName}`;
-      } else {
-        result.appended = newRows.length;
-      }
-    }
-  } catch (err) {
-    result.error = err instanceof Error ? err.message : String(err);
-  }
-
-  onProgress(result);
-  return result;
-}
-
-export interface DownloadTableResult {
-  tableName: string;
-  rowsRead: number;
-  rowsWritten: number;
-  error?: string;
-}
 
 export interface SyncAllResult {
   success: boolean;
@@ -92,17 +25,19 @@ export interface SyncAllResult {
   spreadsheetId?: string;
 }
 
-let activeSyncPromise: Promise<any> = Promise.resolve();
+const TOMBSTONES_TAB = "Tombstones";
 
-export type SyncMode = "upload-only" | "full";
+let activeSyncPromise: Promise<unknown> = Promise.resolve();
 
-/** Sync all 6 tables. Returns aggregate result. */
+/**
+ * Merge every table with its sheet tab (last-writer-wins + tombstones) and
+ * rewrite each tab with the merged result. Calls are serialized.
+ */
 export async function syncAll(
   accessToken: string,
   onProgress?: SyncProgressCallback,
-  mode: SyncMode = "upload-only",
 ): Promise<SyncAllResult> {
-  const execute = () => doSyncAll(accessToken, onProgress, mode);
+  const execute = () => doSyncAll(accessToken, onProgress ?? (() => {}));
   const nextPromise = activeSyncPromise.then(execute, execute);
   activeSyncPromise = nextPromise;
   return nextPromise;
@@ -110,164 +45,127 @@ export async function syncAll(
 
 async function doSyncAll(
   accessToken: string,
-  onProgress?: SyncProgressCallback,
-  mode: SyncMode = "upload-only",
+  onProgress: SyncProgressCallback,
 ): Promise<SyncAllResult> {
-  const cb = onProgress ?? (() => {});
+  const spreadsheetId = await prepareSpreadsheet(accessToken);
+  if (typeof spreadsheetId !== "string") {
+    return { success: false, results: [spreadsheetId] };
+  }
+
   const results: SyncTableResult[] = [];
-
-  // Step 1: Find or create spreadsheet
-  let info = await findSpreadsheet(accessToken);
-  if (!info) {
-    info = await createSpreadsheet(accessToken);
-    if (!info) {
-      console.error("[sync] syncAll: could not find or create spreadsheet");
-      return {
-        success: false,
-        results: [
-          {
-            tableName: "spreadsheet",
-            total: 0,
-            found: 0,
-            appended: 0,
-            error: "Failed to create spreadsheet",
-          },
-        ],
-      };
-    }
-    // Write headers for all tabs on first creation
-    for (let i = 0; i < TABLE_SYNC_CONFIGS.length; i++) {
-      const config = TABLE_SYNC_CONFIGS[i];
-      const sheetName = SHEET_TABS[i];
-      const ok = await writeHeaders(accessToken, info.spreadsheetId, sheetName, config.headers);
-      if (!ok) {
-        return {
-          success: false,
-          results: [
-            {
-              tableName: sheetName,
-              total: 0,
-              found: 0,
-              appended: 0,
-              error: `Failed to write headers for ${sheetName}`,
-            },
-          ],
-          spreadsheetId: info.spreadsheetId,
-        };
-      }
-    }
-  } else {
-    // Ensure all tabs exist for existing spreadsheet
-    const ok = await ensureSheetTabs(accessToken, info.spreadsheetId);
-    if (!ok) {
-      return {
-        success: false,
-        results: [
-          {
-            tableName: "spreadsheet",
-            total: 0,
-            found: 0,
-            appended: 0,
-            error: "Failed to ensure required sheet tabs",
-          },
-        ],
-        spreadsheetId: info.spreadsheetId,
-      };
-    }
-  }
-
-  // Step 2: Sync each table sequentially
-  for (let i = 0; i < TABLE_SYNC_CONFIGS.length; i++) {
-    const config = TABLE_SYNC_CONFIGS[i];
-    const sheetName = SHEET_TABS[i];
-    const result = await syncTable(
-      accessToken,
-      info.spreadsheetId,
-      sheetName,
-      config,
-      cb,
-    );
+  const run = async (config: TableSyncConfig, deletedIds: Set<string>) => {
+    const result = await syncTable(accessToken, spreadsheetId, config, deletedIds);
     results.push(result);
+    onProgress(result);
+  };
+
+  const tombstonesConfig = TABLE_SYNC_CONFIGS.find((c) => c.tabName === TOMBSTONES_TAB)!;
+  await run(tombstonesConfig, new Set());
+
+  const deletedIdsByTab = groupDeletedIds(await appDb.tombstones.toArray());
+  for (const config of TABLE_SYNC_CONFIGS) {
+    if (config === tombstonesConfig) continue;
+    const deletedIds = config.deletable
+      ? (deletedIdsByTab.get(config.tabName) ?? new Set<string>())
+      : new Set<string>();
+    await run(config, deletedIds);
   }
 
-  // Step 3: Download & replace (only in "full" mode)
-  if (mode === "full" && info.spreadsheetId) {
-    const downloadResult = await downloadAndReplaceAll(
-      accessToken,
-      info.spreadsheetId,
-      cb,
-    );
-    for (const dr of downloadResult.results) {
-      const syncResult: SyncTableResult = {
-        tableName: `Download:${dr.tableName}`,
-        total: dr.rowsRead,
-        found: 0,
-        appended: dr.rowsWritten,
-        error: dr.error,
-      };
-      results.push(syncResult);
-    }
-  }
-
-  const finalHasError = results.some((r) => r.error);
   return {
-    success: !finalHasError,
+    success: !results.some((r) => r.error),
     results,
-    spreadsheetId: info.spreadsheetId,
+    spreadsheetId,
   };
 }
 
-/** Phase 2: download all rows from each Google Sheet and replace local IndexedDB. */
-export async function downloadAndReplaceAll(
-  accessToken: string,
-  spreadsheetId: string,
-  onProgress?: SyncProgressCallback,
-): Promise<{ success: boolean; results: DownloadTableResult[] }> {
-  const cb = onProgress ?? (() => {});
-  const results: DownloadTableResult[] = [];
-
-  for (let i = 0; i < TABLE_SYNC_CONFIGS.length; i++) {
-    const config = TABLE_SYNC_CONFIGS[i];
-    const sheetName = SHEET_TABS[i];
-    const result: DownloadTableResult = {
-      tableName: sheetName,
-      rowsRead: 0,
-      rowsWritten: 0,
-    };
-
-    try {
-      const allRows = await readAllRows(accessToken, spreadsheetId, sheetName);
-      // allRows[0] is the header; data rows are allRows.slice(1)
-      if (allRows.length <= 1) {
-        // No data rows (only header or empty)
-        await config.clearDb();
-        result.rowsRead = 0;
-        result.rowsWritten = 0;
-        cb({ tableName: sheetName, total: 0, found: 0, appended: 0 });
-        results.push(result);
-        continue;
-      }
-
-      const headers = allRows[0];
-      const dataRows = allRows.slice(1);
-      result.rowsRead = dataRows.length;
-
-      const records = dataRows.map((row) => config.fromRow(row, headers));
-
-      await config.clearDb();
-      if (records.length > 0) {
-        await config.bulkWriteDb(records);
-      }
-      result.rowsWritten = records.length;
-
-      cb({ tableName: sheetName, total: records.length, found: 0, appended: 0 });
-    } catch (err) {
-      result.error = err instanceof Error ? err.message : String(err);
-    }
-
-    results.push(result);
+/** Returns the spreadsheet id, or a failed result describing what went wrong. */
+async function prepareSpreadsheet(accessToken: string): Promise<string | SyncTableResult> {
+  const existing = await findSpreadsheet(accessToken);
+  if (existing) {
+    const ok = await ensureSheetTabs(accessToken, existing.spreadsheetId);
+    return ok
+      ? existing.spreadsheetId
+      : { tableName: "spreadsheet", rowCount: 0, error: "Failed to ensure required sheet tabs" };
   }
 
-  const hasError = results.some((r) => r.error);
-  return { success: !hasError, results };
+  const created = await createSpreadsheet(accessToken);
+  if (!created) {
+    console.error("[sync] syncAll: could not find or create spreadsheet");
+    return { tableName: "spreadsheet", rowCount: 0, error: "Failed to create spreadsheet" };
+  }
+  return created.spreadsheetId;
+}
+
+function groupDeletedIds(tombstones: Tombstone[]): Map<string, Set<string>> {
+  const byTab = new Map<string, Set<string>>();
+  for (const tombstone of tombstones) {
+    const ids = byTab.get(tombstone.table) ?? new Set<string>();
+    ids.add(tombstone.recordId);
+    byTab.set(tombstone.table, ids);
+  }
+  return byTab;
+}
+
+/**
+ * Merge one tab: read the sheet, merge with local inside a rw transaction
+ * (re-reading local there so records added meanwhile are not lost), replace
+ * the local table, then rewrite the whole tab from the stored result.
+ */
+async function syncTable(
+  accessToken: string,
+  spreadsheetId: string,
+  config: TableSyncConfig,
+  deletedIds: Set<string>,
+): Promise<SyncTableResult> {
+  const result: SyncTableResult = { tableName: config.tabName, rowCount: 0 };
+
+  try {
+    const remote = parseRemoteRows(config, await readAllRows(accessToken, spreadsheetId, config.tabName));
+
+    const stored = await appDb.transaction("rw", syncedDbTables(), async () => {
+      const local = await config.readFromDb();
+      const merged = mergeRecords({
+        local,
+        remote,
+        keyColumn: config.keyColumn,
+        updatedAtKey: config.updatedAtKey,
+        deletedIds,
+      });
+      await config.replaceDb(merged);
+      return config.readFromDb();
+    });
+    result.rowCount = stored.length;
+
+    const ok = await replaceAllRows(accessToken, spreadsheetId, config.tabName, [
+      config.headers,
+      ...stored.map(config.toRow),
+    ]);
+    if (!ok) {
+      result.error = `Failed to write ${config.tabName}`;
+    }
+  } catch (err) {
+    result.error = err instanceof Error ? err.message : String(err);
+  }
+
+  return result;
+}
+
+/**
+ * Turn sheet rows into records. A tab whose header row differs from
+ * `config.headers` (e.g. an old format) is treated as empty; rows with an
+ * empty key are skipped.
+ */
+function parseRemoteRows(config: TableSyncConfig, rows: string[][]): any[] {
+  if (rows.length === 0 || !sameHeaders(rows[0], config.headers)) {
+    return [];
+  }
+  const keyIndex = config.headers.indexOf(config.keyColumn);
+  return rows
+    .slice(1)
+    .filter((row) => (row[keyIndex] ?? "") !== "")
+    .map((row) => config.fromRow(row, config.headers));
+}
+
+function sameHeaders(actual: string[], expected: string[]): boolean {
+  return actual.length === expected.length && actual.every((value, i) => value === expected[i]);
 }
