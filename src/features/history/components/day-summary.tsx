@@ -3,18 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatTime } from "@/lib/date/format-timestamp";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { deleteDailyMetric, upsertDailyMetric } from "@/features/storage/daily-metrics.repository";
-import { deleteDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
-import { deleteLegacyExerciseLog, updateLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
-import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
-import type { ExerciseLogResult, ExerciseVideo, MetricType, WellnessScore } from "@/lib/types";
+import type { MetricType } from "@/lib/types";
+import { Switch } from "@/components/ui/switch";
 
 import type { HistoryDaySummary } from "../history-query";
-import { WellnessScoreInput } from "@/features/self-care/components/wellness-score-input";
-
-import { Switch } from "@/components/ui/switch"
 
 type DaySummaryProps = {
   selectedDate: string | null;
@@ -22,24 +16,10 @@ type DaySummaryProps = {
   onChanged?: () => void;
 };
 
-type EditLogState = {
-  id: string;
-  exerciseId: string;
-  result: ExerciseLogResult;
-  loggedAt: string;
-  date: string;
-};
-
 type EditMetricState = {
   metricType: MetricType;
   value: string;
   unit: string;
-};
-
-type EditWellnessState = {
-  physicalScore: WellnessScore;
-  mentalScore: WellnessScore;
-  note: string;
 };
 
 type MetricField = {
@@ -57,89 +37,6 @@ function getMetricLabelKey(metricType: MetricType) {
   if (metricType === "height") return "self_care_metric_height";
   if (metricType === "weight") return "self_care_metric_weight";
   return "self_care_metric_body_fat";
-}
-
-
-
-function EditLogModal({
-  state,
-  exercises,
-  onChange,
-  onSave,
-  onCancel,
-}: {
-  state: EditLogState;
-  exercises: ExerciseVideo[];
-  onChange: (next: EditLogState) => void;
-  onSave: () => void;
-  onCancel: () => void;
-}) {
-  const { t } = useTranslation();
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
-
-  return (
-    <dialog ref={dialogRef} className="modal" onCancel={onCancel}>
-      <div className="modal__content">
-        <h2>{t("history_edit_heading_log")}</h2>
-
-        <div className="modal__field">
-          <label htmlFor="edit-log-date">{t("history_edit_date_label")}</label>
-          <input
-            id="edit-log-date"
-            type="date"
-            value={state.date}
-            onChange={(e) => onChange({ ...state, date: e.target.value })}
-          />
-        </div>
-
-        <div className="modal__field">
-          <label htmlFor="edit-log-exercise">{t("history_edit_exercise_label")}</label>
-          <select
-            id="edit-log-exercise"
-            value={state.exerciseId}
-            onChange={(e) => onChange({ ...state, exerciseId: e.target.value })}
-          >
-            {exercises.map((ex) => (
-              <option key={ex.id} value={ex.id}>
-                {ex.title}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="modal__field">
-          <label htmlFor="edit-log-result">{t("history_edit_result_label")}</label>
-          <select
-            id="edit-log-result"
-            value={state.result}
-            onChange={(e) => onChange({ ...state, result: e.target.value as ExerciseLogResult })}
-          >
-            <option value="did">{t("result_did")}</option>
-            <option value="partial">{t("result_partial")}</option>
-          </select>
-        </div>
-
-        <div className="modal__actions">
-          <button
-            type="button"
-            className="settings-action-button settings-action-button--secondary"
-            onClick={onCancel}
-          >
-            {t("history_edit_cancel")}
-          </button>
-          <button type="button" className="settings-action-button" onClick={onSave}>
-            {t("history_edit_save")}
-          </button>
-        </div>
-      </div>
-    </dialog>
-  );
 }
 
 function EditMetricModal({
@@ -198,91 +95,10 @@ function EditMetricModal({
   );
 }
 
-function EditWellnessModal({
-  state,
-  onChange,
-  onSave,
-  onCancel,
-}: {
-  state: EditWellnessState;
-  onChange: (next: EditWellnessState) => void;
-  onSave: () => void;
-  onCancel: () => void;
-}) {
-  const { t } = useTranslation();
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
-
-  return (
-    <dialog ref={dialogRef} className="modal" onCancel={onCancel}>
-      <div className="modal__content">
-        <h2>{t("history_wellness_heading")}</h2>
-
-        <div className="modal__field">
-          <span>{t("self_care_physical_label")}</span>
-          <WellnessScoreInput
-            label={t("self_care_physical_label")}
-            value={state.physicalScore}
-            onChange={(score) => onChange({ ...state, physicalScore: score })}
-          />
-        </div>
-
-        <div className="modal__field">
-          <span>{t("self_care_mental_label")}</span>
-          <WellnessScoreInput
-            label={t("self_care_mental_label")}
-            value={state.mentalScore}
-            onChange={(score) => onChange({ ...state, mentalScore: score })}
-          />
-        </div>
-
-        <div className="modal__field">
-          <label htmlFor="edit-wellness-note">{t("condition_note_label")}</label>
-          <textarea
-            id="edit-wellness-note"
-            value={state.note}
-            onChange={(e) => onChange({ ...state, note: e.target.value })}
-          />
-        </div>
-
-        <div className="modal__actions">
-          <button
-            type="button"
-            className="settings-action-button settings-action-button--secondary"
-            onClick={onCancel}
-          >
-            {t("history_edit_cancel")}
-          </button>
-          <button type="button" className="settings-action-button" onClick={onSave}>
-            {t("history_edit_save")}
-          </button>
-        </div>
-      </div>
-    </dialog>
-  );
-}
-
 export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps) {
   const { t } = useTranslation();
-  const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editingLog, setEditingLog] = useState<EditLogState | null>(null);
   const [editingMetric, setEditingMetric] = useState<EditMetricState | null>(null);
-  const [editingWellness, setEditingWellness] = useState<EditWellnessState | null>(null);
-
-  useEffect(() => {
-    void listAllExercises().then(setExercises);
-  }, []);
-
-  function formatResult(result: HistoryDaySummary["logs"][number]["result"]) {
-    if (result === "did") return t("result_did");
-    return t("result_partial");
-  }
 
   function formatMetricLabel(metricType: MetricType) {
     return t(getMetricLabelKey(metricType));
@@ -298,25 +114,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
     if (metricType === "height") return "history_metrics_delete_height";
     if (metricType === "weight") return "history_metrics_delete_weight";
     return "history_metrics_delete_body_fat";
-  }
-
-  async function handleDeleteLog(logId: string) {
-    if (!window.confirm(t("history_log_delete_confirm"))) return;
-    await deleteLegacyExerciseLog(logId);
-    onChanged?.();
-  }
-
-  async function handleSaveLog() {
-    if (!editingLog) return;
-    await updateLegacyExerciseLog({
-      id: editingLog.id,
-      date: editingLog.date,
-      exerciseId: editingLog.exerciseId,
-      result: editingLog.result,
-      loggedAt: editingLog.loggedAt,
-    });
-    setEditingLog(null);
-    onChanged?.();
   }
 
   async function handleSaveMetric() {
@@ -343,25 +140,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
     onChanged?.();
   }
 
-  async function handleSaveWellness() {
-    if (!editingWellness || !selectedDate) return;
-    await saveDailyWellness({
-      date: selectedDate,
-      physicalScore: editingWellness.physicalScore,
-      mentalScore: editingWellness.mentalScore,
-      note: editingWellness.note,
-    });
-    setEditingWellness(null);
-    onChanged?.();
-  }
-
-  async function handleDeleteWellness() {
-    if (!selectedDate) return;
-    if (!window.confirm(t("history_wellness_delete_confirm"))) return;
-    await deleteDailyWellness(selectedDate);
-    onChanged?.();
-  }
-
   if (!selectedDate || !summary) {
     return (
       <Card className="day-summary">
@@ -385,7 +163,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
   }
 
   const metricMap = new Map(summary.metrics.map((metric) => [metric.metricType, metric]));
-  const wellness = summary.wellness;
 
   return (
     <Card className="day-summary">
@@ -403,115 +180,6 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
       </CardHeader>
 
       <CardContent>
-        <div className="day-summary__section">
-          <h3>{t("history_exercises_heading")}</h3>
-          {summary.logs.length === 0 ? (
-            <p>{t("history_no_exercises")}</p>
-          ) : (
-            <ul className="day-summary__list">
-              {summary.logs.map((log) => {
-                const logTime = formatTime(log.loggedAt);
-                return (
-                  <li key={log.id} className="day-summary__item">
-                    <span>{log.title}</span>
-                    {logTime && (
-                      <span className="day-summary__time">{logTime}</span>
-                    )}
-                    <span className="day-summary__result">{formatResult(log.result)}</span>
-                    {isEditMode && (
-                      <div className="day-summary__item-actions">
-                        <button
-                          type="button"
-                          className="day-summary__action-btn"
-                          onClick={() =>
-                            setEditingLog({
-                              id: log.id,
-                              exerciseId: log.exerciseId,
-                              result: log.result,
-                              loggedAt: log.loggedAt,
-                              date: selectedDate,
-                            })
-                          }
-                        >
-                          {t("action_edit")}
-                        </button>
-                        <button
-                          type="button"
-                          className="day-summary__action-btn day-summary__action-btn--danger"
-                          onClick={() => void handleDeleteLog(log.id)}
-                        >
-                          {t("action_delete")}
-                        </button>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        {wellness || isEditMode ? (
-          <div className="day-summary__section">
-            <h3>{t("history_wellness_heading")}</h3>
-            {wellness ? (
-              <>
-                <p>
-                  <span>{t("self_care_physical_label")}</span>:{" "}
-                  <span>{`${wellness.physicalScore} / 5`}</span>
-                </p>
-                <p>
-                  <span>{t("self_care_mental_label")}</span>:{" "}
-                  <span>{`${wellness.mentalScore} / 5`}</span>
-                </p>
-                {wellness.note ? <p>{wellness.note}</p> : null}
-              </>
-            ) : null}
-            {isEditMode && (
-              <div className="day-summary__item-actions">
-                {wellness ? (
-                  <>
-                    <button
-                      type="button"
-                      className="day-summary__action-btn"
-                      onClick={() =>
-                        setEditingWellness({
-                          physicalScore: wellness.physicalScore,
-                          mentalScore: wellness.mentalScore,
-                          note: wellness.note ?? "",
-                        })
-                      }
-                    >
-                      {t("history_wellness_edit")}
-                    </button>
-                    <button
-                      type="button"
-                      className="day-summary__action-btn day-summary__action-btn--danger"
-                      onClick={() => void handleDeleteWellness()}
-                    >
-                      {t("history_wellness_delete")}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="day-summary__action-btn"
-                    onClick={() =>
-                      setEditingWellness({
-                        physicalScore: 3,
-                        mentalScore: 3,
-                        note: "",
-                      })
-                    }
-                  >
-                    {t("history_wellness_add")}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        ) : null}
-
         {summary.metrics.length > 0 || isEditMode ? (
           <div className="day-summary__section">
             <h3>{t("history_metrics_heading")}</h3>
@@ -594,31 +262,12 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
           </div>
         ) : null}
 
-        {isEditMode && editingLog && (
-          <EditLogModal
-            state={editingLog}
-            exercises={exercises}
-            onChange={setEditingLog}
-            onSave={() => void handleSaveLog()}
-            onCancel={() => setEditingLog(null)}
-          />
-        )}
-
         {isEditMode && editingMetric && (
           <EditMetricModal
             state={editingMetric}
             onChange={setEditingMetric}
             onSave={() => void handleSaveMetric()}
             onCancel={() => setEditingMetric(null)}
-          />
-        )}
-
-        {isEditMode && editingWellness && (
-          <EditWellnessModal
-            state={editingWellness}
-            onChange={setEditingWellness}
-            onSave={() => void handleSaveWellness()}
-            onCancel={() => setEditingWellness(null)}
           />
         )}
       </CardContent>

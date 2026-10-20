@@ -18,6 +18,7 @@ const METRIC_OPTIONS: MetricOption[] = [
   { value: { kind: "metric", metricType: "weight" }, label: "Weight" },
   { value: { kind: "metric", metricType: "bodyFat" }, label: "Body fat" },
   { value: { kind: "metric", metricType: "height" }, label: "Height" },
+  { value: { kind: "bmi" }, label: "BMI" },
   { value: { kind: "wellness", score: "physical" }, label: "Physical wellness" },
   { value: { kind: "wellness", score: "mental" }, label: "Mental wellness" },
 ];

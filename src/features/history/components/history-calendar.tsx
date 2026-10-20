@@ -2,9 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildMonthGrid } from "@/lib/date/month-grid";
 import { useTranslation } from "@/features/i18n/use-translation";
 
+import type { CalendarMark } from "../history-query";
+
 type HistoryCalendarProps = {
   month: string;
-  completedDays: string[];
+  marks: Record<string, CalendarMark>;
   selectedDate: string | null;
   onSelectDate: (date: string) => void;
   onPrevMonth: () => void;
@@ -27,23 +29,24 @@ function getMonthLabel(month: string, locale: string): string {
 
 export function HistoryCalendar({
   month,
-  completedDays,
+  marks,
   selectedDate,
   onSelectDate,
   onPrevMonth,
   onNextMonth,
 }: HistoryCalendarProps) {
-  const completedDaySet = new Set(completedDays);
   const { language, t } = useTranslation();
   const locale = language === "ja" ? "ja-JP" : "en-US";
 
-  function formatCalendarLabel(date: string, completed: boolean) {
+  function formatCalendarLabel(date: string, mark: CalendarMark | undefined) {
     const label = new Intl.DateTimeFormat(locale, {
       month: "long",
       day: "numeric",
     }).format(new Date(`${date}T00:00:00`));
 
-    return completed ? t("history_calendar_completed_label", { date: label }) : label;
+    if (mark === "exercise") return t("history_calendar_completed_label", { date: label });
+    if (mark === "record") return t("history_calendar_recorded_label", { date: label });
+    return label;
   }
 
   return (
@@ -86,7 +89,8 @@ export function HistoryCalendar({
 
         <div className="history-calendar__grid">
           {buildMonthGrid(month).map((day) => {
-            const isCompleted = completedDaySet.has(day.date);
+            const mark = marks[day.date];
+            const isCompleted = mark === "exercise";
             const isSelected = selectedDate === day.date;
             const className = [
               "history-calendar__day",
@@ -102,10 +106,16 @@ export function HistoryCalendar({
                 key={day.date}
                 type="button"
                 className={className}
-                aria-label={formatCalendarLabel(day.date, isCompleted)}
+                aria-label={formatCalendarLabel(day.date, mark)}
                 onClick={() => onSelectDate(day.date)}
               >
+                {isCompleted ? (
+                  <span className="history-calendar__hanamaru" aria-hidden="true">
+                    💮
+                  </span>
+                ) : null}
                 <span>{day.dayOfMonth}</span>
+                {mark === "record" ? <span className="history-calendar__dot" aria-hidden="true" /> : null}
               </button>
             );
           })}

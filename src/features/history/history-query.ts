@@ -1,25 +1,11 @@
 import { listDailyMetricsByDate } from "@/features/storage/daily-metrics.repository";
 import { listDailySelfCareEntriesByDate } from "@/features/storage/daily-self-care.repository";
-import { getDailyWellness } from "@/features/storage/daily-wellness.repository";
 import { appDb } from "@/features/storage/app-db";
-import { listLegacyExerciseLogsForDay } from "@/features/storage/legacy-exercise-logs.repository";
-import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { listAllSelfCareItems } from "@/features/storage/self-care-catalog.repository";
-import type { ExerciseLogResult, MetricType, WellnessScore } from "@/lib/types";
+import type { MetricType } from "@/lib/types";
 
-type HistoryDayLog = {
-  id: string;
-  exerciseId: string;
-  title: string;
-  result: ExerciseLogResult;
-  loggedAt: string;
-};
-
-type HistoryDayWellness = {
-  physicalScore: WellnessScore;
-  mentalScore: WellnessScore;
-  note: string;
-};
+/** "exercise": at least one exercise log that day. "record": no exercise, but a wellness entry or a watch. */
+export type CalendarMark = "exercise" | "record";
 
 type HistoryDayMetric = {
   metricType: MetricType;
@@ -37,46 +23,38 @@ type HistoryDaySelfCareLog = {
 };
 
 export type HistoryDaySummary = {
-  logs: HistoryDayLog[];
-  wellness: HistoryDayWellness | null;
   metrics: HistoryDayMetric[];
   selfCareLogs: HistoryDaySelfCareLog[];
 };
 
-export async function listCompletedDaysInMonth(month: string) {
-  const monthLogs = await appDb.logs.where("date").startsWith(month).toArray();
+/** Calendar marks keyed by day (`YYYY-MM-DD`) for the given month (`YYYY-MM`). */
+export async function listCalendarMarksInMonth(month: string): Promise<Record<string, CalendarMark>> {
+  const [logs, wellness, watches] = await Promise.all([
+    appDb.exerciseLogs.where("date").startsWith(month).toArray(),
+    appDb.wellnessEntries.where("date").startsWith(month).toArray(),
+    appDb.watchEvents.where("date").startsWith(month).toArray(),
+  ]);
 
-  return [...new Set(monthLogs.map((entry) => entry.date))].sort();
+  const marks: Record<string, CalendarMark> = {};
+  for (const entry of [...wellness, ...watches]) {
+    marks[entry.date] = "record";
+  }
+  for (const log of logs) {
+    marks[log.date] = "exercise";
+  }
+  return marks;
 }
 
 export async function getHistoryDaySummary(date: string): Promise<HistoryDaySummary> {
-  const [logs, exercises, wellness, metrics, selfCareLogs, selfCareItems] = await Promise.all([
-    listLegacyExerciseLogsForDay(date),
-    listAllExercises(),
-    getDailyWellness(date),
+  const [metrics, selfCareLogs, selfCareItems] = await Promise.all([
     listDailyMetricsByDate(date),
     listDailySelfCareEntriesByDate(date),
     listAllSelfCareItems(),
   ]);
 
-  const exerciseTitleMap = new Map(exercises.map((e) => [e.id, e.title]));
   const selfCareTitleMap = new Map(selfCareItems.map((item) => [item.id, item.title]));
 
   return {
-    logs: logs.map((log) => ({
-      id: log.id,
-      exerciseId: log.exerciseId,
-      title: exerciseTitleMap.get(log.exerciseId) ?? log.exerciseId,
-      result: log.result,
-      loggedAt: log.loggedAt,
-    })),
-    wellness: wellness
-      ? {
-          physicalScore: wellness.physicalScore,
-          mentalScore: wellness.mentalScore,
-          note: wellness.note,
-        }
-      : null,
     metrics: metrics.map((metric) => ({
       metricType: metric.metricType,
       value: metric.value,

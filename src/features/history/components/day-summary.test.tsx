@@ -3,25 +3,13 @@ import { render, screen, within, act, fireEvent, waitFor } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { DaySummary } from "./day-summary";
 import { upsertDailyMetric, deleteDailyMetric } from "@/features/storage/daily-metrics.repository";
-import { deleteDailyWellness } from "@/features/storage/daily-wellness.repository";
 
 vi.mock("@/features/i18n/use-translation", () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }));
-vi.mock("@/features/storage/legacy-exercise-logs.repository", () => ({
-  deleteLegacyExerciseLog: vi.fn(),
-  updateLegacyExerciseLog: vi.fn(),
-}));
 vi.mock("@/features/storage/daily-metrics.repository", () => ({
   upsertDailyMetric: vi.fn(),
   deleteDailyMetric: vi.fn(),
-}));
-vi.mock("@/features/storage/daily-wellness.repository", () => ({
-  saveDailyWellness: vi.fn(),
-  deleteDailyWellness: vi.fn(),
-}));
-vi.mock("@/features/storage/exercise-catalog.repository", () => ({
-  listAllExercises: vi.fn().mockResolvedValue([]),
 }));
 
 beforeEach(() => {
@@ -34,42 +22,21 @@ beforeEach(() => {
   });
 });
 
-const baseLog = {
-  id: "log1",
-  exerciseId: "ex1",
-  title: "Push-ups",
-  result: "did" as const,
-  loggedAt: "2024-01-15T09:00:00+09:00",
-};
+const weightMetric = { metricType: "weight" as const, value: 62, unit: "kg" };
 
 const makeSummary = (overrides = {}) => ({
-  logs: [baseLog],
-  wellness: null,
-  metrics: [],
+  metrics: [weightMetric],
   selfCareLogs: [],
   ...overrides,
 });
 
-describe("DaySummary timestamps", () => {
-  it("renders loggedAt time in the log list", async () => {
-    await act(async () => {
-      render(<DaySummary selectedDate="2024-01-15" summary={makeSummary()} />);
-    });
-    const list = screen.getByRole("list");
-    expect(within(list).getByText(/\d{2}:\d{2}/)).toBeInTheDocument();
-  });
-
-  it("renders wellness, metrics, and self-care sections when data exists", async () => {
+describe("DaySummary", () => {
+  it("renders metrics and self-care sections when data exists", async () => {
     await act(async () => {
       render(
         <DaySummary
           selectedDate="2024-01-15"
           summary={makeSummary({
-            wellness: {
-              physicalScore: 4,
-              mentalScore: 3,
-              note: "Feeling steady",
-            },
             metrics: [
               { metricType: "weight", value: 62, unit: "kg" },
               { metricType: "bodyFat", value: 18, unit: "%" },
@@ -89,12 +56,8 @@ describe("DaySummary timestamps", () => {
       );
     });
 
-    expect(screen.getByText("history_wellness_heading")).toBeInTheDocument();
-    expect(screen.getByText("self_care_physical_label")).toBeInTheDocument();
-    expect(screen.getByText("4 / 5")).toBeInTheDocument();
-    expect(screen.getByText("self_care_mental_label")).toBeInTheDocument();
-    expect(screen.getByText("3 / 5")).toBeInTheDocument();
-    expect(screen.getByText("Feeling steady")).toBeInTheDocument();
+    expect(screen.queryByText("history_wellness_heading")).not.toBeInTheDocument();
+    expect(screen.queryByText("history_exercises_heading")).not.toBeInTheDocument();
     expect(screen.getByText("history_metrics_heading")).toBeInTheDocument();
     expect(screen.getByText("self_care_metric_weight")).toBeInTheDocument();
     expect(screen.getByText("62 kg")).toBeInTheDocument();
@@ -113,10 +76,10 @@ describe("DaySummary timestamps", () => {
       render(<DaySummary selectedDate="2024-01-15" summary={makeSummary()} />);
     });
 
-    expect(screen.getByRole("checkbox", { name: "history_mode_edit" })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "history_mode_edit" })).not.toBeChecked();
     expect(screen.getByText("history_mode_view")).toBeInTheDocument();
     expect(screen.queryAllByRole("button", { name: "action_edit" })).toHaveLength(0);
-    expect(screen.queryAllByRole("button", { name: "action_delete" })).toHaveLength(0);
+    expect(screen.queryByRole("button", { name: "history_metrics_delete_weight" })).not.toBeInTheDocument();
   });
 
   it("shows action buttons after switching to edit mode via switch", async () => {
@@ -124,12 +87,12 @@ describe("DaySummary timestamps", () => {
       render(<DaySummary selectedDate="2024-01-15" summary={makeSummary()} />);
     });
 
-    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    fireEvent.click(screen.getByRole("switch", { name: "history_mode_edit" }));
 
-    expect(screen.getByRole("checkbox", { name: "history_mode_edit" })).toBeChecked();
+    expect(screen.getByRole("switch", { name: "history_mode_edit" })).toBeChecked();
     expect(screen.getByText("history_mode_edit")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "action_edit" })).toHaveLength(1);
-    expect(screen.getAllByRole("button", { name: "action_delete" })).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "history_metrics_delete_weight" })).toBeInTheDocument();
   });
 
   it("shows metric add controls when metric missing in edit mode", async () => {
@@ -144,7 +107,7 @@ describe("DaySummary timestamps", () => {
       );
     });
 
-    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    fireEvent.click(screen.getByRole("switch", { name: "history_mode_edit" }));
 
     expect(screen.getByRole("button", { name: "history_metrics_add_height" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "history_metrics_add_body_fat" })).toBeInTheDocument();
@@ -166,7 +129,7 @@ describe("DaySummary timestamps", () => {
       );
     });
 
-    await user.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    await user.click(screen.getByRole("switch", { name: "history_mode_edit" }));
     await user.click(screen.getByRole("button", { name: "history_metrics_add_height" }));
     await user.type(screen.getByLabelText("self_care_metric_height"), "170");
     await user.click(screen.getByRole("button", { name: "history_edit_save" }));
@@ -195,7 +158,7 @@ describe("DaySummary timestamps", () => {
       );
     });
 
-    await user.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    await user.click(screen.getByRole("switch", { name: "history_mode_edit" }));
     await user.click(screen.getByRole("button", { name: "history_metrics_add_height" }));
     await user.click(screen.getByRole("button", { name: "history_edit_save" }));
 
@@ -219,39 +182,11 @@ describe("DaySummary timestamps", () => {
       );
     });
 
-    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
+    fireEvent.click(screen.getByRole("switch", { name: "history_mode_edit" }));
     fireEvent.click(screen.getByRole("button", { name: "history_metrics_delete_weight" }));
 
     expect(confirmSpy).toHaveBeenCalledWith("history_metric_delete_confirm");
     expect(deleteDailyMetric).toHaveBeenCalledWith("2024-01-15", "weight");
-    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
-  });
-
-  it("calls deleteDailyWellness when deleting wellness", async () => {
-    const onChanged = vi.fn();
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
-
-    await act(async () => {
-      render(
-        <DaySummary
-          selectedDate="2024-01-15"
-          summary={makeSummary({
-            wellness: {
-              physicalScore: 4,
-              mentalScore: 3,
-              note: "Feeling steady",
-            },
-          })}
-          onChanged={onChanged}
-        />,
-      );
-    });
-
-    fireEvent.click(screen.getByRole("checkbox", { name: "history_mode_edit" }));
-    fireEvent.click(screen.getByRole("button", { name: "history_wellness_delete" }));
-
-    expect(confirmSpy).toHaveBeenCalledWith("history_wellness_delete_confirm");
-    expect(deleteDailyWellness).toHaveBeenCalledWith("2024-01-15");
     await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
   });
 });

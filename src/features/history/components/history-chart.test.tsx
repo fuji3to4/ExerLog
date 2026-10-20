@@ -31,7 +31,6 @@ global.ResizeObserver = ResizeObserverMock as any;
 
 describe("HistoryChart", () => {
   const mockSeries: GraphSeries = {
-    label: "Weight",
     unit: "kg",
     points: [
       { date: "2026-06-01", value: 70 },
@@ -65,7 +64,6 @@ describe("HistoryChart", () => {
 
   it("displays x-axis date labels correctly with gapped dates", () => {
     const gappedSeries: GraphSeries = {
-      label: "Weight",
       unit: "kg",
       points: [
         { date: "2026-06-01", value: 70 },

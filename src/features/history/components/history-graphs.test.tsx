@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HistoryGraphs } from "./history-graphs";
 
@@ -27,7 +27,6 @@ describe("HistoryGraphs", () => {
   it("renders graph heading", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
-      label: "Weight",
       unit: "kg",
       points: [
         { date: "2026-03-20", value: 62.5 },
@@ -42,7 +41,6 @@ describe("HistoryGraphs", () => {
   it("renders metric selector dropdown with weight option", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
-      label: "Weight",
       unit: "kg",
       points: [
         { date: "2026-03-20", value: 62.5 },
@@ -58,10 +56,32 @@ describe("HistoryGraphs", () => {
     expect(within(selector).getByText("Weight")).toBeInTheDocument();
   });
 
+  it("offers BMI as a metric and requests the bmi series when selected", async () => {
+    const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
+    const user = userEvent.setup();
+    vi.mocked(buildHistoryGraphSeries).mockClear();
+    vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
+      unit: "",
+      points: [{ date: "2026-10-20", value: 20.8 }],
+    });
+
+    render(<HistoryGraphs />);
+    await screen.findByText("history_graphs_heading");
+
+    const selector = screen.getByLabelText("history_graph_metric_label") as HTMLSelectElement;
+    const bmiOption = within(selector).getByRole("option", { name: "BMI" }) as HTMLOptionElement;
+    await user.selectOptions(selector, bmiOption);
+
+    await waitFor(() =>
+      expect(vi.mocked(buildHistoryGraphSeries)).toHaveBeenLastCalledWith(
+        expect.objectContaining({ metric: { kind: "bmi" } }),
+      ),
+    );
+  });
+
   it("renders date range preset buttons", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
-      label: "Weight",
       unit: "kg",
       points: [
         { date: "2026-03-20", value: 62.5 },
@@ -81,7 +101,6 @@ describe("HistoryGraphs", () => {
   it("renders chart when data exists", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
-      label: "Weight",
       unit: "kg",
       points: [
         { date: "2026-03-20", value: 62.5 },
@@ -103,7 +122,6 @@ describe("HistoryGraphs", () => {
   it("shows empty state when no data points", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
-      label: "Weight",
       unit: "kg",
       points: [],
     });
@@ -120,12 +138,10 @@ describe("HistoryGraphs", () => {
     vi.mocked(buildHistoryGraphSeries).mockClear();
     vi.mocked(buildHistoryGraphSeries)
       .mockResolvedValueOnce({
-        label: "Weight",
         unit: "kg",
         points: [{ date: "2026-03-20", value: 62.5 }],
       })
       .mockResolvedValueOnce({
-        label: "Body fat",
         unit: "%",
         points: [{ date: "2026-03-20", value: 18.5 }],
       });
@@ -153,12 +169,10 @@ describe("HistoryGraphs", () => {
 
     vi.mocked(buildHistoryGraphSeries)
       .mockResolvedValueOnce({
-        label: "Weight",
         unit: "kg",
         points: [{ date: "2026-03-20", value: 62.5 }],
       })
       .mockResolvedValueOnce({
-        label: "Weight",
         unit: "kg",
         points: [{ date: "2026-03-15", value: 63.0 }, { date: "2026-03-20", value: 62.5 }],
       });
@@ -176,7 +190,6 @@ describe("HistoryGraphs", () => {
   it("renders chart and handles data updates", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
-      label: "Weight",
       unit: "kg",
       points: [
         { date: "2026-03-20", value: 60 },

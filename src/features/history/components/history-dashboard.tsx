@@ -1,91 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
-import { HistoryCalendar } from "./history-calendar";
-import { HistoryGraphs } from "./history-graphs";
-import { getHistoryDaySummary, listCompletedDaysInMonth, type HistoryDaySummary } from "../history-query";
-import { toDayKey } from "@/lib/date/day-key";
+
+import { useHistoryState } from "../use-history-state";
 import { DaySummary } from "./day-summary";
+import { HistoryCalendar } from "./history-calendar";
+import { HistoryDayTimeline } from "./history-day-timeline";
+import { HistoryGraphs } from "./history-graphs";
 
 type HistoryDashboardProps = {
   month?: string;
 };
 
-function shiftMonth(month: string, delta: number): string {
-  const [year, m] = month.split("-").map(Number);
-  const date = new Date(year, m - 1 + delta, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
 export function HistoryDashboard({ month: initialMonth }: HistoryDashboardProps = {}) {
-  const today = toDayKey(new Date());
-  const [currentMonth, setCurrentMonth] = useState(() => initialMonth ?? today.slice(0, 7));
-  const [completedDays, setCompletedDays] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>(() => initialMonth ? null : today);
-  const [summary, setSummary] = useState<HistoryDaySummary | null>(null);
+  const history = useHistoryState(initialMonth);
   const { t } = useTranslation();
-
-  useEffect(() => {
-    let isActive = true;
-
-    async function loadCompletedDays() {
-      const days = await listCompletedDaysInMonth(currentMonth);
-      if (!isActive) return;
-      setCompletedDays(days);
-    }
-
-    void loadCompletedDays();
-
-    return () => {
-      isActive = false;
-    };
-  }, [currentMonth]);
-
-  useEffect(() => {
-    if (initialMonth) return;
-
-    let isActive = true;
-
-    async function loadTodaySummary() {
-      const todaySummary = await getHistoryDaySummary(today);
-      if (!isActive) return;
-      setSummary(todaySummary);
-    }
-
-    void loadTodaySummary();
-
-    return () => {
-      isActive = false;
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function handlePrevMonth() {
-    setCurrentMonth((m) => shiftMonth(m, -1));
-    setSelectedDate(null);
-    setSummary(null);
-  }
-
-  function handleNextMonth() {
-    setCurrentMonth((m) => shiftMonth(m, 1));
-    setSelectedDate(null);
-    setSummary(null);
-  }
-
-  async function handleSelectDate(date: string) {
-    setSelectedDate(date);
-    setSummary(await getHistoryDaySummary(date));
-  }
-
-  async function handleSummaryChanged() {
-    if (selectedDate) {
-      setSummary(await getHistoryDaySummary(selectedDate));
-      const days = await listCompletedDaysInMonth(currentMonth);
-      setCompletedDays(days);
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -99,14 +29,25 @@ export function HistoryDashboard({ month: initialMonth }: HistoryDashboardProps 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <HistoryCalendar
-            month={currentMonth}
-            completedDays={completedDays}
-            selectedDate={selectedDate}
-            onSelectDate={(date) => void handleSelectDate(date)}
-            onPrevMonth={handlePrevMonth}
-            onNextMonth={handleNextMonth}
+            month={history.currentMonth}
+            marks={history.marks}
+            selectedDate={history.selectedDate}
+            onSelectDate={history.selectDate}
+            onPrevMonth={history.prevMonth}
+            onNextMonth={history.nextMonth}
           />
-          <DaySummary selectedDate={selectedDate} summary={summary} onChanged={() => void handleSummaryChanged()} />
+          {history.selectedDate ? (
+            <HistoryDayTimeline
+              key={history.selectedDate}
+              date={history.selectedDate}
+              onChanged={history.handleTimelineChanged}
+            />
+          ) : null}
+          <DaySummary
+            selectedDate={history.selectedDate}
+            summary={history.summary}
+            onChanged={history.handleSummaryChanged}
+          />
         </div>
 
         <div>

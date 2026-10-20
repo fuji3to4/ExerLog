@@ -498,6 +498,7 @@ a {
 }
 
 .history-calendar__day {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -513,6 +514,34 @@ a {
   background: var(--success-bg);
   border-color: #8bc7a0;
   font-weight: 700;
+}
+
+/* 💮 badge sitting above the day number on exercise days. */
+.history-calendar__hanamaru {
+  position: absolute;
+  top: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.history-calendar__day:has(.history-calendar__hanamaru) {
+  padding-top: 0.85rem;
+}
+
+/* Small dot under the day number on days with records but no exercise. */
+.history-calendar__dot {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--accent-strong);
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .history-calendar__day.is-selected {
