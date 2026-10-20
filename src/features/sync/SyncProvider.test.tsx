@@ -158,7 +158,7 @@ describe("SyncProvider", () => {
       expect(screen.getByTestId("status").textContent).toBe("error");
     });
     expect(screen.getByTestId("error-message").textContent).toBe(
-      "ExerciseLogs: Permission denied",
+      "運動記録: Permission denied",
     );
     expect(syncAll).toHaveBeenCalledWith("fake-access-token", expect.any(Function));
   });
@@ -216,7 +216,7 @@ describe("SyncProvider", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("syncing-message").textContent).toBe(
-        "ExerciseLogs を同期しました（3件）",
+        "運動記録 を同期しました（3件）",
       );
     });
   });

@@ -196,12 +196,12 @@ export const en = {
   settings_export_daily_metrics: "Export body metrics records (CSV)",
   settings_delete_all_exercises: "Delete all exercises",
   settings_delete_all_exercises_confirm: "Delete all {count} exercises? This cannot be undone.",
-  settings_delete_all_logs: "Delete all logs",
-  settings_delete_all_logs_confirm: "Delete all {count} log entries? This cannot be undone.",
+  settings_delete_all_logs: "Delete all records",
+  settings_delete_all_logs_confirm: "Delete all {count} records (exercise, condition and watch)? This cannot be undone.",
   settings_delete_confirm_btn: "Yes, delete all",
   settings_delete_cancel_btn: "Cancel",
   settings_delete_success_exercises: "All exercises deleted.",
-  settings_delete_success_logs: "All logs deleted.",
+  settings_delete_success_logs: "All records deleted.",
 
   // Google Drive sync
   settings_google_drive_section_heading: "Google Drive",
@@ -221,6 +221,15 @@ export const en = {
   sync_indicator_error: "Sync error",
   sync_status_starting: "Starting sync…",
   sync_status_table: "Synced {table} ({count} rows)",
+  sync_tab_ExerciseLogs: "Exercise records",
+  sync_tab_WellnessEntries: "Condition records",
+  sync_tab_WatchEvents: "Watch records",
+  sync_tab_DailyMetrics: "Body measurements",
+  sync_tab_DailySelfCare: "Self-care",
+  sync_tab_Exercises: "Video library",
+  sync_tab_SelfCareCatalog: "Self-care items",
+  sync_tab_Tombstones: "Deletion records",
+  sync_tab_spreadsheet: "Spreadsheet",
 
   // Common actions
   action_edit: "Edit",
@@ -246,12 +255,15 @@ export const en = {
   // Feedback
   feedback_saved: "✓ Saved",
   celebration_did: "Nice work! {duration} done",
+  celebration_duration_min_sec: "{m} min {s} sec",
+  celebration_duration_min: "{m} min",
+  celebration_duration_sec: "{s} sec",
   celebration_partial: "Nice work!",
 
   // Day timeline
   timeline_add_wellness: "+ Log condition",
   timeline_choose_video: "Choose a video",
-  timeline_empty: "Nothing recorded yet today.",
+  timeline_empty: "No records yet.",
   timeline_label_morning: "Morning",
   timeline_label_before_video: "Before video",
   timeline_label_after_video: "After video",

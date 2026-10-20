@@ -196,12 +196,12 @@
   settings_export_daily_metrics: "身体計測値をエクスポート（CSV）",
   settings_delete_all_exercises: "全エクササイズを削除",
   settings_delete_all_exercises_confirm: "{count}件のエクササイズをすべて削除します。この操作は取り消せません。",
-  settings_delete_all_logs: "全ログを削除",
-  settings_delete_all_logs_confirm: "{count}件の運動ログをすべて削除します。この操作は取り消せません。",
+  settings_delete_all_logs: "記録をすべて削除",
+  settings_delete_all_logs_confirm: "{count}件の記録（運動・体調・視聴）をすべて削除しますか？この操作は取り消せません。",
   settings_delete_confirm_btn: "削除する",
   settings_delete_cancel_btn: "キャンセル",
   settings_delete_success_exercises: "全エクササイズを削除しました。",
-  settings_delete_success_logs: "全ログを削除しました。",
+  settings_delete_success_logs: "記録をすべて削除しました。",
 
   // Google Drive sync
   settings_google_drive_section_heading: "Google Drive",
@@ -221,6 +221,15 @@
   sync_indicator_error: "同期エラー",
   sync_status_starting: "同期を開始しています…",
   sync_status_table: "{table} を同期しました（{count}件）",
+  sync_tab_ExerciseLogs: "運動記録",
+  sync_tab_WellnessEntries: "体調記録",
+  sync_tab_WatchEvents: "視聴記録",
+  sync_tab_DailyMetrics: "体の数値",
+  sync_tab_DailySelfCare: "セルフケア",
+  sync_tab_Exercises: "動画ライブラリ",
+  sync_tab_SelfCareCatalog: "セルフケア項目",
+  sync_tab_Tombstones: "削除記録",
+  sync_tab_spreadsheet: "スプレッドシート",
 
   // Common actions
   action_edit: "編集",
@@ -246,12 +255,15 @@
   // Feedback
   feedback_saved: "✓ 保存しました",
   celebration_did: "おつかれさま！ {duration} やりました",
+  celebration_duration_min_sec: "{m}分{s}秒",
+  celebration_duration_min: "{m}分",
+  celebration_duration_sec: "{s}秒",
   celebration_partial: "おつかれさま！",
 
   // Day timeline
   timeline_add_wellness: "＋ 体調を記録",
   timeline_choose_video: "動画を選ぶ",
-  timeline_empty: "まだ今日の記録はありません。",
+  timeline_empty: "まだ記録はありません。",
   timeline_label_morning: "朝",
   timeline_label_before_video: "動画前",
   timeline_label_after_video: "動画後",

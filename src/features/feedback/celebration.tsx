@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
-import { formatDuration } from "@/lib/date/duration";
+import { splitDuration } from "@/lib/date/duration";
 import type { ExerciseLogResult } from "@/lib/types";
 
 const CELEBRATION_MS = 1600;
@@ -16,6 +16,16 @@ const CelebrationContext = createContext<Celebrate>(noop);
 
 export function useCelebrate(): Celebrate {
   return useContext(CelebrationContext);
+}
+
+type Translate = ReturnType<typeof useTranslation>["t"];
+
+/** Spoken-style duration for the celebration only ("5分30秒" / "5 min 30 sec"); seconds omitted when 0. */
+function formatCelebrationDuration(totalSeconds: number, t: Translate): string {
+  const { minutes, seconds } = splitDuration(totalSeconds);
+  if (minutes === 0) return t("celebration_duration_sec", { s: seconds });
+  if (seconds === 0) return t("celebration_duration_min", { m: minutes });
+  return t("celebration_duration_min_sec", { m: minutes, s: seconds });
 }
 
 export function CelebrationProvider({ children }: { children: ReactNode }) {
@@ -44,7 +54,7 @@ export function CelebrationProvider({ children }: { children: ReactNode }) {
 
   const message = current
     ? current.result === "did"
-      ? t("celebration_did", { duration: formatDuration(current.durationSeconds) })
+      ? t("celebration_did", { duration: formatCelebrationDuration(current.durationSeconds, t) })
       : t("celebration_partial")
     : "";
 

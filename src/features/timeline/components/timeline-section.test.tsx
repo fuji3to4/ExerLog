@@ -15,9 +15,9 @@ import { TimelineSection } from "./timeline-section";
 
 const DATE = "2026-10-20";
 
-function Harness({ onChanged }: { onChanged?: () => void }) {
-  const timeline = useDayTimeline(DATE);
-  return <TimelineSection date={DATE} timeline={timeline} onChanged={onChanged} />;
+function Harness({ onChanged, date = DATE }: { onChanged?: () => void; date?: string }) {
+  const timeline = useDayTimeline(date);
+  return <TimelineSection date={date} timeline={timeline} onChanged={onChanged} />;
 }
 
 function rows() {
@@ -199,8 +199,15 @@ describe("TimelineSection", () => {
     await appDb.exerciseLogs.clear();
     renderWithLanguage(<Harness />, { initialLanguage: "ja" });
 
-    expect(await screen.findByText("まだ今日の記録はありません。")).toBeTruthy();
+    expect(await screen.findByText("まだ記録はありません。")).toBeTruthy();
     expect(screen.getByRole("link", { name: "動画を選ぶ" }).getAttribute("href")).toBe("/library");
+  });
+
+  it("hides the library link on a past day", async () => {
+    renderWithLanguage(<Harness date="2026-10-19" />, { initialLanguage: "ja" });
+
+    expect(await screen.findByText("まだ記録はありません。")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "動画を選ぶ" })).toBeNull();
   });
 });
 

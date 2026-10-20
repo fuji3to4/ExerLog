@@ -72,13 +72,29 @@ describe("feedback primitives", () => {
       { initialLanguage: "ja" },
     );
     fireEvent.click(screen.getByText("go"));
-    expect(screen.getByText("おつかれさま！ 5:30 やりました")).toBeTruthy();
+    expect(screen.getByText("おつかれさま！ 5分30秒 やりました")).toBeTruthy();
     expect(screen.getByText("💮")).toBeTruthy();
     expect(vibrate).toHaveBeenCalledWith(80);
     act(() => {
       vi.advanceTimersByTime(1600);
     });
     expect(screen.queryByText("💮")).toBeNull();
+  });
+
+  it.each([
+    ["ja", 300, "おつかれさま！ 5分 やりました"],
+    ["ja", 45, "おつかれさま！ 45秒 やりました"],
+    ["en", 330, "Nice work! 5 min 30 sec done"],
+    ["en", 300, "Nice work! 5 min done"],
+  ] as const)("formats the %s celebration duration for %d seconds", (language, seconds, text) => {
+    renderWithLanguage(
+      <CelebrationProvider>
+        <CelebrateHarness result="did" seconds={seconds} />
+      </CelebrationProvider>,
+      { initialLanguage: language },
+    );
+    fireEvent.click(screen.getByText("go"));
+    expect(screen.getByText(text)).toBeTruthy();
   });
 
   it("does not throw without navigator.vibrate", () => {

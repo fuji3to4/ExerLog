@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { toDayKey } from "@/lib/date/day-key";
 import { cn } from "@/lib/utils";
 import type { TimelineItem } from "../build-timeline";
 import type { DayTimelineState } from "../use-day-timeline";
@@ -23,6 +24,8 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
   const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [selected, setSelected] = useState<TimelineItem | null>(null);
+  // Logging from the library always records today, so offer it only on today's timeline.
+  const isToday = date === toDayKey(new Date());
 
   async function refresh(highlightId?: string) {
     await timeline.reload(highlightId);
@@ -39,9 +42,11 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
         <Button className="flex-1" onClick={() => setIsAdding(true)}>
           {t("timeline_add_wellness")}
         </Button>
-        <Link href="/library" className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}>
-          {t("timeline_choose_video")}
-        </Link>
+        {isToday ? (
+          <Link href="/library" className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}>
+            {t("timeline_choose_video")}
+          </Link>
+        ) : null}
       </div>
 
       {timeline.isLoaded ? (

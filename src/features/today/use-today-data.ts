@@ -38,7 +38,7 @@ export function useTodayData(date: Date | string) {
   }, [dayKey]);
 
   useEffect(() => {
-    void listAllExercises().then(setExercises);
+    listAllExercises().then(setExercises).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export function useTodayData(date: Date | string) {
       setHydratedDayKey(dayKey);
     }
 
-    void loadTodayData();
+    loadTodayData().catch(console.error);
 
     return () => {
       isActive = false;
@@ -81,10 +81,18 @@ export function useTodayData(date: Date | string) {
   /** Reloads the latest wellness scores and today's log counts (after timeline edits or deletes). */
   const refresh = useCallback(async () => {
     const requestedDayKey = dayKey;
-    const [latestScores, counts] = await Promise.all([
-      loadLatestScores(requestedDayKey),
-      countExerciseLogsForDay(requestedDayKey),
-    ]);
+    let latestScores: LatestScores;
+    let counts: Record<string, number>;
+    try {
+      [latestScores, counts] = await Promise.all([
+        loadLatestScores(requestedDayKey),
+        countExerciseLogsForDay(requestedDayKey),
+      ]);
+    } catch (err) {
+      // Keep the current state; the next refresh or reload retries.
+      console.error(err);
+      return;
+    }
     if (dayKeyRef.current === requestedDayKey) {
       setScores(latestScores);
       setLogCounts(counts);

@@ -12,6 +12,8 @@ import {
 import type { ReactNode } from "react";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { trySilentRefresh, requestSignIn, signOut } from "./google-auth";
+import { SHEET_TABS } from "./google-sheets";
+import type { SheetTab } from "./google-sheets";
 import { syncAll } from "./sync-engine";
 import type { SyncAllResult, SyncTableResult } from "./sync-engine";
 
@@ -41,6 +43,14 @@ export function useSync(): SyncContextValue {
 
 export { SyncContext };
 
+type TabLabelKey = `sync_tab_${SheetTab | "spreadsheet"}`;
+
+/** Translated label for a sync result's table name (falls back to the raw name). */
+function tabLabel(tableName: string, t: ReturnType<typeof useTranslation>["t"]): string {
+  const known = (SHEET_TABS as readonly string[]).includes(tableName) || tableName === "spreadsheet";
+  return known ? t(`sync_tab_${tableName}` as TabLabelKey) : tableName;
+}
+
 export function SyncProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SyncStatus>({ type: "disconnected" });
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -65,7 +75,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setStatus({
         type: "syncing",
         message: tRef.current("sync_status_table", {
-          table: result.tableName,
+          table: tabLabel(result.tableName, tRef.current),
           count: result.rowCount,
         }),
       });
@@ -86,7 +96,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     if (hasError) {
       const errorMessages = result.results
         .filter((r) => r.error)
-        .map((r) => `${r.tableName}: ${r.error}`)
+        .map((r) => `${tabLabel(r.tableName, tRef.current)}: ${r.error}`)
         .join("; ");
       setStatus({
         type: "error",

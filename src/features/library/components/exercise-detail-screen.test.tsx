@@ -122,7 +122,7 @@ test("pressing did logs the exercise with its duration, celebrates, and can repe
 
   await user.click(await screen.findByRole("button", { name: "Did it" }));
 
-  expect(await screen.findByText(/Nice work! 5:00 done/)).toBeInTheDocument();
+  expect(await screen.findByText(/Nice work! 5 min done/)).toBeInTheDocument();
   const logs = await appDb.exerciseLogs.toArray();
   expect(logs).toHaveLength(1);
   expect(logs[0].durationSeconds).toBe(300);
