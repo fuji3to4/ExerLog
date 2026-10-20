@@ -1,0 +1,156 @@
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
+
+import { appDb } from "@/features/storage/app-db";
+import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
+import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { listTombstones } from "@/features/storage/tombstones.repository";
+import { localIsoAt } from "@/lib/date/local-iso";
+import { renderWithLanguage } from "@/test/render-with-language";
+import { useDayTimeline } from "../use-day-timeline";
+import { TimelineSection } from "./timeline-section";
+
+const DATE = "2026-10-20";
+
+function Harness({ onChanged }: { onChanged?: () => void }) {
+  const timeline = useDayTimeline(DATE);
+  return <TimelineSection date={DATE} timeline={timeline} onChanged={onChanged} />;
+}
+
+function rows() {
+  return within(screen.getByRole("list")).getAllByRole("listitem");
+}
+
+function wellnessRow() {
+  return screen.getByRole("button", { name: /からだ4/ });
+}
+
+async function waitForDialogToClose() {
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 3000 });
+}
+
+describe("TimelineSection", () => {
+  beforeEach(async () => {
+    // Only Date is faked so that "now" is 20:00 on DATE; timers stay real.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 20, 20, 0, 0));
+    await Promise.all([
+      appDb.exerciseLogs.clear(),
+      appDb.wellnessEntries.clear(),
+      appDb.watchEvents.clear(),
+      appDb.tombstones.clear(),
+      appDb.exercises.clear(),
+    ]);
+    await replaceAllExercises([
+      {
+        id: "shoulder-roll",
+        title: "肩まわしストレッチ",
+        description: "",
+        videoUrl: "",
+        thumbnailUrl: "",
+        bodyArea: "shoulder",
+        purpose: "stretch",
+        durationSeconds: 300,
+        intensity: "low",
+      },
+    ]);
+    await addExerciseLog({
+      date: DATE,
+      exerciseId: "shoulder-roll",
+      result: "did",
+      durationSeconds: 330,
+      performedAt: localIsoAt(DATE, new Date(2026, 9, 20, 12, 0, 0)),
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("adds, edits and deletes a wellness entry on the timeline", async () => {
+    const onChanged = vi.fn();
+    renderWithLanguage(<Harness onChanged={onChanged} />, { initialLanguage: "ja" });
+
+    expect(await screen.findByText(/肩まわしストレッチ できた/)).toBeTruthy();
+
+    // Add
+    fireEvent.click(screen.getByRole("button", { name: "＋ 体調を記録" }));
+    const addDialog = await screen.findByRole("dialog");
+    expect((within(addDialog).getByLabelText("時刻") as HTMLInputElement).value).toBe("20:00");
+    fireEvent.click(within(within(addDialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "4" }));
+    fireEvent.click(within(addDialog).getByRole("button", { name: "保存" }));
+    expect(await within(addDialog).findByRole("button", { name: "✓ 保存しました" })).toBeTruthy();
+    await waitForDialogToClose();
+
+    await waitFor(() => expect(wellnessRow().className).toContain("timeline-item--new"));
+    expect(rows()).toHaveLength(2);
+    expect(rows()[1].textContent).toContain("からだ4");
+    expect(rows()[1].textContent).toContain("夜");
+    expect(onChanged).toHaveBeenCalledTimes(1);
+
+    // Edit the time to 07:05 -> moves to the top and gets the morning tag
+    fireEvent.click(wellnessRow());
+    const editDialog = await screen.findByRole("dialog");
+    fireEvent.change(within(editDialog).getByLabelText("時刻"), { target: { value: "07:05" } });
+    fireEvent.click(within(editDialog).getByRole("button", { name: "保存" }));
+    await waitForDialogToClose();
+
+    await waitFor(() => expect(rows()[0].textContent).toContain("からだ4"));
+    expect(rows()[0].textContent).toContain("07:05");
+    expect(rows()[0].textContent).toContain("朝");
+    expect(onChanged).toHaveBeenCalledTimes(2);
+
+    // Delete (two-step inline confirm)
+    fireEvent.click(wellnessRow());
+    const deleteDialog = await screen.findByRole("dialog");
+    fireEvent.click(within(deleteDialog).getByRole("button", { name: "削除" }));
+    expect(within(deleteDialog).getByText("この記録を削除しますか？")).toBeTruthy();
+    fireEvent.click(within(deleteDialog).getByRole("button", { name: "削除" }));
+    await waitForDialogToClose();
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: /からだ4/ })).toBeNull());
+    expect(rows()).toHaveLength(1);
+    const tombstones = await listTombstones();
+    expect(tombstones.map((t) => t.table)).toEqual(["WellnessEntries"]);
+    expect(onChanged).toHaveBeenCalledTimes(3);
+  });
+
+  it("edits the duration of an exercise log", async () => {
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    const row = await screen.findByRole("button", { name: /肩まわしストレッチ できた/ });
+    expect(row.textContent).toContain("5:30");
+    fireEvent.click(row);
+
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("分"), { target: { value: "3" } });
+    fireEvent.change(within(dialog).getByLabelText("秒"), { target: { value: "15" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
+    await waitForDialogToClose();
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /肩まわしストレッチ できた/ }).textContent).toContain("3:15"),
+    );
+  });
+
+  it("disables save when the exercise duration is zero", async () => {
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    fireEvent.click(await screen.findByRole("button", { name: /肩まわしストレッチ できた/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("分"), { target: { value: "0" } });
+    fireEvent.change(within(dialog).getByLabelText("秒"), { target: { value: "0" } });
+    expect((within(dialog).getByRole("button", { name: "保存" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("shows the empty message and a link to the library", async () => {
+    await appDb.exerciseLogs.clear();
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    expect(await screen.findByText("まだ今日の記録はありません。")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "動画を選ぶ" }).getAttribute("href")).toBe("/library");
+  });
+});
+
