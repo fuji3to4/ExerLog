@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
-import { deleteLegacyExerciseLogByDateAndExercise, listLegacyExerciseLogsForDay, saveLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
+import { listLegacyExerciseLogsForDay, saveLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import { formatDuration } from "@/lib/date/duration";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
@@ -60,14 +60,6 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
     },
     [exercise.id],
   );
-
-  const handleClear = useCallback(async () => {
-    const currentDayKey = toDayKey(new Date());
-
-    setResult(null);
-
-    await deleteLegacyExerciseLogByDateAndExercise(currentDayKey, exercise.id);
-  }, [exercise.id]);
 
   return (
     <Card className="exercise-detail">
@@ -135,7 +127,10 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
             <p>{t("detail_loading_text")}</p>
           </div>
         ) : (
-          <ExerciseLogActions result={result} onLog={(nextResult) => void handleLog(nextResult)} onClear={() => void handleClear()} />
+          <ExerciseLogActions
+            todayCount={result ? 1 : 0}
+            onLog={(nextResult) => void handleLog(nextResult)}
+          />
         )}
       </CardContent>
     </Card>

@@ -119,6 +119,7 @@ export const en = {
   result_saved_partial: "Saved: Partly",
   result_saved_couldnt: "Saved: Couldn't",
   result_not_logged: "Not logged yet",
+  log_count_today: "{count} times today",
   result_group_label: "Log exercise result",
 
   // Common actions

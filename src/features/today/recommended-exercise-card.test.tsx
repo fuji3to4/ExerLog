@@ -1,29 +1,35 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 
-import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
+import type { ExerciseVideo } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 import { RecommendedExerciseCard } from "./components/recommended-exercise-card";
 
-const stampedCatalog = exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" }));
+const neckMobility: ExerciseVideo = {
+  id: "neck-mobility-5",
+  title: "Neck Mobility",
+  description: "Loosen the neck",
+  videoUrl: "https://example.com/neck",
+  thumbnailUrl: "",
+  bodyArea: "upper-body",
+  purpose: "mobility",
+  durationSeconds: 300,
+  intensity: "low",
+  updatedAt: "2026-10-20T00:00:00+09:00",
+};
 
 test("renders a derived thumbnail image when a YouTube exercise has no stored thumbnail", () => {
   const exercise = {
+    ...neckMobility,
     id: "blank-youtube-thumb",
     title: "Blank Thumbnail Exercise",
-    description: "",
     videoUrl: "https://youtu.be/dQw4w9WgXcQ",
-    thumbnailUrl: "",
-    bodyArea: "upper-body",
-    purpose: "mobility",
-    durationSeconds: 300,
-    intensity: "low" as const,
-    updatedAt: "2026-10-20T00:00:00+09:00",
   };
 
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={exercise} result={null} watchHref="/watch" onLog={vi.fn()} onClear={vi.fn()} />,
+    <RecommendedExerciseCard exercise={exercise} todayCount={0} watchHref="/watch" onLog={vi.fn()} />,
   );
 
   expect(screen.getByRole("img", { name: /blank thumbnail exercise/i })).toHaveAttribute(
@@ -33,37 +39,38 @@ test("renders a derived thumbnail image when a YouTube exercise has no stored th
 });
 
 test("uses the watch destination provided by the container", () => {
-  const exercise = stampedCatalog.find((entry) => entry.id === "neck-mobility-5");
-
   renderWithLanguage(
-    <RecommendedExerciseCard
-      exercise={exercise!}
-      result={null}
-      watchHref="/custom-watch-path"
-      onLog={vi.fn()}
-      onClear={vi.fn()}
-    />,
-    { initialLanguage: "en" }
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} watchHref="/custom-watch-path" onLog={vi.fn()} />,
+    { initialLanguage: "en" },
   );
 
   expect(screen.getByRole("link", { name: /watch neck mobility/i })).toHaveAttribute("href", "/custom-watch-path");
 });
 
 test("translates metadata labels and actions while keeping exercise title raw", () => {
-  const exercise = stampedCatalog.find((entry) => entry.id === "neck-mobility-5");
-
   renderWithLanguage(
-    <RecommendedExerciseCard
-      exercise={exercise!}
-      result={null}
-      watchHref="/custom-watch-path"
-      onLog={vi.fn()}
-      onClear={vi.fn()}
-    />,
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} watchHref="/custom-watch-path" onLog={vi.fn()} />,
   );
 
   expect(screen.getByRole("heading", { name: "Neck Mobility" })).toBeInTheDocument();
   expect(screen.getByText("時間")).toBeInTheDocument();
   expect(screen.getByText("強度")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /見る/i })).toBeInTheDocument();
+});
+
+test("logs every press and shows today's count", async () => {
+  const user = userEvent.setup();
+  const onLog = vi.fn();
+
+  renderWithLanguage(
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={2} watchHref="/watch" onLog={onLog} />,
+  );
+
+  await user.click(screen.getByRole("button", { name: "できた" }));
+  await user.click(screen.getByRole("button", { name: "できた" }));
+
+  expect(onLog).toHaveBeenCalledTimes(2);
+  expect(onLog).toHaveBeenNthCalledWith(1, "did");
+  expect(onLog).toHaveBeenNthCalledWith(2, "did");
+  expect(screen.getByText("今日2回")).toBeInTheDocument();
 });

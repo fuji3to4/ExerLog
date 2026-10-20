@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 
@@ -6,34 +6,35 @@ import { renderWithLanguage } from "@/test/render-with-language";
 
 import { ExerciseLogActions } from "./components/exercise-log-actions";
 
-test("shows all shared logging actions and the current saved state", async () => {
+test("each press logs one more result and there is no clear button", async () => {
   const user = userEvent.setup();
   const onLog = vi.fn();
-  const onClear = vi.fn();
 
-  renderWithLanguage(<ExerciseLogActions result="partial" onLog={onLog} onClear={onClear} />, { initialLanguage: "en" });
+  renderWithLanguage(<ExerciseLogActions todayCount={2} onLog={onLog} />, { initialLanguage: "en" });
 
-  const didItButton = screen.getByRole("button", { name: /did it/i });
-  const partlyButton = screen.getByRole("button", { name: /partly/i });
-  const couldntButton = screen.getByRole("button", { name: /couldn't/i });
+  expect(screen.getAllByRole("button")).toHaveLength(2);
+  expect(screen.queryByRole("button", { name: /couldn't/i })).toBeNull();
+  expect(screen.getByRole("button", { name: /did it/i })).not.toHaveAttribute("aria-pressed");
+  expect(screen.getByText("2 times today")).toBeInTheDocument();
 
-  expect(didItButton).toHaveAttribute("aria-pressed", "false");
-  expect(partlyButton).toHaveAttribute("aria-pressed", "true");
-  expect(couldntButton).toHaveAttribute("aria-pressed", "false");
-  expect(screen.getByText("Saved: Partly")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /did it/i }));
+  await user.click(screen.getByRole("button", { name: /partly/i }));
+  await user.click(screen.getByRole("button", { name: /did it/i }));
 
-  await user.click(couldntButton);
-
-  expect(onClear).toHaveBeenCalledOnce();
-  expect(onLog).not.toHaveBeenCalled();
+  expect(onLog.mock.calls).toEqual([["did"], ["partial"], ["did"]]);
 });
 
-test("translates logging buttons and saved state text", () => {
-  renderWithLanguage(<ExerciseLogActions result="did" onLog={vi.fn()} onClear={vi.fn()} />);
+test("translates logging buttons and shows not-logged state when count is zero", () => {
+  renderWithLanguage(<ExerciseLogActions todayCount={0} onLog={vi.fn()} />);
 
   const buttons = screen.getAllByRole("button");
   expect(buttons[0]).toHaveTextContent("できた");
   expect(buttons[1]).toHaveTextContent("一部できた");
-  expect(buttons[2]).toHaveTextContent("できなかった");
-  expect(screen.getByText("保存済み: できた")).toBeInTheDocument();
+  expect(screen.getByText("未記録")).toBeInTheDocument();
+});
+
+test("shows the Japanese count label", () => {
+  renderWithLanguage(<ExerciseLogActions todayCount={3} onLog={vi.fn()} />);
+
+  expect(screen.getByText("今日3回")).toBeInTheDocument();
 });

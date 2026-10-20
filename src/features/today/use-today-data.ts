@@ -4,25 +4,38 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getTodaysRecommendations } from "@/features/recommendations/get-todays-recommendations";
 import { mapWellnessToCondition } from "@/features/recommendations/wellness-to-condition";
-import { getDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
-import { deleteLegacyExerciseLogByDateAndExercise, listLegacyExerciseLogsForDay, saveLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
+import { addExerciseLog, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
+import { getLatestWellnessEntry } from "@/features/storage/wellness-entries.repository";
 import { toDayKey } from "@/lib/date/day-key";
-import type { ExerciseLogResult, ExerciseVideo, WellnessScore } from "@/lib/types";
+import { localIsoAt } from "@/lib/date/local-iso";
+import type { ExerciseLog, ExerciseLogResult, ExerciseVideo, WellnessScore } from "@/lib/types";
 
-type ExerciseLogState = Record<string, ExerciseLogResult | undefined>;
 const DEFAULT_WELLNESS_SCORE: WellnessScore = 3;
+
+type LatestScores = { physicalScore: WellnessScore; mentalScore: WellnessScore };
+
+const DEFAULT_SCORES: LatestScores = {
+  physicalScore: DEFAULT_WELLNESS_SCORE,
+  mentalScore: DEFAULT_WELLNESS_SCORE,
+};
+
+async function loadLatestScores(dayKey: string): Promise<LatestScores> {
+  const latest = await getLatestWellnessEntry(dayKey);
+  return latest ? { physicalScore: latest.physicalScore, mentalScore: latest.mentalScore } : DEFAULT_SCORES;
+}
 
 export function useTodayData(date: Date | string) {
   const dayKey = useMemo(() => toDayKey(date), [date]);
-  const [physicalScore, setPhysicalScoreState] = useState<WellnessScore>(DEFAULT_WELLNESS_SCORE);
-  const [mentalScore, setMentalScoreState] = useState<WellnessScore>(DEFAULT_WELLNESS_SCORE);
-  const [note, setNote] = useState("");
-  const [logResults, setLogResults] = useState<ExerciseLogState>({});
+  const [scores, setScores] = useState<LatestScores>(DEFAULT_SCORES);
+  const [logCounts, setLogCounts] = useState<Record<string, number>>({});
   const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
-  const hasWellnessDraft = useRef(false);
-  const hasNoteDraft = useRef(false);
+  const dayKeyRef = useRef(dayKey);
+
+  useEffect(() => {
+    dayKeyRef.current = dayKey;
+  }, [dayKey]);
 
   useEffect(() => {
     void listAllExercises().then(setExercises);
@@ -30,33 +43,20 @@ export function useTodayData(date: Date | string) {
 
   useEffect(() => {
     let isActive = true;
-    hasWellnessDraft.current = false;
-    hasNoteDraft.current = false;
 
     async function loadTodayData() {
-      const selectedDayKey = toDayKey(dayKey);
-      const [savedWellness, savedLogs] = await Promise.all([
-        getDailyWellness(selectedDayKey),
-        listLegacyExerciseLogsForDay(selectedDayKey),
+      const [latestScores, counts] = await Promise.all([
+        loadLatestScores(dayKey),
+        countExerciseLogsForDay(dayKey),
       ]);
 
       if (!isActive) {
         return;
       }
 
-      if (!hasWellnessDraft.current) {
-        setPhysicalScoreState(savedWellness?.physicalScore ?? DEFAULT_WELLNESS_SCORE);
-        setMentalScoreState(savedWellness?.mentalScore ?? DEFAULT_WELLNESS_SCORE);
-      }
-
-      if (!hasNoteDraft.current) {
-        setNote(savedWellness?.note ?? "");
-      }
-
-      setLogResults(
-        Object.fromEntries(savedLogs.map((entry) => [entry.exerciseId, entry.result])) as ExerciseLogState,
-      );
-      setHydratedDayKey(selectedDayKey);
+      setScores(latestScores);
+      setLogCounts(counts);
+      setHydratedDayKey(dayKey);
     }
 
     void loadTodayData();
@@ -66,10 +66,7 @@ export function useTodayData(date: Date | string) {
     };
   }, [dayKey]);
 
-  const conditionLevel = useMemo(
-    () => mapWellnessToCondition({ physicalScore, mentalScore }),
-    [mentalScore, physicalScore],
-  );
+  const conditionLevel = useMemo(() => mapWellnessToCondition(scores), [scores]);
 
   const recommendations = useMemo(
     () =>
@@ -81,85 +78,39 @@ export function useTodayData(date: Date | string) {
     [exercises, conditionLevel, dayKey],
   );
 
-  const [conditionSaveError, setConditionSaveError] = useState<string | null>(null);
-
-  const saveConditionEntry = useCallback(async () => {
-    const selectedDayKey = toDayKey(dayKey);
-
-    try {
-      await saveDailyWellness({
-        date: selectedDayKey,
-        physicalScore,
-        mentalScore,
-        note,
-      });
-      setConditionSaveError(null);
-    } catch {
-      setConditionSaveError("condition_save_error");
+  const refreshLatestWellness = useCallback(async () => {
+    const requestedDayKey = dayKey;
+    const latestScores = await loadLatestScores(requestedDayKey);
+    if (dayKeyRef.current === requestedDayKey) {
+      setScores(latestScores);
     }
-  }, [dayKey, mentalScore, note, physicalScore]);
-
-  const updatePhysicalScore = useCallback((nextPhysicalScore: WellnessScore) => {
-    hasWellnessDraft.current = true;
-    setPhysicalScoreState(nextPhysicalScore);
-  }, []);
-
-  const updateMentalScore = useCallback((nextMentalScore: WellnessScore) => {
-    hasWellnessDraft.current = true;
-    setMentalScoreState(nextMentalScore);
-  }, []);
-
-  const updateNote = useCallback((nextNote: string) => {
-    hasNoteDraft.current = true;
-    setNote(nextNote);
-  }, []);
+  }, [dayKey]);
 
   const logExercise = useCallback(
-    async (exerciseId: string, result: ExerciseLogResult) => {
-      const selectedDayKey = toDayKey(dayKey);
-
-      setLogResults((currentResults) => ({
-        ...currentResults,
-        [exerciseId]: result,
-      }));
-
-      await saveLegacyExerciseLog({
-        date: selectedDayKey,
-        exerciseId,
+    async (exercise: ExerciseVideo, result: ExerciseLogResult): Promise<ExerciseLog> => {
+      const requestedDayKey = dayKey;
+      const log = await addExerciseLog({
+        date: requestedDayKey,
+        exerciseId: exercise.id,
         result,
-      });
-    },
-    [dayKey],
-  );
-
-  const clearExercise = useCallback(
-    async (exerciseId: string) => {
-      const selectedDayKey = toDayKey(dayKey);
-
-      setLogResults((currentResults) => {
-        const next = { ...currentResults };
-        delete next[exerciseId];
-        return next;
+        durationSeconds: exercise.durationSeconds,
+        performedAt: localIsoAt(requestedDayKey),
       });
 
-      await deleteLegacyExerciseLogByDateAndExercise(selectedDayKey, exerciseId);
+      if (dayKeyRef.current === requestedDayKey) {
+        setLogCounts((current) => ({ ...current, [exercise.id]: (current[exercise.id] ?? 0) + 1 }));
+      }
+
+      return log;
     },
     [dayKey],
   );
 
   return {
     isHydrated: hydratedDayKey === dayKey,
-    physicalScore,
-    mentalScore,
-    note,
     recommendations,
-    logResults,
-    conditionSaveError,
-    setPhysicalScore: updatePhysicalScore,
-    setMentalScore: updateMentalScore,
-    setNote: updateNote,
-    saveCondition: saveConditionEntry,
+    logCounts,
     logExercise,
-    clearExercise,
+    refreshLatestWellness,
   };
 }

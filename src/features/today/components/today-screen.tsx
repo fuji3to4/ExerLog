@@ -5,10 +5,13 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { useCelebrate } from "@/features/feedback/celebration";
+import { TimelineSection } from "@/features/timeline/components/timeline-section";
+import { useDayTimeline } from "@/features/timeline/use-day-timeline";
 import { cn } from "@/lib/utils";
 import { toDayKey } from "@/lib/date/day-key";
+import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
 
-import { DailyConditionCard } from "./daily-condition-card";
 import { RecommendedExerciseCard } from "./recommended-exercise-card";
 import { useTodayData } from "../use-today-data";
 
@@ -21,21 +24,19 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const { t, formatDate } = useTranslation();
   const recommendedHeadingId = "today-recommended-heading";
   const libraryHeadingId = "today-library-heading";
-  const {
-    isHydrated,
-    physicalScore,
-    mentalScore,
-    note,
-    recommendations,
-    logResults,
-    conditionSaveError,
-    setPhysicalScore,
-    setMentalScore,
-    setNote,
-    saveCondition,
-    logExercise,
-    clearExercise,
-  } = useTodayData(date);
+  const { isHydrated, recommendations, logCounts, logExercise, refreshLatestWellness } = useTodayData(date);
+  const timeline = useDayTimeline(date);
+  const celebrate = useCelebrate();
+
+  async function handleLog(exercise: ExerciseVideo, result: ExerciseLogResult) {
+    try {
+      const log = await logExercise(exercise, result);
+      celebrate({ result, durationSeconds: log.durationSeconds });
+      await timeline.reload(log.id);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   return (
     <>
@@ -49,6 +50,8 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
         </CardHeader>
       </Card>
 
+      <TimelineSection date={date} timeline={timeline} onChanged={() => void refreshLatestWellness()} />
+
       {!isHydrated ? (
         <Card className="grid gap-4" aria-live="polite">
           <CardHeader>
@@ -58,17 +61,6 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
         </Card>
       ) : (
         <>
-          <DailyConditionCard
-            physicalScore={physicalScore}
-            mentalScore={mentalScore}
-            note={note}
-            onPhysicalScoreChange={setPhysicalScore}
-            onMentalScoreChange={setMentalScore}
-            onNoteChange={setNote}
-            onSave={saveCondition}
-            saveError={conditionSaveError ? t("condition_save_error") : undefined}
-          />
-
           <Card
             role="region"
             aria-labelledby={recommendedHeadingId}
@@ -86,10 +78,9 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                   <RecommendedExerciseCard
                     key={exercise.id}
                     exercise={exercise}
-                    result={logResults[exercise.id] ?? null}
+                    todayCount={logCounts[exercise.id] ?? 0}
                     watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
-                    onLog={(result) => void logExercise(exercise.id, result)}
-                    onClear={() => void clearExercise(exercise.id)}
+                    onLog={(result) => void handleLog(exercise, result)}
                   />
                 ))}
               </div>

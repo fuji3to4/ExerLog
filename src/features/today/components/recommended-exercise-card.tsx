@@ -11,18 +11,16 @@ import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
 type RecommendedExerciseCardProps = {
   exercise: ExerciseVideo;
-  result: ExerciseLogResult | null;
+  todayCount: number;
   watchHref: string;
   onLog: (result: ExerciseLogResult) => void;
-  onClear: () => void;
 };
 
 export function RecommendedExerciseCard({
   exercise,
-  result,
+  todayCount,
   watchHref,
   onLog,
-  onClear,
 }: RecommendedExerciseCardProps) {
   const { t, formatIntensity } = useTranslation();
   const headingId = `recommendation-${exercise.id}`;
@@ -61,7 +59,7 @@ export function RecommendedExerciseCard({
           </div>
         </dl>
 
-        <ExerciseLogActions result={result} onLog={onLog} onClear={onClear} />
+        <ExerciseLogActions todayCount={todayCount} onLog={onLog} />
       </CardContent>
     </Card>
   );
