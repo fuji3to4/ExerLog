@@ -1,8 +1,4 @@
-import type {
-  DailyMetricEntry,
-  DailyWellnessEntry,
-  LegacyExerciseLog,
-} from "@/lib/types";
+import type { DailyMetricEntry, ExerciseLog, WatchEvent, WellnessEntry } from "@/lib/types";
 import { formatTimestampForCsv } from "@/lib/date/format-timestamp";
 
 function escapeCsvField(value: string | number): string {
@@ -13,34 +9,47 @@ function escapeCsvField(value: string | number): string {
   return str;
 }
 
-export function generateExerciseLogsCsv(logs: LegacyExerciseLog[], exerciseTitleMap: Map<string, string>): string {
-  const headers = ["date", "exerciseId", "exerciseTitle", "result", "loggedAt"];
-  const rows = [
-    headers.join(","),
-    ...logs.map((log) =>
-      [log.date, log.exerciseId, exerciseTitleMap.get(log.exerciseId) ?? log.exerciseId, log.result, formatTimestampForCsv(log.loggedAt)]
-        .map(escapeCsvField)
-        .join(","),
-    ),
-  ];
-  return rows.join("\n");
+function toCsv(headers: string[], rows: (string | number)[][]): string {
+  return [headers.join(","), ...rows.map((row) => row.map(escapeCsvField).join(","))].join("\n");
 }
 
-export function generateDailyWellnessCsv(entries: DailyWellnessEntry[]): string {
-  const headers = ["date", "physicalScore", "mentalScore", "note", "updatedAt"];
-  const rows = [
-    headers.join(","),
-    ...entries.map((entry) =>
-      [
-        entry.date,
-        entry.physicalScore,
-        entry.mentalScore,
-        entry.note,
-        formatTimestampForCsv(entry.updatedAt),
-      ].map(escapeCsvField).join(","),
-    ),
-  ];
-  return rows.join("\n");
+export function generateExerciseLogsCsv(logs: ExerciseLog[], exerciseTitleMap: Map<string, string>): string {
+  return toCsv(
+    ["date", "performedAt", "exerciseId", "exerciseTitle", "result", "durationSeconds"],
+    logs.map((log) => [
+      log.date,
+      formatTimestampForCsv(log.performedAt),
+      log.exerciseId,
+      exerciseTitleMap.get(log.exerciseId) ?? log.exerciseId,
+      log.result,
+      log.durationSeconds,
+    ]),
+  );
+}
+
+export function generateWellnessEntriesCsv(entries: WellnessEntry[]): string {
+  return toCsv(
+    ["date", "recordedAt", "physicalScore", "mentalScore", "note"],
+    entries.map((entry) => [
+      entry.date,
+      formatTimestampForCsv(entry.recordedAt),
+      entry.physicalScore,
+      entry.mentalScore,
+      entry.note,
+    ]),
+  );
+}
+
+export function generateWatchEventsCsv(events: WatchEvent[], exerciseTitleMap: Map<string, string>): string {
+  return toCsv(
+    ["date", "watchedAt", "exerciseId", "exerciseTitle"],
+    events.map((event) => [
+      event.date,
+      formatTimestampForCsv(event.watchedAt),
+      event.exerciseId,
+      exerciseTitleMap.get(event.exerciseId) ?? event.exerciseId,
+    ]),
+  );
 }
 
 export function generateDailyMetricsCsv(entries: DailyMetricEntry[]): string {

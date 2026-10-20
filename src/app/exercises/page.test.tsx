@@ -8,7 +8,7 @@ import { renderWithLanguage } from "@/test/render-with-language";
 import ExercisesPage from "./page";
 
 beforeEach(async () => {
-  await appDb.logs.clear();
+  await appDb.exerciseLogs.clear();
   await appDb.exercises.clear();
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });

@@ -3,10 +3,8 @@ import Dexie, { type EntityTable } from "dexie";
 import type {
   DailyMetricEntry,
   DailySelfCareEntry,
-  DailyWellnessEntry,
   ExerciseLog,
   ExerciseVideo,
-  LegacyExerciseLog,
   SelfCareItem,
   Tombstone,
   WatchEvent,
@@ -14,15 +12,11 @@ import type {
 } from "@/lib/types";
 
 export class AppDb extends Dexie {
-  /** Legacy one-log-per-day table; removed in a later schema version. */
-  logs!: EntityTable<LegacyExerciseLog, "id">;
   exerciseLogs!: EntityTable<ExerciseLog, "id">;
   wellnessEntries!: EntityTable<WellnessEntry, "id">;
   watchEvents!: EntityTable<WatchEvent, "id">;
   tombstones!: EntityTable<Tombstone, "id">;
   exercises!: EntityTable<ExerciseVideo, "id">;
-  /** Legacy one-entry-per-day table; removed in a later schema version. */
-  dailyWellness!: EntityTable<DailyWellnessEntry, "date">;
   dailyMetrics!: EntityTable<DailyMetricEntry, "id">;
   selfCareCatalog!: EntityTable<SelfCareItem, "id">;
   dailySelfCareLogs!: EntityTable<DailySelfCareEntry, "id">;
@@ -127,6 +121,21 @@ export class AppDb extends Dexie {
           tx.table("exercises").clear(),
         ]);
       });
+
+    // v8: drop the legacy one-per-day tables (superseded by exerciseLogs / wellnessEntries).
+    this.version(8).stores({
+      logs: null,
+      dailyWellness: null,
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",
+      selfCareCatalog: "id, sortOrder, isArchived",
+      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+    });
   }
 }
 

@@ -1,54 +1,46 @@
 import { describe, test, expect, beforeEach } from "vitest";
-import {
-  listLegacyExerciseLogsForDay,
-  saveLegacyExerciseLog,
-} from "./legacy-exercise-logs.repository";
 import { appDb } from "./app-db";
+import { addExerciseLog } from "./exercise-logs.repository";
+import { addWellnessEntry } from "./wellness-entries.repository";
+import { recordWatchEvent } from "./watch-events.repository";
+import { clearAllRecords, countAllRecords } from "./clear-all-records";
 
 beforeEach(async () => {
-  await appDb.logs.clear();
-});
-
-test("stores one log result per exercise and day", async () => {
-  await saveLegacyExerciseLog({
-    date: "2026-03-24",
-    exerciseId: "neck-mobility-5",
-    result: "partial",
-  });
-
-  await saveLegacyExerciseLog({
-    date: "2026-03-24",
-    exerciseId: "neck-mobility-5",
-    result: "did",
-  });
-
-  const logs = await listLegacyExerciseLogsForDay("2026-03-24");
-
-  expect(logs).toHaveLength(1);
-  expect(logs[0]?.result).toBe("did");
-  expect(logs[0]?.loggedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
-});
-
-test("replaces same-day exercise logs without duplicate rows under concurrent saves", async () => {
-  const results = await Promise.allSettled([
-    saveLegacyExerciseLog({
-      date: "2026-03-25",
-      exerciseId: "neck-mobility-5",
-      result: "partial",
-    }),
-    saveLegacyExerciseLog({
-      date: "2026-03-25",
-      exerciseId: "neck-mobility-5",
-      result: "did",
-    }),
+  await Promise.all([
+    appDb.exerciseLogs.clear(),
+    appDb.wellnessEntries.clear(),
+    appDb.watchEvents.clear(),
+    appDb.tombstones.clear(),
   ]);
+});
 
-  expect(results.every((result) => result.status === "fulfilled")).toBe(true);
+describe("clearAllRecords", () => {
+  test("empties the three record tables and tombstones every deleted id", async () => {
+    await addExerciseLog({ date: "2026-10-20", exerciseId: "a", result: "did", durationSeconds: 330 });
+    await addExerciseLog({ date: "2026-10-20", exerciseId: "a", result: "partial", durationSeconds: 60 });
+    await addWellnessEntry({ date: "2026-10-20", physicalScore: 3, mentalScore: 4, note: "" });
+    await recordWatchEvent({ date: "2026-10-20", exerciseId: "a" });
 
-  const logs = await listLegacyExerciseLogsForDay("2026-03-25");
+    expect(await countAllRecords()).toBe(4);
+    const ids = {
+      ExerciseLogs: await appDb.exerciseLogs.toCollection().primaryKeys(),
+      WellnessEntries: await appDb.wellnessEntries.toCollection().primaryKeys(),
+      WatchEvents: await appDb.watchEvents.toCollection().primaryKeys(),
+    };
 
-  expect(logs).toHaveLength(1);
-  expect(logs[0]?.result).toBe("did");
+    await clearAllRecords();
+
+    expect(await countAllRecords()).toBe(0);
+    const tombstones = await appDb.tombstones.toArray();
+    expect(tombstones).toHaveLength(4);
+    for (const [table, list] of Object.entries(ids)) {
+      for (const id of list) {
+        expect(tombstones).toContainEqual(
+          expect.objectContaining({ id: `${table}:${id}`, table, recordId: id }),
+        );
+      }
+    }
+  });
 });
 
 describe("googleAuth table", () => {

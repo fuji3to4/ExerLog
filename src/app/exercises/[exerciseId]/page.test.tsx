@@ -4,14 +4,14 @@ import { beforeEach, expect, test } from "vitest";
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
-import { listLegacyExerciseLogsForDay, saveLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
+import { addExerciseLog, listExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 import ExerciseDetailPage from "./page";
 
 beforeEach(async () => {
-  await appDb.logs.clear();
+  await appDb.exerciseLogs.clear();
   await appDb.exercises.clear();
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });
@@ -19,7 +19,8 @@ beforeEach(async () => {
 async function seedTodayState() {
   const todayKey = toDayKey(new Date());
 
-  await saveLegacyExerciseLog({
+  await addExerciseLog({
+    durationSeconds: 300,
     date: todayKey,
     exerciseId: "neck-mobility-5",
     result: "did",
@@ -54,7 +55,7 @@ test("exercise detail logging persists the selected result", async () => {
   await user.click(await screen.findByRole("button", { name: /did it/i }));
 
   await waitFor(async () => {
-    await expect(listLegacyExerciseLogsForDay(todayKey)).resolves.toEqual(
+    await expect(listExerciseLogsForDay(todayKey)).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           exerciseId: "neck-mobility-5",

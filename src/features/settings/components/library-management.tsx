@@ -25,7 +25,7 @@ export function LibraryManagement() {
   }, [loadExercises]);
 
   async function handleDelete(exercise: ExerciseVideo) {
-    const logCount = await appDb.logs.where("exerciseId").equals(exercise.id).count();
+    const logCount = await appDb.exerciseLogs.where("exerciseId").equals(exercise.id).count();
 
     const message =
       logCount > 0

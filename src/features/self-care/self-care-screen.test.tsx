@@ -14,7 +14,6 @@ import { SelfCareScreen } from "./components/self-care-screen";
 
 beforeEach(async () => {
   await Promise.all([
-    appDb.dailyWellness.clear(),
     appDb.wellnessEntries.clear(),
     appDb.dailyMetrics.clear(),
     appDb.dailySelfCareLogs.clear(),

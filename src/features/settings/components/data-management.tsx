@@ -5,13 +5,13 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
-import { clearAllExerciseLogs } from "@/features/storage/exercise-logs.repository";
-import { clearAllLegacyExerciseLogs } from "@/features/storage/legacy-exercise-logs.repository";
+import { clearAllRecords, countAllRecords } from "@/features/storage/clear-all-records";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
 import {
   generateDailyMetricsCsv,
-  generateDailyWellnessCsv,
   generateExerciseLogsCsv,
+  generateWatchEventsCsv,
+  generateWellnessEntriesCsv,
 } from "../csv/history-csv";
 
 type DeleteState = "idle" | "confirming";
@@ -106,7 +106,7 @@ export function DataManagement() {
 
   useEffect(() => {
     void appDb.exercises.count().then(setExerciseCount);
-    void appDb.logs.count().then(setLogCount);
+    void countAllRecords().then(setLogCount);
   }, []);
 
   async function handleExportExercises() {
@@ -115,14 +115,23 @@ export function DataManagement() {
   }
 
   async function handleExportLogs() {
-    const [logs, exercises] = await Promise.all([appDb.logs.toArray(), listAllExercises()]);
+    const [logs, exercises] = await Promise.all([appDb.exerciseLogs.orderBy("performedAt").toArray(), listAllExercises()]);
     const titleMap = new Map(exercises.map((e) => [e.id, e.title]));
     downloadCsv("exercise-logs.csv", generateExerciseLogsCsv(logs, titleMap));
   }
 
-  async function handleExportDailyWellness() {
-    const entries = await appDb.dailyWellness.toArray();
-    downloadCsv("daily-wellness.csv", generateDailyWellnessCsv(entries));
+  async function handleExportWellnessEntries() {
+    const entries = await appDb.wellnessEntries.orderBy("recordedAt").toArray();
+    downloadCsv("wellness-entries.csv", generateWellnessEntriesCsv(entries));
+  }
+
+  async function handleExportWatchEvents() {
+    const [events, exercises] = await Promise.all([
+      appDb.watchEvents.orderBy("watchedAt").toArray(),
+      listAllExercises(),
+    ]);
+    const titleMap = new Map(exercises.map((e) => [e.id, e.title]));
+    downloadCsv("watch-events.csv", generateWatchEventsCsv(events, titleMap));
   }
 
   async function handleExportDailyMetrics() {
@@ -164,7 +173,7 @@ export function DataManagement() {
   }
 
   async function handleDeleteAllLogs() {
-    await Promise.all([clearAllLegacyExerciseLogs(), clearAllExerciseLogs()]);
+    await clearAllRecords();
     setLogCount(0);
     setImportStatus(t("settings_delete_success_logs"));
   }
@@ -223,9 +232,16 @@ export function DataManagement() {
           <button
             type="button"
             className="settings-action-button"
-            onClick={() => void handleExportDailyWellness()}
+            onClick={() => void handleExportWellnessEntries()}
           >
-            {t("settings_export_daily_wellness")}
+            {t("settings_export_wellness_entries")}
+          </button>
+          <button
+            type="button"
+            className="settings-action-button"
+            onClick={() => void handleExportWatchEvents()}
+          >
+            {t("settings_export_watch_events")}
           </button>
           <button
             type="button"

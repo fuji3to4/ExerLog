@@ -25,14 +25,6 @@ export type ExerciseVideo = {
 /** Exercise fields supplied by callers; repositories stamp `updatedAt` on write. */
 export type ExerciseDraft = Omit<ExerciseVideo, "updatedAt">;
 
-export type LegacyExerciseLog = {
-  id: string;
-  date: string;
-  exerciseId: string;
-  result: ExerciseLogResult;
-  loggedAt: string;
-};
-
 export type ExerciseLog = {
   id: string;
   date: string;
@@ -67,14 +59,6 @@ export type Tombstone = {
   table: string;
   recordId: string;
   deletedAt: string;
-};
-
-export type DailyWellnessEntry = {
-  date: string;
-  physicalScore: WellnessScore;
-  mentalScore: WellnessScore;
-  note: string;
-  updatedAt: string;
 };
 
 export type DailyMetricEntry = {

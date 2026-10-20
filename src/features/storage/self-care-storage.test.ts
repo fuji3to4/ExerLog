@@ -1,10 +1,5 @@
 import { appDb } from "./app-db";
 import {
-  deleteDailyWellness,
-  getDailyWellness,
-  saveDailyWellness,
-} from "./daily-wellness.repository";
-import {
   deleteDailyMetric,
   listDailyMetricsByDate,
   replaceDailyMetrics,
@@ -17,38 +12,9 @@ import {
 
 beforeEach(async () => {
   await Promise.all([
-    appDb.dailyWellness.clear(),
     appDb.dailyMetrics.clear(),
     appDb.dailySelfCareLogs.clear(),
   ]);
-});
-
-test("saveDailyWellness upserts one wellness entry per day", async () => {
-  await saveDailyWellness({
-    date: "2026-03-26",
-    physicalScore: 2,
-    mentalScore: 3,
-    note: "Taking it easy",
-  });
-
-  await saveDailyWellness({
-    date: "2026-03-26",
-    physicalScore: 5,
-    mentalScore: 4,
-    note: "Energy came back",
-  });
-
-  const entry = await getDailyWellness("2026-03-26");
-
-  expect(entry).toEqual({
-    date: "2026-03-26",
-    physicalScore: 5,
-    mentalScore: 4,
-    note: "Energy came back",
-    updatedAt: expect.stringMatching(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/,
-    ),
-  });
 });
 
 test("replaceDailyMetrics replaces all metric rows for the same day", async () => {
@@ -220,17 +186,4 @@ test("replaceDailySelfCareEntries rejects duplicate self-care ids", async () => 
       },
     ]),
   ).rejects.toThrow("Duplicate selfCareId values in entries array");
-});
-
-test("deleteDailyWellness removes daily wellness row", async () => {
-  await saveDailyWellness({
-    date: "2026-03-29",
-    physicalScore: 4,
-    mentalScore: 5,
-    note: "Feeling better",
-  });
-
-  await deleteDailyWellness("2026-03-29");
-
-  await expect(getDailyWellness("2026-03-29")).resolves.toBeUndefined();
 });
