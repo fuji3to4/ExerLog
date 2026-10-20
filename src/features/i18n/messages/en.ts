@@ -261,6 +261,7 @@ export const en = {
   timeline_save_error: "Could not save. Please try again.",
   timeline_delete: "Delete",
   timeline_delete_confirm: "Delete this record?",
+  timeline_delete_error: "Could not delete. Please try again.",
   timeline_wellness_add_title: "Log condition",
   timeline_wellness_edit_title: "Edit condition entry",
   timeline_exercise_edit_title: "Edit exercise entry",

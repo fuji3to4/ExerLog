@@ -7,6 +7,7 @@ import { appDb } from "@/features/storage/app-db";
 import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { listTombstones } from "@/features/storage/tombstones.repository";
+import { listWatchEventsForDay, recordWatchEvent } from "@/features/storage/watch-events.repository";
 import { localIsoAt } from "@/lib/date/local-iso";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { useDayTimeline } from "../use-day-timeline";
@@ -67,6 +68,7 @@ describe("TimelineSection", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("adds, edits and deletes a wellness entry on the timeline", async () => {
@@ -143,6 +145,54 @@ describe("TimelineSection", () => {
     fireEvent.change(within(dialog).getByLabelText("分"), { target: { value: "0" } });
     fireEvent.change(within(dialog).getByLabelText("秒"), { target: { value: "0" } });
     expect((within(dialog).getByRole("button", { name: "保存" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("edits the time of a watch event and deletes it", async () => {
+    await recordWatchEvent({
+      exerciseId: "shoulder-roll",
+      date: DATE,
+      watchedAt: localIsoAt(DATE, new Date(2026, 9, 20, 18, 3, 0)),
+    });
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    fireEvent.click(await screen.findByRole("button", { name: "▶ 肩まわしストレッチを視聴" }));
+    const editDialog = await screen.findByRole("dialog");
+    fireEvent.change(within(editDialog).getByLabelText("時刻"), { target: { value: "09:30" } });
+    fireEvent.click(within(editDialog).getByRole("button", { name: "保存" }));
+    await waitForDialogToClose();
+
+    await waitFor(() => expect(rows()[0].textContent).toContain("09:30"));
+    expect(rows()[0].textContent).toContain("▶ 肩まわしストレッチを視聴");
+    const [saved] = await listWatchEventsForDay(DATE);
+    expect(saved.watchedAt.slice(11, 19)).toBe("09:30:00");
+
+    fireEvent.click(screen.getByRole("button", { name: "▶ 肩まわしストレッチを視聴" }));
+    const deleteDialog = await screen.findByRole("dialog");
+    fireEvent.click(within(deleteDialog).getByRole("button", { name: "削除" }));
+    fireEvent.click(within(deleteDialog).getByRole("button", { name: "削除" }));
+    await waitForDialogToClose();
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: /を視聴/ })).toBeNull());
+    expect(await listWatchEventsForDay(DATE)).toEqual([]);
+    expect((await listTombstones()).map((t) => t.table)).toEqual(["WatchEvents"]);
+  });
+
+  it("shows an alert and keeps the dialog open when delete fails", async () => {
+    vi.spyOn(appDb.exerciseLogs, "delete").mockRejectedValue(new Error("disk full"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    fireEvent.click(await screen.findByRole("button", { name: /肩まわしストレッチ できた/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "削除" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "削除" }));
+
+    expect((await within(dialog).findByRole("alert")).textContent).toBe(
+      "削除できませんでした。もう一度お試しください。",
+    );
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(await appDb.exerciseLogs.count()).toBe(1);
+    expect(await listTombstones()).toEqual([]);
   });
 
   it("shows the empty message and a link to the library", async () => {

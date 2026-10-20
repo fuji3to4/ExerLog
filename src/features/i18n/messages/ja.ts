@@ -261,6 +261,7 @@
   timeline_save_error: "保存に失敗しました。もう一度お試しください。",
   timeline_delete: "削除",
   timeline_delete_confirm: "この記録を削除しますか？",
+  timeline_delete_error: "削除できませんでした。もう一度お試しください。",
   timeline_wellness_add_title: "体調を記録",
   timeline_wellness_edit_title: "体調の記録を編集",
   timeline_exercise_edit_title: "運動の記録を編集",

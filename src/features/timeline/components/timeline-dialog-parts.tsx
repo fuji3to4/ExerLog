@@ -137,12 +137,17 @@ export function TimelineDialogFooter({
   const { t } = useTranslation();
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [hasDeleteError, setHasDeleteError] = useState(false);
 
   async function confirmDelete() {
     if (!onDelete) return;
     setIsDeleting(true);
+    setHasDeleteError(false);
     try {
       await onDelete();
+    } catch (error) {
+      console.error(error);
+      setHasDeleteError(true);
     } finally {
       setIsDeleting(false);
     }
@@ -153,6 +158,11 @@ export function TimelineDialogFooter({
       {hasError ? (
         <p role="alert" className="text-sm text-destructive">
           {t("timeline_save_error")}
+        </p>
+      ) : null}
+      {hasDeleteError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t("timeline_delete_error")}
         </p>
       ) : null}
       {isConfirming ? (

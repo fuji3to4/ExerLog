@@ -39,7 +39,13 @@ export function useDayTimeline(date: string): DayTimelineState {
   const reload = useCallback(
     async (nextHighlightId?: string) => {
       const current = ++requestId.current;
-      const loaded = await loadDay(date);
+      let loaded: TimelineItem[];
+      try {
+        loaded = await loadDay(date);
+      } catch (error) {
+        console.error(error);
+        loaded = [];
+      }
       if (current !== requestId.current) return;
 
       setItems(loaded);
