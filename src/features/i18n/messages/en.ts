@@ -120,6 +120,7 @@ export const en = {
   result_saved_couldnt: "Saved: Couldn't",
   result_not_logged: "Not logged yet",
   log_count_today: "{count} times today",
+  log_save_error: "Could not save the log. Please try again.",
   result_group_label: "Log exercise result",
 
   // Common actions

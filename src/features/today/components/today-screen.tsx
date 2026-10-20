@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
@@ -24,17 +25,20 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const { t, formatDate } = useTranslation();
   const recommendedHeadingId = "today-recommended-heading";
   const libraryHeadingId = "today-library-heading";
-  const { isHydrated, recommendations, logCounts, logExercise, refreshLatestWellness } = useTodayData(date);
+  const { isHydrated, recommendations, logCounts, logExercise, refresh } = useTodayData(date);
   const timeline = useDayTimeline(date);
   const celebrate = useCelebrate();
+  const [logErrorExerciseId, setLogErrorExerciseId] = useState<string | null>(null);
 
   async function handleLog(exercise: ExerciseVideo, result: ExerciseLogResult) {
+    setLogErrorExerciseId(null);
     try {
       const log = await logExercise(exercise, result);
       celebrate({ result, durationSeconds: log.durationSeconds });
       await timeline.reload(log.id);
     } catch (error) {
       console.error(error);
+      setLogErrorExerciseId(exercise.id);
     }
   }
 
@@ -50,7 +54,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
         </CardHeader>
       </Card>
 
-      <TimelineSection date={date} timeline={timeline} onChanged={() => void refreshLatestWellness()} />
+      <TimelineSection date={date} timeline={timeline} onChanged={() => void refresh()} />
 
       {!isHydrated ? (
         <Card className="grid gap-4" aria-live="polite">
@@ -75,13 +79,19 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
             <CardContent>
               <div className="today-screen__recommendations">
                 {recommendations.map((exercise) => (
-                  <RecommendedExerciseCard
-                    key={exercise.id}
-                    exercise={exercise}
-                    todayCount={logCounts[exercise.id] ?? 0}
-                    watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
-                    onLog={(result) => void handleLog(exercise, result)}
-                  />
+                  <div key={exercise.id} className="grid gap-2">
+                    <RecommendedExerciseCard
+                      exercise={exercise}
+                      todayCount={logCounts[exercise.id] ?? 0}
+                      watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
+                      onLog={(result) => void handleLog(exercise, result)}
+                    />
+                    {logErrorExerciseId === exercise.id ? (
+                      <p role="alert" className="text-sm text-destructive">
+                        {t("log_save_error")}
+                      </p>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             </CardContent>

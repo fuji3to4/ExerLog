@@ -120,6 +120,7 @@
   result_saved_couldnt: "保存済み: できなかった",
   result_not_logged: "未記録",
   log_count_today: "今日{count}回",
+  log_save_error: "記録できませんでした。もう一度お試しください。",
   result_group_label: "運動結果を記録",
 
   // Common actions

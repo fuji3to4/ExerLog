@@ -78,11 +78,16 @@ export function useTodayData(date: Date | string) {
     [exercises, conditionLevel, dayKey],
   );
 
-  const refreshLatestWellness = useCallback(async () => {
+  /** Reloads the latest wellness scores and today's log counts (after timeline edits or deletes). */
+  const refresh = useCallback(async () => {
     const requestedDayKey = dayKey;
-    const latestScores = await loadLatestScores(requestedDayKey);
+    const [latestScores, counts] = await Promise.all([
+      loadLatestScores(requestedDayKey),
+      countExerciseLogsForDay(requestedDayKey),
+    ]);
     if (dayKeyRef.current === requestedDayKey) {
       setScores(latestScores);
+      setLogCounts(counts);
     }
   }, [dayKey]);
 
@@ -111,6 +116,6 @@ export function useTodayData(date: Date | string) {
     recommendations,
     logCounts,
     logExercise,
-    refreshLatestWellness,
+    refresh,
   };
 }
