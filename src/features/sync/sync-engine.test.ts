@@ -161,6 +161,42 @@ describe("syncAll", () => {
     expect(await appDb.tombstones.count()).toBe(1);
   });
 
+  test("a record deleted while the sync is running is not resurrected", async () => {
+    const log = makeLog();
+    await appDb.exerciseLogs.put(log);
+    await syncAll(TOKEN);
+    expect(sheets.tabs.get("ExerciseLogs")).toEqual([EXERCISE_LOG_HEADERS, logRow(log)]);
+
+    const handle = sheets.handle;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+        const isLogsRead =
+          (init?.method ?? "GET") === "GET" &&
+          decodeURIComponent(url).includes("/values/ExerciseLogs!");
+        if (isLogsRead) {
+          // The user deletes the record after the Tombstones tab was merged.
+          await appDb.transaction("rw", appDb.exerciseLogs, appDb.tombstones, async () => {
+            await appDb.exerciseLogs.delete(log.id);
+            await appDb.tombstones.put({
+              id: `ExerciseLogs:${log.id}`,
+              table: "ExerciseLogs",
+              recordId: log.id,
+              deletedAt: "2026-10-20T11:00:00+09:00",
+            });
+          });
+        }
+        return handle(url, init);
+      }),
+    );
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(await appDb.exerciseLogs.toArray()).toEqual([]);
+    expect(sheets.tabs.get("ExerciseLogs")).toEqual([EXERCISE_LOG_HEADERS]);
+  });
+
   test("a locally edited time reaches the sheet row", async () => {
     const original = makeLog();
     const edited = makeLog({

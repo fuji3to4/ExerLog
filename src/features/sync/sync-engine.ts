@@ -111,9 +111,34 @@ function groupDeletedIds(tombstones: Tombstone[]): Map<string, Map<string, strin
   return byTab;
 }
 
+/** Local tombstones for one tab, as recordId → deletedAt. */
+async function localDeletedIds(tabName: string): Promise<Map<string, string>> {
+  const tombstones = await appDb.tombstones.where("table").equals(tabName).toArray();
+  return groupDeletedIds(tombstones).get(tabName) ?? new Map<string, string>();
+}
+
+/**
+ * Union of the tombstones merged at the start of the run and those recorded
+ * locally since (e.g. a delete while this sync was running), latest deletedAt wins.
+ */
+function withLocalTombstones(
+  merged: Map<string, string>,
+  local: Map<string, string>,
+): Map<string, string> {
+  const result = new Map(merged);
+  for (const [recordId, deletedAt] of local) {
+    const existing = result.get(recordId);
+    if (existing === undefined || Date.parse(deletedAt) > Date.parse(existing)) {
+      result.set(recordId, deletedAt);
+    }
+  }
+  return result;
+}
+
 /**
  * Merge one tab: read the sheet, merge with local inside a rw transaction
- * (re-reading local there so records added meanwhile are not lost), replace
+ * (re-reading local records and tombstones there so records added or deleted
+ * meanwhile are neither lost nor resurrected), replace
  * the local table, then rewrite the whole tab from the stored result.
  */
 async function syncTable(
@@ -134,7 +159,9 @@ async function syncTable(
         remote,
         keyColumn: config.keyColumn,
         updatedAtKey: config.updatedAtKey,
-        deletedIds,
+        deletedIds: config.deletable
+          ? withLocalTombstones(deletedIds, await localDeletedIds(config.tabName))
+          : deletedIds,
       });
       await config.replaceDb(merged);
       return config.readFromDb();

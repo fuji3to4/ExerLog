@@ -108,7 +108,7 @@ describe("syncIfNeeded", () => {
     mockSyncAll.mockResolvedValue({ success: true, results: [] });
 
     scheduleSync(); // start a pending timer
-    await syncIfNeeded(); // should cancel it and sync now
+    expect(await syncIfNeeded()).toBe("synced"); // should cancel it and sync now
 
     expect(mockTrySilentRefresh).toHaveBeenCalledTimes(1);
     expect(mockSyncAll).toHaveBeenCalledWith("tok", expect.any(Function));
@@ -121,8 +121,15 @@ describe("syncIfNeeded", () => {
   test("does nothing when no token", async () => {
     mockTrySilentRefresh.mockResolvedValue(null);
 
-    await syncIfNeeded();
+    expect(await syncIfNeeded()).toBe("not-connected");
 
     expect(mockSyncAll).not.toHaveBeenCalled();
+  });
+
+  test("reports a failed sync", async () => {
+    mockTrySilentRefresh.mockResolvedValue({ accessToken: "tok" });
+    mockSyncAll.mockResolvedValue({ success: false, results: [] });
+
+    expect(await syncIfNeeded()).toBe("failed");
   });
 });
