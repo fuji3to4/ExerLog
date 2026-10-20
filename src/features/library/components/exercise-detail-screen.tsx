@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
-import { deleteExerciseLogByDateAndExercise, listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { deleteLegacyExerciseLogByDateAndExercise, listLegacyExerciseLogsForDay, saveLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import { formatDuration } from "@/lib/date/duration";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
@@ -28,7 +28,7 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
 
     async function loadTodayLog() {
       const currentDayKey = toDayKey(new Date());
-      const logs = await listExerciseLogsForDay(currentDayKey);
+      const logs = await listLegacyExerciseLogsForDay(currentDayKey);
       const existingLog = logs.find((entry) => entry.exerciseId === exercise.id);
 
       if (!isActive) {
@@ -52,7 +52,7 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
 
       setResult(nextResult);
 
-      await saveExerciseLog({
+      await saveLegacyExerciseLog({
         date: currentDayKey,
         exerciseId: exercise.id,
         result: nextResult,
@@ -66,7 +66,7 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
 
     setResult(null);
 
-    await deleteExerciseLogByDateAndExercise(currentDayKey, exercise.id);
+    await deleteLegacyExerciseLogByDateAndExercise(currentDayKey, exercise.id);
   }, [exercise.id]);
 
   return (

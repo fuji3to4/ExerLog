@@ -1,7 +1,7 @@
 import type {
   DailyMetricEntry,
   DailyWellnessEntry,
-  ExerciseLog,
+  LegacyExerciseLog,
 } from "@/lib/types";
 import { formatTimestampForCsv } from "@/lib/date/format-timestamp";
 
@@ -13,7 +13,7 @@ function escapeCsvField(value: string | number): string {
   return str;
 }
 
-export function generateExerciseLogsCsv(logs: ExerciseLog[], exerciseTitleMap: Map<string, string>): string {
+export function generateExerciseLogsCsv(logs: LegacyExerciseLog[], exerciseTitleMap: Map<string, string>): string {
   const headers = ["date", "exerciseId", "exerciseTitle", "result", "loggedAt"];
   const rows = [
     headers.join(","),

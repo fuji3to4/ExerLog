@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import {
-  listExerciseLogsForDay,
-  saveExerciseLog,
-} from "./exercise-logs.repository";
+  listLegacyExerciseLogsForDay,
+  saveLegacyExerciseLog,
+} from "./legacy-exercise-logs.repository";
 import { appDb } from "./app-db";
 
 beforeEach(async () => {
@@ -10,19 +10,19 @@ beforeEach(async () => {
 });
 
 test("stores one log result per exercise and day", async () => {
-  await saveExerciseLog({
+  await saveLegacyExerciseLog({
     date: "2026-03-24",
     exerciseId: "neck-mobility-5",
     result: "partial",
   });
 
-  await saveExerciseLog({
+  await saveLegacyExerciseLog({
     date: "2026-03-24",
     exerciseId: "neck-mobility-5",
     result: "did",
   });
 
-  const logs = await listExerciseLogsForDay("2026-03-24");
+  const logs = await listLegacyExerciseLogsForDay("2026-03-24");
 
   expect(logs).toHaveLength(1);
   expect(logs[0]?.result).toBe("did");
@@ -31,12 +31,12 @@ test("stores one log result per exercise and day", async () => {
 
 test("replaces same-day exercise logs without duplicate rows under concurrent saves", async () => {
   const results = await Promise.allSettled([
-    saveExerciseLog({
+    saveLegacyExerciseLog({
       date: "2026-03-25",
       exerciseId: "neck-mobility-5",
       result: "partial",
     }),
-    saveExerciseLog({
+    saveLegacyExerciseLog({
       date: "2026-03-25",
       exerciseId: "neck-mobility-5",
       result: "did",
@@ -45,7 +45,7 @@ test("replaces same-day exercise logs without duplicate rows under concurrent sa
 
   expect(results.every((result) => result.status === "fulfilled")).toBe(true);
 
-  const logs = await listExerciseLogsForDay("2026-03-25");
+  const logs = await listLegacyExerciseLogsForDay("2026-03-25");
 
   expect(logs).toHaveLength(1);
   expect(logs[0]?.result).toBe("did");

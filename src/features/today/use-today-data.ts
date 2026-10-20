@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getTodaysRecommendations } from "@/features/recommendations/get-todays-recommendations";
 import { mapWellnessToCondition } from "@/features/recommendations/wellness-to-condition";
 import { getDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
-import { deleteExerciseLogByDateAndExercise, listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { deleteLegacyExerciseLogByDateAndExercise, listLegacyExerciseLogsForDay, saveLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import type { ExerciseLogResult, ExerciseVideo, WellnessScore } from "@/lib/types";
@@ -37,7 +37,7 @@ export function useTodayData(date: Date | string) {
       const selectedDayKey = toDayKey(dayKey);
       const [savedWellness, savedLogs] = await Promise.all([
         getDailyWellness(selectedDayKey),
-        listExerciseLogsForDay(selectedDayKey),
+        listLegacyExerciseLogsForDay(selectedDayKey),
       ]);
 
       if (!isActive) {
@@ -123,7 +123,7 @@ export function useTodayData(date: Date | string) {
         [exerciseId]: result,
       }));
 
-      await saveExerciseLog({
+      await saveLegacyExerciseLog({
         date: selectedDayKey,
         exerciseId,
         result,
@@ -142,7 +142,7 @@ export function useTodayData(date: Date | string) {
         return next;
       });
 
-      await deleteExerciseLogByDateAndExercise(selectedDayKey, exerciseId);
+      await deleteLegacyExerciseLogByDateAndExercise(selectedDayKey, exerciseId);
     },
     [dayKey],
   );

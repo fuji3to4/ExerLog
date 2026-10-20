@@ -1,7 +1,11 @@
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import type { ExerciseVideo } from "@/lib/types";
 
+import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
+import { recordTombstones } from "./tombstones.repository";
+
+const TOMBSTONE_TABLE = "Exercises";
 
 export async function seedIfEmpty(): Promise<void> {
   const count = await appDb.exercises.count();
@@ -18,25 +22,44 @@ export function getExerciseById(id: string): Promise<ExerciseVideo | undefined> 
   return appDb.exercises.get(id);
 }
 
-export function addExercise(exercise: ExerciseVideo): Promise<string> {
-  return appDb.exercises.add(exercise);
+export async function addExercise(exercise: ExerciseVideo): Promise<string> {
+  const id = await appDb.exercises.add(exercise);
+  scheduleSync();
+  return id;
 }
 
-export function updateExercise(exercise: ExerciseVideo): Promise<string> {
-  return appDb.exercises.put(exercise);
+export async function updateExercise(exercise: ExerciseVideo): Promise<string> {
+  const id = await appDb.exercises.put(exercise);
+  scheduleSync();
+  return id;
 }
 
-export function deleteExercise(id: string): Promise<void> {
-  return appDb.exercises.delete(id);
+export async function deleteExercise(id: string): Promise<void> {
+  await appDb.transaction("rw", appDb.exercises, appDb.tombstones, async () => {
+    await appDb.exercises.delete(id);
+    await recordTombstones(TOMBSTONE_TABLE, [id]);
+  });
+  scheduleSync();
 }
 
-export function replaceAllExercises(exercises: ExerciseVideo[]): Promise<void> {
-  return appDb.transaction("rw", appDb.exercises, async () => {
+export async function replaceAllExercises(exercises: ExerciseVideo[]): Promise<void> {
+  await appDb.transaction("rw", appDb.exercises, appDb.tombstones, async () => {
+    const keptIds = new Set(exercises.map((exercise) => exercise.id));
+    const removedIds = (await appDb.exercises.toCollection().primaryKeys()).filter(
+      (id) => !keptIds.has(id),
+    );
     await appDb.exercises.clear();
     await appDb.exercises.bulkAdd(exercises);
+    await recordTombstones(TOMBSTONE_TABLE, removedIds);
   });
+  scheduleSync();
 }
 
-export function clearAllExercises(): Promise<void> {
-  return appDb.exercises.clear();
+export async function clearAllExercises(): Promise<void> {
+  await appDb.transaction("rw", appDb.exercises, appDb.tombstones, async () => {
+    const ids = await appDb.exercises.toCollection().primaryKeys();
+    await appDb.exercises.clear();
+    await recordTombstones(TOMBSTONE_TABLE, ids);
+  });
+  scheduleSync();
 }

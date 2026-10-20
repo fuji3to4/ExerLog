@@ -3,6 +3,9 @@ import type { DailyMetricEntry } from "@/lib/types";
 import { localIsoNow } from "@/lib/date/local-iso";
 import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
+import { recordTombstones } from "./tombstones.repository";
+
+const TOMBSTONE_TABLE = "DailyMetrics";
 
 export type MetricDraft = Pick<DailyMetricEntry, "metricType" | "value" | "unit">;
 
@@ -28,18 +31,28 @@ export async function upsertDailyMetric(date: string, metric: MetricDraft) {
   });
 }
 
-export function deleteDailyMetric(
+export async function deleteDailyMetric(
   date: string,
   metricType: DailyMetricEntry["metricType"],
-) {
-  return appDb.dailyMetrics.where("[date+metricType]").equals([date, metricType]).delete();
+): Promise<void> {
+  await appDb.transaction("rw", appDb.dailyMetrics, appDb.tombstones, async () => {
+    const collection = appDb.dailyMetrics.where("[date+metricType]").equals([date, metricType]);
+    const ids = await collection.primaryKeys();
+    await collection.delete();
+    await recordTombstones(TOMBSTONE_TABLE, ids);
+  });
+  scheduleSync();
 }
 
 export async function replaceDailyMetrics(date: string, metrics: MetricDraft[]) {
-  return appDb.transaction("rw", appDb.dailyMetrics, async () => {
-    await appDb.dailyMetrics.where("date").equals(date).delete();
+  return appDb.transaction("rw", appDb.dailyMetrics, appDb.tombstones, async () => {
+    const existing = appDb.dailyMetrics.where("date").equals(date);
+    const removedIds = await existing.primaryKeys();
+    await existing.delete();
+    await recordTombstones(TOMBSTONE_TABLE, removedIds);
 
     if (metrics.length === 0) {
+      scheduleSync();
       return;
     }
 

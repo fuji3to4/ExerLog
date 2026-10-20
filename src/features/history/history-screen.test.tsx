@@ -8,7 +8,7 @@ import { replaceDailyMetrics } from "@/features/storage/daily-metrics.repository
 import { replaceDailySelfCareEntries } from "@/features/storage/daily-self-care.repository";
 import { appDb } from "@/features/storage/app-db";
 import { saveDailyWellness } from "@/features/storage/daily-wellness.repository";
-import { saveExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { saveLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 import { HistoryScreen } from "./components/history-screen";
@@ -31,7 +31,7 @@ beforeEach(async () => {
 });
 
 async function seedLogsForHistory() {
-  await saveExerciseLog({
+  await saveLegacyExerciseLog({
     date: "2026-03-23",
     exerciseId: "neck-mobility-5",
     result: "did",

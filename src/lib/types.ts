@@ -20,12 +20,48 @@ export type ExerciseVideo = {
   intensity: ExerciseIntensity;
 };
 
-export type ExerciseLog = {
+export type LegacyExerciseLog = {
   id: string;
   date: string;
   exerciseId: string;
   result: ExerciseLogResult;
   loggedAt: string;
+};
+
+export type ExerciseLog = {
+  id: string;
+  date: string;
+  exerciseId: string;
+  result: ExerciseLogResult;
+  performedAt: string;
+  durationSeconds: number;
+  updatedAt: string;
+};
+
+export type WellnessEntry = {
+  id: string;
+  date: string;
+  recordedAt: string;
+  physicalScore: WellnessScore;
+  mentalScore: WellnessScore;
+  note: string;
+  updatedAt: string;
+};
+
+export type WatchEvent = {
+  id: string;
+  date: string;
+  exerciseId: string;
+  watchedAt: string;
+  updatedAt: string;
+};
+
+export type Tombstone = {
+  /** `${table}:${recordId}` */
+  id: string;
+  table: string;
+  recordId: string;
+  deletedAt: string;
 };
 
 export type DailyWellnessEntry = {

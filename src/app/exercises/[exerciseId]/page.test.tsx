@@ -4,7 +4,7 @@ import { beforeEach, expect, test } from "vitest";
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
-import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { listLegacyExerciseLogsForDay, saveLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import { renderWithLanguage } from "@/test/render-with-language";
 
@@ -19,7 +19,7 @@ beforeEach(async () => {
 async function seedTodayState() {
   const todayKey = toDayKey(new Date());
 
-  await saveExerciseLog({
+  await saveLegacyExerciseLog({
     date: todayKey,
     exerciseId: "neck-mobility-5",
     result: "did",
@@ -54,7 +54,7 @@ test("exercise detail logging persists the selected result", async () => {
   await user.click(await screen.findByRole("button", { name: /did it/i }));
 
   await waitFor(async () => {
-    await expect(listExerciseLogsForDay(todayKey)).resolves.toEqual(
+    await expect(listLegacyExerciseLogsForDay(todayKey)).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           exerciseId: "neck-mobility-5",

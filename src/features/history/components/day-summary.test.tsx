@@ -8,9 +8,9 @@ import { deleteDailyWellness } from "@/features/storage/daily-wellness.repositor
 vi.mock("@/features/i18n/use-translation", () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }));
-vi.mock("@/features/storage/exercise-logs.repository", () => ({
-  deleteExerciseLog: vi.fn(),
-  updateExerciseLog: vi.fn(),
+vi.mock("@/features/storage/legacy-exercise-logs.repository", () => ({
+  deleteLegacyExerciseLog: vi.fn(),
+  updateLegacyExerciseLog: vi.fn(),
 }));
 vi.mock("@/features/storage/daily-metrics.repository", () => ({
   upsertDailyMetric: vi.fn(),

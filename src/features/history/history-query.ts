@@ -2,7 +2,7 @@ import { listDailyMetricsByDate } from "@/features/storage/daily-metrics.reposit
 import { listDailySelfCareEntriesByDate } from "@/features/storage/daily-self-care.repository";
 import { getDailyWellness } from "@/features/storage/daily-wellness.repository";
 import { appDb } from "@/features/storage/app-db";
-import { listExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
+import { listLegacyExerciseLogsForDay } from "@/features/storage/legacy-exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { listAllSelfCareItems } from "@/features/storage/self-care-catalog.repository";
 import type { ExerciseLogResult, MetricType, WellnessScore } from "@/lib/types";
@@ -51,7 +51,7 @@ export async function listCompletedDaysInMonth(month: string) {
 
 export async function getHistoryDaySummary(date: string): Promise<HistoryDaySummary> {
   const [logs, exercises, wellness, metrics, selfCareLogs, selfCareItems] = await Promise.all([
-    listExerciseLogsForDay(date),
+    listLegacyExerciseLogsForDay(date),
     listAllExercises(),
     getDailyWellness(date),
     listDailyMetricsByDate(date),

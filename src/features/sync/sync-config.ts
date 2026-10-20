@@ -10,7 +10,7 @@ export interface TableSyncConfig {
 }
 
 import type {
-  ExerciseLog,
+  LegacyExerciseLog,
   ExerciseVideo,
   DailyWellnessEntry,
   DailyMetricEntry,

@@ -3,6 +3,9 @@ import type { DailySelfCareEntry } from "@/lib/types";
 import { localIsoNow } from "@/lib/date/local-iso";
 import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
+import { recordTombstones } from "./tombstones.repository";
+
+const TOMBSTONE_TABLE = "DailySelfCare";
 
 export type SelfCareDraft = Pick<
   DailySelfCareEntry,
@@ -14,10 +17,14 @@ export function listDailySelfCareEntriesByDate(date: string) {
 }
 
 export async function replaceDailySelfCareEntries(date: string, entries: SelfCareDraft[]) {
-  return appDb.transaction("rw", appDb.dailySelfCareLogs, async () => {
-    await appDb.dailySelfCareLogs.where("date").equals(date).delete();
+  return appDb.transaction("rw", appDb.dailySelfCareLogs, appDb.tombstones, async () => {
+    const existing = appDb.dailySelfCareLogs.where("date").equals(date);
+    const removedIds = await existing.primaryKeys();
+    await existing.delete();
+    await recordTombstones(TOMBSTONE_TABLE, removedIds);
 
     if (entries.length === 0) {
+      scheduleSync();
       return;
     }
 

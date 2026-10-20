@@ -6,6 +6,7 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { clearAllExerciseLogs } from "@/features/storage/exercise-logs.repository";
+import { clearAllLegacyExerciseLogs } from "@/features/storage/legacy-exercise-logs.repository";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
 import {
   generateDailyMetricsCsv,
@@ -163,7 +164,7 @@ export function DataManagement() {
   }
 
   async function handleDeleteAllLogs() {
-    await clearAllExerciseLogs();
+    await Promise.all([clearAllLegacyExerciseLogs(), clearAllExerciseLogs()]);
     setLogCount(0);
     setImportStatus(t("settings_delete_success_logs"));
   }

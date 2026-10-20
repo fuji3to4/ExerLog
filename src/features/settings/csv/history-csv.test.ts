@@ -4,9 +4,9 @@ import {
   generateDailyWellnessCsv,
   generateExerciseLogsCsv,
 } from "./history-csv";
-import type { DailyMetricEntry, DailyWellnessEntry, ExerciseLog } from "@/lib/types";
+import type { DailyMetricEntry, DailyWellnessEntry, LegacyExerciseLog } from "@/lib/types";
 
-const makeLog = (overrides: Partial<ExerciseLog> = {}): ExerciseLog => ({
+const makeLog = (overrides: Partial<LegacyExerciseLog> = {}): LegacyExerciseLog => ({
   id: "log1",
   date: "2024-01-15",
   exerciseId: "ex1",

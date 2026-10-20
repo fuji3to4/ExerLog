@@ -7,7 +7,7 @@ import { formatTime } from "@/lib/date/format-timestamp";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { deleteDailyMetric, upsertDailyMetric } from "@/features/storage/daily-metrics.repository";
 import { deleteDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
-import { deleteExerciseLog, updateExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { deleteLegacyExerciseLog, updateLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import type { ExerciseLogResult, ExerciseVideo, MetricType, WellnessScore } from "@/lib/types";
 
@@ -302,13 +302,13 @@ export function DaySummary({ selectedDate, summary, onChanged }: DaySummaryProps
 
   async function handleDeleteLog(logId: string) {
     if (!window.confirm(t("history_log_delete_confirm"))) return;
-    await deleteExerciseLog(logId);
+    await deleteLegacyExerciseLog(logId);
     onChanged?.();
   }
 
   async function handleSaveLog() {
     if (!editingLog) return;
-    await updateExerciseLog({
+    await updateLegacyExerciseLog({
       id: editingLog.id,
       date: editingLog.date,
       exerciseId: editingLog.exerciseId,

@@ -5,7 +5,7 @@ import { beforeEach, expect, test } from "vitest";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { getDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
 import { appDb } from "@/features/storage/app-db";
-import { listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { listLegacyExerciseLogsForDay, saveLegacyExerciseLog } from "@/features/storage/legacy-exercise-logs.repository";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 import { TodayScreen } from "./components/today-screen";
@@ -22,7 +22,7 @@ async function seedWellness(date: string, physicalScore: 1 | 2 | 3 | 4 | 5, ment
 }
 
 async function seedLog(date: string, exerciseId: string, result: "did" | "partial" | "could_not") {
-  await saveExerciseLog({ date, exerciseId, result });
+  await saveLegacyExerciseLog({ date, exerciseId, result });
 }
 
 test("saves a daily wellness entry and logs an exercise from the home screen", async () => {
@@ -55,7 +55,7 @@ test("saves a daily wellness entry and logs an exercise from the home screen", a
   await user.click(within(seatedCalfRaiseCard).getByRole("button", { name: /did it/i }));
 
   await waitFor(async () => {
-    await expect(listExerciseLogsForDay("2026-03-23")).resolves.toEqual(
+    await expect(listLegacyExerciseLogsForDay("2026-03-23")).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           exerciseId: "seated-calf-raise-5",
