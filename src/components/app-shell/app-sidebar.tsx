@@ -20,11 +20,11 @@ import { useSync } from "@/features/sync/SyncProvider";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 const navItems = [
-  { href: "/", icon: Home, label: "Today" },
-  { href: "/library", icon: BookOpen, label: "Library" },
-  { href: "/history", icon: LineChart, label: "History" },
-  { href: "/self-care", icon: Heart, label: "Self-care" },
-  { href: "/settings", icon: Settings, label: "Settings" },
+  { href: "/", icon: Home, labelKey: "nav_today" as const },
+  { href: "/library", icon: BookOpen, labelKey: "nav_library" as const },
+  { href: "/history", icon: LineChart, labelKey: "nav_history" as const },
+  { href: "/self-care", icon: Heart, labelKey: "nav_self_care" as const },
+  { href: "/settings", icon: Settings, labelKey: "nav_settings" as const },
 ];
 
 type AppSidebarProps = {
@@ -71,7 +71,7 @@ export function AppSidebar({ currentPath }: AppSidebarProps) {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("nav_group_label")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
@@ -88,7 +88,7 @@ export function AppSidebar({ currentPath }: AppSidebarProps) {
                   >
                     <Link href={item.href}>
                       <Icon className="size-4" />
-                      <span>{item.label}</span>
+                      <span>{t(item.labelKey)}</span>
                     </Link>
                   </SidebarMenuButton>
                 );

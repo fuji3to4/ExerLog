@@ -1,11 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HistoryGraphs } from "./history-graphs";
+import { renderWithLanguage } from "@/test/render-with-language";
 
-vi.mock("@/features/i18n/use-translation", () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
-}));
+const renderGraphs = () => renderWithLanguage(<HistoryGraphs />, { initialLanguage: "ja" });
 
 vi.mock("@/features/history/history-graph-query", () => ({
   buildHistoryGraphSeries: vi.fn(),
@@ -34,8 +33,8 @@ describe("HistoryGraphs", () => {
       ],
     });
 
-    render(<HistoryGraphs />);
-    expect(await screen.findByText("history_graphs_heading")).toBeInTheDocument();
+    renderGraphs();
+    expect(await screen.findByText("グラフ")).toBeInTheDocument();
   });
 
   it("renders metric selector dropdown with weight option", async () => {
@@ -48,12 +47,12 @@ describe("HistoryGraphs", () => {
       ],
     });
 
-    render(<HistoryGraphs />);
-    await screen.findByText("history_graphs_heading");
+    renderGraphs();
+    await screen.findByText("グラフ");
 
-    const selector = screen.getByLabelText("history_graph_metric_label");
+    const selector = screen.getByLabelText("表示する項目");
     expect(selector).toBeInTheDocument();
-    expect(within(selector).getByText("Weight")).toBeInTheDocument();
+    expect(within(selector).getByText("体重")).toBeInTheDocument();
   });
 
   it("offers BMI as a metric and requests the bmi series when selected", async () => {
@@ -65,10 +64,10 @@ describe("HistoryGraphs", () => {
       points: [{ date: "2026-10-20", value: 20.8 }],
     });
 
-    render(<HistoryGraphs />);
-    await screen.findByText("history_graphs_heading");
+    renderGraphs();
+    await screen.findByText("グラフ");
 
-    const selector = screen.getByLabelText("history_graph_metric_label") as HTMLSelectElement;
+    const selector = screen.getByLabelText("表示する項目") as HTMLSelectElement;
     const bmiOption = within(selector).getByRole("option", { name: "BMI" }) as HTMLOptionElement;
     await user.selectOptions(selector, bmiOption);
 
@@ -89,13 +88,13 @@ describe("HistoryGraphs", () => {
       ],
     });
 
-    render(<HistoryGraphs />);
-    await screen.findByText("history_graphs_heading");
+    renderGraphs();
+    await screen.findByText("グラフ");
 
-    expect(screen.getByRole("button", { name: "7d" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "30d" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "90d" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "all" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "7日" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "30日" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "90日" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "全期間" })).toBeInTheDocument();
   });
 
   it("renders chart when data exists", async () => {
@@ -109,7 +108,7 @@ describe("HistoryGraphs", () => {
       ],
     });
 
-    const { container } = render(<HistoryGraphs />);
+    const { container } = renderGraphs();
 
     // Wait for the chart to load
     const chart = await screen.findByRole("region", { name: "", hidden: true }).catch(() => null)
@@ -126,9 +125,9 @@ describe("HistoryGraphs", () => {
       points: [],
     });
 
-    render(<HistoryGraphs />);
+    renderGraphs();
 
-    expect(await screen.findByText("history_graphs_empty")).toBeInTheDocument();
+    expect(await screen.findByText("選択した範囲に利用可能なデータがありません。")).toBeInTheDocument();
   });
 
   it("updates graph when metric selector changes", async () => {
@@ -146,19 +145,19 @@ describe("HistoryGraphs", () => {
         points: [{ date: "2026-03-20", value: 18.5 }],
       });
 
-    render(<HistoryGraphs />);
+    renderGraphs();
 
     const initialCallCount = vi.mocked(buildHistoryGraphSeries).mock.calls.length;
 
-    const selector = screen.getByLabelText("history_graph_metric_label") as HTMLSelectElement;
-    const bodyFatOption = Array.from(selector.options).find((opt) => opt.textContent === "Body fat");
+    const selector = screen.getByLabelText("表示する項目") as HTMLSelectElement;
+    const bodyFatOption = Array.from(selector.options).find((opt) => opt.textContent === "体脂肪率");
     if (bodyFatOption) {
       await user.click(selector);
       await user.selectOptions(selector, bodyFatOption);
     }
 
     // Wait for the graph to update
-    await screen.findByText("Body fat");
+    await screen.findByText("体脂肪率");
 
     expect(vi.mocked(buildHistoryGraphSeries).mock.calls.length).toBeGreaterThan(initialCallCount);
   });
@@ -177,13 +176,13 @@ describe("HistoryGraphs", () => {
         points: [{ date: "2026-03-15", value: 63.0 }, { date: "2026-03-20", value: 62.5 }],
       });
 
-    render(<HistoryGraphs />);
+    renderGraphs();
 
-    const thirtyDayButton = screen.getByRole("button", { name: "30d" });
+    const thirtyDayButton = screen.getByRole("button", { name: "30日" });
     await user.click(thirtyDayButton);
 
     // Wait for the graph update to settle (the loading indicator or graph content)
-    await screen.findByText("Weight");
+    await screen.findByText("体重");
     expect(vi.mocked(buildHistoryGraphSeries).mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -198,9 +197,33 @@ describe("HistoryGraphs", () => {
       ],
     });
 
-    const { container } = render(<HistoryGraphs />);
+    const { container } = renderGraphs();
 
-    await screen.findByText("history_graphs_heading");
+    await screen.findByText("グラフ");
     expect(container.querySelector(".history-screen__chart-wrapper")).toBeInTheDocument();
+  });
+
+  it("labels all metric options in Japanese", async () => {
+    const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
+    vi.mocked(buildHistoryGraphSeries).mockResolvedValue({ unit: "kg", points: [] });
+
+    renderGraphs();
+    const selector = screen.getByLabelText("表示する項目") as HTMLSelectElement;
+    expect(Array.from(selector.options).map((o) => o.textContent)).toEqual([
+      "体重",
+      "体脂肪率",
+      "身長",
+      "BMI",
+      "からだの調子",
+      "こころの調子",
+    ]);
+  });
+
+  it("shows a Japanese loading message while the series loads", async () => {
+    const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
+    vi.mocked(buildHistoryGraphSeries).mockReturnValue(new Promise(() => {}));
+
+    renderGraphs();
+    expect(await screen.findByText("読み込み中…")).toBeInTheDocument();
   });
 });

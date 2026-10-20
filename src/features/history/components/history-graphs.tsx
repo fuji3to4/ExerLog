@@ -11,16 +11,22 @@ type DateRangePreset = "7d" | "30d" | "90d" | "all";
 
 type MetricOption = {
   value: GraphMetricSelection;
-  label: string;
+  labelKey:
+    | "history_graph_metric_weight"
+    | "history_graph_metric_body_fat"
+    | "history_graph_metric_height"
+    | "history_graph_metric_bmi"
+    | "history_graph_metric_physical"
+    | "history_graph_metric_mental";
 };
 
 const METRIC_OPTIONS: MetricOption[] = [
-  { value: { kind: "metric", metricType: "weight" }, label: "Weight" },
-  { value: { kind: "metric", metricType: "bodyFat" }, label: "Body fat" },
-  { value: { kind: "metric", metricType: "height" }, label: "Height" },
-  { value: { kind: "bmi" }, label: "BMI" },
-  { value: { kind: "wellness", score: "physical" }, label: "Physical wellness" },
-  { value: { kind: "wellness", score: "mental" }, label: "Mental wellness" },
+  { value: { kind: "metric", metricType: "weight" }, labelKey: "history_graph_metric_weight" },
+  { value: { kind: "metric", metricType: "bodyFat" }, labelKey: "history_graph_metric_body_fat" },
+  { value: { kind: "metric", metricType: "height" }, labelKey: "history_graph_metric_height" },
+  { value: { kind: "bmi" }, labelKey: "history_graph_metric_bmi" },
+  { value: { kind: "wellness", score: "physical" }, labelKey: "history_graph_metric_physical" },
+  { value: { kind: "wellness", score: "mental" }, labelKey: "history_graph_metric_mental" },
 ];
 
 function getDateRangeForPreset(preset: DateRangePreset): { start: string; end: string } {
@@ -95,7 +101,7 @@ export function HistoryGraphs() {
               >
                 {METRIC_OPTIONS.map((option, index) => (
                   <option key={index} value={JSON.stringify(option.value)}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </option>
                 ))}
               </select>
@@ -104,18 +110,18 @@ export function HistoryGraphs() {
             <div className="history-screen__date-presets">
               {(["7d", "30d", "90d", "all"] as const).map((preset) => (
                 <button
-                  key={preset}
+                  key={t(`history_range_${preset}` as const)}
                   onClick={() => setDateRangePreset(preset)}
                   className={`history-screen__preset-btn ${dateRangePreset === preset ? "is-active" : ""}`}
                 >
-                  {preset}
+                  {t(`history_range_${preset}` as const)}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {loading && <p className="history-screen__chart-loading">Loading...</p>}
+        {loading && <p className="history-screen__chart-loading">{t("common_loading")}</p>}
 
         {!loading && hasData && series && (
           <div className="history-screen__chart-wrapper">

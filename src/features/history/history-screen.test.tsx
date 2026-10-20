@@ -213,3 +213,19 @@ test("keeps metric edit controls hidden in view mode and shows them in edit mode
   expect(within(summaryCard!).getByRole("button", { name: "Delete weight" })).toBeInTheDocument();
   expect(within(summaryCard!).getByRole("button", { name: "Add body fat" })).toBeInTheDocument();
 });
+
+test("labels the mode toggle and graph controls in Japanese", async () => {
+  const user = userEvent.setup();
+
+  await seedHistory();
+
+  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "ja" });
+
+  expect(screen.getByRole("button", { name: "まとめ" })).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "グラフ" }));
+
+  expect(await screen.findByText("表示する項目")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "7日" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "全期間" })).toBeInTheDocument();
+  expect(screen.queryByText("Summary")).not.toBeInTheDocument();
+});

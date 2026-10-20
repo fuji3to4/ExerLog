@@ -4,6 +4,24 @@ import { AppShell } from "./app-shell";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { SyncContext } from "@/features/sync/SyncProvider";
 
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/library",
+}));
+
 function mockSyncContext() {
   return {
     status: { type: "disconnected" as const },
@@ -50,4 +68,21 @@ test("renders shell layout with utility classes and accessible language radios",
   expect(japaneseRadio).toBeChecked();
   expect(englishRadio).not.toBeChecked();
   expect(screen.getByRole("navigation", { name: /メイン/i })).toHaveClass("fixed", "bottom-0");
+});
+
+test("desktop sidebar shows translated nav labels and no hardcoded Navigation", () => {
+  const { container } = renderWithLanguage(
+    <SyncContext.Provider value={mockSyncContext()}>
+      <AppShell currentPath="/library">
+        <section>content</section>
+      </AppShell>
+    </SyncContext.Provider>,
+    { initialLanguage: "ja" },
+  );
+
+  const sidebarLinks = Array.from(container.querySelectorAll("a[href]")).map((a) => a.textContent);
+  expect(sidebarLinks).toEqual(expect.arrayContaining(["今日", "ライブラリ", "履歴", "コンディション", "設定"]));
+  expect(screen.queryByText("Navigation")).not.toBeInTheDocument();
+  expect(screen.queryByText("Today")).not.toBeInTheDocument();
+  expect(screen.queryByText("Self-care")).not.toBeInTheDocument();
 });

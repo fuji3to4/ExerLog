@@ -146,12 +146,12 @@ export function DataManagement() {
       await replaceAllExercises(exercises);
       const status =
         skipped > 0
-          ? `${t("settings_import_success", { count: exercises.length })} (${skipped} skipped)`
+          ? `${t("settings_import_success", { count: exercises.length })}${t("settings_import_skipped", { count: skipped })}`
           : t("settings_import_success", { count: exercises.length });
       setImportStatus(status);
       setExerciseCount(exercises.length);
     } catch {
-      setImportStatus(t("settings_import_error", { error: "Failed to save" }));
+      setImportStatus(t("settings_import_error", { error: t("settings_import_save_failed") }));
     }
 
     e.target.value = "";

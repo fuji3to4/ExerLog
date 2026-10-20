@@ -28,18 +28,17 @@ vi.mock("@/features/sync/SyncProvider", () => ({
 }));
 
 // Mock useTranslation
-vi.mock("@/features/i18n/use-translation", () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    language: "en",
-    messages: {
-      language_ja: "Japanese",
-      language_en: "English",
-      language_label: "Language",
-    },
-    setLanguage: vi.fn(),
-  }),
-}));
+vi.mock("@/features/i18n/use-translation", async () => {
+  const { ja } = await import("@/features/i18n/messages/ja");
+  return {
+    useTranslation: () => ({
+      t: (key: keyof typeof ja) => ja[key],
+      language: "ja",
+      messages: ja,
+      setLanguage: vi.fn(),
+    }),
+  };
+});
 
 // Mock usePathname
 vi.mock("next/navigation", () => ({
@@ -54,11 +53,12 @@ describe("AppSidebar", () => {
       </SidebarProvider>
     );
 
-    expect(screen.getByText("Today")).toBeInTheDocument();
-    expect(screen.getByText("Library")).toBeInTheDocument();
-    expect(screen.getByText("History")).toBeInTheDocument();
-    expect(screen.getByText("Self-care")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    expect(screen.getByText("今日")).toBeInTheDocument();
+    expect(screen.getByText("ライブラリ")).toBeInTheDocument();
+    expect(screen.getByText("履歴")).toBeInTheDocument();
+    expect(screen.getByText("コンディション")).toBeInTheDocument();
+    expect(screen.getByText("設定")).toBeInTheDocument();
+    expect(screen.queryByText("Navigation")).not.toBeInTheDocument();
   });
 
   it("highlights current page", () => {
@@ -68,7 +68,7 @@ describe("AppSidebar", () => {
       </SidebarProvider>
     );
 
-    const libraryLink = screen.getByText("Library").closest("a");
+    const libraryLink = screen.getByText("ライブラリ").closest("a");
     // The link should exist and be accessible
     expect(libraryLink).toBeInTheDocument();
     expect(libraryLink).toHaveAttribute("href", "/library");
