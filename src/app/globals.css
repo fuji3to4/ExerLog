@@ -1233,3 +1233,72 @@ a {
      padding: 0.65rem 0.75rem;
   }
 }
+
+/* Save feedback */
+@keyframes pop {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.save-button--saved,
+.save-button--saved:hover {
+  background: #3aa76d;
+  border-color: #3aa76d;
+  color: #fff;
+  box-shadow: none;
+}
+
+.timeline-item--new {
+  border-color: #3aa76d;
+  background: #eefaf3;
+  animation: pop 0.6s ease-out;
+}
+
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.celebration-overlay__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 2rem;
+  border-radius: 1.5rem;
+  background: hsl(var(--card, 0 0% 100%) / 0.94);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
+  animation: pop 0.6s ease-out;
+}
+
+.celebration-overlay__mark {
+  font-size: 4.5rem;
+  line-height: 1;
+}
+
+.celebration-overlay__text {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-item--new,
+  .celebration-overlay__card {
+    animation: none;
+  }
+}

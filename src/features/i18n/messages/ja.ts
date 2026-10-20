@@ -231,4 +231,9 @@
   seed_confirm_message: "エクササイズが登録されていません。あらかじめ用意された初期データをインポートしますか？",
   seed_confirm_yes: "インポートする",
   seed_confirm_no: "しない",
+
+  // Feedback
+  feedback_saved: "✓ 保存しました",
+  celebration_did: "おつかれさま！ {duration} やりました",
+  celebration_partial: "おつかれさま！",
 } as const;

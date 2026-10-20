@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Sofia_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { CelebrationProvider } from "@/features/feedback/celebration";
 import { LanguageProvider } from "@/features/i18n/language-provider";
 import { DbInitProvider } from "@/features/storage/db-init-provider";
 import { SyncProvider } from "@/features/sync/SyncProvider";
@@ -77,7 +78,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <ThemeProvider>
           <LanguageProvider>
             <DbInitProvider>
-              <SyncProvider>{children}</SyncProvider>
+              <SyncProvider>
+                <CelebrationProvider>{children}</CelebrationProvider>
+              </SyncProvider>
             </DbInitProvider>
           </LanguageProvider>
         </ThemeProvider>

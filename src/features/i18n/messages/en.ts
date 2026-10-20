@@ -231,4 +231,9 @@ export const en = {
   seed_confirm_message: "No exercises are registered. Would you like to import the starter exercise catalog?",
   seed_confirm_yes: "Import",
   seed_confirm_no: "Not now",
+
+  // Feedback
+  feedback_saved: "✓ Saved",
+  celebration_did: "Nice work! {duration} done",
+  celebration_partial: "Nice work!",
 } as const;
