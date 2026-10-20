@@ -6,6 +6,8 @@ import { renderWithLanguage } from "@/test/render-with-language";
 
 import { RecommendedExerciseCard } from "./components/recommended-exercise-card";
 
+const stampedCatalog = exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" }));
+
 test("renders a derived thumbnail image when a YouTube exercise has no stored thumbnail", () => {
   const exercise = {
     id: "blank-youtube-thumb",
@@ -17,6 +19,7 @@ test("renders a derived thumbnail image when a YouTube exercise has no stored th
     purpose: "mobility",
     durationSeconds: 300,
     intensity: "low" as const,
+    updatedAt: "2026-10-20T00:00:00+09:00",
   };
 
   renderWithLanguage(
@@ -30,7 +33,7 @@ test("renders a derived thumbnail image when a YouTube exercise has no stored th
 });
 
 test("uses the watch destination provided by the container", () => {
-  const exercise = exerciseCatalog.find((entry) => entry.id === "neck-mobility-5");
+  const exercise = stampedCatalog.find((entry) => entry.id === "neck-mobility-5");
 
   renderWithLanguage(
     <RecommendedExerciseCard
@@ -47,7 +50,7 @@ test("uses the watch destination provided by the container", () => {
 });
 
 test("translates metadata labels and actions while keeping exercise title raw", () => {
-  const exercise = exerciseCatalog.find((entry) => entry.id === "neck-mobility-5");
+  const exercise = stampedCatalog.find((entry) => entry.id === "neck-mobility-5");
 
   renderWithLanguage(
     <RecommendedExerciseCard

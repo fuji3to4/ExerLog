@@ -16,7 +16,7 @@ import { HistoryScreen } from "./components/history-screen";
 beforeEach(async () => {
   await appDb.logs.clear();
   await appDb.exercises.clear();
-  await appDb.exercises.bulkAdd(exerciseCatalog);
+  await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
   await appDb.dailyWellness.clear();
   await appDb.dailyMetrics.clear();
   await appDb.dailySelfCareLogs.clear();

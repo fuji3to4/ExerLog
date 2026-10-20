@@ -1,6 +1,6 @@
-import type { ExerciseVideo } from "@/lib/types";
+import type { ExerciseDraft } from "@/lib/types";
 
-export const exerciseCatalog: ExerciseVideo[] = [
+export const exerciseCatalog: ExerciseDraft[] = [
   {
     id: "shoulder-roll-4",
     title: "Shoulder Rolls",

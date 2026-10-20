@@ -29,9 +29,9 @@ test("writes a generated catalog file from a valid CSV", () => {
   expect(output).toContain(
     "// AUTO-GENERATED from public/exercises.csv by scripts/generate-exercise-catalog.js — DO NOT EDIT."
   );
-  expect(output).toContain('import type { ExerciseVideo } from "@/lib/types";');
+  expect(output).toContain('import type { ExerciseDraft } from "@/lib/types";');
   expect(output).toContain('"id": "walk-1"');
-  expect(output).toContain("export const exerciseCatalog: ExerciseVideo[] =");
+  expect(output).toContain("export const exerciseCatalog: ExerciseDraft[] =");
 });
 
 test("writes the fallback re-export when the CSV is missing", () => {

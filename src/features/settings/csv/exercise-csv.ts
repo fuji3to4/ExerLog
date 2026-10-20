@@ -1,4 +1,4 @@
-import type { ExerciseVideo } from "@/lib/types";
+import type { ExerciseDraft } from "@/lib/types";
 
 const HEADERS = [
   "id",
@@ -20,7 +20,7 @@ function escapeCsvField(value: string | number): string {
   return str;
 }
 
-export function generateExerciseCsv(exercises: ExerciseVideo[]): string {
+export function generateExerciseCsv(exercises: ExerciseDraft[]): string {
   const rows = [
     HEADERS.join(","),
     ...exercises.map((e) => HEADERS.map((h) => escapeCsvField(e[h])).join(",")),
@@ -29,7 +29,7 @@ export function generateExerciseCsv(exercises: ExerciseVideo[]): string {
 }
 
 export type ParseExerciseCsvResult = {
-  exercises: ExerciseVideo[];
+  exercises: ExerciseDraft[];
   skipped: number;
 };
 
@@ -45,7 +45,7 @@ export function parseExerciseCsv(csv: string): ParseExerciseCsvResult {
   }
 
   const headers = lines[0].split(",").map((h) => h.trim().replace(/^[\uFEFF"]+|"$/g, ""));
-  const exercises: ExerciseVideo[] = [];
+  const exercises: ExerciseDraft[] = [];
   let skipped = 0;
 
   for (let i = 1; i < lines.length; i++) {
@@ -73,7 +73,7 @@ export function parseExerciseCsv(csv: string): ParseExerciseCsvResult {
       bodyArea: row.bodyArea,
       purpose: row.purpose,
       durationSeconds,
-      intensity: row.intensity as ExerciseVideo["intensity"],
+      intensity: row.intensity as ExerciseDraft["intensity"],
     });
   }
 

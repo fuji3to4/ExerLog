@@ -230,7 +230,7 @@ const dailySelfCareConfig: TableSyncConfig = {
 const exercisesConfig: TableSyncConfig = {
   tabName: "Exercises",
   keyColumn: "id",
-  updatedAtKey: null,
+  updatedAtKey: "updatedAt",
   deletable: true,
   headers: [
     "id",
@@ -242,6 +242,7 @@ const exercisesConfig: TableSyncConfig = {
     "purpose",
     "durationSeconds",
     "intensity",
+    "updatedAt",
   ],
   toRow: (r: ExerciseVideo) => [
     r.id,
@@ -253,6 +254,7 @@ const exercisesConfig: TableSyncConfig = {
     r.purpose,
     String(r.durationSeconds),
     r.intensity,
+    r.updatedAt,
   ],
   fromRow: (row, headers): ExerciseVideo => ({
     id: cell(row, headers, "id"),
@@ -264,6 +266,7 @@ const exercisesConfig: TableSyncConfig = {
     purpose: cell(row, headers, "purpose"),
     durationSeconds: Number(cell(row, headers, "durationSeconds")),
     intensity: cell(row, headers, "intensity") as ExerciseIntensity,
+    updatedAt: cell(row, headers, "updatedAt"),
   }),
   readFromDb: () => appDb.exercises.toArray(),
   replaceDb: (records) => replaceTable(appDb.exercises, records as ExerciseVideo[]),

@@ -7,7 +7,7 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { addExercise, updateExercise } from "@/features/storage/exercise-catalog.repository";
 import { joinDuration, splitDuration } from "@/lib/date/duration";
 import { getYouTubeThumbnailUrl } from "@/lib/video/youtube";
-import type { ExerciseIntensity, ExerciseVideo } from "@/lib/types";
+import type { ExerciseDraft, ExerciseIntensity, ExerciseVideo } from "@/lib/types";
 
 type ExerciseFormModalProps = {
   exercise: ExerciseVideo | null;
@@ -70,7 +70,7 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const data: ExerciseVideo = {
+    const data: ExerciseDraft = {
       id: exercise?.id ?? crypto.randomUUID(),
       title: form.title.trim(),
       description: form.description.trim(),

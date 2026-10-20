@@ -22,6 +22,7 @@ const youtubeExercise: ExerciseVideo = {
   purpose: "mobility",
   durationSeconds: 300,
   intensity: "low",
+  updatedAt: "2026-10-20T00:00:00+09:00",
 };
 
 const nonEmbeddableExercise: ExerciseVideo = {
@@ -34,6 +35,7 @@ const nonEmbeddableExercise: ExerciseVideo = {
   purpose: "mobility",
   durationSeconds: 300,
   intensity: "low",
+  updatedAt: "2026-10-20T00:00:00+09:00",
 };
 
 test("shows a play button over the thumbnail instead of the external watch link", async () => {

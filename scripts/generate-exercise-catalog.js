@@ -17,7 +17,7 @@ const DEFAULT_OUTPUT_PATH = path.join(
 const FALLBACK_CONTENT = 'export { exerciseCatalog } from "./exercise-catalog.default";\n';
 
 function buildGeneratedContent(rows) {
-  return `// AUTO-GENERATED from public/exercises.csv by scripts/generate-exercise-catalog.js — DO NOT EDIT.\nimport type { ExerciseVideo } from "@/lib/types";\n\nexport const exerciseCatalog: ExerciseVideo[] = ${JSON.stringify(
+  return `// AUTO-GENERATED from public/exercises.csv by scripts/generate-exercise-catalog.js — DO NOT EDIT.\nimport type { ExerciseDraft } from "@/lib/types";\n\nexport const exerciseCatalog: ExerciseDraft[] = ${JSON.stringify(
     rows,
     null,
     2

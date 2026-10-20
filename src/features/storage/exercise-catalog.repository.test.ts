@@ -16,6 +16,7 @@ const customExercise: ExerciseVideo = {
   purpose: "mobility",
   durationSeconds: 300,
   intensity: "low",
+  updatedAt: "2026-10-20T00:00:00+09:00",
 };
 
 beforeEach(async () => {

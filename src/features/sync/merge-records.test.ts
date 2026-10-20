@@ -9,7 +9,7 @@ describe("mergeRecords", () => {
       remote: [{ id: "a", value: "remote", updatedAt: "2026-10-20T11:00:00+09:00" }],
       keyColumn: "id",
       updatedAtKey: "updatedAt",
-      deletedIds: new Set(),
+      deletedIds: new Map(),
     });
 
     expect(merged).toEqual([{ id: "a", value: "remote", updatedAt: "2026-10-20T11:00:00+09:00" }]);
@@ -28,7 +28,7 @@ describe("mergeRecords", () => {
       ],
       keyColumn: "id",
       updatedAtKey: "updatedAt",
-      deletedIds: new Set(),
+      deletedIds: new Map(),
     });
 
     expect(merged.map((r) => r.value)).toEqual(["local-newer", "local-same"]);
@@ -40,13 +40,13 @@ describe("mergeRecords", () => {
       remote: [{ id: "remote-only", updatedAt: "2026-10-20T10:00:00+09:00" }],
       keyColumn: "id",
       updatedAtKey: "updatedAt",
-      deletedIds: new Set(),
+      deletedIds: new Map(),
     });
 
     expect(merged.map((r) => r.id).sort()).toEqual(["local-only", "remote-only"]);
   });
 
-  test("drops ids listed in deletedIds from both local and remote", () => {
+  test("drops tombstoned ids from both local and remote when not updated after the deletion", () => {
     const merged = mergeRecords({
       local: [
         { id: "a", updatedAt: "2026-10-20T10:00:00+09:00" },
@@ -58,10 +58,51 @@ describe("mergeRecords", () => {
       ],
       keyColumn: "id",
       updatedAtKey: "updatedAt",
-      deletedIds: new Set(["a", "b"]),
+      deletedIds: new Map([
+        ["a", "2026-10-20T11:00:00+09:00"],
+        ["b", "2026-10-20T12:00:00+09:00"],
+      ]),
     });
 
     expect(merged.map((r) => r.id)).toEqual(["keep"]);
+  });
+
+  test("keeps a record updated after its tombstone and drops one updated before it", () => {
+    const merged = mergeRecords({
+      local: [{ id: "recreated", updatedAt: "2026-10-20T12:00:01+09:00" }],
+      remote: [{ id: "stale", updatedAt: "2026-10-20T11:59:59+09:00" }],
+      keyColumn: "id",
+      updatedAtKey: "updatedAt",
+      deletedIds: new Map([
+        ["recreated", "2026-10-20T12:00:00+09:00"],
+        ["stale", "2026-10-20T12:00:00+09:00"],
+      ]),
+    });
+
+    expect(merged.map((r) => r.id)).toEqual(["recreated"]);
+  });
+
+  test("drops tombstoned records that have no usable timestamp", () => {
+    const merged = mergeRecords({
+      local: [{ id: "no-key" }, { id: "garbage", updatedAt: "not a date" }],
+      remote: [],
+      keyColumn: "id",
+      updatedAtKey: "updatedAt",
+      deletedIds: new Map([
+        ["no-key", "2026-10-20T12:00:00+09:00"],
+        ["garbage", "2026-10-20T12:00:00+09:00"],
+      ]),
+    });
+    const mergedWithoutKey = mergeRecords({
+      local: [{ id: "x", updatedAt: "2026-10-21T00:00:00+09:00" }],
+      remote: [],
+      keyColumn: "id",
+      updatedAtKey: null,
+      deletedIds: new Map([["x", "2026-10-20T12:00:00+09:00"]]),
+    });
+
+    expect(merged).toEqual([]);
+    expect(mergedWithoutKey).toEqual([]);
   });
 
   test("prefers local when updatedAtKey is null", () => {
@@ -73,7 +114,7 @@ describe("mergeRecords", () => {
       ],
       keyColumn: "id",
       updatedAtKey: null,
-      deletedIds: new Set(),
+      deletedIds: new Map(),
     });
 
     expect(merged).toEqual([

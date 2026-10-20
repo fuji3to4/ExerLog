@@ -1,16 +1,23 @@
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
-import type { ExerciseVideo } from "@/lib/types";
+import type { ExerciseDraft, ExerciseVideo } from "@/lib/types";
 
+import { localIsoNow } from "@/lib/date/local-iso";
 import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
 import { recordTombstones } from "./tombstones.repository";
 
 const TOMBSTONE_TABLE = "Exercises";
 
+/** Sets `updatedAt` to now so sync sees this write as newer than any earlier tombstone. */
+function stamp(exercises: ExerciseDraft[]): ExerciseVideo[] {
+  const updatedAt = localIsoNow();
+  return exercises.map((exercise) => ({ ...exercise, updatedAt }));
+}
+
 export async function seedIfEmpty(): Promise<void> {
   const count = await appDb.exercises.count();
   if (count === 0) {
-    await appDb.exercises.bulkAdd(exerciseCatalog);
+    await appDb.exercises.bulkAdd(stamp(exerciseCatalog));
   }
 }
 
@@ -22,14 +29,14 @@ export function getExerciseById(id: string): Promise<ExerciseVideo | undefined> 
   return appDb.exercises.get(id);
 }
 
-export async function addExercise(exercise: ExerciseVideo): Promise<string> {
-  const id = await appDb.exercises.add(exercise);
+export async function addExercise(exercise: ExerciseDraft): Promise<string> {
+  const id = await appDb.exercises.add(stamp([exercise])[0]);
   scheduleSync();
   return id;
 }
 
-export async function updateExercise(exercise: ExerciseVideo): Promise<string> {
-  const id = await appDb.exercises.put(exercise);
+export async function updateExercise(exercise: ExerciseDraft): Promise<string> {
+  const id = await appDb.exercises.put(stamp([exercise])[0]);
   scheduleSync();
   return id;
 }
@@ -42,14 +49,14 @@ export async function deleteExercise(id: string): Promise<void> {
   scheduleSync();
 }
 
-export async function replaceAllExercises(exercises: ExerciseVideo[]): Promise<void> {
+export async function replaceAllExercises(exercises: ExerciseDraft[]): Promise<void> {
   await appDb.transaction("rw", appDb.exercises, appDb.tombstones, async () => {
     const keptIds = new Set(exercises.map((exercise) => exercise.id));
     const removedIds = (await appDb.exercises.toCollection().primaryKeys()).filter(
       (id) => !keptIds.has(id),
     );
     await appDb.exercises.clear();
-    await appDb.exercises.bulkAdd(exercises);
+    await appDb.exercises.bulkAdd(stamp(exercises));
     await recordTombstones(TOMBSTONE_TABLE, removedIds);
   });
   scheduleSync();

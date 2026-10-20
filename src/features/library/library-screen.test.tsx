@@ -10,7 +10,7 @@ import { LibraryScreen } from "./components/library-screen";
 
 beforeEach(async () => {
   await appDb.exercises.clear();
-  await appDb.exercises.bulkAdd(exerciseCatalog);
+  await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });
 
 test("filters the exercise library by body area and duration", async () => {
@@ -75,6 +75,7 @@ test("library shows the shared thumbnail fallback for a blank-thumbnail YouTube 
     purpose: "mobility",
     durationSeconds: 300,
     intensity: "low",
+    updatedAt: "2026-10-20T00:00:00+09:00",
   });
 
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });

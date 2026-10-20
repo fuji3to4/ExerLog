@@ -16,10 +16,13 @@ vi.mock("./sync-engine", () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   vi.useFakeTimers();
+  // Error-path tests log expected errors; keep the output clean.
+  vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe("scheduleSync", () => {

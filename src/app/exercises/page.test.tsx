@@ -10,7 +10,7 @@ import ExercisesPage from "./page";
 beforeEach(async () => {
   await appDb.logs.clear();
   await appDb.exercises.clear();
-  await appDb.exercises.bulkAdd(exerciseCatalog);
+  await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });
 
 test("query-based exercise page renders a user-created exercise id", async () => {
@@ -24,6 +24,7 @@ test("query-based exercise page renders a user-created exercise id", async () =>
     purpose: "mobility",
     durationSeconds: 420,
     intensity: "low",
+    updatedAt: "2026-10-20T00:00:00+09:00",
   });
 
   window.history.pushState({}, "", "/exercises?exerciseId=be113122-1120-4320-af2b-129bc738f2dc");

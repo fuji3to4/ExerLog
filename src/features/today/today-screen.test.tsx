@@ -14,7 +14,7 @@ beforeEach(async () => {
   await appDb.logs.clear();
   await appDb.dailyWellness.clear();
   await appDb.exercises.clear();
-  await appDb.exercises.bulkAdd(exerciseCatalog);
+  await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });
 
 async function seedWellness(date: string, physicalScore: 1 | 2 | 3 | 4 | 5, mentalScore: 1 | 2 | 3 | 4 | 5, note: string) {

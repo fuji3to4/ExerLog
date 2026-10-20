@@ -18,7 +18,12 @@ export type ExerciseVideo = {
   purpose: string;
   durationSeconds: number;
   intensity: ExerciseIntensity;
+  /** Local ISO time of the last catalog write; used by sync (last-writer-wins, tombstones). */
+  updatedAt: string;
 };
+
+/** Exercise fields supplied by callers; repositories stamp `updatedAt` on write. */
+export type ExerciseDraft = Omit<ExerciseVideo, "updatedAt">;
 
 export type LegacyExerciseLog = {
   id: string;

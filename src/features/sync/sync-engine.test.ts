@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
+vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
+
 import type { ExerciseLog, Tombstone } from "@/lib/types";
+import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
+import { clearAllExercises, seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
 import { SHEET_TABS } from "./google-sheets";
 import { TABLE_SYNC_CONFIGS } from "./sync-config";
 import { syncAll } from "./sync-engine";
@@ -111,10 +115,14 @@ beforeEach(async () => {
   await Promise.all(appDb.tables.map((table) => table.clear()));
   sheets = new FakeSheets();
   vi.stubGlobal("fetch", vi.fn(sheets.handle));
+  // Failure-path tests log expected errors; keep the output clean.
+  vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe("syncAll", () => {
@@ -204,6 +212,65 @@ describe("syncAll", () => {
     ]);
     expect(await appDb.wellnessEntries.count()).toBe(1);
   });
+
+  test("exercises re-seeded after 'delete all' survive sync locally and on the sheet", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-20T09:00:00+09:00"));
+    await seedIfEmpty();
+    await syncAll(TOKEN);
+
+    vi.setSystemTime(new Date("2026-10-20T10:00:00+09:00"));
+    await clearAllExercises();
+    await syncAll(TOKEN);
+    expect(sheets.tabs.get("Exercises")).toHaveLength(1);
+
+    vi.setSystemTime(new Date("2026-10-20T11:00:00+09:00"));
+    await seedIfEmpty();
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(await appDb.exercises.count()).toBe(exerciseCatalog.length);
+    expect(sheets.tabs.get("Exercises")).toHaveLength(exerciseCatalog.length + 1);
+    expect(await appDb.tombstones.where("table").equals("Exercises").count()).toBe(
+      exerciseCatalog.length,
+    );
+  });
+
+  test.each(["read", "write"] as const)(
+    "a failed Tombstones %s stops the run before any other tab is synced",
+    async (failure) => {
+      await appDb.tombstones.put({
+        id: "ExerciseLogs:log-1",
+        table: "ExerciseLogs",
+        recordId: "log-1",
+        deletedAt: "2026-10-20T10:00:00+09:00",
+      });
+      sheets.tabs.set("ExerciseLogs", [EXERCISE_LOG_HEADERS, logRow(makeLog())]);
+      const handle = sheets.handle;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+          const method = init?.method ?? "GET";
+          const isTombstones = decodeURIComponent(url).includes("/values/Tombstones!");
+          if (isTombstones && (failure === "read" ? method === "GET" : method !== "GET")) {
+            return { ok: false, status: 500, json: async () => ({}), text: async () => "boom" };
+          }
+          return handle(url, init);
+        }),
+      );
+
+      const result = await syncAll(TOKEN);
+
+      expect(result.success).toBe(false);
+      expect(result.results.map((r) => r.tableName)).toEqual(["Tombstones"]);
+      expect(result.results[0].error).toBeDefined();
+      expect(await appDb.exerciseLogs.count()).toBe(0);
+      expect(sheets.tabs.get("ExerciseLogs")).toEqual([EXERCISE_LOG_HEADERS, logRow(makeLog())]);
+      expect(
+        sheets.calls.some((c) => decodeURIComponent(c.url).includes("/values/ExerciseLogs!")),
+      ).toBe(false);
+    },
+  );
 
   test("syncs every tab, Tombstones first, and reports row counts", async () => {
     await appDb.exerciseLogs.put(makeLog());

@@ -53,21 +53,25 @@ async function doSyncAll(
   }
 
   const results: SyncTableResult[] = [];
-  const run = async (config: TableSyncConfig, deletedIds: Set<string>) => {
+  const run = async (config: TableSyncConfig, deletedIds: Map<string, string>) => {
     const result = await syncTable(accessToken, spreadsheetId, config, deletedIds);
     results.push(result);
     onProgress(result);
   };
 
   const tombstonesConfig = TABLE_SYNC_CONFIGS.find((c) => c.tabName === TOMBSTONES_TAB)!;
-  await run(tombstonesConfig, new Set());
+  await run(tombstonesConfig, new Map());
+  if (results[0].error) {
+    // Without the merged tombstones, other tabs could pull deleted records back.
+    return { success: false, results, spreadsheetId };
+  }
 
   const deletedIdsByTab = groupDeletedIds(await appDb.tombstones.toArray());
   for (const config of TABLE_SYNC_CONFIGS) {
     if (config === tombstonesConfig) continue;
     const deletedIds = config.deletable
-      ? (deletedIdsByTab.get(config.tabName) ?? new Set<string>())
-      : new Set<string>();
+      ? (deletedIdsByTab.get(config.tabName) ?? new Map<string, string>())
+      : new Map<string, string>();
     await run(config, deletedIds);
   }
 
@@ -96,11 +100,12 @@ async function prepareSpreadsheet(accessToken: string): Promise<string | SyncTab
   return created.spreadsheetId;
 }
 
-function groupDeletedIds(tombstones: Tombstone[]): Map<string, Set<string>> {
-  const byTab = new Map<string, Set<string>>();
+/** Tab name → (recordId → deletedAt). */
+function groupDeletedIds(tombstones: Tombstone[]): Map<string, Map<string, string>> {
+  const byTab = new Map<string, Map<string, string>>();
   for (const tombstone of tombstones) {
-    const ids = byTab.get(tombstone.table) ?? new Set<string>();
-    ids.add(tombstone.recordId);
+    const ids = byTab.get(tombstone.table) ?? new Map<string, string>();
+    ids.set(tombstone.recordId, tombstone.deletedAt);
     byTab.set(tombstone.table, ids);
   }
   return byTab;
@@ -115,7 +120,7 @@ async function syncTable(
   accessToken: string,
   spreadsheetId: string,
   config: TableSyncConfig,
-  deletedIds: Set<string>,
+  deletedIds: Map<string, string>,
 ): Promise<SyncTableResult> {
   const result: SyncTableResult = { tableName: config.tabName, rowCount: 0 };
 

@@ -13,7 +13,7 @@ import ExerciseDetailPage from "./page";
 beforeEach(async () => {
   await appDb.logs.clear();
   await appDb.exercises.clear();
-  await appDb.exercises.bulkAdd(exerciseCatalog);
+  await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });
 
 async function seedTodayState() {
@@ -96,6 +96,7 @@ test("exercise detail page shows a derived thumbnail with an embeddable play but
     purpose: "mobility",
     durationSeconds: 300,
     intensity: "low",
+    updatedAt: "2026-10-20T00:00:00+09:00",
   });
 
   renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "blank-youtube-thumb" }) }));
@@ -117,6 +118,7 @@ test("falls back to the external watch link for a non-embeddable video URL", asy
     purpose: "mobility",
     durationSeconds: 300,
     intensity: "low",
+    updatedAt: "2026-10-20T00:00:00+09:00",
   });
 
   renderWithLanguage(await ExerciseDetailPage({ params: Promise.resolve({ exerciseId: "non-youtube-video" }) }));

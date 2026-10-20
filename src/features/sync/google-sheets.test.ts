@@ -1,4 +1,4 @@
-import { describe, expect, test, vi, beforeEach } from "vitest";
+import { afterEach, describe, expect, test, vi, beforeEach } from "vitest";
 import {
   findSpreadsheet,
   createSpreadsheet,
@@ -13,6 +13,12 @@ const FAKE_TOKEN = "fake-token";
 
 beforeEach(() => {
   mockFetch.mockReset();
+  // Failure-path tests log expected errors; keep the output clean.
+  vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe("findSpreadsheet", () => {
