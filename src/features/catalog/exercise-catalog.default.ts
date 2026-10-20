@@ -9,7 +9,7 @@ export const exerciseCatalog: ExerciseVideo[] = [
     thumbnailUrl: "/thumbnails/shoulder-roll.jpg",
     bodyArea: "upper-body",
     purpose: "warmup",
-    durationMinutes: 4,
+    durationSeconds: 240,
     intensity: "low",
   },
   {
@@ -20,7 +20,7 @@ export const exerciseCatalog: ExerciseVideo[] = [
     thumbnailUrl: "/thumbnails/hip-mobility.jpg",
     bodyArea: "lower-body",
     purpose: "mobility",
-    durationMinutes: 6,
+    durationSeconds: 360,
     intensity: "medium",
   },
   {
@@ -31,7 +31,7 @@ export const exerciseCatalog: ExerciseVideo[] = [
     thumbnailUrl: "/thumbnails/seated-calf-raise.jpg",
     bodyArea: "lower-body",
     purpose: "strength",
-    durationMinutes: 5,
+    durationSeconds: 300,
     intensity: "high",
   },
   {
@@ -42,7 +42,7 @@ export const exerciseCatalog: ExerciseVideo[] = [
     thumbnailUrl: "/thumbnails/neck-mobility.jpg",
     bodyArea: "upper-body",
     purpose: "mobility",
-    durationMinutes: 5,
+    durationSeconds: 300,
     intensity: "low",
   },
   {
@@ -53,7 +53,7 @@ export const exerciseCatalog: ExerciseVideo[] = [
     thumbnailUrl: "/thumbnails/breathing-reset.jpg",
     bodyArea: "full-body",
     purpose: "recovery",
-    durationMinutes: 3,
+    durationSeconds: 180,
     intensity: "low",
   },
   {
@@ -64,7 +64,7 @@ export const exerciseCatalog: ExerciseVideo[] = [
     thumbnailUrl: "/thumbnails/walk-in-place.jpg",
     bodyArea: "full-body",
     purpose: "endurance",
-    durationMinutes: 10,
+    durationSeconds: 600,
     intensity: "medium",
   },
 ];

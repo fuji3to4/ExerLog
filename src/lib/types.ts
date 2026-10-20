@@ -16,7 +16,7 @@ export type ExerciseVideo = {
   thumbnailUrl: string;
   bodyArea: string;
   purpose: string;
-  durationMinutes: number;
+  durationSeconds: number;
   intensity: ExerciseIntensity;
 };
 

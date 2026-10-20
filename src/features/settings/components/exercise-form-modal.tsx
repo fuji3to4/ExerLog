@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import { addExercise, updateExercise } from "@/features/storage/exercise-catalog.repository";
+import { joinDuration, splitDuration } from "@/lib/date/duration";
 import { getYouTubeThumbnailUrl } from "@/lib/video/youtube";
 import type { ExerciseIntensity, ExerciseVideo } from "@/lib/types";
 
@@ -25,7 +26,8 @@ type FormState = {
   thumbnailUrl: string;
   bodyArea: string;
   purpose: string;
-  durationMinutes: string;
+  minutesPart: string;
+  secondsPart: string;
   intensity: ExerciseIntensity;
 };
 
@@ -39,7 +41,8 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
     thumbnailUrl: exercise?.thumbnailUrl ?? "",
     bodyArea: exercise?.bodyArea ?? "upper-body",
     purpose: exercise?.purpose ?? "warmup",
-    durationMinutes: exercise?.durationMinutes?.toString() ?? "",
+    minutesPart: exercise ? splitDuration(exercise.durationSeconds).minutes.toString() : "",
+    secondsPart: exercise ? splitDuration(exercise.durationSeconds).seconds.toString() : "0",
     intensity: exercise?.intensity ?? "low",
   });
   const resolvedThumbnailUrl = form.thumbnailUrl.trim() || getYouTubeThumbnailUrl(form.videoUrl) || "";
@@ -75,7 +78,7 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
       thumbnailUrl: form.thumbnailUrl.trim(),
       bodyArea: form.bodyArea,
       purpose: form.purpose,
-      durationMinutes: Number(form.durationMinutes),
+      durationSeconds: joinDuration(Number(form.minutesPart) || 0, Number(form.secondsPart) || 0),
       intensity: form.intensity,
     };
 
@@ -194,16 +197,29 @@ export function ExerciseFormModal({ exercise, onSaved, onCancel }: ExerciseFormM
           </div>
 
           <div className="modal__field">
-            <label htmlFor="ex-duration">{t("settings_form_duration_label")}</label>
-            <input
-              id="ex-duration"
-              type="number"
-              required
-              min="1"
-              max="120"
-              value={form.durationMinutes}
-              onChange={(e) => handleChange("durationMinutes", e.target.value)}
-            />
+            <span>{t("settings_form_duration_label")}</span>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <input
+                id="ex-duration-minutes"
+                type="number"
+                min="0"
+                max="120"
+                required
+                value={form.minutesPart}
+                onChange={(e) => handleChange("minutesPart", e.target.value)}
+              />
+              <label htmlFor="ex-duration-minutes">{t("settings_form_duration_minutes")}</label>
+              <input
+                id="ex-duration-seconds"
+                type="number"
+                min="0"
+                max="59"
+                required
+                value={form.secondsPart}
+                onChange={(e) => handleChange("secondsPart", e.target.value)}
+              />
+              <label htmlFor="ex-duration-seconds">{t("settings_form_duration_seconds")}</label>
+            </div>
           </div>
 
           <div className="modal__field">

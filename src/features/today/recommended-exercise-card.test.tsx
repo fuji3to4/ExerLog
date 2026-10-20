@@ -15,7 +15,7 @@ test("renders a derived thumbnail image when a YouTube exercise has no stored th
     thumbnailUrl: "",
     bodyArea: "upper-body",
     purpose: "mobility",
-    durationMinutes: 5,
+    durationSeconds: 300,
     intensity: "low" as const,
   };
 

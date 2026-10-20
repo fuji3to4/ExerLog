@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
 import { deleteExerciseLogByDateAndExercise, listExerciseLogsForDay, saveExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
+import { formatDuration } from "@/lib/date/duration";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
 import { getYouTubeEmbedUrl, resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 import { useTranslation } from "@/features/i18n/use-translation";
@@ -116,7 +117,7 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
           </div>
           <div>
             <dt>{t("meta_duration")}</dt>
-            <dd>{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
+            <dd>{formatDuration(exercise.durationSeconds)}</dd>
           </div>
           <div>
             <dt>{t("meta_intensity")}</dt>

@@ -8,7 +8,7 @@ const HEADERS = [
   "thumbnailUrl",
   "bodyArea",
   "purpose",
-  "durationMinutes",
+  "durationSeconds",
   "intensity",
 ] as const;
 
@@ -55,9 +55,9 @@ export function parseExerciseCsv(csv: string): ParseExerciseCsvResult {
       row[h] = values[idx] ?? "";
     });
 
-    const durationMinutes = Number(row.durationMinutes);
+    const durationSeconds = Number(row.durationSeconds);
     const isValid =
-      row.title && row.videoUrl && row.bodyArea && row.purpose && row.intensity && !isNaN(durationMinutes) && durationMinutes > 0;
+      row.title && row.videoUrl && row.bodyArea && row.purpose && row.intensity && !isNaN(durationSeconds) && durationSeconds > 0;
 
     if (!isValid) {
       skipped++;
@@ -72,7 +72,7 @@ export function parseExerciseCsv(csv: string): ParseExerciseCsvResult {
       thumbnailUrl: row.thumbnailUrl ?? "",
       bodyArea: row.bodyArea,
       purpose: row.purpose,
-      durationMinutes,
+      durationSeconds,
       intensity: row.intensity as ExerciseVideo["intensity"],
     });
   }

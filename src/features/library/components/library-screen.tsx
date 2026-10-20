@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { ExerciseVideo } from "@/lib/types";
+import { formatDuration } from "@/lib/date/duration";
 import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
 import { LibraryFilters } from "./library-filters";
@@ -48,7 +49,7 @@ export function LibraryScreen() {
         return false;
       }
 
-      if (filters.duration && exercise.durationMinutes !== Number(filters.duration)) {
+      if (filters.duration && Math.round(exercise.durationSeconds / 60) !== Number(filters.duration)) {
         return false;
       }
 
@@ -107,7 +108,7 @@ export function LibraryScreen() {
               <dl className="recommendation-card__meta">
                 <div>
                   <dt>{t("meta_duration")}</dt>
-                  <dd>{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
+                  <dd>{formatDuration(exercise.durationSeconds)}</dd>
                 </div>
                 <div>
                   <dt>{t("meta_intensity")}</dt>

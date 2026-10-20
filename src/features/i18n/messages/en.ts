@@ -110,7 +110,6 @@ export const en = {
 
   // Duration values
   duration_any: "Any duration",
-  duration_minutes: "{count} min",
 
   // Exercise logging results
   result_did: "Did it",
@@ -159,7 +158,9 @@ export const en = {
   settings_form_thumbnail_preview_alt: "Thumbnail preview",
   settings_form_body_area_label: "Body area",
   settings_form_purpose_label: "Purpose",
-  settings_form_duration_label: "Duration (minutes)",
+  settings_form_duration_label: "Duration",
+  settings_form_duration_minutes: "Minutes",
+  settings_form_duration_seconds: "Seconds",
   settings_form_intensity_label: "Intensity",
   settings_form_save: "Save",
   settings_form_cancel: "Cancel",

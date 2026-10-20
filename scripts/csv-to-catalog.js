@@ -46,10 +46,10 @@ function parseCsvToCatalog(csvText) {
       );
     }
 
-    const durationMinutes = Number(record.durationMinutes);
-    if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+    const durationSeconds = Number(record.durationSeconds);
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
       rowErrors.push(
-        `invalid "durationMinutes" value "${record.durationMinutes}" (must be a positive number)`
+        `invalid "durationSeconds" value "${record.durationSeconds}" (must be a positive number)`
       );
     }
 
@@ -73,7 +73,7 @@ function parseCsvToCatalog(csvText) {
       thumbnailUrl: record.thumbnailUrl || "",
       bodyArea: record.bodyArea,
       purpose: record.purpose,
-      durationMinutes,
+      durationSeconds,
       intensity: record.intensity,
     });
   });

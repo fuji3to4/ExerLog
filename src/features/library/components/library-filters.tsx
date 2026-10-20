@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { formatDuration } from "@/lib/date/duration";
 
 type LibraryFiltersValue = {
   search: string;
@@ -66,11 +67,11 @@ export function LibraryFilters({ value, onChange }: LibraryFiltersProps) {
 
   const durationOptions: SelectOption[] = [
     { label: t("duration_any"), value: "" },
-    { label: t("duration_minutes", { count: 3 }), value: "3" },
-    { label: t("duration_minutes", { count: 4 }), value: "4" },
-    { label: t("duration_minutes", { count: 5 }), value: "5" },
-    { label: t("duration_minutes", { count: 6 }), value: "6" },
-    { label: t("duration_minutes", { count: 10 }), value: "10" },
+    { label: formatDuration(3 * 60), value: "3" },
+    { label: formatDuration(4 * 60), value: "4" },
+    { label: formatDuration(5 * 60), value: "5" },
+    { label: formatDuration(6 * 60), value: "6" },
+    { label: formatDuration(10 * 60), value: "10" },
   ];
 
   const intensityOptions: SelectOption[] = [

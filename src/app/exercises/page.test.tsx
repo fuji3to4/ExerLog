@@ -22,7 +22,7 @@ test("query-based exercise page renders a user-created exercise id", async () =>
     thumbnailUrl: "",
     bodyArea: "full-body",
     purpose: "mobility",
-    durationMinutes: 7,
+    durationSeconds: 420,
     intensity: "low",
   });
 

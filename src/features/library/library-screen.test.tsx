@@ -73,7 +73,7 @@ test("library shows the shared thumbnail fallback for a blank-thumbnail YouTube 
     thumbnailUrl: "",
     bodyArea: "upper-body",
     purpose: "mobility",
-    durationMinutes: 5,
+    durationSeconds: 300,
     intensity: "low",
   });
 

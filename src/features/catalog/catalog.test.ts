@@ -10,7 +10,7 @@ test("catalog matches the planned exercise seed data exactly", () => {
       thumbnailUrl: "/thumbnails/breathing-reset.jpg",
       bodyArea: "full-body",
       purpose: "recovery",
-      durationMinutes: 3,
+      durationSeconds: 180,
       intensity: "low",
     },
     {
@@ -21,7 +21,7 @@ test("catalog matches the planned exercise seed data exactly", () => {
       thumbnailUrl: "/thumbnails/hip-mobility.jpg",
       bodyArea: "lower-body",
       purpose: "mobility",
-      durationMinutes: 6,
+      durationSeconds: 360,
       intensity: "medium",
     },
     {
@@ -32,7 +32,7 @@ test("catalog matches the planned exercise seed data exactly", () => {
       thumbnailUrl: "/thumbnails/neck-mobility.jpg",
       bodyArea: "upper-body",
       purpose: "mobility",
-      durationMinutes: 5,
+      durationSeconds: 300,
       intensity: "low",
     },
     {
@@ -43,7 +43,7 @@ test("catalog matches the planned exercise seed data exactly", () => {
       thumbnailUrl: "/thumbnails/shoulder-roll.jpg",
       bodyArea: "upper-body",
       purpose: "warmup",
-      durationMinutes: 4,
+      durationSeconds: 240,
       intensity: "low",
     },
     {
@@ -54,7 +54,7 @@ test("catalog matches the planned exercise seed data exactly", () => {
       thumbnailUrl: "/thumbnails/seated-calf-raise.jpg",
       bodyArea: "lower-body",
       purpose: "strength",
-      durationMinutes: 5,
+      durationSeconds: 300,
       intensity: "high",
     },
     {
@@ -65,7 +65,7 @@ test("catalog matches the planned exercise seed data exactly", () => {
       thumbnailUrl: "/thumbnails/walk-in-place.jpg",
       bodyArea: "full-body",
       purpose: "endurance",
-      durationMinutes: 10,
+      durationSeconds: 600,
       intensity: "medium",
     },
   ].sort((left, right) => left.id.localeCompare(right.id)));
@@ -76,5 +76,5 @@ test("catalog covers the planned browsing dimensions", () => {
   expect(new Set(exerciseCatalog.map((item) => item.bodyArea)).size).toBeGreaterThanOrEqual(2);
   expect(new Set(exerciseCatalog.map((item) => item.purpose)).size).toBeGreaterThanOrEqual(2);
   expect(new Set(exerciseCatalog.map((item) => item.intensity)).size).toBeGreaterThanOrEqual(2);
-  expect(new Set(exerciseCatalog.map((item) => item.durationMinutes)).size).toBeGreaterThanOrEqual(2);
+  expect(new Set(exerciseCatalog.map((item) => item.durationSeconds)).size).toBeGreaterThanOrEqual(2);
 });

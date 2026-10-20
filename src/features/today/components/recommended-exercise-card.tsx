@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
 import { cn } from "@/lib/utils";
+import { formatDuration } from "@/lib/date/duration";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
 import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
@@ -52,7 +53,7 @@ export function RecommendedExerciseCard({
         <dl className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-muted/40 px-4 py-3">
             <dt className="mb-1 text-sm text-muted-foreground">{t("meta_duration")}</dt>
-            <dd className="m-0 font-semibold capitalize">{t("duration_minutes", { count: exercise.durationMinutes })}</dd>
+            <dd className="m-0 font-semibold capitalize">{formatDuration(exercise.durationSeconds)}</dd>
           </div>
           <div className="rounded-2xl bg-muted/40 px-4 py-3">
             <dt className="mb-1 text-sm text-muted-foreground">{t("meta_intensity")}</dt>

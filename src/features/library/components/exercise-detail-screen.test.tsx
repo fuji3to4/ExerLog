@@ -20,7 +20,7 @@ const youtubeExercise: ExerciseVideo = {
   thumbnailUrl: "",
   bodyArea: "upper-body",
   purpose: "mobility",
-  durationMinutes: 5,
+  durationSeconds: 300,
   intensity: "low",
 };
 
@@ -32,7 +32,7 @@ const nonEmbeddableExercise: ExerciseVideo = {
   thumbnailUrl: "https://cdn.example.com/thumb.jpg",
   bodyArea: "upper-body",
   purpose: "mobility",
-  durationMinutes: 5,
+  durationSeconds: 300,
   intensity: "low",
 };
 

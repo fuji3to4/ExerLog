@@ -1,12 +1,12 @@
 const { parseCsvToCatalog } = require("./csv-to-catalog");
 
 const HEADER =
-  "id,title,description,videoUrl,thumbnailUrl,bodyArea,purpose,durationMinutes,intensity";
+  "id,title,description,videoUrl,thumbnailUrl,bodyArea,purpose,durationSeconds,intensity";
 
 test("parses a valid CSV into ExerciseVideo rows", () => {
   const csv = [
     HEADER,
-    "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,10,medium",
+    "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,330,medium",
   ].join("\n");
 
   const { rows, errors } = parseCsvToCatalog(csv);
@@ -21,7 +21,7 @@ test("parses a valid CSV into ExerciseVideo rows", () => {
       thumbnailUrl: "/thumb.jpg",
       bodyArea: "full-body",
       purpose: "endurance",
-      durationMinutes: 10,
+      durationSeconds: 330,
       intensity: "medium",
     },
   ]);
@@ -32,7 +32,7 @@ test("strips a leading UTF-8 BOM before parsing", () => {
     "\uFEFF" +
     [
       HEADER,
-      "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,10,medium",
+      "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,330,medium",
     ].join("\n");
 
   const { rows, errors } = parseCsvToCatalog(csv);
@@ -45,7 +45,7 @@ test("strips a leading UTF-8 BOM before parsing", () => {
 test("reports missing required fields", () => {
   const csv = [
     HEADER,
-    ",Walk,A short walk.,https://example.com/v,/thumb.jpg,,endurance,10,medium",
+    ",Walk,A short walk.,https://example.com/v,/thumb.jpg,,endurance,330,medium",
   ].join("\n");
 
   const { rows, errors } = parseCsvToCatalog(csv);
@@ -57,7 +57,7 @@ test("reports missing required fields", () => {
 test("allows a blank description and thumbnailUrl", () => {
   const csv = [
     HEADER,
-    "walk-1,Walk,,https://example.com/v,,full-body,endurance,10,medium",
+    "walk-1,Walk,,https://example.com/v,,full-body,endurance,330,medium",
   ].join("\n");
 
   const { rows, errors } = parseCsvToCatalog(csv);
@@ -72,7 +72,7 @@ test("allows a blank description and thumbnailUrl", () => {
       thumbnailUrl: "",
       bodyArea: "full-body",
       purpose: "endurance",
-      durationMinutes: 10,
+      durationSeconds: 330,
       intensity: "medium",
     },
   ]);
@@ -91,7 +91,7 @@ test("reports an invalid intensity value", () => {
   ]);
 });
 
-test("reports a non-numeric durationMinutes value", () => {
+test("reports a non-numeric durationSeconds value", () => {
   const csv = [
     HEADER,
     "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,abc,medium",
@@ -100,14 +100,14 @@ test("reports a non-numeric durationMinutes value", () => {
   const { errors } = parseCsvToCatalog(csv);
 
   expect(errors).toEqual([
-    'row 2: invalid "durationMinutes" value "abc" (must be a positive number)',
+    'row 2: invalid "durationSeconds" value "abc" (must be a positive number)',
   ]);
 });
 
 test("reports duplicate ids", () => {
   const csv = [
     HEADER,
-    "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,10,medium",
+    "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,330,medium",
     "walk-1,Walk 2,Another walk.,https://example.com/v2,/thumb2.jpg,full-body,endurance,5,low",
   ].join("\n");
 
@@ -122,7 +122,7 @@ test("reports a row with an unescaped comma that adds an extra column past the h
   // added inside the last field, producing one more column than the header.
   const csv = [
     HEADER,
-    "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,10,medium,extra note",
+    "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,330,medium,extra note",
   ].join("\n");
 
   const { rows, errors } = parseCsvToCatalog(csv);
@@ -144,6 +144,30 @@ test("collects errors from multiple bad rows", () => {
 
   expect(errors).toEqual([
     'row 2: invalid "intensity" value "extreme" (must be low, medium, or high)',
-    'row 3: invalid "durationMinutes" value "abc" (must be a positive number)',
+    'row 3: invalid "durationSeconds" value "abc" (must be a positive number)',
   ]);
+});
+
+test("reports a zero or negative durationSeconds value", () => {
+  const csv = [
+    HEADER,
+    "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,0,medium",
+  ].join("\n");
+
+  const { errors } = parseCsvToCatalog(csv);
+
+  expect(errors).toEqual([
+    'row 2: invalid "durationSeconds" value "0" (must be a positive number)',
+  ]);
+});
+
+test("reports a missing durationSeconds column", () => {
+  const csv = [
+    "id,title,description,videoUrl,thumbnailUrl,bodyArea,purpose,intensity",
+    "walk-1,Walk,A short walk.,https://example.com/v,/thumb.jpg,full-body,endurance,medium",
+  ].join("\n");
+
+  const { errors } = parseCsvToCatalog(csv);
+
+  expect(errors.length).toBeGreaterThan(0);
 });

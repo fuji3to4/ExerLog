@@ -110,7 +110,6 @@
 
   // Duration values
   duration_any: "任意の時間",
-  duration_minutes: "{count}分",
 
   // Exercise logging results
   result_did: "できた",
@@ -159,7 +158,9 @@
   settings_form_thumbnail_preview_alt: "サムネイルのプレビュー",
   settings_form_body_area_label: "体の部位",
   settings_form_purpose_label: "目的",
-  settings_form_duration_label: "時間（分）",
+  settings_form_duration_label: "長さ",
+  settings_form_duration_minutes: "分",
+  settings_form_duration_seconds: "秒",
   settings_form_intensity_label: "強度",
   settings_form_save: "保存",
   settings_form_cancel: "キャンセル",

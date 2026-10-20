@@ -16,7 +16,7 @@ const customExercise: ExerciseVideo = {
   thumbnailUrl: "",
   bodyArea: "upper-body",
   purpose: "mobility",
-  durationMinutes: 5,
+  durationSeconds: 300,
   intensity: "low",
 };
 

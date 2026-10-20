@@ -8,7 +8,7 @@ function makeTempDir() {
 }
 
 const HEADER =
-  "id,title,description,videoUrl,thumbnailUrl,bodyArea,purpose,durationMinutes,intensity";
+  "id,title,description,videoUrl,thumbnailUrl,bodyArea,purpose,durationSeconds,intensity";
 
 test("writes a generated catalog file from a valid CSV", () => {
   const dir = makeTempDir();
