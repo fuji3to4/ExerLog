@@ -116,7 +116,7 @@ describe("today screen timeline", () => {
     fireEvent.click(within(card).getByRole("button", { name: "できた" }));
 
     expect(await screen.findByRole("button", { name: /Delta できた/ })).toBeInTheDocument();
-    expect(await screen.findByText(/おつかれさま！ 5:00 やりました/)).toBeInTheDocument();
+    expect(await screen.findByText(/おつかれさま！ 5分 やりました/)).toBeInTheDocument();
     await waitFor(() => expect(within(card).getByText("今日1回")).toBeInTheDocument());
 
     fireEvent.click(within(card).getByRole("button", { name: "できた" }));
