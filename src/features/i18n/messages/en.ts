@@ -81,6 +81,10 @@ export const en = {
   self_care_count_label: "Count",
   self_care_minutes_label: "Minutes",
   self_care_note_label: "Note",
+  self_care_wellness_text: "Log how your body and mind feel, as often as you like.",
+  self_care_save_error: "Could not save. Please try again.",
+  bmi_value: "BMI {value}",
+  bmi_need_height: "Record your height to see BMI",
 
   // Metadata labels
   meta_duration: "Duration",

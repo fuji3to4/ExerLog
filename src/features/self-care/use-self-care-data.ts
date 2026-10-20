@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { listDailyMetricsByDate, replaceDailyMetrics, type MetricDraft } from "@/features/storage/daily-metrics.repository";
-import { getDailyWellness, saveDailyWellness } from "@/features/storage/daily-wellness.repository";
+import { useSavedFlash } from "@/features/feedback/use-saved-flash";
+import { calculateBmi } from "@/features/metrics/bmi";
+import {
+  findLatestHeightOnOrBefore,
+  listDailyMetricsByDate,
+  replaceDailyMetrics,
+  type MetricDraft,
+} from "@/features/storage/daily-metrics.repository";
 import { toDayKey } from "@/lib/date/day-key";
-import type { MetricType, WellnessScore } from "@/lib/types";
+import type { MetricType } from "@/lib/types";
 
 type MetricState = Record<MetricType, string>;
 
@@ -13,8 +19,6 @@ export type SelfCareEntryState = {
   minutes: string;
   note: string;
 };
-
-const DEFAULT_WELLNESS_SCORE: WellnessScore = 3;
 
 const EMPTY_METRICS: MetricState = {
   height: "",
@@ -39,21 +43,21 @@ function toNullableNumber(value: string): number | null {
 
 export function useSelfCareData(date: Date | string) {
   const dayKey = useMemo(() => toDayKey(date), [date]);
-  const [physicalScore, setPhysicalScoreState] = useState<WellnessScore>(DEFAULT_WELLNESS_SCORE);
-  const [mentalScore, setMentalScoreState] = useState<WellnessScore>(DEFAULT_WELLNESS_SCORE);
-  const [note, setNote] = useState("");
   const [metrics, setMetrics] = useState<MetricState>(EMPTY_METRICS);
+  const [storedHeight, setStoredHeight] = useState<number | null>(null);
   const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
+  const [hasSaveError, setHasSaveError] = useState(false);
+  const { isSaved, flash } = useSavedFlash();
 
   useEffect(() => {
     let isActive = true;
     setHydratedDayKey(null);
+    setHasSaveError(false);
 
     async function loadSelfCareData() {
-      const selectedDayKey = toDayKey(dayKey);
-      const [savedWellness, savedMetrics] = await Promise.all([
-        getDailyWellness(selectedDayKey),
-        listDailyMetricsByDate(selectedDayKey),
+      const [savedMetrics, latestHeight] = await Promise.all([
+        listDailyMetricsByDate(dayKey),
+        findLatestHeightOnOrBefore(dayKey),
       ]);
 
       if (!isActive) {
@@ -64,11 +68,9 @@ export function useSelfCareData(date: Date | string) {
       savedMetrics.forEach((metric) => {
         nextMetrics[metric.metricType] = String(metric.value);
       });
-      setPhysicalScoreState(savedWellness?.physicalScore ?? DEFAULT_WELLNESS_SCORE);
-      setMentalScoreState(savedWellness?.mentalScore ?? DEFAULT_WELLNESS_SCORE);
-      setNote(savedWellness?.note ?? "");
       setMetrics(nextMetrics);
-      setHydratedDayKey(selectedDayKey);
+      setStoredHeight(latestHeight);
+      setHydratedDayKey(dayKey);
     }
 
     void loadSelfCareData();
@@ -78,14 +80,6 @@ export function useSelfCareData(date: Date | string) {
     };
   }, [dayKey]);
 
-  const setPhysicalScore = useCallback((value: WellnessScore) => {
-    setPhysicalScoreState(value);
-  }, []);
-
-  const setMentalScore = useCallback((value: WellnessScore) => {
-    setMentalScoreState(value);
-  }, []);
-
   const setMetric = useCallback((metricType: MetricType, value: string) => {
     setMetrics((currentMetrics) => ({
       ...currentMetrics,
@@ -93,8 +87,18 @@ export function useSelfCareData(date: Date | string) {
     }));
   }, []);
 
+  const bmi = useMemo(() => {
+    const weight = toNullableNumber(metrics.weight);
+    const height = metrics.height.trim() !== "" ? toNullableNumber(metrics.height) : storedHeight;
+
+    if (weight === null || height === null) {
+      return null;
+    }
+
+    return calculateBmi(weight, height);
+  }, [metrics.height, metrics.weight, storedHeight]);
+
   const save = useCallback(async () => {
-    const selectedDayKey = toDayKey(dayKey);
     const metricDrafts = (Object.keys(metrics) as MetricType[]).reduce<MetricDraft[]>((drafts, metricType) => {
       const value = toNullableNumber(metrics[metricType]);
 
@@ -110,28 +114,32 @@ export function useSelfCareData(date: Date | string) {
       return drafts;
     }, []);
 
-    await Promise.all([
-      saveDailyWellness({
-        date: selectedDayKey,
-        physicalScore,
-        mentalScore,
-        note,
-      }),
-      replaceDailyMetrics(selectedDayKey, metricDrafts),
-    ]);
-  }, [dayKey, mentalScore, metrics, note, physicalScore]);
+    try {
+      await replaceDailyMetrics(dayKey, metricDrafts);
+    } catch {
+      setHasSaveError(true);
+      return;
+    }
+
+    // A height saved just now becomes the BMI fallback once the height field is cleared.
+    try {
+      setStoredHeight(await findLatestHeightOnOrBefore(dayKey));
+    } catch {
+      // Keep the previous fallback; the save itself succeeded.
+    }
+
+    setHasSaveError(false);
+    flash();
+  }, [dayKey, flash, metrics]);
 
   return {
     dayKey,
     isHydrated: hydratedDayKey === dayKey,
-    physicalScore,
-    mentalScore,
-    note,
     metrics,
-    setPhysicalScore,
-    setMentalScore,
-    setNote,
+    bmi,
     setMetric,
     save,
+    isSaved,
+    hasSaveError,
   };
 }

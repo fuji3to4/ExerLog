@@ -1,29 +1,22 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { useTranslation } from "@/features/i18n/use-translation";
-import type { WellnessScore } from "@/lib/types";
+"use client";
 
-import { WellnessScoreInput } from "./wellness-score-input";
+import { useState } from "react";
+
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { SaveButton } from "@/features/feedback/save-button";
+import { useSavedFlash } from "@/features/feedback/use-saved-flash";
+import { useTranslation } from "@/features/i18n/use-translation";
+import { WellnessEntryDialog } from "@/features/timeline/components/wellness-entry-dialog";
 
 type WellnessCardProps = {
-  physicalScore: WellnessScore;
-  mentalScore: WellnessScore;
-  note: string;
-  onPhysicalScoreChange: (value: WellnessScore) => void;
-  onMentalScoreChange: (value: WellnessScore) => void;
-  onNoteChange: (value: string) => void;
+  date: string;
 };
 
-export function WellnessCard({
-  physicalScore,
-  mentalScore,
-  note,
-  onPhysicalScoreChange,
-  onMentalScoreChange,
-  onNoteChange,
-}: WellnessCardProps) {
+export function WellnessCard({ date }: WellnessCardProps) {
   const { t } = useTranslation();
   const headingId = "self-care-wellness-heading";
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { isSaved, flash } = useSavedFlash();
 
   return (
     <Card role="region" aria-labelledby={headingId} className="grid gap-4">
@@ -31,37 +24,27 @@ export function WellnessCard({
         <h2 id={headingId} className="text-xl font-semibold">
           {t("self_care_condition_heading")}
         </h2>
+        <CardDescription>{t("self_care_wellness_text")}</CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <div className="grid gap-2 font-semibold">
-          <span className="text-sm text-muted-foreground">{t("self_care_physical_label")}</span>
-          <WellnessScoreInput
-            label={t("self_care_physical_label")}
-            value={physicalScore}
-            onChange={onPhysicalScoreChange}
-          />
-        </div>
-
-        <div className="grid gap-2 font-semibold">
-          <span className="text-sm text-muted-foreground">{t("self_care_mental_label")}</span>
-          <WellnessScoreInput
-            label={t("self_care_mental_label")}
-            value={mentalScore}
-            onChange={onMentalScoreChange}
-          />
-        </div>
-
-        <label className="grid gap-2 font-semibold">
-          <span className="text-sm text-muted-foreground">{t("condition_note_label")}</span>
-          <Textarea
-            rows={3}
-            value={note}
-            placeholder={t("condition_note_placeholder")}
-            onChange={(event) => onNoteChange(event.target.value)}
-          />
-        </label>
+      <CardContent>
+        <SaveButton
+          type="button"
+          variant="outline"
+          className="w-full sm:w-auto"
+          isSaved={isSaved}
+          onClick={() => setIsDialogOpen(true)}
+        >
+          {t("timeline_add_wellness")}
+        </SaveButton>
       </CardContent>
+
+      <WellnessEntryDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        date={date}
+        onSaved={flash}
+      />
     </Card>
   );
 }

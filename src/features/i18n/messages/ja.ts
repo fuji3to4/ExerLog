@@ -81,6 +81,10 @@
   self_care_count_label: "回数",
   self_care_minutes_label: "分",
   self_care_note_label: "メモ",
+  self_care_wellness_text: "からだとこころの調子を、気づいたときに何度でも記録できます。",
+  self_care_save_error: "保存できませんでした。もう一度お試しください。",
+  bmi_value: "BMI {value}",
+  bmi_need_height: "身長を記録するとBMIが出ます",
 
   // Metadata labels
   meta_duration: "時間",

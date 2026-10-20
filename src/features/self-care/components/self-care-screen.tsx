@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { SaveButton } from "@/features/feedback/save-button";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { toDayKey } from "@/lib/date/day-key";
 
@@ -16,18 +16,8 @@ type SelfCareScreenProps = {
 export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
   const date = dateProp ?? toDayKey(new Date());
   const { t, formatDate } = useTranslation();
-  const {
-    isHydrated,
-    physicalScore,
-    mentalScore,
-    note,
-    metrics,
-    setPhysicalScore,
-    setMentalScore,
-    setNote,
-    setMetric,
-    save,
-  } = useSelfCareData(date);
+  const { dayKey, isHydrated, metrics, bmi, setMetric, save, isSaved, hasSaveError } = useSelfCareData(date);
+
   return (
     <>
       <Card className="page-header">
@@ -49,26 +39,24 @@ export function SelfCareScreen({ date: dateProp }: SelfCareScreenProps) {
         <>
           <div className="flex flex-col gap-4 lg:flex-row lg:justify-center">
             <div className="lg:max-w-[400px] lg:w-full">
-              <WellnessCard
-                physicalScore={physicalScore}
-                mentalScore={mentalScore}
-                note={note}
-                onPhysicalScoreChange={setPhysicalScore}
-                onMentalScoreChange={setMentalScore}
-                onNoteChange={setNote}
-              />
+              <WellnessCard date={dayKey} />
             </div>
             <div className="lg:max-w-[400px] lg:w-full">
-              <MetricsCard metrics={metrics} onMetricChange={setMetric} />
+              <MetricsCard metrics={metrics} bmi={bmi} onMetricChange={setMetric} />
             </div>
           </div>
 
           <Card className="grid gap-4">
-            <CardContent className="pt-0">
+            <CardContent className="grid gap-3 pt-0">
+              {hasSaveError ? (
+                <p role="alert" className="text-sm font-medium text-destructive">
+                  {t("self_care_save_error")}
+                </p>
+              ) : null}
               <div className="button-row">
-                <Button className="w-full sm:w-auto" onClick={() => void save()}>
+                <SaveButton className="w-full sm:w-auto" isSaved={isSaved} onClick={() => void save()}>
                   {t("self_care_save_button")}
-                </Button>
+                </SaveButton>
               </div>
             </CardContent>
           </Card>

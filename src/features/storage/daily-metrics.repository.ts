@@ -1,4 +1,4 @@
-import type { DailyMetricEntry } from "@/lib/types";
+import type { DailyMetricEntry, MetricType } from "@/lib/types";
 
 import { localIsoNow } from "@/lib/date/local-iso";
 import { scheduleSync } from "@/features/sync/auto-sync";
@@ -11,6 +11,41 @@ export type MetricDraft = Pick<DailyMetricEntry, "metricType" | "value" | "unit"
 
 export function listDailyMetricsByDate(date: string) {
   return appDb.dailyMetrics.where("date").equals(date).sortBy("metricType");
+}
+
+export async function findLatestHeightOnOrBefore(date: string): Promise<number | null> {
+  const heights = await appDb.dailyMetrics
+    .where("date")
+    .belowOrEqual(date)
+    .filter((entry) => entry.metricType === "height")
+    .toArray();
+
+  let latest: DailyMetricEntry | undefined;
+  for (const entry of heights) {
+    if (
+      !latest ||
+      entry.date > latest.date ||
+      (entry.date === latest.date && entry.recordedAt > latest.recordedAt)
+    ) {
+      latest = entry;
+    }
+  }
+
+  return latest?.value ?? null;
+}
+
+export async function listMetricEntriesInRange(
+  metricType: MetricType,
+  start: string,
+  end: string,
+): Promise<DailyMetricEntry[]> {
+  const entries = await appDb.dailyMetrics
+    .where("date")
+    .between(start, end, true, true)
+    .filter((entry) => entry.metricType === metricType)
+    .toArray();
+
+  return entries.sort((a, b) => a.date.localeCompare(b.date) || a.recordedAt.localeCompare(b.recordedAt));
 }
 
 export async function upsertDailyMetric(date: string, metric: MetricDraft) {
