@@ -16,3 +16,4 @@ data/
 
 src/features/catalog/exercise-catalog.ts
 public/exercises.csv
+.superpowers/
