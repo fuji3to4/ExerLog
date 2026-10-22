@@ -21,14 +21,26 @@ function formatTimestampToMD(timestamp: number): string {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
-const CustomTooltip = ({ active, payload, label, unit }: any) => {
+/** "M/D HH:mm" read from the ISO string's own digits (the time as recorded, no timezone conversion). */
+export function formatPointTime(at: string): string {
+  const month = Number(at.slice(5, 7));
+  const day = Number(at.slice(8, 10));
+  return `${month}/${day} ${at.slice(11, 16)}`;
+}
+
+export function formatPointValue(value: number, series: GraphSeries): string {
+  return value.toFixed(series.decimals);
+}
+
+const CustomTooltip = ({ active, payload, series }: any) => {
   if (active && payload && payload.length) {
-    const displayDate = typeof label === "number" ? formatTimestampToMD(label) : label;
+    const point = payload[0].payload as { at: string; value: number };
     return (
       <div className="rounded-lg border bg-popover p-2 shadow-md">
-        <p className="text-xs text-muted-foreground">{displayDate}</p>
+        <p className="text-xs text-muted-foreground">{formatPointTime(point.at)}</p>
         <p className="text-sm font-bold text-foreground">
-          {payload[0].value} <span className="text-xs font-normal text-muted-foreground">{unit}</span>
+          {formatPointValue(point.value, series)}{" "}
+          <span className="text-xs font-normal text-muted-foreground">{series.unit}</span>
         </p>
       </div>
     );
@@ -41,8 +53,7 @@ export function HistoryChart({ series }: HistoryChartProps) {
   const chartData = useMemo(() => {
     return series.points.map((point) => ({
       ...point,
-      // Parse as local midnight to ensure consistent month/day formatting
-      timestamp: new Date(`${point.date}T00:00:00`).getTime(),
+      timestamp: Date.parse(point.at),
     }));
   }, [series.points]);
 
@@ -74,13 +85,14 @@ export function HistoryChart({ series }: HistoryChartProps) {
             dy={10}
           />
           <YAxis
+            allowDecimals={series.decimals > 0}
             tick={{ fontSize: 12, fill: "#6b7280" }}
             tickLine={false}
             axisLine={false}
             dx={-5}
           />
           <Tooltip
-            content={<CustomTooltip unit={series.unit} />}
+            content={<CustomTooltip series={series} />}
             cursor={{ stroke: "#2563eb", strokeWidth: 1 }}
           />
           <Area

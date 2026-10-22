@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
+import type { Messages } from "@/features/i18n/messages";
+import { MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
 import { buildHistoryGraphSeries, type GraphMetricSelection, type GraphSeries } from "@/features/history/history-graph-query";
 import { toDayKey } from "@/lib/date/day-key";
 import { HistoryChart } from "./history-chart";
@@ -11,19 +13,14 @@ type DateRangePreset = "7d" | "30d" | "90d" | "all";
 
 type MetricOption = {
   value: GraphMetricSelection;
-  labelKey:
-    | "history_graph_metric_weight"
-    | "history_graph_metric_body_fat"
-    | "history_graph_metric_height"
-    | "history_graph_metric_bmi"
-    | "history_graph_metric_physical"
-    | "history_graph_metric_mental";
+  labelKey: keyof Messages;
 };
 
+/** Graphable measurement items in list order, then BMI and the two wellness scores. */
 const METRIC_OPTIONS: MetricOption[] = [
-  { value: { kind: "metric", metricType: "weight" }, labelKey: "history_graph_metric_weight" },
-  { value: { kind: "metric", metricType: "bodyFat" }, labelKey: "history_graph_metric_body_fat" },
-  { value: { kind: "metric", metricType: "height" }, labelKey: "history_graph_metric_height" },
+  ...MEASUREMENT_ITEMS.filter((item) => item.showInGraph).map(
+    (item): MetricOption => ({ value: { kind: "measurement", itemId: item.id }, labelKey: item.labelKey }),
+  ),
   { value: { kind: "bmi" }, labelKey: "history_graph_metric_bmi" },
   { value: { kind: "wellness", score: "physical" }, labelKey: "history_graph_metric_physical" },
   { value: { kind: "wellness", score: "mental" }, labelKey: "history_graph_metric_mental" },

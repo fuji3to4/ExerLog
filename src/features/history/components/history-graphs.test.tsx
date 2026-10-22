@@ -27,9 +27,10 @@ describe("HistoryGraphs", () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
       unit: "kg",
+      decimals: 1,
       points: [
-        { date: "2026-03-20", value: 62.5 },
-        { date: "2026-03-21", value: 62.1 },
+        { at: "2026-03-20T00:00:00+09:00", value: 62.5 },
+        { at: "2026-03-21T00:00:00+09:00", value: 62.1 },
       ],
     });
 
@@ -41,9 +42,10 @@ describe("HistoryGraphs", () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
       unit: "kg",
+      decimals: 1,
       points: [
-        { date: "2026-03-20", value: 62.5 },
-        { date: "2026-03-21", value: 62.1 },
+        { at: "2026-03-20T00:00:00+09:00", value: 62.5 },
+        { at: "2026-03-21T00:00:00+09:00", value: 62.1 },
       ],
     });
 
@@ -61,7 +63,8 @@ describe("HistoryGraphs", () => {
     vi.mocked(buildHistoryGraphSeries).mockClear();
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
       unit: "",
-      points: [{ date: "2026-10-20", value: 20.8 }],
+      decimals: 1,
+      points: [{ at: "2026-10-20T00:00:00+09:00", value: 20.8 }],
     });
 
     renderGraphs();
@@ -82,9 +85,10 @@ describe("HistoryGraphs", () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
       unit: "kg",
+      decimals: 1,
       points: [
-        { date: "2026-03-20", value: 62.5 },
-        { date: "2026-03-21", value: 62.1 },
+        { at: "2026-03-20T00:00:00+09:00", value: 62.5 },
+        { at: "2026-03-21T00:00:00+09:00", value: 62.1 },
       ],
     });
 
@@ -101,10 +105,11 @@ describe("HistoryGraphs", () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
       unit: "kg",
+      decimals: 1,
       points: [
-        { date: "2026-03-20", value: 62.5 },
-        { date: "2026-03-21", value: 62.1 },
-        { date: "2026-03-22", value: 61.8 },
+        { at: "2026-03-20T00:00:00+09:00", value: 62.5 },
+        { at: "2026-03-21T00:00:00+09:00", value: 62.1 },
+        { at: "2026-03-22T00:00:00+09:00", value: 61.8 },
       ],
     });
 
@@ -122,6 +127,7 @@ describe("HistoryGraphs", () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
       unit: "kg",
+      decimals: 1,
       points: [],
     });
 
@@ -138,11 +144,13 @@ describe("HistoryGraphs", () => {
     vi.mocked(buildHistoryGraphSeries)
       .mockResolvedValueOnce({
         unit: "kg",
-        points: [{ date: "2026-03-20", value: 62.5 }],
+        decimals: 1,
+        points: [{ at: "2026-03-20T00:00:00+09:00", value: 62.5 }],
       })
       .mockResolvedValueOnce({
         unit: "%",
-        points: [{ date: "2026-03-20", value: 18.5 }],
+        decimals: 1,
+        points: [{ at: "2026-03-20T00:00:00+09:00", value: 18.5 }],
       });
 
     renderGraphs();
@@ -169,11 +177,13 @@ describe("HistoryGraphs", () => {
     vi.mocked(buildHistoryGraphSeries)
       .mockResolvedValueOnce({
         unit: "kg",
-        points: [{ date: "2026-03-20", value: 62.5 }],
+        decimals: 1,
+        points: [{ at: "2026-03-20T00:00:00+09:00", value: 62.5 }],
       })
       .mockResolvedValueOnce({
         unit: "kg",
-        points: [{ date: "2026-03-15", value: 63.0 }, { date: "2026-03-20", value: 62.5 }],
+        decimals: 1,
+        points: [{ at: "2026-03-15T00:00:00+09:00", value: 63.0 }, { at: "2026-03-20T00:00:00+09:00", value: 62.5 }],
       });
 
     renderGraphs();
@@ -190,10 +200,11 @@ describe("HistoryGraphs", () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
     vi.mocked(buildHistoryGraphSeries).mockResolvedValue({
       unit: "kg",
+      decimals: 1,
       points: [
-        { date: "2026-03-20", value: 60 },
-        { date: "2026-03-21", value: 65 },
-        { date: "2026-03-22", value: 62 },
+        { at: "2026-03-20T00:00:00+09:00", value: 60 },
+        { at: "2026-03-21T00:00:00+09:00", value: 65 },
+        { at: "2026-03-22T00:00:00+09:00", value: 62 },
       ],
     });
 
@@ -205,7 +216,7 @@ describe("HistoryGraphs", () => {
 
   it("labels all metric options in Japanese", async () => {
     const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
-    vi.mocked(buildHistoryGraphSeries).mockResolvedValue({ unit: "kg", points: [] });
+    vi.mocked(buildHistoryGraphSeries).mockResolvedValue({ unit: "kg", decimals: 1, points: [] });
 
     renderGraphs();
     const selector = screen.getByLabelText("表示する項目") as HTMLSelectElement;
@@ -217,6 +228,29 @@ describe("HistoryGraphs", () => {
       "からだの調子",
       "こころの調子",
     ]);
+  });
+
+  it("requests the weight measurement series first and body fat by item id when selected", async () => {
+    const { buildHistoryGraphSeries } = await import("@/features/history/history-graph-query");
+    const user = userEvent.setup();
+    vi.mocked(buildHistoryGraphSeries).mockClear();
+    vi.mocked(buildHistoryGraphSeries).mockResolvedValue({ unit: "kg", decimals: 1, points: [] });
+
+    renderGraphs();
+    await waitFor(() =>
+      expect(vi.mocked(buildHistoryGraphSeries)).toHaveBeenLastCalledWith(
+        expect.objectContaining({ metric: { kind: "measurement", itemId: "weight" } }),
+      ),
+    );
+
+    const selector = screen.getByLabelText("表示する項目") as HTMLSelectElement;
+    await user.selectOptions(selector, within(selector).getByRole("option", { name: "体脂肪率" }));
+
+    await waitFor(() =>
+      expect(vi.mocked(buildHistoryGraphSeries)).toHaveBeenLastCalledWith(
+        expect.objectContaining({ metric: { kind: "measurement", itemId: "bodyFat" } }),
+      ),
+    );
   });
 
   it("shows a Japanese loading message while the series loads", async () => {

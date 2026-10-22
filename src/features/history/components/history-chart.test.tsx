@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { HistoryChart } from "./history-chart";
+import { localIsoAt } from "@/lib/date/local-iso";
+import { HistoryChart, formatPointTime, formatPointValue } from "./history-chart";
 import type { GraphSeries } from "../history-graph-query";
 
 // Mock Recharts to render without ResponsiveContainer constraints in JSDOM
@@ -29,13 +30,17 @@ class ResizeObserverMock {
 }
 global.ResizeObserver = ResizeObserverMock as any;
 
+/** Local midnight of `day`, so the "M/D" ticks do not depend on the test machine's timezone. */
+const midnight = (day: string) => localIsoAt(day, new Date(2000, 0, 1, 0, 0, 0));
+
 describe("HistoryChart", () => {
   const mockSeries: GraphSeries = {
     unit: "kg",
+    decimals: 1,
     points: [
-      { date: "2026-06-01", value: 70 },
-      { date: "2026-06-02", value: 71 },
-      { date: "2026-06-03", value: 69.5 },
+      { at: midnight("2026-06-01"), value: 70 },
+      { at: midnight("2026-06-02"), value: 71 },
+      { at: midnight("2026-06-03"), value: 69.5 },
     ],
   };
 
@@ -65,9 +70,10 @@ describe("HistoryChart", () => {
   it("displays x-axis date labels correctly with gapped dates", () => {
     const gappedSeries: GraphSeries = {
       unit: "kg",
+      decimals: 1,
       points: [
-        { date: "2026-06-01", value: 70 },
-        { date: "2026-06-05", value: 72 }, // 4 days gap
+        { at: midnight("2026-06-01"), value: 70 },
+        { at: midnight("2026-06-05"), value: 72 }, // 4 days gap
       ],
     };
     const { container } = render(<HistoryChart series={gappedSeries} />);
@@ -78,5 +84,26 @@ describe("HistoryChart", () => {
     // Use getAllByText to avoid matching Recharts internal measurement spans
     expect(screen.getAllByText("6/1")[0]).toBeInTheDocument();
     expect(screen.getAllByText("6/5")[0]).toBeInTheDocument();
+  });
+
+  it("draws one dot per point when a day has several records", () => {
+    const sameDay: GraphSeries = {
+      unit: "kg",
+      decimals: 1,
+      points: [
+        { at: "2026-10-22T07:12:00+09:00", value: 60.2 },
+        { at: "2026-10-22T21:00:00+09:00", value: 60.9 },
+      ],
+    };
+    const { container } = render(<HistoryChart series={sameDay} />);
+
+    expect(container.querySelectorAll(".recharts-dot").length).toBe(2);
+    expect(formatPointTime(sameDay.points[0]!.at)).toBe("10/22 07:12");
+    expect(formatPointTime(sameDay.points[1]!.at)).toBe("10/22 21:00");
+  });
+
+  it("formats tooltip values with the series decimals", () => {
+    expect(formatPointValue(60, { unit: "kg", decimals: 1, points: [] })).toBe("60.0");
+    expect(formatPointValue(4, { unit: "/5", decimals: 0, points: [] })).toBe("4");
   });
 });

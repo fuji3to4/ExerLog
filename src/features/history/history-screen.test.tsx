@@ -6,10 +6,10 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { selfCareCatalog } from "@/features/catalog/self-care-catalog";
-import { replaceDailyMetrics } from "@/features/storage/daily-metrics.repository";
 import { replaceDailySelfCareEntries } from "@/features/storage/daily-self-care.repository";
 import { appDb } from "@/features/storage/app-db";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { addMeasurement } from "@/features/storage/measurements.repository";
 import { recordWatchEvent } from "@/features/storage/watch-events.repository";
 import { addWellnessEntry } from "@/features/storage/wellness-entries.repository";
 import { renderWithLanguage } from "@/test/render-with-language";
@@ -22,7 +22,7 @@ beforeEach(async () => {
     appDb.wellnessEntries.clear(),
     appDb.watchEvents.clear(),
     appDb.exercises.clear(),
-    appDb.dailyMetrics.clear(),
+    appDb.measurements.clear(),
     appDb.dailySelfCareLogs.clear(),
     appDb.selfCareCatalog.clear(),
   ]);
@@ -37,7 +37,7 @@ beforeEach(async () => {
 });
 
 async function seedHistory() {
-  // 3/23: exercise + metrics + self care
+  // 3/23: exercise + measurement + self care
   await addExerciseLog({
     date: "2026-03-23",
     exerciseId: "upper-body-shoulder-rolls",
@@ -45,10 +45,12 @@ async function seedHistory() {
     durationSeconds: 300,
     performedAt: "2026-03-23T09:00:00+09:00",
   });
-  await replaceDailyMetrics("2026-03-23", [
-    { metricType: "height", value: 171, unit: "cm" },
-    { metricType: "weight", value: 62, unit: "kg" },
-  ]);
+  await addMeasurement({
+    date: "2026-03-23",
+    recordedAt: "2026-03-23T07:00:00+09:00",
+    values: { height: 171, weight: 62 },
+    note: "",
+  });
   await replaceDailySelfCareEntries("2026-03-23", [
     { selfCareId: "stretching", isDone: true, count: 1, minutes: 10, note: "Felt looser" },
   ]);
@@ -67,6 +69,14 @@ async function seedHistory() {
     exerciseId: "upper-body-shoulder-rolls",
     date: "2026-03-25",
     watchedAt: "2026-03-25T10:00:00+09:00",
+  });
+
+  // 3/27: body measurement only
+  await addMeasurement({
+    date: "2026-03-27",
+    recordedAt: "2026-03-27T07:30:00+09:00",
+    values: { weight: 61.5 },
+    note: "",
   });
 }
 
@@ -89,6 +99,10 @@ test("shows a hanamaru on exercise days and a dot on record-only days", async ()
   const watchDay = screen.getByRole("button", { name: "March 25 (recorded)" });
   expect(watchDay.querySelector(".history-calendar__dot")).not.toBeNull();
 
+  const measurementDay = screen.getByRole("button", { name: "March 27 (recorded)" });
+  expect(measurementDay.querySelector(".history-calendar__dot")).not.toBeNull();
+  expect(within(measurementDay).queryByText("💮")).toBeNull();
+
   const emptyDay = screen.getByRole("button", { name: "March 26" });
   expect(emptyDay.querySelector(".history-calendar__dot")).toBeNull();
   expect(within(emptyDay).queryByText("💮")).toBeNull();
@@ -103,7 +117,7 @@ test("uses Japanese calendar labels by default", async () => {
   expect(screen.getByRole("button", { name: "3月24日（記録あり）" })).toBeInTheDocument();
 });
 
-test("shows the selected day's timeline above the metrics and self care summary", async () => {
+test("shows the selected day's timeline above the self care summary, without a body metrics section", async () => {
   const user = userEvent.setup();
   await seedHistory();
 
@@ -112,9 +126,8 @@ test("shows the selected day's timeline above the metrics and self care summary"
   await user.click(await screen.findByRole("button", { name: "March 23, completed" }));
 
   const exerciseRow = await screen.findByRole("button", { name: /肩回し/ });
-  expect(await screen.findByRole("heading", { name: /metrics/i })).toBeInTheDocument();
-  expect(screen.getByText("171 cm")).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: /self care/i })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: /self care/i })).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: /metrics/i })).toBeNull();
   expect(screen.getByText(/felt looser/i)).toBeInTheDocument();
 
   const summaryHeading = screen.getByRole("heading", { name: /day summary/i });
@@ -190,28 +203,19 @@ test("returns to summary mode when clicking summary button from graph mode", asy
   expect(await screen.findByRole("heading", { name: /calendar/i })).toBeInTheDocument();
 });
 
-test("keeps metric edit controls hidden in view mode and shows them in edit mode", async () => {
+test("shows no body metrics heading for a measurement-only day", async () => {
   const user = userEvent.setup();
-
   await seedHistory();
 
-  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "en" });
+  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "ja" });
 
-  await user.click(await screen.findByRole("button", { name: "March 23, completed" }));
+  await user.click(await screen.findByRole("button", { name: "3月27日（記録あり）" }));
 
-  const daySummary = await screen.findByRole("heading", { name: /day summary/i });
-  const summaryCard = daySummary.closest(".day-summary") as HTMLElement | null;
-
-  expect(summaryCard).not.toBeNull();
-  expect(within(summaryCard!).getByText("View")).toBeInTheDocument();
-  expect(within(summaryCard!).queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
-  expect(within(summaryCard!).queryByRole("button", { name: "Delete weight" })).not.toBeInTheDocument();
-
-  await user.click(within(summaryCard!).getByRole("switch", { name: "Edit" }));
-
-  expect(within(summaryCard!).getAllByRole("button", { name: "Edit" }).length).toBeGreaterThan(0);
-  expect(within(summaryCard!).getByRole("button", { name: "Delete weight" })).toBeInTheDocument();
-  expect(within(summaryCard!).getByRole("button", { name: "Add body fat" })).toBeInTheDocument();
+  const daySummary = await screen.findByRole("heading", { name: "1日のまとめ" });
+  const summaryCard = daySummary.closest(".day-summary") as HTMLElement;
+  expect(within(summaryCard).queryByRole("heading", { name: "測定値" })).toBeNull();
+  expect(within(summaryCard).queryByRole("heading", { name: "体の数値" })).toBeNull();
+  expect(within(summaryCard).queryByRole("switch")).toBeNull();
 });
 
 test("labels the mode toggle and graph controls in Japanese", async () => {

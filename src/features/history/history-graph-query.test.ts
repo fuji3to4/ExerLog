@@ -3,16 +3,16 @@ import { beforeEach, expect, test, vi } from "vitest";
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { selfCareCatalog } from "@/features/catalog/self-care-catalog";
-import { replaceDailyMetrics } from "@/features/storage/daily-metrics.repository";
 import { replaceDailySelfCareEntries } from "@/features/storage/daily-self-care.repository";
 import { appDb } from "@/features/storage/app-db";
+import { addMeasurement } from "@/features/storage/measurements.repository";
 import { addWellnessEntry } from "@/features/storage/wellness-entries.repository";
 
 import { buildHistoryGraphSeries } from "./history-graph-query";
 
 beforeEach(async () => {
   await Promise.all([
-    appDb.dailyMetrics.clear(),
+    appDb.measurements.clear(),
     appDb.dailySelfCareLogs.clear(),
     appDb.wellnessEntries.clear(),
     appDb.selfCareCatalog.clear(),
@@ -21,34 +21,45 @@ beforeEach(async () => {
   await appDb.selfCareCatalog.bulkAdd(selfCareCatalog);
 });
 
-test("builds a weight metric series within the requested date range", async () => {
-  await replaceDailyMetrics("2026-03-19", [{ metricType: "weight", value: 62.4, unit: "kg" }]);
-  await replaceDailyMetrics("2026-03-21", [
-    { metricType: "weight", value: 62.1, unit: "kg" },
-    { metricType: "height", value: 171, unit: "cm" },
-  ]);
-  await replaceDailyMetrics("2026-03-23", [{ metricType: "weight", value: 61.8, unit: "kg" }]);
-  await replaceDailyMetrics("2026-03-25", [{ metricType: "weight", value: 61.5, unit: "kg" }]);
+test("plots every weight record in the range as its own point, oldest first", async () => {
+  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T21:00:00+09:00", values: { weight: 60.9 }, note: "" });
+  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T07:12:00+09:00", values: { weight: 60.2 }, note: "" });
+  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T12:00:00+09:00", values: { weight: 60.6, bodyFat: 20 }, note: "" });
+  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T13:00:00+09:00", values: { bodyFat: 21 }, note: "" });
+  await addMeasurement({ date: "2026-10-23", recordedAt: "2026-10-23T07:00:00+09:00", values: { weight: 61 }, note: "" });
 
   const series = await buildHistoryGraphSeries({
-    range: { start: "2026-03-20", end: "2026-03-24" },
-    metric: { kind: "metric", metricType: "weight" },
+    range: { start: "2026-10-22", end: "2026-10-22" },
+    metric: { kind: "measurement", itemId: "weight" },
   });
 
   expect(series).toEqual({
     unit: "kg",
+    decimals: 1,
     points: [
-      { date: "2026-03-21", value: 62.1 },
-      { date: "2026-03-23", value: 61.8 },
+      { at: "2026-10-22T07:12:00+09:00", value: 60.2 },
+      { at: "2026-10-22T12:00:00+09:00", value: 60.6 },
+      { at: "2026-10-22T21:00:00+09:00", value: 60.9 },
     ],
   });
 });
 
-test("averages wellness entries per day within the range", async () => {
-  await addWellnessEntry({ date: "2026-10-20", physicalScore: 2, mentalScore: 5, note: "" });
-  await addWellnessEntry({ date: "2026-10-20", physicalScore: 4, mentalScore: 4, note: "" });
-  await addWellnessEntry({ date: "2026-10-18", physicalScore: 3, mentalScore: 1, note: "" });
-  await addWellnessEntry({ date: "2026-10-15", physicalScore: 5, mentalScore: 5, note: "" });
+test("orders points by instant, not by string, when offsets differ", async () => {
+  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T08:00:00+09:00", values: { weight: 60 }, note: "" });
+  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T07:00:00+00:00", values: { weight: 61 }, note: "" });
+
+  const series = await buildHistoryGraphSeries({
+    range: { start: "2026-10-22", end: "2026-10-22" },
+    metric: { kind: "measurement", itemId: "weight" },
+  });
+
+  expect(series.points.map((point) => point.value)).toEqual([60, 61]);
+});
+
+test("plots every wellness entry as its own point instead of a daily average", async () => {
+  await addWellnessEntry({ date: "2026-10-20", recordedAt: "2026-10-20T20:00:00+09:00", physicalScore: 4, mentalScore: 5, note: "" });
+  await addWellnessEntry({ date: "2026-10-20", recordedAt: "2026-10-20T08:00:00+09:00", physicalScore: 2, mentalScore: 3, note: "" });
+  await addWellnessEntry({ date: "2026-10-15", recordedAt: "2026-10-15T08:00:00+09:00", physicalScore: 5, mentalScore: 5, note: "" });
 
   const physical = await buildHistoryGraphSeries({
     range: { start: "2026-10-16", end: "2026-10-20" },
@@ -57,9 +68,10 @@ test("averages wellness entries per day within the range", async () => {
 
   expect(physical).toEqual({
     unit: "/5",
+    decimals: 0,
     points: [
-      { date: "2026-10-18", value: 3 },
-      { date: "2026-10-20", value: 3 },
+      { at: "2026-10-20T08:00:00+09:00", value: 2 },
+      { at: "2026-10-20T20:00:00+09:00", value: 4 },
     ],
   });
 
@@ -68,36 +80,41 @@ test("averages wellness entries per day within the range", async () => {
     metric: { kind: "wellness", score: "mental" },
   });
 
-  expect(mental.points).toEqual([{ date: "2026-10-20", value: 4.5 }]);
+  expect(mental.points.map((point) => point.value)).toEqual([3, 5]);
 });
 
-test("rounds a per-day wellness average to one decimal", async () => {
-  await addWellnessEntry({ date: "2026-10-20", physicalScore: 1, mentalScore: 3, note: "" });
-  await addWellnessEntry({ date: "2026-10-20", physicalScore: 1, mentalScore: 3, note: "" });
-  await addWellnessEntry({ date: "2026-10-20", physicalScore: 2, mentalScore: 3, note: "" });
+test("builds BMI from each weight with the latest height recorded at or before it, even before the range", async () => {
+  await addMeasurement({ date: "2026-10-01", recordedAt: "2026-10-01T09:00:00+09:00", values: { height: 170 }, note: "" });
+  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T07:12:00+09:00", values: { weight: 60 }, note: "" });
 
   const series = await buildHistoryGraphSeries({
-    range: { start: "2026-10-20", end: "2026-10-20" },
-    metric: { kind: "wellness", score: "physical" },
-  });
-
-  expect(series.points).toEqual([{ date: "2026-10-20", value: 1.3 }]);
-});
-
-test("builds a BMI series from weights using the latest height on or before each day", async () => {
-  await replaceDailyMetrics("2026-10-01", [{ metricType: "height", value: 170, unit: "cm" }]);
-  await replaceDailyMetrics("2026-10-20", [{ metricType: "weight", value: 60, unit: "kg" }]);
-  await replaceDailyMetrics("2026-09-30", [{ metricType: "weight", value: 62, unit: "kg" }]);
-
-  const series = await buildHistoryGraphSeries({
-    range: { start: "2026-09-01", end: "2026-10-31" },
+    range: { start: "2026-10-22", end: "2026-10-22" },
     metric: { kind: "bmi" },
   });
 
   expect(series).toEqual({
     unit: "",
-    points: [{ date: "2026-10-20", value: 20.8 }],
+    decimals: 1,
+    points: [{ at: "2026-10-22T07:12:00+09:00", value: 20.8 }],
   });
+});
+
+test("skips BMI points with no earlier height and switches height when a newer one is recorded", async () => {
+  await addMeasurement({ date: "2026-10-20", recordedAt: "2026-10-20T07:00:00+09:00", values: { weight: 62 }, note: "" });
+  await addMeasurement({ date: "2026-10-20", recordedAt: "2026-10-20T08:00:00+09:00", values: { height: 170 }, note: "" });
+  await addMeasurement({ date: "2026-10-21", recordedAt: "2026-10-21T07:00:00+09:00", values: { weight: 60 }, note: "" });
+  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T07:00:00+09:00", values: { weight: 60, height: 160 }, note: "" });
+  await addMeasurement({ date: "2026-10-25", recordedAt: "2026-10-25T07:00:00+09:00", values: { height: 150 }, note: "" });
+
+  const series = await buildHistoryGraphSeries({
+    range: { start: "2026-10-20", end: "2026-10-22" },
+    metric: { kind: "bmi" },
+  });
+
+  expect(series.points).toEqual([
+    { at: "2026-10-21T07:00:00+09:00", value: 20.8 },
+    { at: "2026-10-22T07:00:00+09:00", value: 23.4 },
+  ]);
 });
 
 test("builds a self-care minutes series for a specific self-care item", async () => {
@@ -143,9 +160,10 @@ test("builds a self-care minutes series for a specific self-care item", async ()
 
   expect(series).toEqual({
     unit: "",
+    decimals: 0,
     points: [
-      { date: "2026-03-22", value: 8 },
-      { date: "2026-03-24", value: 0 },
+      { at: "2026-03-22T00:00:00", value: 8 },
+      { at: "2026-03-24T00:00:00", value: 0 },
     ],
   });
 });

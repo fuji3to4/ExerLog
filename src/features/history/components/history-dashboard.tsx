@@ -46,7 +46,6 @@ export function HistoryDashboard({ month: initialMonth }: HistoryDashboardProps 
           <DaySummary
             selectedDate={history.selectedDate}
             summary={history.summary}
-            onChanged={history.handleSummaryChanged}
           />
         </div>
 

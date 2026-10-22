@@ -65,13 +65,6 @@ export function useHistoryState(initialMonth?: string) {
     void loadSummary(date);
   }
 
-  /** DaySummary edited metrics: reload the summary and the marks. */
-  function handleSummaryChanged() {
-    if (!selectedDate) return;
-    void loadSummary(selectedDate);
-    void refreshMarks();
-  }
-
   /** Timeline rows were added, edited or deleted: the marks may have changed. */
   function handleTimelineChanged() {
     void refreshMarks();
@@ -85,7 +78,6 @@ export function useHistoryState(initialMonth?: string) {
     prevMonth: () => changeMonth(-1),
     nextMonth: () => changeMonth(1),
     selectDate,
-    handleSummaryChanged,
     handleTimelineChanged,
   };
 }

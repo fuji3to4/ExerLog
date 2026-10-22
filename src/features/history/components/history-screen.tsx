@@ -70,7 +70,6 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
           <DaySummary
             selectedDate={history.selectedDate}
             summary={history.summary}
-            onChanged={history.handleSummaryChanged}
           />
         </>
       )}
