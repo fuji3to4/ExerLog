@@ -47,10 +47,7 @@ export const en = {
   history_calendar_recorded_label: "{date} (recorded)",
   history_calendar_prev_month: "Previous month",
   history_calendar_next_month: "Next month",
-  history_day_summary_heading: "Day summary",
-  history_day_summary_empty: "Select a day from the calendar to review what you logged.",
   history_exercises_heading: "Exercises",
-  history_self_care_heading: "Self Care",
   history_mode_summary: "Summary",
   history_mode_graphs: "Graphs",
   history_graphs_heading: "Graphs",
@@ -73,9 +70,6 @@ export const en = {
   // Condition screen (self-care)
   wellness_score_hint_low: "😞 Worst",
   wellness_score_hint_high: "Best 😄",
-  self_care_done_label: "Done",
-  self_care_count_label: "Count",
-  self_care_minutes_label: "Minutes",
   bmi_value: "BMI {value}",
   bmi_need_height: "Record your height to see BMI",
 
@@ -141,11 +135,14 @@ export const en = {
   settings_library_section_heading: "Library Management",
   settings_data_section_heading: "Data Management",
 
-  // Library management
-  settings_library_add: "+ Add exercise",
-  settings_library_empty: "No exercises yet. Add one or import a CSV.",
-  settings_exercise_delete_confirm: "Delete this exercise?",
-  settings_exercise_delete_has_logs: "This exercise has {count} log(s). Deleting it won't remove the logs, but the exercise name may not display correctly in history.",
+  // Library edit mode
+  library_add: "+ Add exercise",
+  library_delete_confirm: "Delete this exercise?",
+  library_delete_has_logs: "This exercise has {count} log(s). Deleting it won't remove the logs, but the exercise name may not display correctly in history.",
+  library_edit_mode_label: "Edit",
+  library_edit_aria: "Edit {title}",
+  library_delete_aria: "Delete {title}",
+  action_back: "← Back",
 
   // Exercise form modal
   settings_form_add_heading: "Add exercise",

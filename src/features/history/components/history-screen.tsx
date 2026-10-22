@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 import { useHistoryState } from "../use-history-state";
-import { DaySummary } from "./day-summary";
 import { HistoryCalendar } from "./history-calendar";
 import { HistoryDayTimeline } from "./history-day-timeline";
 import { HistoryGraphs } from "./history-graphs";
@@ -66,11 +65,6 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
               onChanged={history.handleTimelineChanged}
             />
           ) : null}
-
-          <DaySummary
-            selectedDate={history.selectedDate}
-            summary={history.summary}
-          />
         </>
       )}
 

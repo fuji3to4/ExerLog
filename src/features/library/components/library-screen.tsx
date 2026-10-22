@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { appDb } from "@/features/storage/app-db";
+import { deleteExercise, listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { ExerciseVideo } from "@/lib/types";
 import { formatDuration } from "@/lib/date/duration";
 import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
+import { ExerciseFormModal } from "./exercise-form-modal";
 import { LibraryFilters } from "./library-filters";
 
 type LibraryFilterState = {
@@ -31,11 +34,45 @@ const initialFilters: LibraryFilterState = {
 export function LibraryScreen() {
   const [filters, setFilters] = useState<LibraryFilterState>(initialFilters);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<ExerciseVideo | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
 
-  useEffect(() => {
-    void listAllExercises().then(setExercises);
+  const loadExercises = useCallback(async () => {
+    setExercises(await listAllExercises());
   }, []);
+
+  useEffect(() => {
+    void loadExercises();
+  }, [loadExercises]);
+
+  async function handleDelete(exercise: ExerciseVideo) {
+    const logCount = await appDb.exerciseLogs.where("exerciseId").equals(exercise.id).count();
+
+    const message =
+      logCount > 0
+        ? `${t("library_delete_has_logs", { count: logCount })}
+
+${t("library_delete_confirm")}`
+        : t("library_delete_confirm");
+
+    if (!window.confirm(message)) return;
+
+    await deleteExercise(exercise.id);
+    await loadExercises();
+  }
+
+  async function handleFormSaved() {
+    setEditingExercise(null);
+    setIsAdding(false);
+    await loadExercises();
+  }
+
+  function handleFormCancel() {
+    setEditingExercise(null);
+    setIsAdding(false);
+  }
 
   const filteredExercises = useMemo(() => {
     const searchTerm = filters.search.trim().toLowerCase();
@@ -72,12 +109,26 @@ export function LibraryScreen() {
     <>
       <Card className="page-header">
         <CardHeader>
-          <CardTitle>{t("library_heading")}</CardTitle>
+          <div className="flex items-start justify-between gap-4">
+            <CardTitle>{t("library_heading")}</CardTitle>
+            <label className="library-screen__edit-toggle">
+              <span>{t("library_edit_mode_label")}</span>
+              <Switch checked={isEditMode} onCheckedChange={setIsEditMode} />
+            </label>
+          </div>
           <p>{t("library_subheading")}</p>
         </CardHeader>
       </Card>
 
       <LibraryFilters value={filters} onChange={setFilters} />
+
+      {isEditMode ? (
+        <div className="library-screen__edit-actions">
+          <button type="button" className="settings-action-button" onClick={() => setIsAdding(true)}>
+            {t("library_add")}
+          </button>
+        </div>
+      ) : null}
 
       <section className="library-screen__results flex flex-wrap gap-4 justify-center">
         {filteredExercises.map((exercise) => {
@@ -123,10 +174,39 @@ export function LibraryScreen() {
                   <dd>{formatPurpose(exercise.purpose)}</dd>
                 </div>
               </dl>
+
+              {isEditMode ? (
+                <div className="library-screen__card-actions">
+                  <button
+                    type="button"
+                    className="settings-action-button settings-action-button--secondary"
+                    onClick={() => setEditingExercise(exercise)}
+                    aria-label={t("library_edit_aria", { title: exercise.title })}
+                  >
+                    {t("action_edit")}
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-action-button settings-action-button--danger"
+                    onClick={() => void handleDelete(exercise)}
+                    aria-label={t("library_delete_aria", { title: exercise.title })}
+                  >
+                    {t("action_delete")}
+                  </button>
+                </div>
+              ) : null}
             </Card>
           );
         })}
       </section>
+
+      {(isAdding || editingExercise !== null) && (
+        <ExerciseFormModal
+          exercise={editingExercise}
+          onSaved={() => void handleFormSaved()}
+          onCancel={handleFormCancel}
+        />
+      )}
     </>
   );
 }

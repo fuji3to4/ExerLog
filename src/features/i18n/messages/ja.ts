@@ -47,10 +47,7 @@
   history_calendar_recorded_label: "{date}（記録あり）",
   history_calendar_prev_month: "前の月",
   history_calendar_next_month: "次の月",
-  history_day_summary_heading: "1日のまとめ",
-  history_day_summary_empty: "カレンダーから日を選択して、記録した内容を確認しましょう。",
   history_exercises_heading: "エクササイズ",
-  history_self_care_heading: "セルフケア",
   history_mode_summary: "まとめ",
   history_mode_graphs: "グラフ",
   history_graphs_heading: "グラフ",
@@ -73,9 +70,6 @@
   // Condition screen (self-care)
   wellness_score_hint_low: "😞 最悪",
   wellness_score_hint_high: "最高 😄",
-  self_care_done_label: "実施",
-  self_care_count_label: "回数",
-  self_care_minutes_label: "分",
   bmi_value: "BMI {value}",
   bmi_need_height: "身長を記録するとBMIが出ます",
 
@@ -141,11 +135,14 @@
   settings_library_section_heading: "ライブラリ管理",
   settings_data_section_heading: "データ管理",
 
-  // Library management
-  settings_library_add: "＋ エクササイズを追加",
-  settings_library_empty: "エクササイズがありません。追加またはCSVをインポートしてください。",
-  settings_exercise_delete_confirm: "このエクササイズを削除しますか？",
-  settings_exercise_delete_has_logs: "このエクササイズには{count}件のログがあります。削除してもログは残りますが、履歴での表示名が変わる場合があります。",
+  // Library edit mode
+  library_add: "＋ エクササイズを追加",
+  library_delete_confirm: "このエクササイズを削除しますか？",
+  library_delete_has_logs: "このエクササイズには{count}件のログがあります。削除してもログは残りますが、履歴での表示名が変わる場合があります。",
+  library_edit_mode_label: "編集",
+  library_edit_aria: "{title}を編集",
+  library_delete_aria: "{title}を削除",
+  action_back: "← 戻る",
 
   // Exercise form modal
   settings_form_add_heading: "エクササイズを追加",

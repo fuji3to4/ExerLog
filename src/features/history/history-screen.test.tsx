@@ -5,8 +5,6 @@ import { beforeEach, expect, test, vi } from "vitest";
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
-import { selfCareCatalog } from "@/features/catalog/self-care-catalog";
-import { replaceDailySelfCareEntries } from "@/features/storage/daily-self-care.repository";
 import { appDb } from "@/features/storage/app-db";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { addMeasurement } from "@/features/storage/measurements.repository";
@@ -23,11 +21,8 @@ beforeEach(async () => {
     appDb.watchEvents.clear(),
     appDb.exercises.clear(),
     appDb.measurements.clear(),
-    appDb.dailySelfCareLogs.clear(),
-    appDb.selfCareCatalog.clear(),
   ]);
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
-  await appDb.selfCareCatalog.bulkAdd(selfCareCatalog);
   HTMLDialogElement.prototype.showModal = vi.fn(function showModal(this: HTMLDialogElement) {
     this.setAttribute("open", "");
   });
@@ -37,7 +32,7 @@ beforeEach(async () => {
 });
 
 async function seedHistory() {
-  // 3/23: exercise + measurement + self care
+  // 3/23: exercise + measurement
   await addExerciseLog({
     date: "2026-03-23",
     exerciseId: "upper-body-shoulder-rolls",
@@ -51,9 +46,6 @@ async function seedHistory() {
     values: { height: 171, weight: 62 },
     note: "",
   });
-  await replaceDailySelfCareEntries("2026-03-23", [
-    { selfCareId: "stretching", isDone: true, count: 1, minutes: 10, note: "Felt looser" },
-  ]);
 
   // 3/24: wellness only
   await addWellnessEntry({
@@ -117,7 +109,7 @@ test("uses Japanese calendar labels by default", async () => {
   expect(screen.getByRole("button", { name: "3月24日（記録あり）" })).toBeInTheDocument();
 });
 
-test("shows the selected day's timeline above the self care summary, without a body metrics section", async () => {
+test("shows the selected day's timeline without a day summary card", async () => {
   const user = userEvent.setup();
   await seedHistory();
 
@@ -125,14 +117,9 @@ test("shows the selected day's timeline above the self care summary, without a b
 
   await user.click(await screen.findByRole("button", { name: "March 23, completed" }));
 
-  const exerciseRow = await screen.findByRole("button", { name: /肩回し/ });
-  expect(await screen.findByRole("heading", { name: /self care/i })).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: /肩回し/ })).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: /day summary/i })).toBeNull();
   expect(screen.queryByRole("heading", { name: /metrics/i })).toBeNull();
-  expect(screen.getByText(/felt looser/i)).toBeInTheDocument();
-
-  const summaryHeading = screen.getByRole("heading", { name: /day summary/i });
-  // The timeline comes before the day summary in document order.
-  expect(exerciseRow.compareDocumentPosition(summaryHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
   await user.click(screen.getByRole("button", { name: "March 24 (recorded)" }));
   expect(await screen.findByRole("button", { name: /body 4/ })).toBeInTheDocument();
@@ -170,7 +157,7 @@ test("switches history copy to English", async () => {
   await user.click(await screen.findByRole("button", { name: "March 23, completed" }));
 
   expect(screen.getByRole("heading", { name: "History" })).toBeInTheDocument();
-  expect(await screen.findByRole("heading", { name: /Day summary/i })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "Calendar" })).toBeInTheDocument();
 });
 
 test("switches to graph mode when clicking graphs button", async () => {
@@ -201,21 +188,6 @@ test("returns to summary mode when clicking summary button from graph mode", asy
   await user.click(screen.getByRole("button", { name: "Summary" }));
 
   expect(await screen.findByRole("heading", { name: /calendar/i })).toBeInTheDocument();
-});
-
-test("shows no body metrics heading for a measurement-only day", async () => {
-  const user = userEvent.setup();
-  await seedHistory();
-
-  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "ja" });
-
-  await user.click(await screen.findByRole("button", { name: "3月27日（記録あり）" }));
-
-  const daySummary = await screen.findByRole("heading", { name: "1日のまとめ" });
-  const summaryCard = daySummary.closest(".day-summary") as HTMLElement;
-  expect(within(summaryCard).queryByRole("heading", { name: "測定値" })).toBeNull();
-  expect(within(summaryCard).queryByRole("heading", { name: "体の数値" })).toBeNull();
-  expect(within(summaryCard).queryByRole("switch")).toBeNull();
 });
 
 test("labels the mode toggle and graph controls in Japanese", async () => {
