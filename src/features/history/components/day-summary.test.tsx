@@ -26,7 +26,6 @@ describe("DaySummary", () => {
       />,
     );
 
-    expect(screen.queryByText("history_metrics_heading")).not.toBeInTheDocument();
     expect(screen.queryByRole("switch")).not.toBeInTheDocument();
     expect(screen.getByText("history_self_care_heading")).toBeInTheDocument();
     expect(screen.getByText("Stretching")).toBeInTheDocument();

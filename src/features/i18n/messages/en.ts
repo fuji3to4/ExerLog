@@ -43,7 +43,7 @@ export const en = {
   history_heading: "History",
   history_subheading: "Look back on the days you logged on the calendar.",
   history_calendar_heading: "Calendar",
-  history_calendar_text: "💮 marks days you exercised; a dot marks days with condition or video records.",
+  history_calendar_text: "💮 marks days you exercised; a dot marks days with condition, body measurements or video records.",
   history_calendar_completed_label: "{date}, completed",
   history_calendar_recorded_label: "{date} (recorded)",
   history_calendar_prev_month: "Previous month",
@@ -74,19 +74,16 @@ export const en = {
   // Condition screen (self-care)
   self_care_heading: "Condition",
   self_care_subheading: "Record your body metrics and condition.",
-  self_care_save_button: "Save check-in",
   self_care_condition_heading: "Condition",
   self_care_wellness_heading: "Wellness check-in",
   wellness_score_hint_low: "😞 Worst",
   wellness_score_hint_high: "Best 😄",
-  self_care_metrics_heading: "Metrics",
   self_care_logs_heading: "Logs",
   self_care_done_label: "Done",
   self_care_count_label: "Count",
   self_care_minutes_label: "Minutes",
   self_care_note_label: "Note",
   self_care_wellness_text: "Log how your body and mind feel, as often as you like.",
-  self_care_save_error: "Could not save. Please try again.",
   bmi_value: "BMI {value}",
   bmi_need_height: "Record your height to see BMI",
 
@@ -184,7 +181,7 @@ export const en = {
   settings_export_logs: "Export exercise logs (CSV)",
   settings_export_wellness_entries: "Export wellness entries (CSV)",
   settings_export_watch_events: "Export video watch history (CSV)",
-  settings_export_daily_metrics: "Export body metrics records (CSV)",
+  settings_export_measurements: "Body measurements",
   settings_delete_all_exercises: "Delete all exercises",
   settings_delete_all_exercises_confirm: "Delete all {count} exercises? This cannot be undone.",
   settings_delete_all_logs: "Delete all records",
@@ -225,8 +222,6 @@ export const en = {
   // Common actions
   action_edit: "Edit",
   action_delete: "Delete",
-
-  // History edit/delete
 
   // Seed confirm dialog
   seed_confirm_title: "Import starter exercises?",

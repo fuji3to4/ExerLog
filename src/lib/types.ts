@@ -6,8 +6,6 @@ export type ExerciseIntensity = "low" | "medium" | "high";
 
 export type WellnessScore = 1 | 2 | 3 | 4 | 5;
 
-export type MetricType = "height" | "weight" | "bodyFat";
-
 export type ExerciseVideo = {
   id: string;
   title: string;
@@ -68,15 +66,6 @@ export type Tombstone = {
   table: string;
   recordId: string;
   deletedAt: string;
-};
-
-export type DailyMetricEntry = {
-  id: string;
-  date: string;
-  metricType: MetricType;
-  value: number;
-  unit: string;
-  recordedAt: string;
 };
 
 export type SelfCareItem = {

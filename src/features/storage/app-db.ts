@@ -1,7 +1,6 @@
 import Dexie, { type EntityTable } from "dexie";
 
 import type {
-  DailyMetricEntry,
   DailySelfCareEntry,
   ExerciseLog,
   ExerciseVideo,
@@ -19,7 +18,6 @@ export class AppDb extends Dexie {
   watchEvents!: EntityTable<WatchEvent, "id">;
   tombstones!: EntityTable<Tombstone, "id">;
   exercises!: EntityTable<ExerciseVideo, "id">;
-  dailyMetrics!: EntityTable<DailyMetricEntry, "id">;
   selfCareCatalog!: EntityTable<SelfCareItem, "id">;
   dailySelfCareLogs!: EntityTable<DailySelfCareEntry, "id">;
   googleAuth!: EntityTable<{ key: string; value: string }, "key">;
@@ -139,9 +137,23 @@ export class AppDb extends Dexie {
       tombstones: "id, table",
     });
 
-    // v9: timed body measurements (dailyMetrics stays until it is removed later).
+    // v9: timed body measurements .
     this.version(9).stores({
       dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",
+      selfCareCatalog: "id, sortOrder, isArchived",
+      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      measurements: "id, date, recordedAt",
+    });
+
+    // v10: drop the legacy dailyMetrics table (superseded by measurements). No data migration.
+    this.version(10).stores({
+      dailyMetrics: null,
       selfCareCatalog: "id, sortOrder, isArchived",
       dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
       googleAuth: "key",

@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
-  generateDailyMetricsCsv,
   generateExerciseLogsCsv,
+  generateMeasurementsCsv,
   generateWatchEventsCsv,
   generateWellnessEntriesCsv,
 } from "./history-csv";
-import type { DailyMetricEntry, ExerciseLog, WatchEvent, WellnessEntry } from "@/lib/types";
+import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
 
 const makeLog = (overrides: Partial<ExerciseLog> = {}): ExerciseLog => ({
   id: "log1",
@@ -38,13 +38,13 @@ const makeWatch = (overrides: Partial<WatchEvent> = {}): WatchEvent => ({
   ...overrides,
 });
 
-const makeMetric = (overrides: Partial<DailyMetricEntry> = {}): DailyMetricEntry => ({
-  id: "metric1",
+const makeMeasurement = (overrides: Partial<MeasurementRecord> = {}): MeasurementRecord => ({
+  id: "m1",
   date: "2024-01-15",
-  metricType: "weight",
-  value: 62.4,
-  unit: "kg",
   recordedAt: "2024-01-15T07:10:00+09:00",
+  values: { weight: 60.25, waist: 80 },
+  note: "",
+  updatedAt: "2024-01-15T07:10:00+09:00",
   ...overrides,
 });
 
@@ -93,20 +93,11 @@ describe("generateWatchEventsCsv", () => {
   });
 });
 
-describe("generateDailyMetricsCsv", () => {
-  it("includes daily metrics headers", () => {
-    const csv = generateDailyMetricsCsv([makeMetric()]);
-    expect(csv.split("\n")[0]).toBe("date,metricType,value,unit,recordedAt");
-  });
-
-  it("outputs metric type, value, and unit", () => {
-    const csv = generateDailyMetricsCsv([makeMetric()]);
-    expect(csv).toContain("weight");
-    expect(csv).toContain("62.4");
-    expect(csv).toContain("kg");
-  });
-
-  it("handles empty recordedAt gracefully", () => {
-    expect(generateDailyMetricsCsv([makeMetric({ recordedAt: "" })])).toContain("weight");
+describe("generateMeasurementsCsv", () => {
+  it("writes item columns with formatted values, blanks for missing, none for unknown ids", () => {
+    const [header, row] = generateMeasurementsCsv([makeMeasurement()]).split("\n");
+    expect(header).toBe("date,recordedAt,note,weight,bodyFat,height");
+    expect(header).not.toContain("waist");
+    expect(row).toMatch(/^2024-01-15,\d{4}-\d{2}-\d{2} \d{2}:\d{2},,60\.3,,$/);
   });
 });

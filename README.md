@@ -56,6 +56,18 @@ npm run build   # outputs static files to out/
 npm run test
 ```
 
+## 体の数値の項目を足すには / Adding a body-measurement item
+
+1. `src/features/measurements/measurement-items.ts` の `MEASUREMENT_ITEMS` に1件足す（`id`・`labelKey`・`unit`・`decimals`・`min`・`max`・`showInGraph`）。`id` は `id` / `date` / `recordedAt` / `note` / `updatedAt` と重ねない。
+2. `src/features/i18n/messages/ja.ts` と `en.ts` に `labelKey` の表示名を足す。
+
+入力欄・履歴・グラフ・CSV・スプレッドシートの列は、この2つだけで増えます。
+
+1. Add one entry to `MEASUREMENT_ITEMS` in `src/features/measurements/measurement-items.ts` (`id`, `labelKey`, `unit`, `decimals`, `min`, `max`, `showInGraph`). The `id` must not collide with `id`, `date`, `recordedAt`, `note` or `updatedAt`.
+2. Add the display name for its `labelKey` to `src/features/i18n/messages/ja.ts` and `en.ts`.
+
+The input field, history, graph, CSV export and sheet column all follow from these two steps.
+
 ## Exercise Catalog Data
 
 The built-in exercise catalog (`src/features/catalog/exercise-catalog.ts`) is generated at build time from `public/exercises.csv`, falling back to `src/features/catalog/exercise-catalog.default.ts` if the CSV is absent. Generation runs automatically via `predev`/`prebuild`/`pretest` (`scripts/generate-exercise-catalog.js`), so `exercise-catalog.ts` is gitignored and should never be hand-edited — changes go in `exercises.csv` instead.

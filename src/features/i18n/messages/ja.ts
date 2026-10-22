@@ -43,7 +43,7 @@
   history_heading: "履歴",
   history_subheading: "記録した日をカレンダーで振り返れます。",
   history_calendar_heading: "カレンダー",
-  history_calendar_text: "💮は運動した日、・は体調や視聴を記録した日です。",
+  history_calendar_text: "💮は運動した日、・は体調・体の数値・視聴を記録した日です。",
   history_calendar_completed_label: "{date}、実施済み",
   history_calendar_recorded_label: "{date}（記録あり）",
   history_calendar_prev_month: "前の月",
@@ -74,19 +74,16 @@
   // Condition screen (self-care)
   self_care_heading: "コンディション",
   self_care_subheading: "体の数値と体調を記録します。",
-  self_care_save_button: "記録を保存",
   self_care_condition_heading: "体調",
   self_care_wellness_heading: "ウェルネス記録",
   wellness_score_hint_low: "😞 最悪",
   wellness_score_hint_high: "最高 😄",
-  self_care_metrics_heading: "測定値",
   self_care_logs_heading: "記録",
   self_care_done_label: "実施",
   self_care_count_label: "回数",
   self_care_minutes_label: "分",
   self_care_note_label: "メモ",
   self_care_wellness_text: "からだとこころの調子を、気づいたときに何度でも記録できます。",
-  self_care_save_error: "保存できませんでした。もう一度お試しください。",
   bmi_value: "BMI {value}",
   bmi_need_height: "身長を記録するとBMIが出ます",
 
@@ -184,7 +181,7 @@
   settings_export_logs: "運動ログをエクスポート（CSV）",
   settings_export_wellness_entries: "体調の記録をエクスポート（CSV）",
   settings_export_watch_events: "動画の視聴履歴をエクスポート（CSV）",
-  settings_export_daily_metrics: "身体計測値をエクスポート（CSV）",
+  settings_export_measurements: "体の数値",
   settings_delete_all_exercises: "全エクササイズを削除",
   settings_delete_all_exercises_confirm: "{count}件のエクササイズをすべて削除します。この操作は取り消せません。",
   settings_delete_all_logs: "記録をすべて削除",
@@ -225,8 +222,6 @@
   // Common actions
   action_edit: "編集",
   action_delete: "削除",
-
-  // History edit/delete
 
   // Seed confirm dialog
   seed_confirm_title: "初期データをインポートしますか？",

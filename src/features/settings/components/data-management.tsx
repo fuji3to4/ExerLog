@@ -8,7 +8,7 @@ import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/feat
 import { clearAllRecords, countAllRecords } from "@/features/storage/clear-all-records";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
 import {
-  generateDailyMetricsCsv,
+  generateMeasurementsCsv,
   generateExerciseLogsCsv,
   generateWatchEventsCsv,
   generateWellnessEntriesCsv,
@@ -134,9 +134,9 @@ export function DataManagement() {
     downloadCsv("watch-events.csv", generateWatchEventsCsv(events, titleMap));
   }
 
-  async function handleExportDailyMetrics() {
-    const entries = await appDb.dailyMetrics.toArray();
-    downloadCsv("daily-metrics.csv", generateDailyMetricsCsv(entries));
+  async function handleExportMeasurements() {
+    const entries = await appDb.measurements.orderBy("recordedAt").toArray();
+    downloadCsv("measurements.csv", generateMeasurementsCsv(entries));
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -246,9 +246,9 @@ export function DataManagement() {
           <button
             type="button"
             className="settings-action-button"
-            onClick={() => void handleExportDailyMetrics()}
+            onClick={() => void handleExportMeasurements()}
           >
-            {t("settings_export_daily_metrics")}
+            {t("settings_export_measurements")}
           </button>
         </div>
         <BulkDeleteButton

@@ -5,7 +5,6 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 import { scheduleSync } from "@/features/sync/auto-sync";
 
 import { appDb } from "./app-db";
-import { deleteDailyMetric, listDailyMetricsByDate, replaceDailyMetrics, upsertDailyMetric } from "./daily-metrics.repository";
 import { replaceAllExercises } from "./exercise-catalog.repository";
 import {
   addExerciseLog,
@@ -28,7 +27,6 @@ beforeEach(async () => {
     appDb.wellnessEntries.clear(),
     appDb.watchEvents.clear(),
     appDb.tombstones.clear(),
-    appDb.dailyMetrics.clear(),
     appDb.exercises.clear(),
   ]);
   vi.mocked(scheduleSync).mockClear();
@@ -154,28 +152,6 @@ test("recordTombstones overwrites an existing tombstone and schedules sync", asy
 
   expect(await listTombstones()).toHaveLength(1);
   expect(scheduleSync).toHaveBeenCalled();
-});
-
-test("replaceDailyMetrics records tombstones for the removed ids", async () => {
-  await replaceDailyMetrics("2026-10-20", [{ metricType: "weight", value: 62.4, unit: "kg" }]);
-  const [before] = await listDailyMetricsByDate("2026-10-20");
-
-  await replaceDailyMetrics("2026-10-20", [{ metricType: "weight", value: 61.8, unit: "kg" }]);
-
-  expect(await listTombstones()).toContainEqual(
-    expect.objectContaining({ id: `DailyMetrics:${before!.id}`, table: "DailyMetrics", recordId: before!.id }),
-  );
-});
-
-test("deleteDailyMetric records a tombstone for the deleted id", async () => {
-  await upsertDailyMetric("2026-10-20", { metricType: "weight", value: 62.4, unit: "kg" });
-  const [metric] = await listDailyMetricsByDate("2026-10-20");
-
-  await deleteDailyMetric("2026-10-20", "weight");
-
-  expect(await listTombstones()).toContainEqual(
-    expect.objectContaining({ id: `DailyMetrics:${metric!.id}`, table: "DailyMetrics" }),
-  );
 });
 
 test("replaceAllExercises records tombstones only for exercises that disappear", async () => {
