@@ -261,7 +261,6 @@
   celebration_partial: "おつかれさま！",
 
   // Day timeline
-  timeline_add_wellness: "＋ 体調を記録",
   timeline_choose_video: "動画を選ぶ",
   timeline_empty: "まだ記録はありません。",
   timeline_label_morning: "朝",

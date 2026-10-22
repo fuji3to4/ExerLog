@@ -261,7 +261,6 @@ export const en = {
   celebration_partial: "Nice work!",
 
   // Day timeline
-  timeline_add_wellness: "+ Log condition",
   timeline_choose_video: "Choose a video",
   timeline_empty: "No records yet.",
   timeline_label_morning: "Morning",

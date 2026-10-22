@@ -2,7 +2,6 @@
 
 import { useId, useState } from "react";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { WellnessScoreInput } from "@/features/self-care/components/wellness-score-input";
 import {
@@ -14,7 +13,7 @@ import { localIsoAt, timeOfIso, withLocalTime } from "@/lib/date/local-iso";
 import type { WellnessEntry, WellnessScore } from "@/lib/types";
 import { TimeField, TimelineDialogFooter, useSaveAndClose } from "./timeline-dialog-parts";
 
-export type WellnessEntryDialogProps = {
+type WellnessEntryDialogProps = {
   open: boolean;
   onOpenChange(open: boolean): void;
   date: string;
@@ -26,25 +25,6 @@ export type WellnessEntryDialogProps = {
 export type WellnessFormProps = Omit<WellnessEntryDialogProps, "open">;
 
 const DEFAULT_SCORE: WellnessScore = 3;
-
-/** Wellness-only dialog, kept for screens outside the timeline (the self-care card). */
-export function WellnessEntryDialog(props: WellnessEntryDialogProps) {
-  const { t } = useTranslation();
-
-  return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent aria-describedby={undefined}>
-        <DialogHeader>
-          <DialogTitle>
-            {t(props.entry ? "timeline_wellness_edit_title" : "timeline_wellness_add_title")}
-          </DialogTitle>
-        </DialogHeader>
-        {/* Mounted only while open, so the form state starts fresh on every open. */}
-        <WellnessForm {...props} />
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 /** Time, body/mind scores and note for a wellness entry. Mount it only while its dialog is open. */
 export function WellnessForm({ onOpenChange, date, entry, onSaved, onDeleted }: WellnessFormProps) {
