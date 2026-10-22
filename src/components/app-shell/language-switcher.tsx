@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { Language } from "@/features/i18n/language";
 import { cva } from "class-variance-authority";
@@ -18,6 +20,8 @@ const languageOptionVariants = cva(
 
 export function LanguageSwitcher() {
   const { language, messages, setLanguage } = useTranslation();
+  // The sidebar and the mobile header each render a switcher; separate names keep their radios apart.
+  const groupName = `language-${useId()}`;
   const options: Array<{ value: Language; label: string }> = [
     { value: "ja", label: messages.language_ja },
     { value: "en", label: messages.language_en },
@@ -38,7 +42,7 @@ export function LanguageSwitcher() {
             <input
               checked={isActive}
               className="peer sr-only"
-              name="language"
+              name={groupName}
               onChange={() => handleLanguageChange(option.value)}
               type="radio"
               value={option.value}

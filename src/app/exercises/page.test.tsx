@@ -1,11 +1,22 @@
+import type { ReactElement } from "react";
 import { screen } from "@testing-library/react";
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
-import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/library",
+  useRouter: () => ({ back: vi.fn(), push: vi.fn() }),
+}));
+
+import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
 import { appDb } from "@/features/storage/app-db";
+import { MockSyncProvider } from "@/test/mock-sync-provider";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 import ExercisesPage from "./page";
+
+function renderPage(ui: ReactElement, options?: Parameters<typeof renderWithLanguage>[1]) {
+  return renderWithLanguage(<MockSyncProvider>{ui}</MockSyncProvider>, options);
+}
 
 beforeEach(async () => {
   await appDb.exerciseLogs.clear();
@@ -29,7 +40,7 @@ test("query-based exercise page renders a user-created exercise id", async () =>
 
   window.history.pushState({}, "", "/exercises?exerciseId=be113122-1120-4320-af2b-129bc738f2dc");
 
-  renderWithLanguage(await ExercisesPage(), { initialLanguage: "en" });
+  renderPage(await ExercisesPage(), { initialLanguage: "en" });
 
   expect(await screen.findByRole("heading", { name: "UUID Exercise" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /play uuid exercise/i })).toBeInTheDocument();

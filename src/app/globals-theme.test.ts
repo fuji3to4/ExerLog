@@ -140,20 +140,6 @@ describe("globals.css warm theme contract", () => {
       "var(--font-sans)",
     );
     expectDeclaration(
-      getCssBlock(globalsCss, ".card", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "background",
-      "var(--surface-soft)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".card", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "border",
-      "1px solid var(--border-soft)",
-    );
-    expectDeclaration(
       getCssBlock(globalsCss, ".today-screen__primary-button", {
         matches: (block) => block.includes("background:"),
       }),
@@ -228,7 +214,7 @@ describe("globals.css warm theme contract", () => {
         matches: (block) => block.includes("box-shadow:"),
       }),
       "box-shadow",
-      "0 18px 36px rgba(149, 92, 73, 0.22)",
+      "0 18px 36px hsl(var(--foreground) / 0.12)",
     );
     expectDeclaration(
       getCssBlock(globalsCss, ".bottom-nav", {

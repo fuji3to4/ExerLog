@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test } from "vitest";
 
-import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
+import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
 import { appDb } from "@/features/storage/app-db";
 import { renderWithLanguage } from "@/test/render-with-language";
 

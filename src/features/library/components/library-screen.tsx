@@ -136,7 +136,7 @@ ${t("library_delete_confirm")}`
           const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
 
           return (
-            <Card key={exercise.id} className="recommendation-card max-w-[400px]" aria-labelledby={headingId}>
+            <Card key={exercise.id} role="article" className="recommendation-card max-w-[400px]" aria-labelledby={headingId}>
               {thumbnailUrl ? (
                 <div className="recommendation-card__thumbnail">
                   <img src={thumbnailUrl} alt={exercise.title} loading="lazy" />

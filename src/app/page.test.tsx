@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { MockSyncProvider } from "@/test/mock-sync-provider";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 const { todayScreenSpy } = vi.hoisted(() => ({
@@ -8,6 +9,15 @@ const { todayScreenSpy } = vi.hoisted(() => ({
 
 vi.mock("@/features/today/components/today-screen", () => ({
   TodayScreen: todayScreenSpy,
+}));
+
+// The PC layout also shows the history dashboard; keep its IndexedDB reads out of this fake-timer test.
+vi.mock("@/features/history/components/history-dashboard", () => ({
+  HistoryDashboard: () => <section data-testid="history-dashboard" />,
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
 }));
 
 vi.mock("@/features/sync/auto-sync", async (importOriginal) => ({
@@ -34,18 +44,23 @@ afterEach(() => {
 });
 
 test("renders the today screen for the home route", () => {
-  renderWithLanguage(<HomePage />);
+  renderWithLanguage(
+    <MockSyncProvider>
+      <HomePage />
+    </MockSyncProvider>,
+  );
 
-  expect(screen.getByTestId("today-screen")).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /ライブラリ/i })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /履歴/i })).toBeInTheDocument();
+  // Mobile and PC layouts each render the today screen and a navigation.
+  expect(screen.getAllByTestId("today-screen").length).toBeGreaterThan(0);
+  expect(screen.getAllByRole("link", { name: /ライブラリ/i }).length).toBeGreaterThan(0);
+  expect(screen.getAllByRole("link", { name: /履歴/i }).length).toBeGreaterThan(0);
   expect(screen.queryByRole("link", { name: /コンディション/i })).not.toBeInTheDocument();
   expect(todayScreenSpy).toHaveBeenCalled();
 });
 
 test("layout includes installable app metadata", () => {
   expect(metadata.applicationName).toBe("Exercise Log");
-  expect(metadata.manifest).toBe("/manifest.webmanifest");
+  expect(metadata.manifest).toBe("/ExerLog/manifest.webmanifest");
 });
 
 describe("today screen timeline", () => {

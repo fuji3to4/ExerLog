@@ -1,4 +1,4 @@
-import { exerciseCatalog } from "../catalog/exercise-catalog";
+import { exerciseCatalog } from "../catalog/exercise-catalog.default";
 import { getTodaysRecommendations } from "./get-todays-recommendations";
 
 const stampedCatalog = exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" }));
