@@ -293,4 +293,11 @@ export const en = {
   measurement_item_weight: "Weight",
   measurement_item_body_fat: "Body fat",
   measurement_item_height: "Height",
+  timeline_add_record: "+ Add record",
+  record_add_title: "Add record",
+  record_kind_label: "Record type",
+  record_kind_wellness: "Condition",
+  record_kind_measurement: "Body measurements",
+  measurement_edit_title: "Edit body measurements",
+  measurement_previous: "Last {value}",
 } as const;

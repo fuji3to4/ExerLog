@@ -11,8 +11,8 @@ import type { TimelineItem } from "../build-timeline";
 import type { DayTimelineState } from "../use-day-timeline";
 import { DayTimeline } from "./day-timeline";
 import { ExerciseLogDialog } from "./exercise-log-dialog";
+import { RecordDialog } from "./record-dialog";
 import { WatchEventDialog } from "./watch-event-dialog";
-import { WellnessEntryDialog } from "./wellness-entry-dialog";
 
 export type TimelineSectionProps = {
   date: string;
@@ -40,7 +40,7 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
     <section className="space-y-4">
       <div className="flex gap-2">
         <Button className="flex-1" onClick={() => setIsAdding(true)}>
-          {t("timeline_add_wellness")}
+          {t("timeline_add_record")}
         </Button>
         {isToday ? (
           <Link href="/library" className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}>
@@ -53,20 +53,19 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
         <DayTimeline items={timeline.items} highlightId={timeline.highlightId} onSelect={setSelected} />
       ) : null}
 
-      <WellnessEntryDialog
-        open={isAdding}
-        onOpenChange={setIsAdding}
-        date={date}
-        onSaved={(entry) => void refresh(entry.id)}
-      />
+      <RecordDialog open={isAdding} onOpenChange={setIsAdding} date={date} onSaved={(id) => void refresh(id)} />
 
-      {selected?.kind === "wellness" ? (
-        <WellnessEntryDialog
+      {selected?.kind === "wellness" || selected?.kind === "measurement" ? (
+        <RecordDialog
           key={selected.id}
           open
           onOpenChange={closeSelected}
           date={date}
-          entry={selected.entry}
+          editing={
+            selected.kind === "wellness"
+              ? { kind: "wellness", entry: selected.entry }
+              : { kind: "measurement", record: selected.record }
+          }
           onSaved={() => void refresh()}
           onDeleted={() => void refresh()}
         />

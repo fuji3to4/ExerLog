@@ -70,7 +70,7 @@ test("places the timeline under the header and above the recommendations", async
   expect(screen.getByText(/loading today's log/i)).toBeInTheDocument();
 
   const header = screen.getByRole("heading", { name: "Today", level: 1 });
-  const addButton = screen.getByRole("button", { name: "+ Log condition" });
+  const addButton = screen.getByRole("button", { name: "+ Add record" });
   const recommended = await screen.findByRole("region", { name: /recommended/i });
 
   expect(header.compareDocumentPosition(addButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -127,7 +127,7 @@ test("shows Japanese fixed UI by default while leaving exercise titles unchanged
   renderWithLanguage(<TodayScreen date="2026-10-20" />);
 
   expect(screen.getByRole("heading", { name: "今日" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "＋ 体調を記録" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "＋ 記録する" })).toBeInTheDocument();
   const card = await screen.findByRole("article", { name: "Delta" });
   expect(within(card).getByRole("link", { name: /Delta.*を見る/ })).toBeInTheDocument();
   expect(within(card).getByText("未記録")).toBeInTheDocument();

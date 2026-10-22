@@ -10,7 +10,7 @@ import { useTranslation } from "@/features/i18n/use-translation";
 /** How long a dialog stays open after a successful save so "✓ saved" is visible. */
 export const SAVE_CLOSE_DELAY_MS = 600;
 
-const FIELD_CLASS =
+export const FIELD_CLASS =
   "h-11 w-full rounded-xl border border-input bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-ring";
 
 /**

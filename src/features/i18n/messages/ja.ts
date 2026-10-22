@@ -293,4 +293,11 @@
   measurement_item_weight: "体重",
   measurement_item_body_fat: "体脂肪率",
   measurement_item_height: "身長",
+  timeline_add_record: "＋ 記録する",
+  record_add_title: "記録する",
+  record_kind_label: "記録の種類",
+  record_kind_wellness: "体調",
+  record_kind_measurement: "体の数値",
+  measurement_edit_title: "体の数値の記録を編集",
+  measurement_previous: "前回 {value}",
 } as const;

@@ -6,6 +6,7 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 import { appDb } from "@/features/storage/app-db";
 import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { listMeasurementsForDay } from "@/features/storage/measurements.repository";
 import { listTombstones } from "@/features/storage/tombstones.repository";
 import { listWatchEventsForDay, recordWatchEvent } from "@/features/storage/watch-events.repository";
 import { localIsoAt } from "@/lib/date/local-iso";
@@ -40,6 +41,7 @@ describe("TimelineSection", () => {
     await Promise.all([
       appDb.exerciseLogs.clear(),
       appDb.wellnessEntries.clear(),
+      appDb.measurements.clear(),
       appDb.watchEvents.clear(),
       appDb.tombstones.clear(),
       appDb.exercises.clear(),
@@ -78,8 +80,9 @@ describe("TimelineSection", () => {
     expect(await screen.findByText(/肩まわしストレッチ できた/)).toBeTruthy();
 
     // Add
-    fireEvent.click(screen.getByRole("button", { name: "＋ 体調を記録" }));
+    fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
     const addDialog = await screen.findByRole("dialog");
+    expect(within(addDialog).getByRole("tab", { name: "体調" }).getAttribute("aria-selected")).toBe("true");
     expect((within(addDialog).getByLabelText("時刻") as HTMLInputElement).value).toBe("20:00");
     fireEvent.click(within(within(addDialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "4" }));
     fireEvent.click(within(addDialog).getByRole("button", { name: "保存" }));
@@ -117,6 +120,36 @@ describe("TimelineSection", () => {
     const tombstones = await listTombstones();
     expect(tombstones.map((t) => t.table)).toEqual(["WellnessEntries"]);
     expect(onChanged).toHaveBeenCalledTimes(3);
+  });
+
+  it("adds a measurement record from + Add record and edits it", async () => {
+    const onChanged = vi.fn();
+    renderWithLanguage(<Harness onChanged={onChanged} />, { initialLanguage: "ja" });
+    expect(await screen.findByText(/肩まわしストレッチ できた/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("tab", { name: "体の数値" }));
+    fireEvent.change(within(dialog).getByLabelText("体重"), { target: { value: "60.2" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
+    await waitForDialogToClose();
+
+    const row = await screen.findByRole("button", { name: /📏 体重 60.2kg/ });
+    await waitFor(() => expect(row.className).toContain("timeline-item--new"));
+    expect(rows()).toHaveLength(2);
+    const [saved] = await listMeasurementsForDay(DATE);
+    expect(saved.values).toEqual({ weight: 60.2 });
+    expect(onChanged).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(row);
+    const editDialog = await screen.findByRole("dialog");
+    expect(within(editDialog).queryByRole("tablist")).toBeNull();
+    fireEvent.change(within(editDialog).getByLabelText("体重"), { target: { value: "61" } });
+    fireEvent.click(within(editDialog).getByRole("button", { name: "保存" }));
+    await waitForDialogToClose();
+
+    expect(await screen.findByRole("button", { name: /📏 体重 61.0kg/ })).toBeTruthy();
+    expect(onChanged).toHaveBeenCalledTimes(2);
   });
 
   it("edits the duration of an exercise log", async () => {

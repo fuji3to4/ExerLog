@@ -23,8 +23,11 @@ export type WellnessEntryDialogProps = {
   onDeleted?(): void;
 };
 
+export type WellnessFormProps = Omit<WellnessEntryDialogProps, "open">;
+
 const DEFAULT_SCORE: WellnessScore = 3;
 
+/** Wellness-only dialog, kept for screens outside the timeline (the self-care card). */
 export function WellnessEntryDialog(props: WellnessEntryDialogProps) {
   const { t } = useTranslation();
 
@@ -37,13 +40,14 @@ export function WellnessEntryDialog(props: WellnessEntryDialogProps) {
           </DialogTitle>
         </DialogHeader>
         {/* Mounted only while open, so the form state starts fresh on every open. */}
-        <WellnessEntryForm {...props} />
+        <WellnessForm {...props} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function WellnessEntryForm({ onOpenChange, date, entry, onSaved, onDeleted }: WellnessEntryDialogProps) {
+/** Time, body/mind scores and note for a wellness entry. Mount it only while its dialog is open. */
+export function WellnessForm({ onOpenChange, date, entry, onSaved, onDeleted }: WellnessFormProps) {
   const { t } = useTranslation();
   const noteId = useId();
   // For a new entry the base instant is "now" on `date`, taken when the dialog opens.

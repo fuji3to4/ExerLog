@@ -103,10 +103,10 @@ describe("today screen timeline", () => {
     await replaceAllExercises(catalog);
   });
 
-  test("shows the add-condition button on the today screen", async () => {
+  test("shows the add-record button on the today screen", async () => {
     await renderTodayScreen();
 
-    expect(await screen.findByRole("button", { name: "＋ 体調を記録" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "＋ 記録する" })).toBeInTheDocument();
   });
 
   test("logging an exercise adds a timeline row, celebrates and counts repeats", async () => {
@@ -135,7 +135,7 @@ describe("today screen timeline", () => {
     expect(await screen.findByRole("heading", { name: "Gamma" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Zeta" })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "＋ 体調を記録" }));
+    fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(within(dialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "1" }));
     fireEvent.click(within(within(dialog).getByRole("group", { name: "こころ" })).getByRole("button", { name: "1" }));
