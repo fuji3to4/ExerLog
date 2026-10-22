@@ -5,6 +5,7 @@ import type {
   DailySelfCareEntry,
   ExerciseLog,
   ExerciseVideo,
+  MeasurementRecord,
   SelfCareItem,
   Tombstone,
   WatchEvent,
@@ -14,6 +15,7 @@ import type {
 export class AppDb extends Dexie {
   exerciseLogs!: EntityTable<ExerciseLog, "id">;
   wellnessEntries!: EntityTable<WellnessEntry, "id">;
+  measurements!: EntityTable<MeasurementRecord, "id">;
   watchEvents!: EntityTable<WatchEvent, "id">;
   tombstones!: EntityTable<Tombstone, "id">;
   exercises!: EntityTable<ExerciseVideo, "id">;
@@ -135,6 +137,20 @@ export class AppDb extends Dexie {
       wellnessEntries: "id, date, recordedAt",
       watchEvents: "id, date, exerciseId, watchedAt",
       tombstones: "id, table",
+    });
+
+    // v9: timed body measurements (dailyMetrics stays until it is removed later).
+    this.version(9).stores({
+      dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",
+      selfCareCatalog: "id, sortOrder, isArchived",
+      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      measurements: "id, date, recordedAt",
     });
   }
 }

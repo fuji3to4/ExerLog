@@ -289,4 +289,7 @@ export const en = {
   timeline_wellness_edit_title: "Edit condition entry",
   timeline_exercise_edit_title: "Edit exercise entry",
   timeline_watch_edit_title: "Edit watch entry",
+  measurement_item_weight: "Weight",
+  measurement_item_body_fat: "Body fat",
+  measurement_item_height: "Height",
 } as const;

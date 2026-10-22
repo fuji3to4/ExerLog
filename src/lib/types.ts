@@ -45,6 +45,15 @@ export type WellnessEntry = {
   updatedAt: string;
 };
 
+export type MeasurementRecord = {
+  id: string;
+  date: string;
+  recordedAt: string;
+  values: Record<string, number>;
+  note: string;
+  updatedAt: string;
+};
+
 export type WatchEvent = {
   id: string;
   date: string;

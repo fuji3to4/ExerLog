@@ -289,4 +289,7 @@
   timeline_wellness_edit_title: "体調の記録を編集",
   timeline_exercise_edit_title: "運動の記録を編集",
   timeline_watch_edit_title: "視聴の記録を編集",
+  measurement_item_weight: "体重",
+  measurement_item_body_fat: "体脂肪率",
+  measurement_item_height: "身長",
 } as const;
