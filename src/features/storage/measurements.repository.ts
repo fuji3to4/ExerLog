@@ -55,16 +55,31 @@ export function listMeasurementsInRange(start: string, end: string): Promise<Mea
   return appDb.measurements.where("date").between(start, end, true, true).sortBy("recordedAt");
 }
 
+export type MeasurementLookupOptions = {
+  /** Ignore this record (the one being edited). */
+  excludeId?: string;
+};
+
 /** Per item, the newest value recorded strictly before `at`. */
-export async function findPreviousValues(at: string): Promise<Record<string, number>> {
+export async function findPreviousValues(
+  at: string,
+  options: MeasurementLookupOptions = {},
+): Promise<Record<string, number>> {
   const earlier = await appDb.measurements.where("recordedAt").below(at).toArray();
-  return mergeOldestFirst(earlier);
+  return mergeOldestFirst(withoutId(earlier, options.excludeId));
 }
 
 /** Newest height recorded at or before `at`, or null. */
-export async function findLatestHeightAt(at: string): Promise<number | null> {
+export async function findLatestHeightAt(
+  at: string,
+  options: MeasurementLookupOptions = {},
+): Promise<number | null> {
   const upTo = await appDb.measurements.where("recordedAt").belowOrEqual(at).toArray();
-  return mergeOldestFirst(upTo).height ?? null;
+  return mergeOldestFirst(withoutId(upTo, options.excludeId)).height ?? null;
+}
+
+function withoutId(records: MeasurementRecord[], id: string | undefined): MeasurementRecord[] {
+  return id === undefined ? records : records.filter((record) => record.id !== id);
 }
 
 /** Per item, the newest recorded value and when it was recorded. */

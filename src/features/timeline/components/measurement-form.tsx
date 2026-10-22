@@ -33,12 +33,17 @@ type Draft = { raw: string; badInput: boolean };
 
 type ParsedValue = { state: "empty" } | { state: "invalid" } | { state: "ok"; value: number };
 
-/** Empty, invalid (not a number, out of range, too many decimals) or a value to save. */
-function parseDraft(item: MeasurementItem, draft: Draft | undefined): ParsedValue {
+/**
+ * Empty, invalid (not a number, out of range, too many decimals) or a value to save.
+ * A field still holding its stored value is always accepted, so a record imported
+ * with e.g. 60.25 can be edited (note, time) without being forced to change it.
+ */
+function parseDraft(item: MeasurementItem, draft: Draft | undefined, stored: number | undefined): ParsedValue {
   if (draft?.badInput) return { state: "invalid" };
   const raw = draft?.raw.trim() ?? "";
   if (raw === "") return { state: "empty" };
   const value = Number(raw);
+  if (stored !== undefined && raw === String(stored)) return { state: "ok", value: stored };
   if (!Number.isFinite(value) || value < item.min || value > item.max) return { state: "invalid" };
   const scaled = value * 10 ** item.decimals;
   if (Math.abs(scaled - Math.round(scaled)) > 1e-6) return { state: "invalid" };
@@ -66,26 +71,27 @@ export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted
   const { isSaved, isBusy, hasError, run } = useSaveAndClose();
 
   const recordedAt = time === "" ? null : withLocalTime(baseAt, time);
-  const isEditing = record !== undefined;
+  const editingId = record?.id;
 
   useEffect(() => {
     if (!recordedAt) return;
     let isCurrent = true;
-    Promise.all([findPreviousValues(recordedAt), isEditing ? null : findLatestHeightAt(recordedAt)])
+    // The record being edited must not count as its own "previous" value or height.
+    const options = { excludeId: editingId };
+    Promise.all([findPreviousValues(recordedAt, options), findLatestHeightAt(recordedAt, options)])
       .then(([previousValues, latestHeight]) => {
         if (!isCurrent) return;
         setPrevious(previousValues);
-        // When editing, the record's own stored height must not stand in for a cleared field.
-        setFallbackHeight(isEditing ? (previousValues.height ?? null) : latestHeight);
+        setFallbackHeight(latestHeight);
       })
       .catch((error: unknown) => console.error(error));
     return () => {
       isCurrent = false;
     };
-  }, [recordedAt, isEditing]);
+  }, [recordedAt, editingId]);
 
   const parsed = Object.fromEntries(
-    MEASUREMENT_ITEMS.map((item) => [item.id, parseDraft(item, drafts[item.id])]),
+    MEASUREMENT_ITEMS.map((item) => [item.id, parseDraft(item, drafts[item.id], record?.values[item.id])]),
   ) as Record<string, ParsedValue>;
 
   // Keep values of items not in the list; drop listed items whose field is empty.

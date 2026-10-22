@@ -40,6 +40,7 @@ describe("RecordDialog", () => {
   beforeEach(async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 20, 7, 12, 0));
+    window.localStorage.clear();
     await Promise.all([appDb.measurements.clear(), appDb.wellnessEntries.clear(), appDb.tombstones.clear()]);
   });
 
@@ -189,6 +190,50 @@ describe("RecordDialog", () => {
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1), { timeout: 3000 });
     expect((await onlyRecord()).values).toEqual({ weight: 61 });
+  });
+
+  it("saves a stored value that fails validation when only the note is edited", async () => {
+    const record = await addMeasurement({
+      date: DATE,
+      recordedAt: localIsoAt(DATE, new Date(2026, 9, 20, 7, 0, 0)),
+      values: { weight: 60.25 },
+      note: "",
+    });
+    const { onSaved } = renderDialog({ editing: { kind: "measurement", record } });
+
+    fireEvent.change(await waitFor(() => input("メモ")), { target: { value: "読み込み" } });
+    expect(saveButton().disabled).toBe(false);
+    fireEvent.click(saveButton());
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    const saved = await onlyRecord();
+    expect(saved.values).toEqual({ weight: 60.25 });
+    expect(saved.note).toBe("読み込み");
+  });
+
+  it("validates a stored value again once the field is edited", async () => {
+    const record = await addMeasurement({ date: DATE, values: { weight: 60.25 }, note: "" });
+    renderDialog({ editing: { kind: "measurement", record } });
+
+    fireEvent.change(await waitFor(() => input("体重")), { target: { value: "60.35" } });
+    expect(saveButton().disabled).toBe(true);
+  });
+
+  it("does not show the edited record's own values as previous values", async () => {
+    const record = await addMeasurement({
+      date: DATE,
+      recordedAt: localIsoAt(DATE, new Date(2026, 9, 20, 7, 0, 0)),
+      values: { weight: 61, height: 170 },
+      note: "",
+    });
+    renderDialog({ editing: { kind: "measurement", record } });
+
+    fireEvent.change(await waitFor(() => input("時刻")), { target: { value: "09:00" } });
+    fireEvent.change(input("身長"), { target: { value: "" } });
+    // Give the lookup for the new time a chance to settle.
+    await waitFor(() => expect(screen.getByText("身長を記録するとBMIが出ます")).toBeTruthy());
+    expect(input("体重").placeholder).toBe("");
+    expect(input("身長").placeholder).toBe("");
   });
 
   it("deletes a measurement record with a tombstone", async () => {
