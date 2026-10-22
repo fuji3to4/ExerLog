@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
-import type { ExerciseLog, Tombstone } from "@/lib/types";
+import type { ExerciseLog, MeasurementRecord, Tombstone } from "@/lib/types";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
@@ -107,6 +107,26 @@ function logRow(log: ExerciseLog): string[] {
     String(log.durationSeconds),
     log.updatedAt,
   ];
+}
+
+const MEASUREMENT_FIXED = ["id", "date", "recordedAt", "note", "updatedAt"];
+const MEASUREMENT_HEADERS = [...MEASUREMENT_FIXED, "weight", "bodyFat", "height"];
+
+function makeMeasurement(overrides: Partial<MeasurementRecord> = {}): MeasurementRecord {
+  return {
+    id: "m-1",
+    date: "2026-10-20",
+    recordedAt: "2026-10-20T07:00:00+09:00",
+    values: { weight: 60 },
+    note: "",
+    updatedAt: "2026-10-20T07:00:00+09:00",
+    ...overrides,
+  };
+}
+
+/** Fixed columns of a measurement row, in MEASUREMENT_FIXED order. */
+function measurementFixedCells(record: MeasurementRecord): string[] {
+  return [record.id, record.date, record.recordedAt, record.note, record.updatedAt];
 }
 
 let sheets: FakeSheets;
@@ -323,7 +343,8 @@ describe("syncAll", () => {
       rowCount: 1,
     });
     for (const config of TABLE_SYNC_CONFIGS) {
-      expect(sheets.tabs.get(config.tabName)?.[0]).toEqual(config.headers);
+      const written = config.headerMode === "byName" ? config.buildHeaders!([]) : config.headers;
+      expect(sheets.tabs.get(config.tabName)?.[0]).toEqual(written);
     }
   });
 
@@ -418,5 +439,101 @@ describe("syncAll", () => {
     expect(first.success).toBe(true);
     expect(second.success).toBe(true);
     expect(maxActive).toBe(1);
+  });
+});
+
+describe("syncAll: Measurements tab", () => {
+  test("a sheet missing item columns is merged and rewritten with every item column", async () => {
+    const remote = makeMeasurement({ id: "m-1", values: { weight: 60 } });
+    const local = makeMeasurement({
+      id: "m-2",
+      recordedAt: "2026-10-20T21:00:00+09:00",
+      values: { bodyFat: 22 },
+      updatedAt: "2026-10-20T21:00:00+09:00",
+    });
+    await appDb.measurements.put(local);
+    sheets.tabs.set("Measurements", [
+      [...MEASUREMENT_FIXED, "weight"],
+      [...measurementFixedCells(remote), "60"],
+    ]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(await appDb.measurements.orderBy("id").toArray()).toEqual([remote, local]);
+    expect(sheets.tabs.get("Measurements")).toEqual([
+      MEASUREMENT_HEADERS,
+      [...measurementFixedCells(remote), "60", "", ""],
+      [...measurementFixedCells(local), "", "22", ""],
+    ]);
+  });
+
+  test("a column not in the item list is kept; non-numeric cells are dropped", async () => {
+    const first = makeMeasurement({ id: "m-1", values: { weight: 60, waist: 80 } });
+    const second = makeMeasurement({ id: "m-2", values: { weight: 61 } });
+    sheets.tabs.set("Measurements", [
+      [...MEASUREMENT_FIXED, "weight", "waist"],
+      [...measurementFixedCells(first), "60", "80"],
+      [...measurementFixedCells(second), "61", "abc"],
+    ]);
+
+    await syncAll(TOKEN);
+
+    expect(await appDb.measurements.orderBy("id").toArray()).toEqual([first, second]);
+    expect(sheets.tabs.get("Measurements")).toEqual([
+      [...MEASUREMENT_HEADERS, "waist"],
+      [...measurementFixedCells(first), "60", "", "", "80"],
+      [...measurementFixedCells(second), "61", "", "", ""],
+    ]);
+  });
+
+  test("a sheet missing a fixed column is treated as empty and rewritten", async () => {
+    const local = makeMeasurement();
+    await appDb.measurements.put(local);
+    sheets.tabs.set("Measurements", [
+      ["id", "date", "weight"],
+      ["m-9", "2026-10-19", "70"],
+    ]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(await appDb.measurements.toArray()).toEqual([local]);
+    expect(sheets.tabs.get("Measurements")).toEqual([
+      MEASUREMENT_HEADERS,
+      [...measurementFixedCells(local), "60", "", ""],
+    ]);
+  });
+
+  test("the old DailyMetrics tab is never read or written", async () => {
+    const oldRows = [
+      ["id", "date", "metricType", "value", "unit", "recordedAt"],
+      ["d-1", "2026-10-01", "weight", "60", "kg", "2026-10-01T08:00:00+09:00"],
+    ];
+    sheets.tabs.set("DailyMetrics", oldRows);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(sheets.tabs.get("DailyMetrics")).toEqual(oldRows);
+    expect(sheets.calls.some((c) => decodeURIComponent(c.url).includes("DailyMetrics"))).toBe(false);
+    expect(result.results.map((r) => r.tableName)).not.toContain("DailyMetrics");
+  });
+
+  test("a measurement deleted locally disappears from both local and the sheet", async () => {
+    const record = makeMeasurement();
+    await appDb.tombstones.put({
+      id: "Measurements:m-1",
+      table: "Measurements",
+      recordId: "m-1",
+      deletedAt: "2026-10-20T10:00:00+09:00",
+    });
+    sheets.tabs.set("Measurements", [MEASUREMENT_HEADERS, [...measurementFixedCells(record), "60", "", ""]]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(await appDb.measurements.toArray()).toEqual([]);
+    expect(sheets.tabs.get("Measurements")).toEqual([MEASUREMENT_HEADERS]);
   });
 });

@@ -1,13 +1,12 @@
 import type { Table } from "dexie";
 
 import type {
-  DailyMetricEntry,
   DailySelfCareEntry,
   ExerciseIntensity,
   ExerciseLog,
   ExerciseLogResult,
   ExerciseVideo,
-  MetricType,
+  MeasurementRecord,
   SelfCareItem,
   Tombstone,
   WatchEvent,
@@ -15,6 +14,7 @@ import type {
   WellnessScore,
 } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
+import { MEASUREMENT_FIXED_COLUMNS, MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
 import type { SheetTab } from "./google-sheets";
 
 /** How one Dexie table is mirrored to one sheet tab. */
@@ -25,8 +25,19 @@ export interface TableSyncConfig {
   updatedAtKey: string | null;
   /** Whether tombstones for this tab remove records (false only for Tombstones). */
   deletable: boolean;
+  /**
+   * "exact" (default): the sheet header row must equal `headers`, otherwise the
+   * tab is read as empty. "byName": columns are matched by header name; the tab
+   * is read as long as its header row contains every column in `headers`.
+   */
+  headerMode?: "exact" | "byName";
+  /** exact: the header row. byName: the columns a sheet must have to be read. */
   headers: string[];
-  toRow: (record: any) => string[];
+  /** byName only: the header row written for `records` (the merged result). */
+  buildHeaders?: (records: any[]) => string[];
+  /** Cells in the order of `headers` (the row actually written). */
+  toRow: (record: any, headers: string[]) => string[];
+  /** `headers` is the header row the row was read under. */
   fromRow: (row: string[], headers: string[]) => any;
   readFromDb: () => Promise<any[]>;
   /**
@@ -42,7 +53,7 @@ export function syncedDbTables(): Table<any, any>[] {
     appDb.exerciseLogs,
     appDb.wellnessEntries,
     appDb.watchEvents,
-    appDb.dailyMetrics,
+    appDb.measurements,
     appDb.dailySelfCareLogs,
     appDb.exercises,
     appDb.selfCareCatalog,
@@ -160,32 +171,65 @@ const watchEventsConfig: TableSyncConfig = {
   replaceDb: (records) => replaceTable(appDb.watchEvents, records as WatchEvent[]),
 };
 
-const dailyMetricsConfig: TableSyncConfig = {
-  tabName: "DailyMetrics",
+const MEASUREMENT_FIXED: readonly string[] = MEASUREMENT_FIXED_COLUMNS;
+
+/** Fixed columns, then the item list in order, then ids found only in records (sorted). */
+function measurementHeaders(records: MeasurementRecord[]): string[] {
+  const listed = MEASUREMENT_ITEMS.map((item) => item.id);
+  const unknown = new Set<string>();
+  for (const record of records) {
+    for (const id of Object.keys(record.values)) {
+      if (!listed.includes(id) && !MEASUREMENT_FIXED.includes(id)) unknown.add(id);
+    }
+  }
+  return [...MEASUREMENT_FIXED, ...listed, ...[...unknown].sort()];
+}
+
+const measurementsConfig: TableSyncConfig = {
+  tabName: "Measurements",
   keyColumn: "id",
-  updatedAtKey: "recordedAt",
+  updatedAtKey: "updatedAt",
   deletable: true,
-  headers: ["id", "date", "metricType", "value", "unit", "recordedAt"],
-  toRow: (r: DailyMetricEntry) => [r.id, r.date, r.metricType, String(r.value), r.unit, r.recordedAt],
-  fromRow: (row, headers): DailyMetricEntry => ({
-    id: cell(row, headers, "id"),
-    date: cell(row, headers, "date"),
-    metricType: cell(row, headers, "metricType") as MetricType,
-    value: Number(cell(row, headers, "value")),
-    unit: cell(row, headers, "unit"),
-    recordedAt: cell(row, headers, "recordedAt"),
-  }),
-  readFromDb: () => appDb.dailyMetrics.toArray(),
-  // Unique index &[date+metricType]
-  replaceDb: (records) =>
-    replaceTable(
-      appDb.dailyMetrics,
-      keepLatestPerKey(
-        records as DailyMetricEntry[],
-        (r) => `${r.date}|${r.metricType}`,
-        "recordedAt",
-      ),
-    ),
+  headerMode: "byName",
+  headers: [...MEASUREMENT_FIXED],
+  buildHeaders: (records) => measurementHeaders(records as MeasurementRecord[]),
+  toRow: (r: MeasurementRecord, headers) =>
+    headers.map((column) => {
+      switch (column) {
+        case "id":
+          return r.id;
+        case "date":
+          return r.date;
+        case "recordedAt":
+          return r.recordedAt;
+        case "note":
+          return r.note ?? "";
+        case "updatedAt":
+          return r.updatedAt;
+        default:
+          return column in r.values ? String(r.values[column]) : "";
+      }
+    }),
+  fromRow: (row, headers): MeasurementRecord => {
+    const values: Record<string, number> = {};
+    headers.forEach((column, index) => {
+      if (column === "" || MEASUREMENT_FIXED.includes(column)) return;
+      const raw = (row[index] ?? "").trim();
+      const value = Number(raw);
+      // An empty cell means "no value", not 0; non-numeric text is dropped.
+      if (raw !== "" && Number.isFinite(value)) values[column] = value;
+    });
+    return {
+      id: cell(row, headers, "id"),
+      date: cell(row, headers, "date"),
+      recordedAt: cell(row, headers, "recordedAt"),
+      values,
+      note: cell(row, headers, "note"),
+      updatedAt: cell(row, headers, "updatedAt"),
+    };
+  },
+  readFromDb: () => appDb.measurements.toArray(),
+  replaceDb: (records) => replaceTable(appDb.measurements, records as MeasurementRecord[]),
 };
 
 const dailySelfCareConfig: TableSyncConfig = {
@@ -318,7 +362,7 @@ export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
   exerciseLogsConfig,
   wellnessEntriesConfig,
   watchEventsConfig,
-  dailyMetricsConfig,
+  measurementsConfig,
   dailySelfCareConfig,
   exercisesConfig,
   selfCareCatalogConfig,

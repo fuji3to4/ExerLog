@@ -5,7 +5,7 @@ export const SHEET_TABS = [
   "ExerciseLogs",
   "WellnessEntries",
   "WatchEvents",
-  "DailyMetrics",
+  "Measurements",
   "DailySelfCare",
   "Exercises",
   "SelfCareCatalog",

@@ -224,7 +224,7 @@
   sync_tab_ExerciseLogs: "運動記録",
   sync_tab_WellnessEntries: "体調記録",
   sync_tab_WatchEvents: "視聴記録",
-  sync_tab_DailyMetrics: "体の数値",
+  sync_tab_Measurements: "体の数値",
   sync_tab_DailySelfCare: "セルフケア",
   sync_tab_Exercises: "動画ライブラリ",
   sync_tab_SelfCareCatalog: "セルフケア項目",

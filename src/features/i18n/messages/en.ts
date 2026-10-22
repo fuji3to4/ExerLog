@@ -224,7 +224,7 @@ export const en = {
   sync_tab_ExerciseLogs: "Exercise records",
   sync_tab_WellnessEntries: "Condition records",
   sync_tab_WatchEvents: "Watch records",
-  sync_tab_DailyMetrics: "Body measurements",
+  sync_tab_Measurements: "Body measurements",
   sync_tab_DailySelfCare: "Self-care",
   sync_tab_Exercises: "Video library",
   sync_tab_SelfCareCatalog: "Self-care items",

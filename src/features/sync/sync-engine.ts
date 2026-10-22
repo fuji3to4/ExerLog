@@ -168,9 +168,10 @@ async function syncTable(
     });
     result.rowCount = stored.length;
 
+    const headers = isByName(config) ? config.buildHeaders!(stored) : config.headers;
     const ok = await replaceAllRows(accessToken, spreadsheetId, config.tabName, [
-      config.headers,
-      ...stored.map(config.toRow),
+      headers,
+      ...stored.map((record) => config.toRow(record, headers)),
     ]);
     if (!ok) {
       result.error = `Failed to write ${config.tabName}`;
@@ -182,20 +183,31 @@ async function syncTable(
   return result;
 }
 
+function isByName(config: TableSyncConfig): boolean {
+  return config.headerMode === "byName";
+}
+
 /**
- * Turn sheet rows into records. A tab whose header row differs from
- * `config.headers` (e.g. an old format) is treated as empty; rows with an
- * empty key are skipped.
+ * Turn sheet rows into records; rows with an empty key are skipped.
+ * exact: a tab whose header row differs from `config.headers` (e.g. an old
+ * format) is treated as empty. byName: the tab is read under its own header
+ * row, unless that row lacks one of `config.headers`, in which case it is
+ * treated as empty.
  */
 function parseRemoteRows(config: TableSyncConfig, rows: string[][]): any[] {
-  if (rows.length === 0 || !sameHeaders(rows[0], config.headers)) {
-    return [];
-  }
-  const keyIndex = config.headers.indexOf(config.keyColumn);
+  if (rows.length === 0) return [];
+  const actual = rows[0];
+  const readable = isByName(config)
+    ? config.headers.every((column) => actual.includes(column))
+    : sameHeaders(actual, config.headers);
+  if (!readable) return [];
+
+  const headers = isByName(config) ? actual : config.headers;
+  const keyIndex = headers.indexOf(config.keyColumn);
   return rows
     .slice(1)
     .filter((row) => (row[keyIndex] ?? "") !== "")
-    .map((row) => config.fromRow(row, config.headers));
+    .map((row) => config.fromRow(row, headers));
 }
 
 function sameHeaders(actual: string[], expected: string[]): boolean {
