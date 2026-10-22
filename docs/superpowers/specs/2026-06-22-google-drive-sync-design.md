@@ -29,8 +29,7 @@ Use **Google Identity Services (GIS)** — the modern successor to `gapi`/`gapi.
 
 | Scope | Purpose |
 |---|---|
-| `https://www.googleapis.com/auth/drive.file` | Create/find "ExerLog Data" spreadsheet (app-created files only) |
-| `https://www.googleapis.com/auth/spreadsheets` | Read/write sheet data |
+| `https://www.googleapis.com/auth/drive.file` | Create/find and read/write the "ExerLog Data" spreadsheet (app-created files only; also covers Sheets API access to it) |
 
 ### 2.3 Token Lifecycle
 
