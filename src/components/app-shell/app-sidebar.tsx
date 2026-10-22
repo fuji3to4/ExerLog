@@ -14,7 +14,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Home, BookOpen, LineChart, Heart, Settings, LogIn, LogOut, Languages } from "lucide-react";
+import { Home, BookOpen, LineChart, Settings, LogIn, LogOut, Languages } from "lucide-react";
 import { LanguageSwitcher } from "./language-switcher";
 import { useSync } from "@/features/sync/SyncProvider";
 import { useTranslation } from "@/features/i18n/use-translation";
@@ -23,7 +23,6 @@ const navItems = [
   { href: "/", icon: Home, labelKey: "nav_today" as const },
   { href: "/library", icon: BookOpen, labelKey: "nav_library" as const },
   { href: "/history", icon: LineChart, labelKey: "nav_history" as const },
-  { href: "/self-care", icon: Heart, labelKey: "nav_self_care" as const },
   { href: "/settings", icon: Settings, labelKey: "nav_settings" as const },
 ];
 

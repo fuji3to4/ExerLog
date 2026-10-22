@@ -82,20 +82,6 @@ function withoutId(records: MeasurementRecord[], id: string | undefined): Measur
   return id === undefined ? records : records.filter((record) => record.id !== id);
 }
 
-/** Per item, the newest recorded value and when it was recorded. */
-export async function getLatestMeasurementValues(): Promise<
-  Record<string, { value: number; recordedAt: string }>
-> {
-  const all = await appDb.measurements.orderBy("recordedAt").toArray();
-  const latest: Record<string, { value: number; recordedAt: string }> = {};
-  for (const record of all) {
-    for (const [id, value] of Object.entries(record.values)) {
-      latest[id] = { value, recordedAt: record.recordedAt };
-    }
-  }
-  return latest;
-}
-
 function mergeOldestFirst(records: MeasurementRecord[]): Record<string, number> {
   const sorted = [...records].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
   const result: Record<string, number> = {};

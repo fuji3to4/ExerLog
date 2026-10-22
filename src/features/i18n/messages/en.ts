@@ -3,7 +3,6 @@ export const en = {
   nav_today: "Today",
   nav_library: "Library",
   nav_history: "History",
-  nav_self_care: "Condition",
   nav_aria_label: "Primary",
 
   // Language labels
@@ -72,18 +71,11 @@ export const en = {
   settings_import_save_failed: "Failed to save",
 
   // Condition screen (self-care)
-  self_care_heading: "Condition",
-  self_care_subheading: "Record your body metrics and condition.",
-  self_care_condition_heading: "Condition",
-  self_care_wellness_heading: "Wellness check-in",
   wellness_score_hint_low: "😞 Worst",
   wellness_score_hint_high: "Best 😄",
-  self_care_logs_heading: "Logs",
   self_care_done_label: "Done",
   self_care_count_label: "Count",
   self_care_minutes_label: "Minutes",
-  self_care_note_label: "Note",
-  self_care_wellness_text: "Log how your body and mind feel, as often as you like.",
   bmi_value: "BMI {value}",
   bmi_need_height: "Record your height to see BMI",
 

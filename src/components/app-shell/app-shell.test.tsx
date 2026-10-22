@@ -81,8 +81,9 @@ test("desktop sidebar shows translated nav labels and no hardcoded Navigation", 
   );
 
   const sidebarLinks = Array.from(container.querySelectorAll("a[href]")).map((a) => a.textContent);
-  expect(sidebarLinks).toEqual(expect.arrayContaining(["今日", "ライブラリ", "履歴", "コンディション", "設定"]));
+  expect(sidebarLinks).toEqual(expect.arrayContaining(["今日", "ライブラリ", "履歴", "設定"]));
   expect(screen.queryByText("Navigation")).not.toBeInTheDocument();
   expect(screen.queryByText("Today")).not.toBeInTheDocument();
   expect(screen.queryByText("Self-care")).not.toBeInTheDocument();
+  expect(sidebarLinks).not.toContain("コンディション");
 });

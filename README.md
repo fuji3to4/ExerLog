@@ -1,6 +1,6 @@
 # ExerLog
 
-A local-first exercise & wellness tracking PWA. Log your daily condition, track wellness metrics, record self-care activities, and review history — all stored locally in your browser.
+A local-first exercise & wellness tracking PWA. Log your condition and body measurements throughout the day, record exercises and video watches on a timeline, and review history — all stored locally in your browser.
 
 **[→ Open App](https://fuji3to4.github.io/ExerLog/)**
 
@@ -8,10 +8,9 @@ A local-first exercise & wellness tracking PWA. Log your daily condition, track 
 
 ## Features
 
-- **Today** — Log your daily wellness (physical/mental scores + notes), record recommended exercises, and complete self-care items in one place
-- **Self-Care** — Track stretch, walking, bath, meditation and other self-care activities with counts, minutes, and notes
+- **Today** — A time-stamped timeline of the day: one "+ Add record" entry for condition (physical/mental scores + notes) and body measurements (height / weight / body fat, extensible), video watches and recommended exercises
 - **Library** — Browse, search, and filter the full exercise catalog with video links and details; dedicated exercise detail pages
-- **History** — Review past days via calendar, view graphs (weight, body fat, wellness scores over time), edit or delete logged exercises and conditions
+- **History** — Review past days via calendar and the same day timeline (add, edit or delete records), view graphs of every recorded point (body measurements, BMI, wellness scores)
 - **Settings / Data Management**
   - Add, edit, and delete custom exercises
   - Export exercises, exercise logs, conditions, wellness entries, and metrics as CSV

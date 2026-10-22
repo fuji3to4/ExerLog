@@ -10,7 +10,6 @@ import {
   deleteMeasurement,
   findLatestHeightAt,
   findPreviousValues,
-  getLatestMeasurementValues,
   listMeasurementsForDay,
   listMeasurementsInRange,
   updateMeasurement,
@@ -84,15 +83,6 @@ test("findLatestHeightAt returns null when no height is recorded", async () => {
   await seed();
   expect(await findLatestHeightAt("2026-10-22T18:00:00+09:00")).toBe(170);
   expect(await findLatestHeightAt("2026-10-20T00:00:00+09:00")).toBeNull();
-});
-
-test("getLatestMeasurementValues gives the newest value per item", async () => {
-  await seed();
-  expect(await getLatestMeasurementValues()).toEqual({
-    height: { value: 170, recordedAt: "2026-10-21T08:00:00+09:00" },
-    weight: { value: 60.8, recordedAt: "2026-10-22T18:00:00+09:00" },
-    bodyFat: { value: 22, recordedAt: "2026-10-22T18:00:00+09:00" },
-  });
 });
 
 test("updateMeasurement keeps values outside the item list", async () => {

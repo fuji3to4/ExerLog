@@ -3,7 +3,6 @@
   nav_today: "今日",
   nav_library: "ライブラリ",
   nav_history: "履歴",
-  nav_self_care: "コンディション",
   nav_aria_label: "メイン",
 
   // Language labels
@@ -72,18 +71,11 @@
   settings_import_save_failed: "保存に失敗しました",
 
   // Condition screen (self-care)
-  self_care_heading: "コンディション",
-  self_care_subheading: "体の数値と体調を記録します。",
-  self_care_condition_heading: "体調",
-  self_care_wellness_heading: "ウェルネス記録",
   wellness_score_hint_low: "😞 最悪",
   wellness_score_hint_high: "最高 😄",
-  self_care_logs_heading: "記録",
   self_care_done_label: "実施",
   self_care_count_label: "回数",
   self_care_minutes_label: "分",
-  self_care_note_label: "メモ",
-  self_care_wellness_text: "からだとこころの調子を、気づいたときに何度でも記録できます。",
   bmi_value: "BMI {value}",
   bmi_need_height: "身長を記録するとBMIが出ます",
 

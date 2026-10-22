@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { cva } from "class-variance-authority";
 import { useTranslation } from "@/features/i18n/use-translation";
-import { Home, BookOpen, LineChart, Heart, Settings } from "lucide-react";
+import { Home, BookOpen, LineChart, Settings } from "lucide-react";
 
 type BottomNavProps = {
   currentPath: string;
@@ -28,7 +28,6 @@ export function BottomNav({ currentPath }: BottomNavProps) {
     { href: "/", icon: Home, label: messages.nav_today },
     { href: "/library", icon: BookOpen, label: messages.nav_library },
     { href: "/history", icon: LineChart, label: messages.nav_history },
-    { href: "/self-care", icon: Heart, label: messages.nav_self_care },
     { href: "/settings", icon: Settings, label: messages.nav_settings },
   ];
 

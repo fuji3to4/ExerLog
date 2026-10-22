@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
-import { WellnessScoreInput } from "@/features/self-care/components/wellness-score-input";
+import { WellnessScoreInput } from "./wellness-score-input";
 import {
   addWellnessEntry,
   deleteWellnessEntry,

@@ -1033,55 +1033,6 @@ a {
 
 /* ── Self-care and history styling ───────────────────────────────────── */
 
-.self-care-screen__field {
-  display: grid;
-  gap: 0.5rem;
-  font-weight: 600;
-}
-
-.self-care-screen__field > span {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.self-care-screen__metric-input {
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--border-soft);
-  border-radius: 0.9rem;
-  background: var(--surface-elevated);
-  overflow: hidden;
-}
-
-.self-care-screen__metric-input:focus-within {
-  border-color: var(--focus-ring);
-  box-shadow: 0 0 0 2px var(--focus-ring);
-}
-
-.self-care-screen__metric-input input {
-  flex: 1;
-  border: 0;
-  padding: 0.75rem 0.75rem;
-  font: inherit;
-  color: inherit;
-}
-
-.self-care-screen__metric-input input:focus {
-  outline: none;
-  background: var(--surface-soft);
-}
-
-.self-care-screen__metric-input > span {
-  padding: 0 0.75rem;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.self-care-screen__section {
-  gap: 1rem;
-}
-
 /* Metric selector dropdown */
 #metric-selector {
   padding: 0.75rem 1rem;
@@ -1217,45 +1168,6 @@ a {
 }
 
 /* Self-care activity log card */
-.self-care-log-card {
-  display: grid;
-  gap: 1rem;
-}
-
-.self-care-log-card__field {
-  display: grid;
-  gap: 0.5rem;
-  font-weight: 600;
-}
-
-.self-care-log-card__field select,
-.self-care-log-card__field textarea {
-  width: 100%;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--border-soft);
-  border-radius: 0.9rem;
-  background: var(--surface-elevated);
-  color: inherit;
-  font: inherit;
-}
-
-.self-care-log-card__field select:hover,
-.self-care-log-card__field textarea:hover {
-  border-color: var(--accent-strong);
-}
-
-.self-care-log-card__field select:focus,
-.self-care-log-card__field textarea:focus {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-  border-color: var(--focus-ring);
-}
-
-.self-care-log-card__field textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
 @media (max-width: 479px) {
   .history-screen__mode-btn {
      font-size: 0.85rem;

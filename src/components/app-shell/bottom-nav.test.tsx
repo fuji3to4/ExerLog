@@ -20,5 +20,5 @@ test("marks the current destination as active", () => {
   expect(screen.getByRole("link", { name: /今日/i })).not.toHaveAttribute("aria-current");
   expect(screen.getByRole("link", { name: /履歴/i })).not.toHaveAttribute("aria-current");
   expect(screen.getByRole("link", { name: /今日/i })).toHaveClass("text-muted-foreground");
-  expect(screen.getByRole("link", { name: /コンディション/i })).toHaveAttribute("href", "/self-care");
+  expect(screen.queryByRole("link", { name: /コンディション/i })).not.toBeInTheDocument();
 });

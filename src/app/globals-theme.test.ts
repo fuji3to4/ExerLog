@@ -301,13 +301,6 @@ describe("globals.css warm theme contract", () => {
       "2px solid var(--focus-ring)",
     );
     expectDeclaration(
-      getCssBlock(globalsCss, ".self-care-log-card__field select:focus", {
-        matches: (block) => block.includes("outline:"),
-      }),
-      "outline",
-      "2px solid var(--focus-ring)",
-    );
-    expectDeclaration(
       getCssBlock(globalsCss, ".library-filters__field input:focus", {
         matches: (block) => block.includes("outline:"),
       }),
@@ -335,25 +328,6 @@ describe("globals.css warm theme contract", () => {
       "outline-offset",
       "2px",
     );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".self-care-screen__metric-input:focus-within", {
-        matches: (block) => block.includes("box-shadow:"),
-      }),
-      "box-shadow",
-      "0 0 0 2px var(--focus-ring)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".self-care-screen__metric-input:focus-within", {
-        matches: (block) => block.includes("border-color:"),
-      }),
-      "border-color",
-      "var(--focus-ring)",
-    );
-    expect(
-      getCssBlock(globalsCss, ".self-care-screen__metric-input input:focus").includes(
-        "outline: none",
-      ),
-    ).toBe(true);
   });
 
   test("wires Sofia Sans and warm theme color in layout", () => {

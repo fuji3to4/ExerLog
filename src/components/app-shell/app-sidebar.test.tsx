@@ -56,7 +56,7 @@ describe("AppSidebar", () => {
     expect(screen.getByText("今日")).toBeInTheDocument();
     expect(screen.getByText("ライブラリ")).toBeInTheDocument();
     expect(screen.getByText("履歴")).toBeInTheDocument();
-    expect(screen.getByText("コンディション")).toBeInTheDocument();
+    expect(screen.queryByText("コンディション")).not.toBeInTheDocument();
     expect(screen.getByText("設定")).toBeInTheDocument();
     expect(screen.queryByText("Navigation")).not.toBeInTheDocument();
   });
