@@ -1,23 +1,28 @@
 import { timeOfIso } from "@/lib/date/local-iso";
-import type { ExerciseLog, WatchEvent, WellnessEntry } from "@/lib/types";
+import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
 
 export type WellnessLabel = "morning" | "beforeVideo" | "afterVideo" | "night";
 
 export type TimelineItem =
   | { kind: "wellness"; id: string; at: string; entry: WellnessEntry; label: WellnessLabel | null }
+  | { kind: "measurement"; id: string; at: string; record: MeasurementRecord; label: WellnessLabel | null }
   | { kind: "watch"; id: string; at: string; event: WatchEvent; title: string }
   | { kind: "exercise"; id: string; at: string; log: ExerciseLog; title: string };
 
 export const LABEL_WINDOW_MS = 30 * 60_000;
 
-const KIND_ORDER: Record<TimelineItem["kind"], number> = { wellness: 0, watch: 1, exercise: 2 };
+const KIND_ORDER: Record<TimelineItem["kind"], number> = { wellness: 0, measurement: 1, watch: 2, exercise: 3 };
 
 export function labelWellness(
   entry: WellnessEntry,
   watches: WatchEvent[],
   logs: ExerciseLog[],
 ): WellnessLabel | null {
-  const e = Date.parse(entry.recordedAt);
+  return labelAt(entry.recordedAt, watches, logs);
+}
+
+export function labelAt(at: string, watches: WatchEvent[], logs: ExerciseLog[]): WellnessLabel | null {
+  const e = Date.parse(at);
 
   let beforeDistance = Infinity;
   for (const watch of watches) {
@@ -39,7 +44,7 @@ export function labelWellness(
     return afterDistance <= beforeDistance ? "afterVideo" : "beforeVideo";
   }
 
-  const hour = Number(timeOfIso(entry.recordedAt).slice(0, 2));
+  const hour = Number(timeOfIso(at).slice(0, 2));
   if (hour >= 4 && hour <= 10) return "morning";
   if (hour >= 18) return "night";
   return null;
@@ -49,9 +54,10 @@ export function buildTimeline(input: {
   wellness: WellnessEntry[];
   watches: WatchEvent[];
   logs: ExerciseLog[];
+  measurements: MeasurementRecord[];
   titles: Map<string, string>;
 }): TimelineItem[] {
-  const { wellness, watches, logs, titles } = input;
+  const { wellness, watches, logs, measurements, titles } = input;
   const items: TimelineItem[] = [
     ...wellness.map((entry): TimelineItem => ({
       kind: "wellness",
@@ -59,6 +65,13 @@ export function buildTimeline(input: {
       at: entry.recordedAt,
       entry,
       label: labelWellness(entry, watches, logs),
+    })),
+    ...measurements.map((record): TimelineItem => ({
+      kind: "measurement",
+      id: record.id,
+      at: record.recordedAt,
+      record,
+      label: labelAt(record.recordedAt, watches, logs),
     })),
     ...watches.map((event): TimelineItem => ({
       kind: "watch",

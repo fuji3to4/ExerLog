@@ -269,6 +269,7 @@ export const en = {
   timeline_label_after_video: "After video",
   timeline_label_night: "Night",
   timeline_wellness_row: "Condition: body {physical} · mind {mental}",
+  timeline_measurement_row: "📏 {summary}",
   timeline_exercise_row: "✅ {title}: {result}",
   timeline_watched: "▶ Watched {title}",
   timeline_edit_time: "Time",

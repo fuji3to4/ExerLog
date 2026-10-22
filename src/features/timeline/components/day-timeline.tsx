@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from "react";
 
+import { formatMeasurementSummary } from "@/features/measurements/measurement-items";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { formatDuration } from "@/lib/date/duration";
 import { timeOfIso } from "@/lib/date/local-iso";
@@ -16,6 +17,7 @@ export type DayTimelineProps = {
 
 const POINT_COLORS: Record<TimelineItem["kind"], string> = {
   wellness: "#e48a3a",
+  measurement: "#7a4fb0",
   watch: "#4a7bd0",
   exercise: "#3aa76d",
 };
@@ -71,6 +73,13 @@ function ItemBody({ item }: { item: TimelineItem }) {
           </span>
           {item.entry.note ? <span className="block text-muted-foreground">{item.entry.note}</span> : null}
         </>
+      );
+    case "measurement":
+      return (
+        <span className="block">
+          {t("timeline_measurement_row", { summary: formatMeasurementSummary(item.record, t) })}
+          {item.label ? <span className="timeline-tag">{t(LABEL_KEYS[item.label])}</span> : null}
+        </span>
       );
     case "watch":
       return <span className="block">{t("timeline_watched", { title: item.title })}</span>;

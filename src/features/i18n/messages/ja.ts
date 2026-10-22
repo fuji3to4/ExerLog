@@ -269,6 +269,7 @@
   timeline_label_after_video: "動画後",
   timeline_label_night: "夜",
   timeline_wellness_row: "体調 からだ{physical}・こころ{mental}",
+  timeline_measurement_row: "📏 {summary}",
   timeline_exercise_row: "✅ {title} {result}",
   timeline_watched: "▶ {title}を視聴",
   timeline_edit_time: "時刻",
