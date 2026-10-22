@@ -78,8 +78,7 @@ async function replaceTable<T>(table: Table<T, any>, records: T[]): Promise<void
 
 /**
  * Keeps one record per `uniqueKey` (the latest by `timeKey`) so that a merge of
- * two devices' records cannot violate a compound unique index such as
- * &[date+metricType].
+ * two devices' records cannot violate a compound unique index.
  */
 function keepLatestPerKey<T extends Record<string, any>>(
   records: T[],

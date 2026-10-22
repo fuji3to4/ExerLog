@@ -76,10 +76,13 @@ function ItemBody({ item }: { item: TimelineItem }) {
       );
     case "measurement":
       return (
-        <span className="block">
-          {t("timeline_measurement_row", { summary: formatMeasurementSummary(item.record, t) })}
-          {item.label ? <span className="timeline-tag">{t(LABEL_KEYS[item.label])}</span> : null}
-        </span>
+        <>
+          <span className="block">
+            {t("timeline_measurement_row", { summary: formatMeasurementSummary(item.record, t) || "—" })}
+            {item.label ? <span className="timeline-tag">{t(LABEL_KEYS[item.label])}</span> : null}
+          </span>
+          {item.record.note ? <span className="block text-muted-foreground">{item.record.note}</span> : null}
+        </>
       );
     case "watch":
       return <span className="block">{t("timeline_watched", { title: item.title })}</span>;

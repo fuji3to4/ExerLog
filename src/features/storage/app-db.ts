@@ -137,7 +137,7 @@ export class AppDb extends Dexie {
       tombstones: "id, table",
     });
 
-    // v9: timed body measurements .
+    // v9: timed body measurements.
     this.version(9).stores({
       dailyMetrics: "id, date, metricType, recordedAt, &[date+metricType]",
       selfCareCatalog: "id, sortOrder, isArchived",

@@ -181,7 +181,7 @@
   settings_export_logs: "運動ログをエクスポート（CSV）",
   settings_export_wellness_entries: "体調の記録をエクスポート（CSV）",
   settings_export_watch_events: "動画の視聴履歴をエクスポート（CSV）",
-  settings_export_measurements: "体の数値",
+  settings_export_measurements: "体の数値をエクスポート（CSV）",
   settings_delete_all_exercises: "全エクササイズを削除",
   settings_delete_all_exercises_confirm: "{count}件のエクササイズをすべて削除します。この操作は取り消せません。",
   settings_delete_all_logs: "記録をすべて削除",

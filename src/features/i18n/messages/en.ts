@@ -181,7 +181,7 @@ export const en = {
   settings_export_logs: "Export exercise logs (CSV)",
   settings_export_wellness_entries: "Export wellness entries (CSV)",
   settings_export_watch_events: "Export video watch history (CSV)",
-  settings_export_measurements: "Body measurements",
+  settings_export_measurements: "Export body measurements (CSV)",
   settings_delete_all_exercises: "Delete all exercises",
   settings_delete_all_exercises_confirm: "Delete all {count} exercises? This cannot be undone.",
   settings_delete_all_logs: "Delete all records",

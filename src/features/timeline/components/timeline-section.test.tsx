@@ -6,7 +6,7 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 import { appDb } from "@/features/storage/app-db";
 import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
-import { listMeasurementsForDay } from "@/features/storage/measurements.repository";
+import { addMeasurement, listMeasurementsForDay } from "@/features/storage/measurements.repository";
 import { listTombstones } from "@/features/storage/tombstones.repository";
 import { listWatchEventsForDay, recordWatchEvent } from "@/features/storage/watch-events.repository";
 import { localIsoAt } from "@/lib/date/local-iso";
@@ -150,6 +150,21 @@ describe("TimelineSection", () => {
 
     expect(await screen.findByRole("button", { name: /📏 体重 61.0kg/ })).toBeTruthy();
     expect(onChanged).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the note of a measurement row on a second line", async () => {
+    await addMeasurement({ date: DATE, values: { weight: 60 }, note: "朝いちばん" });
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    const row = await screen.findByRole("button", { name: /📏 体重 60.0kg/ });
+    expect(row.textContent).toContain("朝いちばん");
+  });
+
+  it("shows a dash when a measurement only has values for unlisted items", async () => {
+    await addMeasurement({ date: DATE, values: { unknownItem: 1 }, note: "" });
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    expect(await screen.findByRole("button", { name: /📏 —/ })).toBeTruthy();
   });
 
   it("edits the duration of an exercise log", async () => {

@@ -1,5 +1,5 @@
 import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
-import { MEASUREMENT_ITEMS, formatMeasurementValue } from "@/features/measurements/measurement-items";
+import { MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
 import { formatTimestampForCsv } from "@/lib/date/format-timestamp";
 
 function escapeCsvField(value: string | number): string {
@@ -61,7 +61,7 @@ export function generateMeasurementsCsv(records: MeasurementRecord[]): string {
       formatTimestampForCsv(record.recordedAt),
       record.note,
       ...MEASUREMENT_ITEMS.map((item) =>
-        item.id in record.values ? formatMeasurementValue(item, record.values[item.id]) : "",
+        item.id in record.values ? String(record.values[item.id]) : "",
       ),
     ]),
   );
