@@ -273,6 +273,7 @@
   circumference_limb_leg: "脚",
   circumference_side_left: "左",
   circumference_side_right: "右",
+  circumference_site_group: "部位",
   circumference_site_palm: "手のひら",
   circumference_site_wrist: "手首",
   circumference_site_belowElbow: "肘下5cm",

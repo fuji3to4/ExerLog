@@ -124,6 +124,10 @@ export function CircumferenceGraph({ range }: { range: { start: string; end: str
       .then((series) => {
         if (isActive) setPoints(series);
       })
+      .catch((err) => {
+        console.error("[history] circumference series failed", err);
+        if (isActive) setPoints([]);
+      })
       .finally(() => {
         if (isActive) setLoading(false);
       });
@@ -160,7 +164,7 @@ export function CircumferenceGraph({ range }: { range: { start: string; end: str
       renderTab={(option) => t(LIMB_LABEL_KEYS[option])}
     >
       <div className="space-y-4">
-        <div className="history-screen__date-presets">
+        <div className="history-screen__date-presets" role="group" aria-label={t("circumference_site_group")}>
           {CIRCUMFERENCE_SITES[limb].map((option) => (
             <button
               key={option}

@@ -273,6 +273,7 @@ export const en = {
   circumference_limb_leg: "Leg",
   circumference_side_left: "Left",
   circumference_side_right: "Right",
+  circumference_site_group: "Site",
   circumference_site_palm: "Palm",
   circumference_site_wrist: "Wrist",
   circumference_site_belowElbow: "5 cm below elbow",

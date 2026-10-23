@@ -212,7 +212,14 @@ export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted
         limb={limb}
         onLimbChange={chooseLimb}
         invalidLimbs={invalidLimbs}
-        renderInput={(item) => <MeasurementInput {...inputProps(item)} ariaLabel={t(item.labelKey)} />}
+        renderInput={(item) => (
+          <MeasurementInput
+            {...inputProps(item)}
+            ariaLabel={t(item.labelKey)}
+            // Compact so the "前回 150.0" placeholder fits a narrow grid cell; the value stays text-base (no iOS zoom).
+            className="px-2 placeholder:text-sm"
+          />
+        )}
         onHelp={() => setIsHelpOpen(true)}
       />
       <CircumferenceHelpDialog open={isHelpOpen} onOpenChange={setIsHelpOpen} limb={limb} />
@@ -263,7 +270,7 @@ function MeasurementField(props: MeasurementInputProps) {
   );
 }
 
-/** The number input itself; labelled by a <label> via `id`, or by `ariaLabel`. */
+/** The number input itself; labelled by a <label> via `id`, or by `ariaLabel`. `className` adds to the field style. */
 function MeasurementInput({
   item,
   draft,
@@ -272,7 +279,8 @@ function MeasurementInput({
   onChange,
   id,
   ariaLabel,
-}: MeasurementInputProps & { id?: string; ariaLabel?: string }) {
+  className,
+}: MeasurementInputProps & { id?: string; ariaLabel?: string; className?: string }) {
   return (
     <input
       id={id}
@@ -284,7 +292,7 @@ function MeasurementInput({
       step={10 ** -item.decimals}
       placeholder={placeholder}
       aria-invalid={isInvalid || undefined}
-      className={cn(FIELD_CLASS, "text-right", isInvalid && "border-destructive")}
+      className={cn(FIELD_CLASS, "text-right", className, isInvalid && "border-destructive")}
       value={draft?.raw ?? ""}
       onChange={(event) => onChange({ raw: event.target.value, badInput: event.target.validity.badInput })}
     />

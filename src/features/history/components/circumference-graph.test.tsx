@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { ja } from "@/features/i18n/messages/ja";
 import type { Messages } from "@/features/i18n/messages";
 import { renderWithLanguage } from "@/test/render-with-language";
+import { buildCircumferenceSeries } from "@/features/history/history-graph-query";
 import { CircumferenceGraph, SquareDot, circumferenceTooltipLines } from "./circumference-graph";
 
 vi.mock("@/features/history/history-graph-query", () => ({
@@ -103,5 +104,31 @@ describe("CircumferenceGraph", () => {
     await screen.findAllByText("左");
     // The second point is left-only, so only the first point gets a square dot.
     expect(container.querySelectorAll(".recharts-line-dots rect")).toHaveLength(1);
+  });
+
+  it("groups the site buttons under an accessible name", async () => {
+    renderWithLanguage(<CircumferenceGraph range={{ start: "2026-10-01", end: "2026-10-31" }} />, {
+      initialLanguage: "ja",
+    });
+    await screen.findAllByText("左");
+    const group = screen.getByRole("group", { name: "部位" });
+    expect(within(group).getByRole("button", { name: "手首" })).toBeTruthy();
+  });
+
+  it("shows the empty state instead of stale points when the query fails", async () => {
+    const { container } = renderWithLanguage(
+      <CircumferenceGraph range={{ start: "2026-10-01", end: "2026-10-31" }} />,
+      { initialLanguage: "ja" },
+    );
+    await screen.findAllByText("左");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(buildCircumferenceSeries).mockRejectedValueOnce(new Error("db failed"));
+
+    fireEvent.click(screen.getByRole("button", { name: "手首" }));
+
+    expect(await screen.findByText(ja.history_graphs_empty)).toBeTruthy();
+    expect(container.querySelector(".recharts-line")).toBeNull();
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 });

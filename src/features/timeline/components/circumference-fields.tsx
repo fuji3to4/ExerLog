@@ -64,7 +64,7 @@ export function CircumferenceFields({ limb, onLimbChange, invalidLimbs, renderIn
           </>
         )}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,6rem)_minmax(0,6rem)] items-center gap-x-2 gap-y-2">
+        <div className="grid grid-cols-[minmax(4.5rem,1fr)_minmax(0,7rem)_minmax(0,7rem)] items-center gap-x-2 gap-y-2">
           <span aria-hidden="true" />
           {SIDES.map((side) => (
             <span

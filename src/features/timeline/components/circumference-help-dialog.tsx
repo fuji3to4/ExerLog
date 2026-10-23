@@ -64,9 +64,8 @@ export function CircumferenceHelpDialog({ open, onOpenChange, limb }: Circumfere
             <li key={site} className="flex gap-2">
               <span aria-hidden="true">{MARKERS[index]}</span>
               <span>
-                <span className="font-medium">{t(`circumference_site_${site}`)}</span>
-                {"　"}
-                {t(`circumference_help_${site}`)}
+                <span className="mr-2 font-medium">{t(`circumference_site_${site}`)}</span>
+                <span>{t(`circumference_help_${site}`)}</span>
               </span>
             </li>
           ))}

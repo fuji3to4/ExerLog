@@ -300,6 +300,9 @@ describe("RecordDialog", () => {
       fireEvent.change(input("足首 左"), { target: { value: "21.0" } });
       expect(saveButton().disabled).toBe(true);
       expect(screen.getByRole("tab", { name: /腕/ }).textContent).toContain("⚠");
+      expect(
+        within(screen.getByRole("tab", { name: /腕/ })).getByRole("img", { name: "腕に正しくない値があります" }),
+      ).toBeTruthy();
     });
 
     it("opens the measuring help for the selected limb", async () => {
