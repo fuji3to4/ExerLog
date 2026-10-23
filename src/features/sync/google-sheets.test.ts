@@ -176,8 +176,21 @@ describe("ensureSheetTabs", () => {
   });
 });
 describe("replaceAllRows", () => {
-  test("clears the tab, then writes every row (header included) as RAW", async () => {
-    mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
+  /** Spreadsheet metadata listing one tab with the given column count. */
+  function metadata(columnCount: number, title = "ExerciseLogs") {
+    return {
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          sheets: [{ properties: { sheetId: 7, title, gridProperties: { columnCount } } }],
+        }),
+    };
+  }
+
+  test("checks the column count, clears the tab, then writes every row (header included) as RAW", async () => {
+    mockFetch
+      .mockResolvedValueOnce(metadata(26))
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
     const rows = [
       ["id", "date"],
       ["1", "2026-10-20"],
@@ -186,13 +199,17 @@ describe("replaceAllRows", () => {
     const ok = await replaceAllRows(FAKE_TOKEN, "sheet123", "ExerciseLogs", rows);
 
     expect(ok).toBe(true);
-    expect(mockFetch).toHaveBeenCalledTimes(2);
-    const [clearUrl, clearInit] = mockFetch.mock.calls[0];
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+    const [metaUrl] = mockFetch.mock.calls[0];
+    expect(decodeURIComponent(metaUrl)).toBe(
+      "https://sheets.googleapis.com/v4/spreadsheets/sheet123?fields=sheets.properties(sheetId,title,gridProperties.columnCount)",
+    );
+    const [clearUrl, clearInit] = mockFetch.mock.calls[1];
     expect(clearUrl).toBe(
       "https://sheets.googleapis.com/v4/spreadsheets/sheet123/values/ExerciseLogs!A%3AZZ:clear",
     );
     expect(clearInit.method).toBe("POST");
-    const [putUrl, putInit] = mockFetch.mock.calls[1];
+    const [putUrl, putInit] = mockFetch.mock.calls[2];
     expect(putUrl).toBe(
       "https://sheets.googleapis.com/v4/spreadsheets/sheet123/values/ExerciseLogs!A1?valueInputOption=RAW",
     );
@@ -200,7 +217,38 @@ describe("replaceAllRows", () => {
     expect(JSON.parse(putInit.body)).toEqual({ values: rows });
   });
 
-  test("returns false and skips the write when clearing fails", async () => {
+  test("appends the missing columns before clearing when the rows are wider than the tab", async () => {
+    mockFetch
+      .mockResolvedValueOnce(metadata(26, "Measurements"))
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
+    const rows = [Array.from({ length: 28 }, (_, i) => `c${i}`), ["1"]];
+
+    const ok = await replaceAllRows(FAKE_TOKEN, "sheet123", "Measurements", rows);
+
+    expect(ok).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(4);
+    const [growUrl, growInit] = mockFetch.mock.calls[1];
+    expect(growUrl).toBe("https://sheets.googleapis.com/v4/spreadsheets/sheet123:batchUpdate");
+    expect(growInit.method).toBe("POST");
+    expect(JSON.parse(growInit.body)).toEqual({
+      requests: [{ appendDimension: { sheetId: 7, dimension: "COLUMNS", length: 2 } }],
+    });
+    expect(mockFetch.mock.calls[2][0]).toContain(":clear");
+  });
+
+  test("returns false and clears nothing when appending columns fails", async () => {
+    mockFetch
+      .mockResolvedValueOnce(metadata(26, "Measurements"))
+      .mockResolvedValueOnce({ ok: false, status: 400, text: () => Promise.resolve("err") });
+    const rows = [Array.from({ length: 28 }, (_, i) => `c${i}`)];
+
+    const ok = await replaceAllRows(FAKE_TOKEN, "sheet123", "Measurements", rows);
+
+    expect(ok).toBe(false);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  test("returns false and clears nothing when the column check fails", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500, text: () => Promise.resolve("err") });
 
     const ok = await replaceAllRows(FAKE_TOKEN, "sheet123", "ExerciseLogs", [["id"]]);
@@ -209,8 +257,20 @@ describe("replaceAllRows", () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
+  test("returns false and skips the write when clearing fails", async () => {
+    mockFetch
+      .mockResolvedValueOnce(metadata(26))
+      .mockResolvedValueOnce({ ok: false, status: 500, text: () => Promise.resolve("err") });
+
+    const ok = await replaceAllRows(FAKE_TOKEN, "sheet123", "ExerciseLogs", [["id"]]);
+
+    expect(ok).toBe(false);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
   test("returns false when the write fails", async () => {
     mockFetch
+      .mockResolvedValueOnce(metadata(26))
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) })
       .mockResolvedValueOnce({ ok: false, status: 500, text: () => Promise.resolve("err") });
 

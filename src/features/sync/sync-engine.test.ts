@@ -29,6 +29,9 @@ class FakeSheets {
   tabs = new Map<string, string[][]>();
   spreadsheetExists = true;
   failWritesFor = new Set<string>();
+  /** Column count per tab; a tab not listed has the 26 (A–Z) a new tab gets. */
+  columnCounts = new Map<string, number>();
+  failColumnGrow = false;
   calls: { method: string; url: string }[] = [];
 
   constructor() {
@@ -62,13 +65,45 @@ class FakeSheets {
         return json({});
       }
       if (method === "PUT") {
-        this.tabs.set(tab, JSON.parse(init!.body!).values);
+        const values: string[][] = JSON.parse(init!.body!).values;
+        const width = Math.max(0, ...values.map((row) => row.length));
+        if (width > this.columnCount(tab)) {
+          return {
+            ok: false,
+            status: 400,
+            json: async () => ({}),
+            text: async () => "Range exceeds grid limits",
+          };
+        }
+        this.tabs.set(tab, values);
         return json({});
       }
     }
 
     if (url.includes(`/spreadsheets/${SPREADSHEET_ID}?fields=`)) {
-      return json({ sheets: [...this.tabs.keys()].map((title) => ({ properties: { title } })) });
+      return json({
+        sheets: [...this.tabs.keys()].map((title, sheetId) => ({
+          properties: { sheetId, title, gridProperties: { columnCount: this.columnCount(title) } },
+        })),
+      });
+    }
+
+    if (url.endsWith(`/spreadsheets/${SPREADSHEET_ID}:batchUpdate`) && method === "POST") {
+      const titles = [...this.tabs.keys()];
+      for (const request of JSON.parse(init!.body!).requests) {
+        if (request.appendDimension) {
+          if (this.failColumnGrow) {
+            return { ok: false, status: 500, json: async () => ({}), text: async () => "boom" };
+          }
+          const { sheetId, dimension, length } = request.appendDimension;
+          expect(dimension).toBe("COLUMNS");
+          const title = titles[sheetId];
+          this.columnCounts.set(title, this.columnCount(title) + length);
+        } else if (request.addSheet) {
+          this.tabs.set(request.addSheet.properties.title, []);
+        }
+      }
+      return json({ replies: [] });
     }
 
     if (url === "https://sheets.googleapis.com/v4/spreadsheets" && method === "POST") {
@@ -79,6 +114,10 @@ class FakeSheets {
 
     throw new Error(`Unexpected fetch ${method} ${url}`);
   };
+
+  columnCount(tab: string): number {
+    return this.columnCounts.get(tab) ?? 26;
+  }
 }
 
 function json(body: unknown) {
@@ -509,6 +548,41 @@ describe("syncAll: Measurements tab", () => {
       MEASUREMENT_HEADERS,
       [...measurementFixedCells(local), "60", ...blanks(22)],
     ]);
+  });
+
+  test("a 28-column write to a 26-column tab widens the tab first and keeps the data", async () => {
+    const local = makeMeasurement();
+    await appDb.measurements.put(local);
+    expect(MEASUREMENT_HEADERS.length).toBeGreaterThan(26);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(sheets.columnCount("Measurements")).toBe(MEASUREMENT_HEADERS.length);
+    expect(sheets.tabs.get("Measurements")).toEqual([
+      MEASUREMENT_HEADERS,
+      [...measurementFixedCells(local), "60", ...blanks(22)],
+    ]);
+  });
+
+  test("when widening the tab fails, nothing is cleared", async () => {
+    const remote = makeMeasurement({ id: "m-1", values: { weight: 60 } });
+    const remoteRows = [
+      [...MEASUREMENT_FIXED, "weight"],
+      [...measurementFixedCells(remote), "60"],
+    ];
+    sheets.tabs.set("Measurements", remoteRows);
+    sheets.failColumnGrow = true;
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.results.find((r) => r.tableName === "Measurements")?.error).toBeDefined();
+    expect(sheets.tabs.get("Measurements")).toEqual(remoteRows);
+    expect(
+      sheets.calls.some(
+        (c) => c.method === "POST" && decodeURIComponent(c.url).includes("/values/Measurements!A:ZZ:clear"),
+      ),
+    ).toBe(false);
   });
 
   test("the old DailyMetrics tab is never read or written", async () => {
