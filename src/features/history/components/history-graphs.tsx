@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { Messages } from "@/features/i18n/messages";
 import { MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
 import { buildHistoryGraphSeries, type GraphMetricSelection, type GraphSeries } from "@/features/history/history-graph-query";
 import { toDayKey } from "@/lib/date/day-key";
+import { CircumferenceGraph } from "./circumference-graph";
 import { HistoryChart } from "./history-chart";
 
 type DateRangePreset = "7d" | "30d" | "90d" | "all";
@@ -16,11 +17,12 @@ type MetricOption = {
   labelKey: keyof Messages;
 };
 
-/** Graphable measurement items in list order, then BMI and the two wellness scores. */
+/** Graphable measurement items in list order, then circumference, BMI and the two wellness scores. */
 const METRIC_OPTIONS: MetricOption[] = [
   ...MEASUREMENT_ITEMS.filter((item) => item.showInGraph).map(
     (item): MetricOption => ({ value: { kind: "measurement", itemId: item.id }, labelKey: item.labelKey }),
   ),
+  { value: { kind: "circumference" }, labelKey: "history_graph_metric_circumference" },
   { value: { kind: "bmi" }, labelKey: "history_graph_metric_bmi" },
   { value: { kind: "wellness", score: "physical" }, labelKey: "history_graph_metric_physical" },
   { value: { kind: "wellness", score: "mental" }, labelKey: "history_graph_metric_mental" },
@@ -47,13 +49,15 @@ export function HistoryGraphs() {
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>("7d");
   const [series, setSeries] = useState<GraphSeries | null>(null);
   const [loading, setLoading] = useState(false);
+  const range = useMemo(() => getDateRangeForPreset(dateRangePreset), [dateRangePreset]);
+  const isCircumference = selectedMetric.kind === "circumference";
 
   useEffect(() => {
+    if (isCircumference) return;
     let isActive = true;
 
     async function loadGraphData() {
       setLoading(true);
-      const range = getDateRangeForPreset(dateRangePreset);
 
       try {
         const graphSeries = await buildHistoryGraphSeries({
@@ -76,7 +80,7 @@ export function HistoryGraphs() {
     return () => {
       isActive = false;
     };
-  }, [selectedMetric, dateRangePreset]);
+  }, [selectedMetric, range, isCircumference]);
 
   const hasData = series && series.points.length > 0;
 
@@ -118,15 +122,21 @@ export function HistoryGraphs() {
           </div>
         </div>
 
-        {loading && <p className="history-screen__chart-loading">{t("common_loading")}</p>}
+        {isCircumference ? (
+          <CircumferenceGraph range={range} />
+        ) : (
+          <>
+            {loading && <p className="history-screen__chart-loading">{t("common_loading")}</p>}
 
-        {!loading && hasData && series && (
-          <div className="history-screen__chart-wrapper">
-            <HistoryChart series={series} />
-          </div>
+            {!loading && hasData && series && (
+              <div className="history-screen__chart-wrapper">
+                <HistoryChart series={series} />
+              </div>
+            )}
+
+            {!loading && !hasData && <p className="history-screen__chart-empty">{t("history_graphs_empty")}</p>}
+          </>
         )}
-
-        {!loading && !hasData && <p className="history-screen__chart-empty">{t("history_graphs_empty")}</p>}
       </CardContent>
     </Card>
   );

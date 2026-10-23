@@ -26,7 +26,9 @@ export type GraphMetricSelection =
   | { kind: "measurement"; itemId: string }
   | { kind: "bmi" }
   | { kind: "wellness"; score: "physical" | "mental" }
-  | { kind: "selfCare"; selfCareId: string; measure: "count" | "minutes" | "done" };
+  | { kind: "selfCare"; selfCareId: string; measure: "count" | "minutes" | "done" }
+  /** Drawn by CircumferenceGraph from buildCircumferenceSeries; this series is always empty. */
+  | { kind: "circumference" };
 
 export type GraphSeries = {
   unit: string;
@@ -109,6 +111,10 @@ export async function buildHistoryGraphSeries({
 
   if (metric.kind === "bmi") {
     return { unit: "", decimals: 1, points: await buildBmiPoints(range) };
+  }
+
+  if (metric.kind === "circumference") {
+    return { unit: "cm", decimals: 1, points: [] };
   }
 
   if (metric.kind === "wellness") {

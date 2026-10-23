@@ -8,6 +8,7 @@ const renderGraphs = () => renderWithLanguage(<HistoryGraphs />, { initialLangua
 
 vi.mock("@/features/history/history-graph-query", () => ({
   buildHistoryGraphSeries: vi.fn(),
+  buildCircumferenceSeries: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("recharts", async (importOriginal) => {
@@ -224,10 +225,13 @@ describe("HistoryGraphs", () => {
       "体重",
       "体脂肪率",
       "身長",
+      "周径",
       "BMI",
       "からだの調子",
       "こころの調子",
     ]);
+    // Let the initial load settle so its state update stays inside the test.
+    expect(await screen.findByText("選択した範囲に利用可能なデータがありません。")).toBeInTheDocument();
   });
 
   it("requests the weight measurement series first and body fat by item id when selected", async () => {
@@ -259,5 +263,27 @@ describe("HistoryGraphs", () => {
 
     renderGraphs();
     expect(await screen.findByText("読み込み中…")).toBeInTheDocument();
+  });
+  it("shows the circumference graph with limb and site switches and requests that site", async () => {
+    window.localStorage.setItem("exerlog-circumference-limb", "arm");
+    const query = await import("@/features/history/history-graph-query");
+    vi.mocked(query.buildHistoryGraphSeries).mockResolvedValue({ unit: "kg", decimals: 1, points: [] });
+    vi.mocked(query.buildCircumferenceSeries).mockResolvedValue([
+      { at: "2026-10-20T07:10:00+09:00", left: { value: 22.4, delta: null }, right: { value: 24.5, delta: 0.3 } },
+    ]);
+    renderGraphs();
+    await userEvent.selectOptions(await screen.findByLabelText("表示する項目"), screen.getByText("周径"));
+    await waitFor(() =>
+      expect(query.buildCircumferenceSeries).toHaveBeenLastCalledWith(expect.objectContaining({ limb: "arm", site: "palm" })),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "肘下5cm" }));
+    await waitFor(() =>
+      expect(query.buildCircumferenceSeries).toHaveBeenLastCalledWith(expect.objectContaining({ site: "belowElbow" })),
+    );
+    await userEvent.click(screen.getByRole("tab", { name: "脚" }));
+    await waitFor(() =>
+      expect(query.buildCircumferenceSeries).toHaveBeenLastCalledWith(expect.objectContaining({ limb: "leg", site: "instep" })),
+    );
+    expect(window.localStorage.getItem("exerlog-circumference-limb")).toBe("leg");
   });
 });

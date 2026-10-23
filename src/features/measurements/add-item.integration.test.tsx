@@ -13,6 +13,7 @@ vi.mock("recharts", async (importOriginal) => {
 });
 vi.mock("@/features/history/history-graph-query", () => ({
   buildHistoryGraphSeries: vi.fn().mockResolvedValue({ unit: "kg", decimals: 1, points: [] }),
+  buildCircumferenceSeries: vi.fn().mockResolvedValue([]),
 }));
 
 // Adding one entry to MEASUREMENT_ITEMS is all it takes for every surface to pick it up. The real
@@ -80,8 +81,8 @@ describe("adding one item to MEASUREMENT_ITEMS", () => {
   it("(e) adds one graph option", async () => {
     renderWithLanguage(<HistoryGraphs />, { initialLanguage: "ja" });
     const select = (await screen.findByLabelText("表示する項目")) as HTMLSelectElement;
-    // 4 graphable items + BMI + 2 wellness scores; the 20 circumference items are showInGraph=false
+    // 4 graphable items + circumference + BMI + 2 wellness scores; the 20 circumference items are showInGraph=false
     expect(MEASUREMENT_ITEMS).toHaveLength(24);
-    expect(select.options).toHaveLength(7);
+    expect(select.options).toHaveLength(8);
   });
 });
