@@ -28,8 +28,8 @@ test("every labelKey exists in ja and en", () => {
   }
 });
 
-test("items are weight, bodyFat, height in that order", () => {
-  expect(MEASUREMENT_ITEMS.map((item) => item.id)).toEqual(["weight", "bodyFat", "height"]);
+test("items start with weight, bodyFat, height in that order", () => {
+  expect(MEASUREMENT_ITEMS.slice(0, 3).map((item) => item.id)).toEqual(["weight", "bodyFat", "height"]);
   expect(getMeasurementItem("weight")?.unit).toBe("kg");
   expect(getMeasurementItem("nope")).toBeUndefined();
 });

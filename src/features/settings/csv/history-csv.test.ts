@@ -96,8 +96,8 @@ describe("generateWatchEventsCsv", () => {
 describe("generateMeasurementsCsv", () => {
   it("writes item columns with raw values, blanks for missing, none for unknown ids", () => {
     const [header, row] = generateMeasurementsCsv([makeMeasurement()]).split("\n");
-    expect(header).toBe("date,recordedAt,note,weight,bodyFat,height");
+    expect(header.startsWith("date,recordedAt,note,weight,bodyFat,height,armPalmLeft,")).toBe(true);
     expect(header).not.toContain("waist");
-    expect(row).toMatch(/^2024-01-15,\d{4}-\d{2}-\d{2} \d{2}:\d{2},,60\.25,,$/);
+    expect(row).toMatch(/^2024-01-15,\d{4}-\d{2}-\d{2} \d{2}:\d{2},,60\.25,,,{20}$/);
   });
 });

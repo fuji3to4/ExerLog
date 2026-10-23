@@ -6,6 +6,7 @@ import type { ExerciseLog, MeasurementRecord, Tombstone } from "@/lib/types";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
+import { MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
 import { SHEET_TABS } from "./google-sheets";
 import { TABLE_SYNC_CONFIGS } from "./sync-config";
 import { syncAll } from "./sync-engine";
@@ -110,7 +111,12 @@ function logRow(log: ExerciseLog): string[] {
 }
 
 const MEASUREMENT_FIXED = ["id", "date", "recordedAt", "note", "updatedAt"];
-const MEASUREMENT_HEADERS = [...MEASUREMENT_FIXED, "weight", "bodyFat", "height"];
+const MEASUREMENT_HEADERS = [...MEASUREMENT_FIXED, ...MEASUREMENT_ITEMS.map((item) => item.id)];
+
+/** n empty item cells. */
+function blanks(n: number): string[] {
+  return Array.from({ length: n }, () => "");
+}
 
 function makeMeasurement(overrides: Partial<MeasurementRecord> = {}): MeasurementRecord {
   return {
@@ -463,8 +469,8 @@ describe("syncAll: Measurements tab", () => {
     expect(await appDb.measurements.orderBy("id").toArray()).toEqual([remote, local]);
     expect(sheets.tabs.get("Measurements")).toEqual([
       MEASUREMENT_HEADERS,
-      [...measurementFixedCells(remote), "60", "", ""],
-      [...measurementFixedCells(local), "", "22", ""],
+      [...measurementFixedCells(remote), "60", ...blanks(22)],
+      [...measurementFixedCells(local), "", "22", ...blanks(21)],
     ]);
   });
 
@@ -482,8 +488,8 @@ describe("syncAll: Measurements tab", () => {
     expect(await appDb.measurements.orderBy("id").toArray()).toEqual([first, second]);
     expect(sheets.tabs.get("Measurements")).toEqual([
       [...MEASUREMENT_HEADERS, "waist"],
-      [...measurementFixedCells(first), "60", "", "", "80"],
-      [...measurementFixedCells(second), "61", "", "", ""],
+      [...measurementFixedCells(first), "60", ...blanks(22), "80"],
+      [...measurementFixedCells(second), "61", ...blanks(23)],
     ]);
   });
 
@@ -501,7 +507,7 @@ describe("syncAll: Measurements tab", () => {
     expect(await appDb.measurements.toArray()).toEqual([local]);
     expect(sheets.tabs.get("Measurements")).toEqual([
       MEASUREMENT_HEADERS,
-      [...measurementFixedCells(local), "60", "", ""],
+      [...measurementFixedCells(local), "60", ...blanks(22)],
     ]);
   });
 
@@ -528,7 +534,7 @@ describe("syncAll: Measurements tab", () => {
       recordId: "m-1",
       deletedAt: "2026-10-20T10:00:00+09:00",
     });
-    sheets.tabs.set("Measurements", [MEASUREMENT_HEADERS, [...measurementFixedCells(record), "60", "", ""]]);
+    sheets.tabs.set("Measurements", [MEASUREMENT_HEADERS, [...measurementFixedCells(record), "60", ...blanks(22)]]);
 
     const result = await syncAll(TOKEN);
 

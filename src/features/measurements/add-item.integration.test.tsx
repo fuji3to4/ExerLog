@@ -57,8 +57,9 @@ describe("adding one item to MEASUREMENT_ITEMS", () => {
     fireEvent.click(await screen.findByRole("tab", { name: "体の数値" }));
 
     const dialog = within(screen.getByRole("dialog"));
-    expect(dialog.getAllByRole("spinbutton")).toHaveLength(4);
-    expect(dialog.getAllByText("cm")).toHaveLength(2); // height and waist
+    // 4 basic inputs (incl. waist) + 20 circumference inputs; the form lists them flat until it groups by limb.
+    expect(dialog.getAllByRole("spinbutton")).toHaveLength(4 + 20);
+    expect(dialog.getAllByText("cm")).toHaveLength(2 + 20); // height and waist + 20 circumference units
   });
 
   it("(b) includes waist in the measurement summary", () => {
@@ -78,8 +79,8 @@ describe("adding one item to MEASUREMENT_ITEMS", () => {
   it("(e) adds one graph option", async () => {
     renderWithLanguage(<HistoryGraphs />, { initialLanguage: "ja" });
     const select = (await screen.findByLabelText("表示する項目")) as HTMLSelectElement;
-    // 4 graphable items + BMI + 2 wellness scores
-    expect(MEASUREMENT_ITEMS).toHaveLength(4);
+    // 4 graphable items + BMI + 2 wellness scores; the 20 circumference items are showInGraph=false
+    expect(MEASUREMENT_ITEMS).toHaveLength(24);
     expect(select.options).toHaveLength(7);
   });
 });
