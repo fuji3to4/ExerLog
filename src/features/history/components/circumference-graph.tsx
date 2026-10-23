@@ -101,9 +101,12 @@ function CircumferenceTooltip({ active, payload, t }: { active?: boolean; payloa
   );
 }
 
-/** Square marker for the right side so the two lines differ by shape, not only color. */
-function SquareDot({ cx, cy, fill, size }: { cx?: number; cy?: number; fill: string; size: number }) {
-  if (cx === undefined || cy === undefined) return null;
+/**
+ * Square marker for the right side so the two lines differ by shape, not only color.
+ * Recharts passes cy: null for points without a value on this side; draw nothing there.
+ */
+export function SquareDot({ cx, cy, fill, size }: { cx?: number | null; cy?: number | null; fill: string; size: number }) {
+  if (cx == null || cy == null) return null;
   return <rect x={cx - size / 2} y={cy - size / 2} width={size} height={size} fill={fill} />;
 }
 
@@ -203,22 +206,7 @@ export function CircumferenceGraph({ range }: { range: { start: string; end: str
                   />
                   <Tooltip content={<CircumferenceTooltip t={t} />} cursor={{ stroke: "#9ca3af", strokeWidth: 1 }} />
                   <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 16, fontSize: 12 }} />
-                  <Line
-                    isAnimationActive={false}
-                    type="monotone"
-                    dataKey="rightValue"
-                    name={sideLabel("right")}
-                    legendType="square"
-                    stroke={SIDE_COLORS.right}
-                    strokeWidth={2.5}
-                    connectNulls
-                    dot={(props: { key?: string; cx?: number; cy?: number }) => (
-                      <SquareDot key={props.key} cx={props.cx} cy={props.cy} fill={SIDE_COLORS.right} size={6} />
-                    )}
-                    activeDot={(props: { cx?: number; cy?: number }) => (
-                      <SquareDot cx={props.cx} cy={props.cy} fill={SIDE_COLORS.right} size={10} />
-                    )}
-                  />
+                  {/* Left first: the legend reads 左｜右 like the inputs. */}
                   <Line
                     isAnimationActive={false}
                     type="monotone"
@@ -230,6 +218,22 @@ export function CircumferenceGraph({ range }: { range: { start: string; end: str
                     connectNulls
                     dot={{ r: 3, fill: SIDE_COLORS.left, strokeWidth: 0 }}
                     activeDot={{ r: 5, fill: SIDE_COLORS.left, strokeWidth: 2, stroke: "#fff" }}
+                  />
+                  <Line
+                    isAnimationActive={false}
+                    type="monotone"
+                    dataKey="rightValue"
+                    name={sideLabel("right")}
+                    legendType="square"
+                    stroke={SIDE_COLORS.right}
+                    strokeWidth={2.5}
+                    connectNulls
+                    dot={(props: { key?: string; cx?: number | null; cy?: number | null }) => (
+                      <SquareDot key={props.key} cx={props.cx} cy={props.cy} fill={SIDE_COLORS.right} size={6} />
+                    )}
+                    activeDot={(props: { cx?: number | null; cy?: number | null }) => (
+                      <SquareDot cx={props.cx} cy={props.cy} fill={SIDE_COLORS.right} size={10} />
+                    )}
                   />
                 </LineChart>
               </ResponsiveContainer>
