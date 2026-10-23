@@ -68,7 +68,7 @@ App data is stored locally in your browser's IndexedDB. Google Sheets sync is op
 
 ---
 
-## 日本語
+## 日本語README
 
 ExerLogは、運動とコンディションを記録するローカルファーストのPWAです。日々の体調、身体測定、運動、動画の視聴を記録し、履歴から振り返ることができます。
 
