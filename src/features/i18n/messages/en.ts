@@ -235,6 +235,8 @@ export const en = {
   timeline_label_night: "Night",
   timeline_wellness_row: "Condition: body {physical} · mind {mental}",
   timeline_measurement_row: "📏 {summary}",
+  circumference_summary_arm: "Arm circumference ({count})",
+  circumference_summary_leg: "Leg circumference ({count})",
   timeline_exercise_row: "✅ {title}: {result}",
   timeline_watched: "▶ Watched {title}",
   timeline_edit_time: "Time",

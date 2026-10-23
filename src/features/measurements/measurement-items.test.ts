@@ -51,3 +51,20 @@ test("formatMeasurementSummary joins known items in list order and omits unknown
   const t = (key: keyof typeof messages) => messages[key];
   expect(formatMeasurementSummary(record, t)).toBe("体重 60.2kg・体脂肪率 22.0%");
 });
+
+test("formatMeasurementSummary lists basic items, then arm and leg circumference counts", () => {
+  const baseRecord: MeasurementRecord = {
+    id: "1",
+    date: "2026-10-22",
+    recordedAt: "2026-10-22T07:12:00+09:00",
+    values: {},
+    note: "",
+    updatedAt: "2026-10-22T07:12:00+09:00",
+  };
+  const messages = getMessages("ja");
+  const t = (key: keyof typeof messages, params?: Record<string, string | number>) =>
+    messages[key].replace(/\{(\w+)\}/g, (_, name) => String(params?.[name]));
+  const values = { weight: 60.2, legAnkleLeft: 21, armPalmLeft: 18, armPalmRight: 19 };
+  expect(formatMeasurementSummary({ ...baseRecord, values }, t)).toBe("体重 60.2kg・腕の周径 2か所・脚の周径 1か所");
+  expect(formatMeasurementSummary({ ...baseRecord, values: { legGroinRight: 53.4 } }, t)).toBe("脚の周径 1か所");
+});

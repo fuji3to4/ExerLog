@@ -60,12 +60,20 @@ export function formatMeasurementValue(item: MeasurementItem, value: number): st
   return value.toFixed(item.decimals);
 }
 
-/** "体重 60.2kg・体脂肪率 22.0%": known items present in the record, in list order. */
+/**
+ * "体重 60.2kg・体脂肪率 22.0%・腕の周径 2か所": known non-circumference items in list order,
+ * then a per-limb count of recorded circumference sites (arm, then leg).
+ */
 export function formatMeasurementSummary(
   record: MeasurementRecord,
   t: (key: keyof Messages, params?: Record<string, string | number>) => string,
 ): string {
-  return MEASUREMENT_ITEMS.filter((item) => item.id in record.values)
-    .map((item) => `${t(item.labelKey)} ${formatMeasurementValue(item, record.values[item.id])}${item.unit}`)
-    .join("・");
+  const parts = MEASUREMENT_ITEMS.filter((item) => !item.circumference && item.id in record.values).map(
+    (item) => `${t(item.labelKey)} ${formatMeasurementValue(item, record.values[item.id])}${item.unit}`,
+  );
+  for (const limb of LIMBS) {
+    const count = MEASUREMENT_ITEMS.filter((item) => item.circumference?.limb === limb && item.id in record.values).length;
+    if (count > 0) parts.push(t(`circumference_summary_${limb}`, { count }));
+  }
+  return parts.join("・");
 }

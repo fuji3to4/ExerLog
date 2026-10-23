@@ -235,6 +235,8 @@
   timeline_label_night: "夜",
   timeline_wellness_row: "体調 からだ{physical}・こころ{mental}",
   timeline_measurement_row: "📏 {summary}",
+  circumference_summary_arm: "腕の周径 {count}か所",
+  circumference_summary_leg: "脚の周径 {count}か所",
   timeline_exercise_row: "✅ {title} {result}",
   timeline_watched: "▶ {title}を視聴",
   timeline_edit_time: "時刻",
