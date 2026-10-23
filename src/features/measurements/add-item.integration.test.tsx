@@ -57,9 +57,10 @@ describe("adding one item to MEASUREMENT_ITEMS", () => {
     fireEvent.click(await screen.findByRole("tab", { name: "体の数値" }));
 
     const dialog = within(screen.getByRole("dialog"));
-    // 4 basic inputs (incl. waist) + 20 circumference inputs; the form lists them flat until it groups by limb.
-    expect(dialog.getAllByRole("spinbutton")).toHaveLength(4 + 20);
-    expect(dialog.getAllByText("cm")).toHaveLength(2 + 20); // height and waist + 20 circumference units
+    // 4 basic inputs (waist has no circumference place, so it is basic) + 10 inputs of the arm shown by default.
+    expect(dialog.getAllByRole("spinbutton")).toHaveLength(4 + 10);
+    // height and waist; circumference inputs carry no unit label (the heading says 周径（cm）).
+    expect(dialog.getAllByText("cm")).toHaveLength(2);
   });
 
   it("(b) includes waist in the measurement summary", () => {

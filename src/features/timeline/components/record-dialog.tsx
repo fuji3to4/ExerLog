@@ -1,12 +1,12 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { MeasurementRecord, WellnessEntry } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { MeasurementForm } from "./measurement-form";
+import { SegmentedTabs } from "./segmented-tabs";
 import { WellnessForm } from "./wellness-entry-dialog";
 
 export type RecordKind = "wellness" | "measurement";
@@ -113,51 +113,15 @@ function KindTabs({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
-  const baseId = useId();
-  const tabRefs = useRef<Partial<Record<RecordKind, HTMLButtonElement | null>>>({});
-  const tabId = (kind: RecordKind) => `${baseId}-tab-${kind}`;
-  const panelId = `${baseId}-panel`;
-
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-    event.preventDefault();
-    const step = event.key === "ArrowRight" ? 1 : -1;
-    const next = RECORD_KINDS[(RECORD_KINDS.indexOf(value) + step + RECORD_KINDS.length) % RECORD_KINDS.length];
-    onChange(next);
-    tabRefs.current[next]?.focus();
-  }
-
   return (
-    <div className="space-y-4">
-      <div role="tablist" aria-label={t("record_kind_label")} className="flex gap-1" onKeyDown={onKeyDown}>
-        {RECORD_KINDS.map((kind) => {
-          const isSelected = kind === value;
-          return (
-            <button
-              key={kind}
-              ref={(node) => {
-                tabRefs.current[kind] = node;
-              }}
-              id={tabId(kind)}
-              type="button"
-              role="tab"
-              aria-selected={isSelected}
-              aria-controls={panelId}
-              tabIndex={isSelected ? 0 : -1}
-              className={cn(
-                "h-10 flex-1 rounded-xl text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-muted/80",
-              )}
-              onClick={() => onChange(kind)}
-            >
-              {t(kind === "wellness" ? "record_kind_wellness" : "record_kind_measurement")}
-            </button>
-          );
-        })}
-      </div>
-      <div role="tabpanel" id={panelId} aria-labelledby={tabId(value)}>
-        {children}
-      </div>
-    </div>
+    <SegmentedTabs
+      options={RECORD_KINDS}
+      value={value}
+      onChange={onChange}
+      label={t("record_kind_label")}
+      renderTab={(kind) => t(kind === "wellness" ? "record_kind_wellness" : "record_kind_measurement")}
+    >
+      {children}
+    </SegmentedTabs>
   );
 }

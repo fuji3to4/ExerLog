@@ -143,7 +143,7 @@ describe("TimelineSection", () => {
 
     fireEvent.click(row);
     const editDialog = await screen.findByRole("dialog");
-    expect(within(editDialog).queryByRole("tablist")).toBeNull();
+    expect(within(editDialog).queryByRole("tablist", { name: "記録の種類" })).toBeNull();
     fireEvent.change(within(editDialog).getByLabelText("体重"), { target: { value: "61" } });
     fireEvent.click(within(editDialog).getByRole("button", { name: "保存" }));
     await waitForDialogToClose();

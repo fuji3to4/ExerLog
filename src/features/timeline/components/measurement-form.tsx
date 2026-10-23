@@ -4,6 +4,12 @@ import { useEffect, useId, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import {
+  isCircumferenceItem,
+  readCircumferenceLimb,
+  writeCircumferenceLimb,
+  type Limb,
+} from "@/features/measurements/circumference";
+import {
   formatMeasurementValue,
   MEASUREMENT_ITEMS,
   type MeasurementItem,
@@ -19,6 +25,7 @@ import {
 import { localIsoAt, timeOfIso, withLocalTime } from "@/lib/date/local-iso";
 import type { MeasurementRecord } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { CircumferenceFields } from "./circumference-fields";
 import { FIELD_CLASS, TimeField, TimelineDialogFooter, useSaveAndClose } from "./timeline-dialog-parts";
 
 export type MeasurementFormProps = {
@@ -30,6 +37,18 @@ export type MeasurementFormProps = {
 };
 
 type Draft = { raw: string; badInput: boolean };
+
+const BASIC_ITEMS = MEASUREMENT_ITEMS.filter((item) => !isCircumferenceItem(item));
+
+/** Editing opens on the limb the record has values for (arm first); otherwise the remembered limb. */
+function initialLimb(record: MeasurementRecord | undefined): Limb {
+  const limbs = MEASUREMENT_ITEMS.filter((item) => record?.values[item.id] !== undefined).map(
+    (item) => item.circumference?.limb,
+  );
+  if (limbs.includes("arm")) return "arm";
+  if (limbs.includes("leg")) return "leg";
+  return readCircumferenceLimb();
+}
 
 type ParsedValue = { state: "empty" } | { state: "invalid" } | { state: "ok"; value: number };
 
@@ -50,7 +69,11 @@ function parseDraft(item: MeasurementItem, draft: Draft | undefined, stored: num
   return { state: "ok", value };
 }
 
-/** Time, one number field per known item, and a note. Mount it only while its dialog is open. */
+/**
+ * Time, one number field per basic item, the arm or leg circumference grid, and a note.
+ * Drafts of the hidden limb are kept and still validated and saved.
+ * Mount it only while its dialog is open.
+ */
 export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted }: MeasurementFormProps) {
   const { t } = useTranslation();
   const noteId = useId();
@@ -66,6 +89,9 @@ export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted
     return initial;
   });
   const [note, setNote] = useState(record?.note ?? "");
+  const [limb, setLimb] = useState<Limb>(() => initialLimb(record));
+  // Whether the where-to-measure help is open; the help dialog itself is not rendered yet.
+  const [, setIsHelpOpen] = useState(false);
   const [previous, setPrevious] = useState<Record<string, number>>({});
   const [fallbackHeight, setFallbackHeight] = useState<number | null>(null);
   const { isSaved, isBusy, hasError, run } = useSaveAndClose();
@@ -107,6 +133,33 @@ export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted
   }
   const canSave = recordedAt !== null && values !== null && Object.keys(values).length > 0;
 
+  const invalidLimbs = new Set<Limb>();
+  for (const item of MEASUREMENT_ITEMS) {
+    if (item.circumference && parsed[item.id].state === "invalid") invalidLimbs.add(item.circumference.limb);
+  }
+
+  function chooseLimb(next: Limb) {
+    setLimb(next);
+    writeCircumferenceLimb(next);
+  }
+
+  function placeholderFor(item: MeasurementItem): string | undefined {
+    const value = previous[item.id];
+    return value === undefined
+      ? undefined
+      : t("measurement_previous", { value: formatMeasurementValue(item, value) });
+  }
+
+  function inputProps(item: MeasurementItem) {
+    return {
+      item,
+      draft: drafts[item.id],
+      isInvalid: parsed[item.id].state === "invalid",
+      placeholder: placeholderFor(item),
+      onChange: (draft: Draft) => setDrafts((current) => ({ ...current, [item.id]: draft })),
+    };
+  }
+
   const weight = parsed.weight;
   const enteredHeight = parsed.height;
   let bmiText: string | null = null;
@@ -146,19 +199,8 @@ export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted
     <div className="space-y-4">
       <TimeField value={time} onChange={setTime} />
       <div className="space-y-2">
-        {MEASUREMENT_ITEMS.map((item) => (
-          <MeasurementField
-            key={item.id}
-            item={item}
-            draft={drafts[item.id]}
-            isInvalid={parsed[item.id].state === "invalid"}
-            placeholder={
-              previous[item.id] === undefined
-                ? undefined
-                : t("measurement_previous", { value: formatMeasurementValue(item, previous[item.id]) })
-            }
-            onChange={(draft) => setDrafts((current) => ({ ...current, [item.id]: draft }))}
-          />
+        {BASIC_ITEMS.map((item) => (
+          <MeasurementField key={item.id} {...inputProps(item)} />
         ))}
       </div>
       {bmiText ? (
@@ -166,6 +208,13 @@ export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted
           {bmiText}
         </p>
       ) : null}
+      <CircumferenceFields
+        limb={limb}
+        onLimbChange={chooseLimb}
+        invalidLimbs={invalidLimbs}
+        renderInput={(item) => <MeasurementInput {...inputProps(item)} ariaLabel={t(item.labelKey)} />}
+        onHelp={() => setIsHelpOpen(true)}
+      />
       <div className="space-y-1.5">
         <label htmlFor={noteId} className="text-sm font-medium">
           {t("timeline_note")}
@@ -190,43 +239,53 @@ export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted
   );
 }
 
-function MeasurementField({
-  item,
-  draft,
-  isInvalid,
-  placeholder,
-  onChange,
-}: {
+type MeasurementInputProps = {
   item: MeasurementItem;
   draft: Draft | undefined;
   isInvalid: boolean;
   placeholder?: string;
   onChange(draft: Draft): void;
-}) {
+};
+
+function MeasurementField(props: MeasurementInputProps) {
   const { t } = useTranslation();
   const id = useId();
 
   return (
     <div className="flex items-center gap-2">
       <label htmlFor={id} className="w-24 shrink-0 text-sm font-medium">
-        {t(item.labelKey)}
+        {t(props.item.labelKey)}
       </label>
-      <input
-        id={id}
-        type="number"
-        inputMode={item.decimals > 0 ? "decimal" : "numeric"}
-        min={item.min}
-        max={item.max}
-        step={10 ** -item.decimals}
-        placeholder={placeholder}
-        aria-invalid={isInvalid || undefined}
-        className={cn(FIELD_CLASS, "text-right", isInvalid && "border-destructive")}
-        value={draft?.raw ?? ""}
-        onChange={(event) =>
-          onChange({ raw: event.target.value, badInput: event.target.validity.badInput })
-        }
-      />
-      <span className="w-8 shrink-0 text-sm text-muted-foreground">{item.unit}</span>
+      <MeasurementInput {...props} id={id} />
+      <span className="w-8 shrink-0 text-sm text-muted-foreground">{props.item.unit}</span>
     </div>
+  );
+}
+
+/** The number input itself; labelled by a <label> via `id`, or by `ariaLabel`. */
+function MeasurementInput({
+  item,
+  draft,
+  isInvalid,
+  placeholder,
+  onChange,
+  id,
+  ariaLabel,
+}: MeasurementInputProps & { id?: string; ariaLabel?: string }) {
+  return (
+    <input
+      id={id}
+      aria-label={ariaLabel}
+      type="number"
+      inputMode={item.decimals > 0 ? "decimal" : "numeric"}
+      min={item.min}
+      max={item.max}
+      step={10 ** -item.decimals}
+      placeholder={placeholder}
+      aria-invalid={isInvalid || undefined}
+      className={cn(FIELD_CLASS, "text-right", isInvalid && "border-destructive")}
+      value={draft?.raw ?? ""}
+      onChange={(event) => onChange({ raw: event.target.value, badInput: event.target.validity.badInput })}
+    />
   );
 }

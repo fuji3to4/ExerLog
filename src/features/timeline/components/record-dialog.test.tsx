@@ -165,7 +165,7 @@ describe("RecordDialog", () => {
     const { onSaved } = renderDialog({ editing: { kind: "measurement", record } });
 
     expect(await screen.findByRole("dialog")).toBeTruthy();
-    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "記録の種類" })).toBeNull();
     expect(input("体重").value).toBe("61");
     fireEvent.change(input("体重"), { target: { value: "62" } });
     fireEvent.click(saveButton());
@@ -266,5 +266,66 @@ describe("RecordDialog", () => {
     expect(screen.queryByRole("tablist")).toBeNull();
     expect(within(dialog).getByRole("heading", { name: "体調の記録を編集" })).toBeTruthy();
     expect(within(dialog).queryByLabelText("体重")).toBeNull();
+  });
+
+  describe("circumference", () => {
+    it("opens on the remembered limb and shows left/right fields for its five sites only", async () => {
+      window.localStorage.setItem("exerlog-circumference-limb", "leg");
+      renderDialog();
+      fireEvent.click(await screen.findByRole("tab", { name: "体の数値" }));
+      expect(screen.getByRole("tab", { name: "脚" }).getAttribute("aria-selected")).toBe("true");
+      expect(input("足首 左")).toBeTruthy();
+      expect(within(screen.getByRole("dialog")).queryByLabelText("手首 左")).toBeNull();
+    });
+
+    it("keeps arm values when switching to leg and saves both in one record", async () => {
+      const { onSaved } = renderDialog();
+      fireEvent.click(await screen.findByRole("tab", { name: "体の数値" }));
+      fireEvent.change(input("肘下5cm 右"), { target: { value: "24.5" } });
+      fireEvent.click(screen.getByRole("tab", { name: "脚" }));
+      fireEvent.change(input("足首 左"), { target: { value: "21.0" } });
+      fireEvent.click(screen.getByRole("tab", { name: "腕" }));
+      expect(input("肘下5cm 右").value).toBe("24.5");
+      fireEvent.click(saveButton());
+      await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1), { timeout: 3000 });
+      expect((await onlyRecord()).values).toEqual({ armBelowElbowRight: 24.5, legAnkleLeft: 21 });
+      expect(window.localStorage.getItem("exerlog-circumference-limb")).toBe("arm");
+    });
+
+    it("blocks saving and marks the hidden limb when it holds an invalid value", async () => {
+      renderDialog();
+      fireEvent.click(await screen.findByRole("tab", { name: "体の数値" }));
+      fireEvent.change(input("手首 左"), { target: { value: "200" } });
+      fireEvent.click(screen.getByRole("tab", { name: "脚" }));
+      fireEvent.change(input("足首 左"), { target: { value: "21.0" } });
+      expect(saveButton().disabled).toBe(true);
+      expect(screen.getByRole("tab", { name: /腕/ }).textContent).toContain("⚠");
+    });
+
+    it("shows the previous value of each side as a placeholder", async () => {
+      await addMeasurement({
+        date: "2026-10-19",
+        recordedAt: localIsoAt("2026-10-19", new Date(2026, 9, 19, 21, 0, 0)),
+        values: { armBelowElbowRight: 24.5 },
+        note: "",
+      });
+      renderDialog();
+      fireEvent.click(await screen.findByRole("tab", { name: "体の数値" }));
+      await waitFor(() => expect(input("肘下5cm 右").placeholder).toBe("前回 24.5"));
+      expect(input("肘下5cm 左").placeholder).toBe("");
+    });
+
+    it("opens an edited leg-only record on 脚 even when 腕 was remembered", async () => {
+      const record = await addMeasurement({
+        date: DATE,
+        recordedAt: localIsoAt(DATE, new Date(2026, 9, 20, 6, 0, 0)),
+        values: { legAnkleLeft: 21 },
+        note: "",
+      });
+      window.localStorage.setItem("exerlog-circumference-limb", "arm");
+      renderDialog({ editing: { kind: "measurement", record } });
+      expect((await screen.findByRole("tab", { name: "脚" })).getAttribute("aria-selected")).toBe("true");
+      expect(input("足首 左").value).toBe("21");
+    });
   });
 });
