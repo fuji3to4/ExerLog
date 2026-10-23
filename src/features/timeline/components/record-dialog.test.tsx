@@ -302,6 +302,25 @@ describe("RecordDialog", () => {
       expect(screen.getByRole("tab", { name: /腕/ }).textContent).toContain("⚠");
     });
 
+    it("opens the measuring help for the selected limb", async () => {
+      window.localStorage.setItem("exerlog-circumference-limb", "leg");
+      renderDialog();
+      fireEvent.click(await screen.findByRole("tab", { name: "体の数値" }));
+      fireEvent.click(screen.getByRole("button", { name: "測る位置の説明" }));
+      const help = await screen.findByRole("dialog", { name: "脚の測り方" });
+      expect(within(help).getByText(/土踏まずのアーチ/)).toBeTruthy();
+      expect(within(help).getByRole("img")).toBeTruthy();
+      expect(within(help).queryByText(/こぶしを握った/)).toBeNull();
+    });
+
+    it("shows the arm help when the arm is selected", async () => {
+      renderDialog();
+      fireEvent.click(await screen.findByRole("tab", { name: "体の数値" }));
+      fireEvent.click(screen.getByRole("button", { name: "測る位置の説明" }));
+      const help = await screen.findByRole("dialog", { name: "腕の測り方" });
+      expect(within(help).getByText(/こぶしを握った/)).toBeTruthy();
+    });
+
     it("shows the previous value of each side as a placeholder", async () => {
       await addMeasurement({
         date: "2026-10-19",

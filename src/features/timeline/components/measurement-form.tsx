@@ -26,6 +26,7 @@ import { localIsoAt, timeOfIso, withLocalTime } from "@/lib/date/local-iso";
 import type { MeasurementRecord } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CircumferenceFields } from "./circumference-fields";
+import { CircumferenceHelpDialog } from "./circumference-help-dialog";
 import { FIELD_CLASS, TimeField, TimelineDialogFooter, useSaveAndClose } from "./timeline-dialog-parts";
 
 export type MeasurementFormProps = {
@@ -90,8 +91,7 @@ export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted
   });
   const [note, setNote] = useState(record?.note ?? "");
   const [limb, setLimb] = useState<Limb>(() => initialLimb(record));
-  // Whether the where-to-measure help is open; the help dialog itself is not rendered yet.
-  const [, setIsHelpOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [previous, setPrevious] = useState<Record<string, number>>({});
   const [fallbackHeight, setFallbackHeight] = useState<number | null>(null);
   const { isSaved, isBusy, hasError, run } = useSaveAndClose();
@@ -215,6 +215,7 @@ export function MeasurementForm({ onOpenChange, date, record, onSaved, onDeleted
         renderInput={(item) => <MeasurementInput {...inputProps(item)} ariaLabel={t(item.labelKey)} />}
         onHelp={() => setIsHelpOpen(true)}
       />
+      <CircumferenceHelpDialog open={isHelpOpen} onOpenChange={setIsHelpOpen} limb={limb} />
       <div className="space-y-1.5">
         <label htmlFor={noteId} className="text-sm font-medium">
           {t("timeline_note")}
