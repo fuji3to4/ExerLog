@@ -8,7 +8,7 @@ import { appDb } from "@/features/storage/app-db";
 import { addMeasurement } from "@/features/storage/measurements.repository";
 import { addWellnessEntry } from "@/features/storage/wellness-entries.repository";
 
-import { buildHistoryGraphSeries } from "./history-graph-query";
+import { buildCircumferenceSeries, buildHistoryGraphSeries } from "./history-graph-query";
 
 beforeEach(async () => {
   await Promise.all([
@@ -166,4 +166,20 @@ test("builds a self-care minutes series for a specific self-care item", async ()
       { at: "2026-03-24T00:00:00", value: 0 },
     ],
   });
+});
+
+test("buildCircumferenceSeries uses records before the range for deltas and returns only in-range points", async () => {
+  await addMeasurement({ date: "2026-09-30", recordedAt: "2026-09-30T07:00:00+09:00", values: { armBelowElbowRight: 24.2 }, note: "" });
+  await addMeasurement({ date: "2026-10-20", recordedAt: "2026-10-20T07:00:00+09:00", values: { armBelowElbowRight: 24.5, armBelowElbowLeft: 22.4 }, note: "" });
+  await addMeasurement({ date: "2026-10-25", recordedAt: "2026-10-25T07:00:00+09:00", values: { armBelowElbowRight: 25 }, note: "" });
+
+  const points = await buildCircumferenceSeries({
+    range: { start: "2026-10-01", end: "2026-10-22" },
+    limb: "arm",
+    site: "belowElbow",
+  });
+
+  expect(points).toEqual([
+    { at: "2026-10-20T07:00:00+09:00", left: { value: 22.4, delta: null }, right: { value: 24.5, delta: 24.5 - 24.2 } },
+  ]);
 });

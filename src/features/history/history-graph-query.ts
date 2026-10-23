@@ -1,3 +1,9 @@
+import {
+  buildCircumferencePoints,
+  type CircumferencePoint,
+  type CircumferenceSite,
+  type Limb,
+} from "@/features/measurements/circumference";
 import { getMeasurementItem } from "@/features/measurements/measurement-items";
 import { calculateBmi } from "@/features/metrics/bmi";
 import { appDb } from "@/features/storage/app-db";
@@ -136,4 +142,14 @@ export async function buildHistoryGraphSeries({
       })),
     ),
   };
+}
+
+/** Reads records up to the range end so earlier ones can serve as "previous" values. */
+export async function buildCircumferenceSeries(input: {
+  range: GraphRange;
+  limb: Limb;
+  site: CircumferenceSite;
+}): Promise<CircumferencePoint[]> {
+  const upToEnd = await listMeasurementsInRange("0000-01-01", input.range.end);
+  return buildCircumferencePoints(upToEnd, input.limb, input.site, input.range.start);
 }

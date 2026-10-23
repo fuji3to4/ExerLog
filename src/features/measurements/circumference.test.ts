@@ -4,11 +4,16 @@ import { getMessages } from "@/features/i18n/messages";
 import { generateMeasurementsCsv } from "@/features/settings/csv/history-csv";
 import { TABLE_SYNC_CONFIGS } from "@/features/sync/sync-config";
 
+import type { MeasurementRecord } from "@/lib/types";
+
 import {
+  buildCircumferencePoints,
   countCircumferenceValues,
   findCircumferenceItem,
+  formatDelta,
   isCircumferenceItem,
   readCircumferenceLimb,
+  sideDifference,
   writeCircumferenceLimb,
 } from "./circumference";
 import { MEASUREMENT_ITEMS } from "./measurement-items";
@@ -67,4 +72,39 @@ test("CSV and the sync tab get a column for every circumference id", () => {
   const headers = config.buildHeaders!([]);
   expect(headers).toContain("armPalmLeft");
   expect(headers).toContain("legGroinRight");
+});
+
+const rec = (date: string, time: string, values: Record<string, number>): MeasurementRecord => ({
+  id: `${date}${time}`, date, recordedAt: `${date}T${time}:00+09:00`, values, note: "", updatedAt: "",
+});
+
+test("buildCircumferencePoints uses the previous same-side value, even from before the range", () => {
+  const points = buildCircumferencePoints(
+    [
+      rec("2026-10-20", "07:00", { armBelowElbowRight: 24.5, armBelowElbowLeft: 22.4 }),
+      rec("2026-09-30", "07:00", { armBelowElbowRight: 24.2 }),
+      rec("2026-10-21", "07:00", { armBelowElbowLeft: 22.5, weight: 60 }),
+      rec("2026-10-21", "08:00", { weight: 60 }),
+    ],
+    "arm", "belowElbow", "2026-10-01",
+  );
+  expect(points).toEqual([
+    { at: "2026-10-20T07:00:00+09:00", left: { value: 22.4, delta: null }, right: { value: 24.5, delta: 24.5 - 24.2 } },
+    { at: "2026-10-21T07:00:00+09:00", left: { value: 22.5, delta: 22.5 - 22.4 } },
+  ]);
+});
+
+test("formatDelta rounds before choosing the sign", () => {
+  expect(formatDelta(24.5 - 24.2, 1)).toBe("+0.3");
+  expect(formatDelta(-0.2, 1)).toBe("−0.2");
+  expect(formatDelta(0.04, 1)).toBe("±0.0");
+  expect(formatDelta(0, 1)).toBe("±0.0");
+});
+
+test("sideDifference only pairs sides of the same record", () => {
+  expect(sideDifference({ at: "x", left: { value: 22.4, delta: null }, right: { value: 24.5, delta: null } }, 1))
+    .toEqual({ amount: 2.1, larger: "right" });
+  expect(sideDifference({ at: "x", left: { value: 22.4, delta: null } }, 1)).toBeNull();
+  expect(sideDifference({ at: "x", left: { value: 22.4, delta: null }, right: { value: 22.4, delta: null } }, 1))
+    .toEqual({ amount: 0, larger: null });
 });
