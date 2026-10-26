@@ -299,7 +299,6 @@
   circumference_help_belowKnee: "膝のお皿から5cm下（ふくらはぎ）の周り。",
   circumference_help_aboveKnee: "膝のお皿から10cm上の周り。",
   circumference_help_groin: "脚のつけ根を一周する位置。",
-  circumference_help_garment_note: "弾性着衣（スリーブ・ストッキング）を選ぶときは、測る位置がメーカーごとに違います。各メーカーのカタログを確認してください。",
   measurement_item_armPalmLeft: "手のひら 左",
   measurement_item_armPalmRight: "手のひら 右",
   measurement_item_armWristLeft: "手首 左",

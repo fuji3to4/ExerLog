@@ -299,7 +299,6 @@ export const en = {
   circumference_help_belowKnee: "Around the leg (calf) 5 cm below the kneecap.",
   circumference_help_aboveKnee: "Around the leg 10 cm above the kneecap.",
   circumference_help_groin: "Once around at the top of the leg (groin).",
-  circumference_help_garment_note: "When choosing compression garments (sleeves, stockings), measuring positions differ by manufacturer. Check each manufacturer's catalog.",
   measurement_item_armPalmLeft: "Palm, left",
   measurement_item_armPalmRight: "Palm, right",
   measurement_item_armWristLeft: "Wrist, left",

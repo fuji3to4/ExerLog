@@ -2,41 +2,62 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "@/features/i18n/use-translation";
-import { CIRCUMFERENCE_SITES, type Limb } from "@/features/measurements/circumference";
+import { CIRCUMFERENCE_SITES, type CircumferenceSite, type Limb } from "@/features/measurements/circumference";
+import { LIMB_OUTLINES } from "./limb-outlines";
 
 const MARKERS = ["❶", "❷", "❸", "❹", "❺"];
 
-/** Height (y) of each site's marker line, in the order of CIRCUMFERENCE_SITES; distal first. */
-const MARKER_Y: Record<Limb, readonly number[]> = {
-  arm: [176, 146, 104, 62, 30],
-  leg: [186, 156, 112, 62, 24],
+type Line = readonly [x1: number, y1: number, x2: number, y2: number];
+
+/** Figure geometry, in the coordinates of docs/memo/fig/{arm,leg}.svg. */
+const FIGURES: Record<Limb, { viewBox: string; reference: Line; sites: Partial<Record<CircumferenceSite, Line>> }> = {
+  arm: {
+    viewBox: "179 28 112 482",
+    // The elbow.
+    reference: [189.5, 222.1, 276.7, 226.7],
+    sites: {
+      palm: [213.1, 436.9, 259.8, 430.9],
+      wrist: [216.8, 377.6, 248.3, 377.6],
+      belowElbow: [204.4, 262.1, 259.7, 264.2],
+      aboveElbow: [207.7, 145.6, 259.8, 145.6],
+      axilla: [202, 112, 265.5, 112],
+    },
+  },
+  leg: {
+    viewBox: "168 10 142 518",
+    // The kneecap.
+    reference: [173.2, 242.5, 284, 242.5],
+    sites: {
+      instep: [205.2, 473.4, 251.6, 486.5],
+      ankle: [214, 413.7, 243.9, 413.7],
+      belowKnee: [198.8, 296.1, 259.9, 296.1],
+      aboveKnee: [187.9, 140.6, 272.7, 140.6],
+      groin: [180.2, 53.7, 282, 53.7],
+    },
+  },
 };
 
-/** A simple tapered outline of the limb with a numbered line at each measuring site. */
+/** The limb outline with a numbered line at each measuring site and a dashed line at the elbow or knee. */
 function LimbFigure({ limb, label }: { limb: Limb; label: string }) {
-  const outline =
-    limb === "arm"
-      ? "M44 14 L76 14 L82 60 L72 104 L68 140 L74 168 L78 192 L42 192 L46 168 L52 140 L48 104 L38 60 Z"
-      : "M40 12 L80 12 L78 62 L74 112 L70 160 L72 184 L96 192 L96 200 L38 200 L46 160 L46 112 L44 62 Z";
+  const { viewBox, reference, sites } = FIGURES[limb];
+  const [rx1, ry1, rx2, ry2] = reference;
   return (
-    <svg
-      role="img"
-      aria-label={label}
-      viewBox="0 0 120 210"
-      className="mx-auto h-48 w-auto text-foreground"
-      fill="none"
-      stroke="currentColor"
-      strokeLinejoin="round"
-    >
-      <path d={outline} strokeWidth={2} className="text-muted-foreground" />
-      {MARKER_Y[limb].map((y, index) => (
-        <g key={y}>
-          <line x1={26} x2={94} y1={y} y2={y} strokeWidth={2} strokeDasharray="5 3" />
-          <text x={100} y={y + 5} fill="currentColor" stroke="none" fontSize={14}>
-            {MARKERS[index]}
-          </text>
-        </g>
-      ))}
+    <svg role="img" aria-label={label} viewBox={viewBox} className="mx-auto h-80 w-auto text-foreground">
+      <path d={LIMB_OUTLINES[limb]} fill="currentColor" fillRule="evenodd" />
+      <line x1={rx1} y1={ry1} x2={rx2} y2={ry2} stroke="currentColor" strokeWidth={1} strokeDasharray="4 4" />
+      {CIRCUMFERENCE_SITES[limb].map((site, index) => {
+        const line = sites[site];
+        if (!line) return null;
+        const [x1, y1, x2, y2] = line;
+        return (
+          <g key={site} className="text-primary">
+            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth={4} strokeLinecap="round" />
+            <text x={x2 + 4} y={y2 + 7} fill="currentColor" fontSize={20}>
+              {MARKERS[index]}
+            </text>
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -70,7 +91,6 @@ export function CircumferenceHelpDialog({ open, onOpenChange, limb }: Circumfere
             </li>
           ))}
         </ol>
-        <p className="text-xs text-muted-foreground">{t("circumference_help_garment_note")}</p>
       </DialogContent>
     </Dialog>
   );
