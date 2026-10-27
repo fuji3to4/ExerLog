@@ -3,6 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 
+import { ModuleSettingsSection } from "@/features/modules/components/module-settings-section";
+
 import { DataManagement } from "./data-management";
 import { GoogleDriveSettings } from "./google-drive-settings";
 import { ThemeSwitcher } from "./theme-switcher";
@@ -24,6 +26,15 @@ export function SettingsScreen() {
         </CardHeader>
         <CardContent>
           <ThemeSwitcher />
+        </CardContent>
+      </Card>
+
+      <Card className="settings-section w-full">
+        <CardHeader>
+          <CardTitle>{t("settings_modules_section_heading")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ModuleSettingsSection />
         </CardContent>
       </Card>
 
