@@ -3,6 +3,7 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { useModuleSettings } from "@/features/modules/use-module-settings";
+import { PeriodSummaryButton } from "@/features/period-summary/components/period-summary-button";
 
 import { useHistoryState } from "../use-history-state";
 import { HistoryCalendar } from "./history-calendar";
@@ -29,6 +30,7 @@ export function HistoryDashboard({ month: initialMonth }: HistoryDashboardProps 
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
+          <PeriodSummaryButton />
           <HistoryCalendar
             month={history.currentMonth}
             marks={history.marks}

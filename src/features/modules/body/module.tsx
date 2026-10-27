@@ -10,6 +10,7 @@ import type { RecordModule, TimeLabel } from "../types";
 import { BodyForm } from "./body-form";
 import { bodyData } from "./data";
 import { BODY_GRAPH_METRICS } from "./graph";
+import { BodySummaryCard } from "./summary-card";
 
 function BodyTimelineCard({ record, label }: { record: MeasurementRecord; label: TimeLabel | null }) {
   return <MeasurementTimelineCard record={record} label={label} items={BODY_ITEMS} />;
@@ -17,11 +18,6 @@ function BodyTimelineCard({ record, label }: { record: MeasurementRecord; label:
 
 function BodyHistoryView() {
   return <MetricGraphView metrics={BODY_GRAPH_METRICS} />;
-}
-
-/** Filled in by the period summary task. */
-function BodySummaryCard() {
-  return null;
 }
 
 export const bodyModule: RecordModule<MeasurementRecord> = {

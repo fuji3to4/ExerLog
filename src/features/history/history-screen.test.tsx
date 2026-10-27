@@ -216,3 +216,11 @@ test("a module turned OFF has no chip and its records no longer mark the calenda
   // 3/27 had only a body measurement.
   expect(screen.getByRole("button", { name: "3月27日" })).toBeInTheDocument();
 });
+
+test("opens the period summary dialog from the all view", async () => {
+  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "ja" });
+
+  await userEvent.click(await screen.findByRole("button", { name: "期間でまとめる" }));
+
+  expect(await screen.findByRole("dialog", { name: "期間のまとめ" })).toBeInTheDocument();
+});

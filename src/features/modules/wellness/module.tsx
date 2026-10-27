@@ -9,6 +9,7 @@ import type { WellnessEntry } from "@/lib/types";
 import type { RecordModule, TimeLabel } from "../types";
 import { wellnessData } from "./data";
 import { WELLNESS_GRAPH_METRICS } from "./graph";
+import { WellnessSummaryCard } from "./summary-card";
 import { WellnessForm } from "./wellness-entry-dialog";
 
 function WellnessTimelineCard({ record, label }: { record: WellnessEntry; label: TimeLabel | null }) {
@@ -26,11 +27,6 @@ function WellnessTimelineCard({ record, label }: { record: WellnessEntry; label:
 
 function WellnessHistoryView() {
   return <MetricGraphView metrics={WELLNESS_GRAPH_METRICS} />;
-}
-
-/** Filled in by the period summary task. */
-function WellnessSummaryCard() {
-  return null;
 }
 
 export const wellnessModule: RecordModule<WellnessEntry> = {

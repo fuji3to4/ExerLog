@@ -11,6 +11,7 @@ import type { RecordModule, TimeLabel } from "../types";
 import { CircumferenceGraph } from "./circumference-graph";
 import { CircumferenceForm } from "./circumference-form";
 import { circumferenceData } from "./data";
+import { CircumferenceSummaryCard } from "./summary-card";
 
 function CircumferenceTimelineCard({ record, label }: { record: MeasurementRecord; label: TimeLabel | null }) {
   return <MeasurementTimelineCard record={record} label={label} items={CIRCUMFERENCE_ITEMS} />;
@@ -25,11 +26,6 @@ function CircumferenceHistoryView() {
       <CircumferenceGraph range={range} />
     </div>
   );
-}
-
-/** Filled in by the period summary task. */
-function CircumferenceSummaryCard() {
-  return null;
 }
 
 export const circumferenceModule: RecordModule<MeasurementRecord> = {
