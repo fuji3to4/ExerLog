@@ -22,7 +22,8 @@
   - `Photos`（写真の記録）：tombstone の `table` も `Photos`。
   - `PhotoFiles`（写真1枚＝1行のドライブ対応表）：tombstone の `table` も `PhotoFiles`。
 - **ドライブ**
-  - 専用フォルダの名前は `Lymly Photos`。写真1枚＝1ファイルで、ファイル名は `<photoId>.jpg`、mimeType は `image/jpeg`。
+  - 専用フォルダの名前は `記録写真`（アプリ名は入れない。Lymly は仮称）。写真1枚＝1ファイルで、ファイル名は `<photoId>.jpg`、mimeType は `image/jpeg`。
+  - フォルダは名前ではなく目印で探す：作成時に `appProperties: { "recordApp": "photo-folder" }` を付け、`appProperties has { key='recordApp' and value='photo-folder' } and mimeType='application/vnd.google-apps.folder' and trashed=false` で検索する。
   - 許可は今の `drive.file` のまま。`SCOPES` は変えない。
 - **縮小**：JPEG、長い辺は最大 1600px（小さい画像は拡大しない）、画質 0.8。
 - **枚数**：1つの記録の写真は1〜20枚。0枚では保存できない。
@@ -177,8 +178,9 @@ src/features/modules/photo/
   export function writePhotoSyncEnabled(enabled: boolean): void;
   export function usePhotoSyncEnabled(): [boolean, (enabled: boolean) => void]; // useSyncExternalStore
   // drive.ts
-  export const PHOTO_FOLDER_NAME = "Lymly Photos";
-  export function findOrCreatePhotoFolder(accessToken: string): Promise<string>; // 名前で探し、複数なら createdTime が最古、なければ作る。id は localStorage "lymly-photo-folder-id" に覚え、404 なら探し直す
+  export const PHOTO_FOLDER_NAME = "記録写真";
+  export const PHOTO_FOLDER_APP_PROPERTY = { recordApp: "photo-folder" } as const;
+  export function findOrCreatePhotoFolder(accessToken: string): Promise<string>; // appProperties の目印で探し、複数なら createdTime が最古、なければ目印付きで作る。id は localStorage "record-photo-folder-id" に覚え、404 なら探し直す
   export function uploadPhoto(accessToken: string, folderId: string, photoId: string, blob: Blob): Promise<string>; // multipart upload → fileId
   export function downloadPhoto(accessToken: string, driveFileId: string): Promise<Blob>; // alt=media
   export function trashDriveFile(accessToken: string, driveFileId: string): Promise<"ok" | "failed">; // 404 は "ok"
@@ -204,8 +206,8 @@ src/features/modules/photo/
   it("round-trips a photo record with photoIds as a JSON array cell");
   it("reads an empty or malformed photoIds cell as []");
   // drive.test.ts（fetch を vi.fn で差し替え、URL・メソッド・本文を確かめる）
-  it("finds the oldest folder named 'Lymly Photos' and remembers its id");
-  it("creates the folder when none exists");
+  it("finds the oldest folder by the appProperties marker (not by name) and remembers its id");
+  it("creates the folder named 記録写真 with the appProperties marker");
   it("uploads multipart with name '<photoId>.jpg', mimeType image/jpeg, parents [folderId]");
   it("trashes with PATCH {trashed:true}; 404 counts as ok; 500 is failed");
   // file-sync.test.ts（drive.ts を vi.mock）
