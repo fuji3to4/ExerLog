@@ -10,6 +10,7 @@ import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/feat
 import { clearAllRecords, countAllRecords } from "@/features/storage/clear-all-records";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
 import { generateExerciseLogsCsv, generateWatchEventsCsv } from "../csv/history-csv";
+import { ExportMenu } from "./export-menu";
 
 type DeleteState = "idle" | "confirming";
 
@@ -213,30 +214,22 @@ export function DataManagement() {
           {t("history_heading")}
         </h3>
         <div className="data-management__buttons">
-          <button
-            type="button"
-            className="settings-action-button"
-            onClick={() => void handleExportLogs()}
-          >
-            {t("settings_export_logs")}
-          </button>
-          <button
-            type="button"
-            className="settings-action-button"
-            onClick={() => void handleExportWatchEvents()}
-          >
-            {t("settings_export_watch_events")}
-          </button>
-          {recordModuleData().map((module) => (
-            <button
-              key={module.id}
-              type="button"
-              className="settings-action-button"
-              onClick={() => void handleExportModule(module)}
-            >
-              {t(module.csv.exportLabelKey)}
-            </button>
-          ))}
+          <ExportMenu
+            label={t("settings_export_history_menu")}
+            items={[
+              { key: "logs", label: t("settings_export_logs"), onSelect: () => void handleExportLogs() },
+              {
+                key: "watch-events",
+                label: t("settings_export_watch_events"),
+                onSelect: () => void handleExportWatchEvents(),
+              },
+              ...recordModuleData().map((module) => ({
+                key: module.id,
+                label: t(module.csv.exportLabelKey),
+                onSelect: () => void handleExportModule(module),
+              })),
+            ]}
+          />
         </div>
         <BulkDeleteButton
           label={t("settings_delete_all_logs")}
