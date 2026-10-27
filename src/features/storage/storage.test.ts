@@ -113,11 +113,54 @@ describe("v11 upgrade", () => {
     const upgraded = new AppDb();
     try {
       await upgraded.open();
-      expect(upgraded.verno).toBe(11);
+      expect(upgraded.verno).toBe(12);
       expect(upgraded.tables.map((table) => table.name)).not.toContain("measurements");
       expect(await upgraded.bodyRecords.count()).toBe(0);
       expect(await upgraded.circumferenceRecords.count()).toBe(0);
       expect(await upgraded.wellnessEntries.count()).toBe(1);
+    } finally {
+      upgraded.close();
+      await appDb.open();
+    }
+  });
+});
+
+describe("v12 upgrade", () => {
+  test("opens v12 with photoRecords, photoBlobs, photoFiles and photoTrash, keeping existing tables", async () => {
+    appDb.close();
+    await Dexie.delete("exercise-log-mvp");
+
+    const v11 = new Dexie("exercise-log-mvp");
+    v11.version(11).stores({
+      selfCareCatalog: "id, sortOrder, isArchived",
+      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      bodyRecords: "id, date, recordedAt",
+      circumferenceRecords: "id, date, recordedAt",
+    });
+    await v11.table("bodyRecords").add({
+      id: "b-1",
+      date: "2026-10-20",
+      recordedAt: "2026-10-20T07:00:00+09:00",
+      values: { weight: 60 },
+      note: "",
+      updatedAt: "2026-10-20T07:00:00+09:00",
+    });
+    v11.close();
+
+    const upgraded = new AppDb();
+    try {
+      await upgraded.open();
+      expect(upgraded.verno).toBe(12);
+      const names = upgraded.tables.map((table) => table.name);
+      expect(names).toEqual(expect.arrayContaining(["photoRecords", "photoBlobs", "photoFiles", "photoTrash"]));
+      expect(await upgraded.photoRecords.count()).toBe(0);
+      expect(await upgraded.bodyRecords.count()).toBe(1);
     } finally {
       upgraded.close();
       await appDb.open();

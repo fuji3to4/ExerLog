@@ -5,6 +5,10 @@ import type {
   ExerciseLog,
   ExerciseVideo,
   MeasurementRecord,
+  PhotoBlob,
+  PhotoFile,
+  PhotoRecord,
+  PhotoTrashItem,
   SelfCareItem,
   Tombstone,
   WatchEvent,
@@ -17,6 +21,10 @@ export class AppDb extends Dexie {
   bodyRecords!: Table<MeasurementRecord, string>;
   circumferenceRecords!: Table<MeasurementRecord, string>;
   watchEvents!: EntityTable<WatchEvent, "id">;
+  photoRecords!: EntityTable<PhotoRecord, "id">;
+  photoBlobs!: EntityTable<PhotoBlob, "id">;
+  photoFiles!: EntityTable<PhotoFile, "id">;
+  photoTrash!: EntityTable<PhotoTrashItem, "driveFileId">;
   tombstones!: EntityTable<Tombstone, "id">;
   exercises!: EntityTable<ExerciseVideo, "id">;
   selfCareCatalog!: EntityTable<SelfCareItem, "id">;
@@ -180,6 +188,24 @@ export class AppDb extends Dexie {
       measurements: null,
       bodyRecords: "id, date, recordedAt",
       circumferenceRecords: "id, date, recordedAt",
+    });
+
+    // v12: photo records, their local blobs, the Drive file map and the Drive trash queue.
+    this.version(12).stores({
+      selfCareCatalog: "id, sortOrder, isArchived",
+      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      bodyRecords: "id, date, recordedAt",
+      circumferenceRecords: "id, date, recordedAt",
+      photoRecords: "id, date, recordedAt",
+      photoBlobs: "id, recordId",
+      photoFiles: "id, recordId",
+      photoTrash: "driveFileId",
     });
   }
 }
