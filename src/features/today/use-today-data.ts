@@ -6,7 +6,7 @@ import { getTodaysRecommendations } from "@/features/recommendations/get-todays-
 import { mapWellnessToCondition } from "@/features/recommendations/wellness-to-condition";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
-import { getLatestWellnessEntry } from "@/features/storage/wellness-entries.repository";
+import { getLatestWellnessEntry } from "@/features/modules/wellness/data";
 import { toDayKey } from "@/lib/date/day-key";
 import { localIsoAt } from "@/lib/date/local-iso";
 import type { ExerciseLog, ExerciseLogResult, ExerciseVideo, WellnessScore } from "@/lib/types";

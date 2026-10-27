@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { recordModuleData } from "@/features/modules/data-registry";
 import { toDayKey } from "@/lib/date/day-key";
 
 import { listCalendarMarksInMonth, type CalendarMark } from "./history-query";
@@ -25,7 +26,11 @@ export function useHistoryState(initialMonth?: string) {
 
   const refreshMarks = useCallback(async () => {
     const current = ++marksRequest.current;
-    const next = await listCalendarMarksInMonth(currentMonth);
+    // Until module settings are wired in (Task 6), every module marks days.
+    const next = await listCalendarMarksInMonth(
+      currentMonth,
+      recordModuleData().map((m) => m.id),
+    );
     if (current === marksRequest.current) setMarks(next);
   }, [currentMonth]);
 

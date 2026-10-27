@@ -9,7 +9,7 @@ vi.mock("@/features/sync/auto-sync", async (importOriginal) => ({
 import { appDb } from "@/features/storage/app-db";
 import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
-import { addWellnessEntry } from "@/features/storage/wellness-entries.repository";
+import { addWellnessEntry } from "@/features/modules/wellness/data";
 import type { ExerciseDraft } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
 

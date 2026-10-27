@@ -8,7 +8,7 @@ import {
   addWellnessEntry,
   deleteWellnessEntry,
   updateWellnessEntry,
-} from "@/features/storage/wellness-entries.repository";
+} from "@/features/modules/wellness/data";
 import { localIsoAt, timeOfIso, withLocalTime } from "@/lib/date/local-iso";
 import type { WellnessEntry, WellnessScore } from "@/lib/types";
 import { TimeField, TimelineDialogFooter, useSaveAndClose } from "./timeline-dialog-parts";

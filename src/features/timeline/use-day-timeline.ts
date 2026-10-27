@@ -7,7 +7,7 @@ import { listExerciseLogsForDay } from "@/features/storage/exercise-logs.reposit
 import { bodyRepository } from "@/features/modules/body/data";
 import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { listWatchEventsForDay } from "@/features/storage/watch-events.repository";
-import { listWellnessEntriesForDay } from "@/features/storage/wellness-entries.repository";
+import { listWellnessEntriesForDay } from "@/features/modules/wellness/data";
 import { buildTimeline, type TimelineItem } from "./build-timeline";
 
 /** How long a newly added row keeps its highlight (covers the pop animation). */

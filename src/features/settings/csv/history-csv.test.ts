@@ -1,10 +1,9 @@
-import { describe, it, expect } from "vitest";
-import {
-  generateExerciseLogsCsv,
-  generateMeasurementsCsv,
-  generateWatchEventsCsv,
-  generateWellnessEntriesCsv,
-} from "./history-csv";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
+
+import { generateWellnessEntriesCsv } from "@/features/modules/wellness/data";
+import { generateExerciseLogsCsv, generateMeasurementsCsv, generateWatchEventsCsv } from "./history-csv";
 import { BODY_ITEMS, CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
 import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
 

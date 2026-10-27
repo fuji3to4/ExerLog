@@ -19,7 +19,7 @@ import {
   deleteWellnessEntry,
   getLatestWellnessEntry,
   listWellnessEntriesForDay,
-} from "./wellness-entries.repository";
+} from "@/features/modules/wellness/data";
 
 beforeEach(async () => {
   await Promise.all([

@@ -7,7 +7,7 @@ import { bodyRepository } from "@/features/modules/body/data";
 import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { AppDb, appDb } from "./app-db";
 import { addExerciseLog } from "./exercise-logs.repository";
-import { addWellnessEntry } from "./wellness-entries.repository";
+import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { recordWatchEvent } from "./watch-events.repository";
 import { clearAllRecords, countAllRecords } from "./clear-all-records";
 

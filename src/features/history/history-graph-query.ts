@@ -9,7 +9,7 @@ import { calculateBmi } from "@/features/metrics/bmi";
 import { appDb } from "@/features/storage/app-db";
 import { bodyRepository } from "@/features/modules/body/data";
 import { circumferenceRepository } from "@/features/modules/circumference/data";
-import { listWellnessEntriesInRange } from "@/features/storage/wellness-entries.repository";
+import { listWellnessEntriesInRange } from "@/features/modules/wellness/data";
 import type { DailySelfCareEntry } from "@/lib/types";
 
 type GraphRange = {

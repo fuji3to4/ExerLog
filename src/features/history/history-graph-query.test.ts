@@ -7,7 +7,7 @@ import { replaceDailySelfCareEntries } from "@/features/storage/daily-self-care.
 import { appDb } from "@/features/storage/app-db";
 import { bodyRepository } from "@/features/modules/body/data";
 import { circumferenceRepository } from "@/features/modules/circumference/data";
-import { addWellnessEntry } from "@/features/storage/wellness-entries.repository";
+import { addWellnessEntry } from "@/features/modules/wellness/data";
 
 import { buildCircumferenceSeries, buildHistoryGraphSeries } from "./history-graph-query";
 

@@ -10,7 +10,7 @@ import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { bodyRepository } from "@/features/modules/body/data";
 import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { recordWatchEvent } from "@/features/storage/watch-events.repository";
-import { addWellnessEntry } from "@/features/storage/wellness-entries.repository";
+import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 import { HistoryScreen } from "./components/history-screen";

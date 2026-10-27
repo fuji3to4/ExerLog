@@ -1,4 +1,4 @@
-import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
+import type { ExerciseLog, MeasurementRecord, WatchEvent } from "@/lib/types";
 import type { MeasurementItem } from "@/features/measurements/measurement-items";
 import { formatTimestampForCsv } from "@/lib/date/format-timestamp";
 
@@ -10,7 +10,7 @@ function escapeCsvField(value: string | number): string {
   return str;
 }
 
-function toCsv(headers: string[], rows: (string | number)[][]): string {
+export function toCsv(headers: string[], rows: (string | number)[][]): string {
   return [headers.join(","), ...rows.map((row) => row.map(escapeCsvField).join(","))].join("\n");
 }
 
@@ -24,19 +24,6 @@ export function generateExerciseLogsCsv(logs: ExerciseLog[], exerciseTitleMap: M
       exerciseTitleMap.get(log.exerciseId) ?? log.exerciseId,
       log.result,
       log.durationSeconds,
-    ]),
-  );
-}
-
-export function generateWellnessEntriesCsv(entries: WellnessEntry[]): string {
-  return toCsv(
-    ["date", "recordedAt", "physicalScore", "mentalScore", "note"],
-    entries.map((entry) => [
-      entry.date,
-      formatTimestampForCsv(entry.recordedAt),
-      entry.physicalScore,
-      entry.mentalScore,
-      entry.note,
     ]),
   );
 }

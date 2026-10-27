@@ -9,14 +9,9 @@ import type {
   SelfCareItem,
   Tombstone,
   WatchEvent,
-  WellnessEntry,
-  WellnessScore,
 } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
-import { BODY_ITEMS, CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
-import { createMeasurementSyncConfig } from "@/features/measurements/measurement-sync";
-import { bodyRepository } from "@/features/modules/body/data";
-import { circumferenceRepository } from "@/features/modules/circumference/data";
+import { recordModuleData } from "@/features/modules/data-registry";
 import { cell, keepLatestPerKey, nullableNumber, replaceTable } from "./sync-helpers";
 
 /** How one Dexie table is mirrored to one sheet tab. */
@@ -53,10 +48,8 @@ export interface TableSyncConfig {
 export function syncedDbTables(): Table<any, any>[] {
   return [
     appDb.exerciseLogs,
-    appDb.wellnessEntries,
+    ...recordModuleData().flatMap((m) => m.tables()),
     appDb.watchEvents,
-    appDb.bodyRecords,
-    appDb.circumferenceRecords,
     appDb.dailySelfCareLogs,
     appDb.exercises,
     appDb.selfCareCatalog,
@@ -90,34 +83,6 @@ const exerciseLogsConfig: TableSyncConfig = {
   }),
   readFromDb: () => appDb.exerciseLogs.toArray(),
   replaceDb: (records) => replaceTable(appDb.exerciseLogs, records as ExerciseLog[]),
-};
-
-const wellnessEntriesConfig: TableSyncConfig = {
-  tabName: "WellnessEntries",
-  keyColumn: "id",
-  updatedAtKey: "updatedAt",
-  deletable: true,
-  headers: ["id", "date", "recordedAt", "physicalScore", "mentalScore", "note", "updatedAt"],
-  toRow: (r: WellnessEntry) => [
-    r.id,
-    r.date,
-    r.recordedAt,
-    String(r.physicalScore),
-    String(r.mentalScore),
-    r.note ?? "",
-    r.updatedAt,
-  ],
-  fromRow: (row, headers): WellnessEntry => ({
-    id: cell(row, headers, "id"),
-    date: cell(row, headers, "date"),
-    recordedAt: cell(row, headers, "recordedAt"),
-    physicalScore: Number(cell(row, headers, "physicalScore")) as WellnessScore,
-    mentalScore: Number(cell(row, headers, "mentalScore")) as WellnessScore,
-    note: cell(row, headers, "note"),
-    updatedAt: cell(row, headers, "updatedAt"),
-  }),
-  readFromDb: () => appDb.wellnessEntries.toArray(),
-  replaceDb: (records) => replaceTable(appDb.wellnessEntries, records as WellnessEntry[]),
 };
 
 const watchEventsConfig: TableSyncConfig = {
@@ -266,19 +231,13 @@ const tombstonesConfig: TableSyncConfig = {
 /**
  * One entry per sheet tab (Tombstones last). A function, not a constant, so
  * the array is built at call time and import cycles never see it half-built
- * (the measurement configs read repositories that import the sync scheduler).
+ * (module data files import the sync scheduler).
  */
 export function tableSyncConfigs(): TableSyncConfig[] {
   return [
     exerciseLogsConfig,
-    wellnessEntriesConfig,
+    ...recordModuleData().flatMap((m) => m.syncConfigs),
     watchEventsConfig,
-    createMeasurementSyncConfig({ tabName: "BodyMeasurements", items: BODY_ITEMS, repository: bodyRepository }),
-    createMeasurementSyncConfig({
-      tabName: "Circumference",
-      items: CIRCUMFERENCE_ITEMS,
-      repository: circumferenceRepository,
-    }),
     dailySelfCareConfig,
     exercisesConfig,
     selfCareCatalogConfig,

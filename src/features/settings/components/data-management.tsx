@@ -3,19 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
-import { BODY_ITEMS, CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
-import { bodyRepository } from "@/features/modules/body/data";
-import { circumferenceRepository } from "@/features/modules/circumference/data";
+import { recordModuleData } from "@/features/modules/data-registry";
+import type { RecordModuleData } from "@/features/modules/types";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { clearAllRecords, countAllRecords } from "@/features/storage/clear-all-records";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
-import {
-  generateMeasurementsCsv,
-  generateExerciseLogsCsv,
-  generateWatchEventsCsv,
-  generateWellnessEntriesCsv,
-} from "../csv/history-csv";
+import { generateExerciseLogsCsv, generateWatchEventsCsv } from "../csv/history-csv";
 
 type DeleteState = "idle" | "confirming";
 
@@ -123,11 +117,6 @@ export function DataManagement() {
     downloadCsv("exercise-logs.csv", generateExerciseLogsCsv(logs, titleMap));
   }
 
-  async function handleExportWellnessEntries() {
-    const entries = await appDb.wellnessEntries.orderBy("recordedAt").toArray();
-    downloadCsv("wellness-entries.csv", generateWellnessEntriesCsv(entries));
-  }
-
   async function handleExportWatchEvents() {
     const [events, exercises] = await Promise.all([
       appDb.watchEvents.orderBy("watchedAt").toArray(),
@@ -137,14 +126,8 @@ export function DataManagement() {
     downloadCsv("watch-events.csv", generateWatchEventsCsv(events, titleMap));
   }
 
-  async function handleExportBody() {
-    const records = await bodyRepository.listAll();
-    downloadCsv("body.csv", generateMeasurementsCsv(records, BODY_ITEMS));
-  }
-
-  async function handleExportCircumference() {
-    const records = await circumferenceRepository.listAll();
-    downloadCsv("circumference.csv", generateMeasurementsCsv(records, CIRCUMFERENCE_ITEMS));
+  async function handleExportModule(module: RecordModuleData) {
+    downloadCsv(module.csv.fileName, await module.csv.generate());
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -240,31 +223,20 @@ export function DataManagement() {
           <button
             type="button"
             className="settings-action-button"
-            onClick={() => void handleExportWellnessEntries()}
-          >
-            {t("settings_export_wellness_entries")}
-          </button>
-          <button
-            type="button"
-            className="settings-action-button"
             onClick={() => void handleExportWatchEvents()}
           >
             {t("settings_export_watch_events")}
           </button>
-          <button
-            type="button"
-            className="settings-action-button"
-            onClick={() => void handleExportBody()}
-          >
-            {t("settings_export_body")}
-          </button>
-          <button
-            type="button"
-            className="settings-action-button"
-            onClick={() => void handleExportCircumference()}
-          >
-            {t("settings_export_circumference")}
-          </button>
+          {recordModuleData().map((module) => (
+            <button
+              key={module.id}
+              type="button"
+              className="settings-action-button"
+              onClick={() => void handleExportModule(module)}
+            >
+              {t(module.csv.exportLabelKey)}
+            </button>
+          ))}
         </div>
         <BulkDeleteButton
           label={t("settings_delete_all_logs")}
