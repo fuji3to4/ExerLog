@@ -34,9 +34,11 @@ function toInputValue(iso: string): string {
 }
 
 /** datetime-local value (wall-clock, no offset) back to a local ISO instant. */
-function fromInputValue(value: string): string | null {
+function fromInputValue(value: string, endOfMinute = false): string | null {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
+  // An end time typed by the user covers its whole minute (the input has no seconds).
+  if (endOfMinute) date.setSeconds(59);
   return isoOf(date);
 }
 
@@ -45,9 +47,11 @@ async function loadExerciseSummary(period: Period) {
   return { summary: summarizeExercise(logs, new Map(exercises.map((exercise) => [exercise.id, exercise.title]))) };
 }
 
+const EMPTY_EXERCISE: Awaited<ReturnType<typeof loadExerciseSummary>> = { summary: null };
+
 function ExerciseSummaryCard({ period }: { period: Period }) {
   const { t } = useTranslation();
-  const loaded = usePeriodSummary(period, loadExerciseSummary);
+  const loaded = usePeriodSummary(period, loadExerciseSummary, EMPTY_EXERCISE);
   const summary = loaded?.summary;
   return (
     <SummaryCardFrame title={t("period_exercise_heading")}>
@@ -77,7 +81,7 @@ function PeriodSummaryBody({ initialPeriod }: { initialPeriod?: Period }) {
   const [period, setPeriod] = useState<Period>(() => initialPeriod ?? defaultPeriod());
 
   function change(key: keyof Period, value: string) {
-    const iso = fromInputValue(value);
+    const iso = fromInputValue(value, key === "end");
     if (iso) setPeriod((current) => ({ ...current, [key]: iso }));
   }
 

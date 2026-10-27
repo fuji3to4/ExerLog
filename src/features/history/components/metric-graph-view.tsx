@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { Messages } from "@/features/i18n/messages";
@@ -28,6 +28,7 @@ export function sortByTime<T extends { at: string }>(items: T[]): T[] {
 /** Item selector, range buttons and the chart for a module's metrics. */
 export function MetricGraphView({ metrics }: { metrics: readonly GraphMetric[] }) {
   const { t } = useTranslation();
+  const selectorId = useId();
   const [selectedKey, setSelectedKey] = useState(() => metrics[0]?.key ?? "");
   const [preset, setPreset] = useState<DateRangePreset>("7d");
   const [series, setSeries] = useState<GraphSeries | null>(null);
@@ -62,9 +63,9 @@ export function MetricGraphView({ metrics }: { metrics: readonly GraphMetric[] }
     <div>
       <div className="history-screen__chart-container" style={{ marginBottom: "1rem" }}>
         <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-          <label htmlFor="metric-selector" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <label htmlFor={selectorId} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span style={{ fontWeight: "600" }}>{t("history_graph_metric_label")}</span>
-            <select id="metric-selector" value={metric?.key ?? ""} onChange={(e) => setSelectedKey(e.currentTarget.value)}>
+            <select id={selectorId} className="metric-selector" value={metric?.key ?? ""} onChange={(e) => setSelectedKey(e.currentTarget.value)}>
               {metrics.map((option) => (
                 <option key={option.key} value={option.key}>
                   {t(option.labelKey)}

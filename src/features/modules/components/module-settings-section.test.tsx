@@ -41,7 +41,7 @@ describe("ModuleSettingsSection", () => {
       expect(within(r).getByRole("switch", { hidden: true }).getAttribute("aria-checked")).toBe("true");
       expect(within(r).getByLabelText("並べ替え")).toBeTruthy();
     }
-    expect(screen.getByText("ONにした順に「＋記録する」に並びます")).toBeTruthy();
+    expect(screen.getByText("この順に「＋記録する」や履歴に並びます")).toBeTruthy();
   });
 
   it("moves a module up with the button and stores the order", () => {

@@ -22,8 +22,8 @@ export async function clearAllRecords(): Promise<void> {
       await appDb.watchEvents.clear();
       await recordTombstones("ExerciseLogs", exerciseIds);
       await recordTombstones("WatchEvents", watchIds);
-      for (const module of modules) {
-        await module.clearAll();
+      for (const moduleData of modules) {
+        await moduleData.clearAll();
       }
     },
   );

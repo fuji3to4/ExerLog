@@ -9,6 +9,8 @@ import type { Period } from "../period";
 import { circumferenceData } from "./data";
 import { summarizeCircumference, type SiteSummary } from "./summary";
 
+const EMPTY = { summary: null };
+
 async function load(period: Period) {
   return { summary: summarizeCircumference(await circumferenceData.listInPeriod(period)) };
 }
@@ -53,7 +55,7 @@ function SiteLines({ site }: { site: SiteSummary }) {
 
 export function CircumferenceSummaryCard({ period }: { period: Period }) {
   const { t } = useTranslation();
-  const loaded = usePeriodSummary(period, load);
+  const loaded = usePeriodSummary(period, load, EMPTY);
   const summary = loaded?.summary;
 
   return (

@@ -153,7 +153,7 @@ describe("today screen timeline", () => {
     fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
     const sheet = await screen.findByRole("dialog", { name: "何を記録しますか？" });
     fireEvent.click(within(sheet).getByRole("button", { name: "体調" }));
-    const dialog = await screen.findByRole("dialog", { name: "記録する" });
+    const dialog = await screen.findByRole("dialog", { name: "体調を記録" });
     fireEvent.click(within(within(dialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "1" }));
     fireEvent.click(within(within(dialog).getByRole("group", { name: "こころ" })).getByRole("button", { name: "1" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));

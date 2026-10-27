@@ -23,20 +23,32 @@ export function SummaryEmpty() {
 
 type Loaded<T> = { key: string; value: T } | null;
 
-/** Runs `load` whenever the period changes; undefined while loading. */
-export function usePeriodSummary<T>(period: Period, load: (period: Period) => Promise<T>): T | undefined {
+/**
+ * Runs `load` whenever the period changes; undefined while loading. If `load` rejects, the
+ * error is logged and `fallback` (the "nothing recorded" value) is returned instead.
+ */
+export function usePeriodSummary<T>(
+  period: Period,
+  load: (period: Period) => Promise<T>,
+  fallback: T,
+): T | undefined {
   const key = `${period.start}|${period.end}`;
   const [loaded, setLoaded] = useState<Loaded<T>>(null);
 
   useEffect(() => {
     let cancelled = false;
-    void load({ start: period.start, end: period.end }).then((value) => {
-      if (!cancelled) setLoaded({ key, value });
-    });
+    load({ start: period.start, end: period.end })
+      .catch((error: unknown) => {
+        console.error("Failed to load period summary", error);
+        return fallback;
+      })
+      .then((value) => {
+        if (!cancelled) setLoaded({ key, value });
+      });
     return () => {
       cancelled = true;
     };
-    // `load` is a stable module-level function in every caller.
+    // `load` and `fallback` are stable module-level values in every caller.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 

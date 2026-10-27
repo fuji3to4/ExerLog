@@ -70,7 +70,7 @@ describe("ModuleRecordDialog", () => {
     renderDialog("wellness");
 
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("heading", { name: "記録する" })).toBeTruthy();
+    expect(within(dialog).getByRole("heading", { name: "体調を記録" })).toBeTruthy();
     expect(within(dialog).queryByRole("tablist")).toBeNull();
     expect(within(dialog).getByRole("group", { name: "からだ" })).toBeTruthy();
     expect(within(dialog).queryByLabelText("体重")).toBeNull();
@@ -213,7 +213,7 @@ describe("ModuleRecordDialog", () => {
     const { onSaved } = renderDialog("body", { record });
 
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("heading", { name: "身体の記録を修正" })).toBeTruthy();
+    expect(within(dialog).getByRole("heading", { name: "身体の記録を編集" })).toBeTruthy();
     expect(within(dialog).queryByLabelText("手首 左")).toBeNull();
     expect(input("体重").value).toBe("61");
     fireEvent.change(input("体重"), { target: { value: "62" } });
@@ -426,7 +426,7 @@ describe("ModuleRecordDialog", () => {
       window.localStorage.setItem("exerlog-circumference-limb", "arm");
       renderDialog("circumference", { record });
       const dialog = await screen.findByRole("dialog");
-      expect(within(dialog).getByRole("heading", { name: "周径の記録を修正" })).toBeTruthy();
+      expect(within(dialog).getByRole("heading", { name: "周径の記録を編集" })).toBeTruthy();
       expect(within(dialog).queryByLabelText("体重")).toBeNull();
       expect((await screen.findByRole("tab", { name: "脚" })).getAttribute("aria-selected")).toBe("true");
       expect(input("足首 左").value).toBe("21");

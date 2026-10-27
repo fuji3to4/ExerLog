@@ -8,6 +8,8 @@ import type { Period } from "../period";
 import { bodyData, bodyRepository } from "./data";
 import { summarizeBody, type FirstLast } from "./summary";
 
+const EMPTY = { summary: null };
+
 async function load(period: Period) {
   const records = await bodyData.listInPeriod(period);
   const lastWeight = records.filter((record) => "weight" in record.values).at(-1);
@@ -40,7 +42,7 @@ function MetricLines({ itemId, stats }: { itemId: "weight" | "bodyFat"; stats: F
 
 export function BodySummaryCard({ period }: { period: Period }) {
   const { t } = useTranslation();
-  const loaded = usePeriodSummary(period, load);
+  const loaded = usePeriodSummary(period, load, EMPTY);
   const summary = loaded?.summary;
 
   return (

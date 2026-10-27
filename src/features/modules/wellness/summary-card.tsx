@@ -6,13 +6,15 @@ import type { Period } from "../period";
 import { wellnessData } from "./data";
 import { summarizeWellness } from "./summary";
 
+const EMPTY = { summary: null };
+
 async function load(period: Period) {
   return { summary: summarizeWellness(await wellnessData.listInPeriod(period)) };
 }
 
 export function WellnessSummaryCard({ period }: { period: Period }) {
   const { t } = useTranslation();
-  const loaded = usePeriodSummary(period, load);
+  const loaded = usePeriodSummary(period, load, EMPTY);
   const summary = loaded?.summary;
 
   return (

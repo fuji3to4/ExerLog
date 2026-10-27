@@ -280,7 +280,7 @@ describe("globals.css warm theme contract", () => {
       "2px solid var(--focus-ring)",
     );
     expectDeclaration(
-      getCssBlock(globalsCss, "#metric-selector:focus", {
+      getCssBlock(globalsCss, ".metric-selector:focus", {
         matches: (block) => block.includes("outline:"),
       }),
       "outline",

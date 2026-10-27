@@ -1,3 +1,9 @@
+// Adding a record module requires:
+//  1. a folder src/features/modules/<id>/ with data.ts (RecordModuleData) and module.tsx (RecordModule);
+//  2. one line in data-registry.ts;
+//  3. one line in registry.ts (this file);
+//  4. its Dexie table in app-db.ts (new version);
+//  5. `module_<id>_*` and `sync_tab_<Tab>` i18n keys in ja.ts and en.ts.
 import { bodyModule } from "./body/module";
 import { circumferenceModule } from "./circumference/module";
 import type { RecordModule } from "./types";

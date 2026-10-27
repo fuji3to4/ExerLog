@@ -32,7 +32,7 @@ export function ModuleRecordDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent aria-describedby={undefined} className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t(record ? module.editTitleKey : "record_add_title")}</DialogTitle>
+          <DialogTitle>{record ? t(module.editTitleKey) : t("record_add_module_title", { module: t(module.labelKey) })}</DialogTitle>
         </DialogHeader>
         {/* Content is mounted only while open, so the form state starts fresh on every open. */}
         <Form

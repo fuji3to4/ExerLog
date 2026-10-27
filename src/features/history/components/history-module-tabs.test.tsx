@@ -43,6 +43,30 @@ describe("HistoryModuleTabs", () => {
     expect(screen.queryByText("まとめの中身")).toBeNull();
   });
 
+  it("moves selection and focus with arrow keys, Home and End", async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(
+      <HistoryModuleTabs modules={[wellness, body, circumference]} includeAll allContent={<p>まとめの中身</p>} />,
+      { initialLanguage: "ja" },
+    );
+    const tab = (name: string) => screen.getByRole("tab", { name });
+    tab("すべて").focus();
+    await user.keyboard("{ArrowRight}");
+    expect(tab("体調")).toHaveAttribute("aria-selected", "true");
+    expect(tab("体調")).toHaveFocus();
+    expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", tab("体調").id);
+    await user.keyboard("{End}");
+    expect(tab("周径")).toHaveAttribute("aria-selected", "true");
+    expect(tab("周径")).toHaveFocus();
+    await user.keyboard("{ArrowRight}");
+    expect(tab("すべて")).toHaveFocus();
+    await user.keyboard("{ArrowLeft}");
+    expect(tab("周径")).toHaveFocus();
+    await user.keyboard("{Home}");
+    expect(tab("すべて")).toHaveAttribute("aria-selected", "true");
+    expect(tab("すべて")).toHaveFocus();
+  });
+
   it("falls back to すべて when the selected module is removed", async () => {
     const user = userEvent.setup();
     const { rerender } = renderWithLanguage(

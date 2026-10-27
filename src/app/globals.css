@@ -965,7 +965,7 @@ a {
 /* ── Self-care and history styling ───────────────────────────────────── */
 
 /* Metric selector dropdown */
-#metric-selector {
+.metric-selector {
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-soft);
   border-radius: 0.9rem;
@@ -977,12 +977,12 @@ a {
   transition: all 0.2s;
 }
 
-#metric-selector:hover {
+.metric-selector:hover {
   border-color: var(--accent-strong);
   background: var(--surface-soft);
 }
 
-#metric-selector:focus {
+.metric-selector:focus {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }

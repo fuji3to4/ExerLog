@@ -38,7 +38,7 @@ async function chooseModule(label: string) {
   fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
   const sheet = await screen.findByRole("dialog", { name: "何を記録しますか？" });
   fireEvent.click(within(sheet).getByRole("button", { name: label }));
-  return screen.findByRole("dialog", { name: "記録する" });
+  return screen.findByRole("dialog", { name: `${label}を記録` });
 }
 
 async function waitForDialogToClose() {
@@ -152,7 +152,7 @@ describe("TimelineSection", () => {
     expect(onChanged).toHaveBeenCalledTimes(1);
 
     fireEvent.click(row);
-    const editDialog = await screen.findByRole("dialog", { name: "身体の記録を修正" });
+    const editDialog = await screen.findByRole("dialog", { name: "身体の記録を編集" });
     fireEvent.change(within(editDialog).getByLabelText("体重"), { target: { value: "61" } });
     fireEvent.click(within(editDialog).getByRole("button", { name: "保存" }));
     await waitForDialogToClose();
@@ -215,7 +215,7 @@ describe("TimelineSection", () => {
 
     fireEvent.click(circumferenceRow);
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("heading", { name: "周径の記録を修正" })).toBeTruthy();
+    expect(within(dialog).getByRole("heading", { name: "周径の記録を編集" })).toBeTruthy();
     expect((within(dialog).getByLabelText("手首 左") as HTMLInputElement).value).toBe("15");
     expect(within(dialog).queryByLabelText("体重")).toBeNull();
   });

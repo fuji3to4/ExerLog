@@ -93,6 +93,37 @@ describe("PeriodSummaryDialog", () => {
     await waitFor(() => expect(within(circumference).getByText("記録なし")).toBeTruthy());
   });
 
+  it("shows BMI when the only height record is before the period", async () => {
+    await bodyRepository.add({
+      date: "2026-09-15",
+      recordedAt: "2026-09-15T08:00:00+09:00",
+      values: { height: 160 },
+      note: "",
+    });
+    await bodyRepository.add({
+      date: "2026-10-20",
+      recordedAt: "2026-10-20T08:00:00+09:00",
+      values: { weight: 60.2 },
+      note: "",
+    });
+    renderDialog();
+    expect(await screen.findByText("BMI 23.5")).toBeTruthy();
+  });
+
+  it("includes a record from the final minute of an edited end time", async () => {
+    await addWellnessEntry({
+      date: "2026-10-27",
+      recordedAt: "2026-10-27T10:30:20+09:00",
+      physicalScore: 4,
+      mentalScore: 2,
+      note: "",
+    });
+    renderDialog();
+    fireEvent.change(screen.getByLabelText("終了"), { target: { value: "2026-10-27T10:30" } });
+    const wellness = screen.getByRole("heading", { name: "体調" }).closest("section")!;
+    expect(await within(wellness).findByText("1件")).toBeTruthy();
+  });
+
   it("shows the invalid message and no cards when start is after end", async () => {
     renderDialog();
     fireEvent.change(screen.getByLabelText("開始"), { target: { value: "2026-11-01T09:00" } });
