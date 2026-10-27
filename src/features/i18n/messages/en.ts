@@ -62,7 +62,6 @@ export const en = {
   history_graph_metric_bmi: "BMI",
   history_graph_metric_physical: "Physical condition",
   history_graph_metric_mental: "Mental condition",
-  history_graph_metric_circumference: "Circumference",
   circumference_tooltip_side: "{side} {value} cm (prev. {delta})",
   circumference_tooltip_side_no_previous: "{side} {value} cm",
   circumference_tooltip_difference: "Difference {amount} ({side} larger)",

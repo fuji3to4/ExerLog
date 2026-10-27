@@ -62,7 +62,6 @@
   history_graph_metric_bmi: "BMI",
   history_graph_metric_physical: "からだの調子",
   history_graph_metric_mental: "こころの調子",
-  history_graph_metric_circumference: "周径",
   circumference_tooltip_side: "{side} {value}cm（前回 {delta}）",
   circumference_tooltip_side_no_previous: "{side} {value}cm",
   circumference_tooltip_difference: "左右差 {amount}（{side}が大きい）",

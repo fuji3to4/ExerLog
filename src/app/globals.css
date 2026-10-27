@@ -1056,54 +1056,10 @@ a {
   font-size: 0.95rem;
 }
 
-/* Mode toggle buttons */
-.history-screen__mode-toggle {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.25rem;
-  border-radius: 0.9rem;
-  background: var(--accent-soft);
-}
-
-.history-screen__mode-btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1rem;
-  border: 0;
-  border-radius: 0.75rem;
-  background: transparent;
-  color: var(--text-strong);
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.history-screen__mode-btn:hover {
-  background: hsl(var(--foreground) / 0.04);
-}
-
-.history-screen__mode-btn.is-active {
-  background: var(--surface-elevated);
-  color: var(--text-strong);
-  box-shadow: 0 2px 8px hsl(var(--foreground) / 0.08);
-}
-
 /* Wellness card styling (migrated to primitives) — legacy per-element rules removed. */
 .wellness-card {
   display: grid;
   gap: 0.75rem;
-}
-
-/* Self-care activity log card */
-@media (max-width: 479px) {
-  .history-screen__mode-btn {
-     font-size: 0.85rem;
-     padding: 0.65rem 0.75rem;
-  }
 }
 
 /* Save feedback */
