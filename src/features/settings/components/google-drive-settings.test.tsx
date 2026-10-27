@@ -94,7 +94,7 @@ describe("GoogleDriveSettings", () => {
     test("shows the note under the checkbox", () => {
       renderWithProviders(createMockContext());
       expect(
-        screen.getByText("When off, photos are kept only on this device"),
+        screen.getByText("When off, new photos are saved only on this device"),
       ).toBeInTheDocument();
     });
   });

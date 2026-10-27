@@ -201,7 +201,7 @@ export const en = {
   settings_google_drive_syncing: "Syncing...",
   settings_google_drive_last_synced: "Last synced",
   settings_photo_sync_label: "Sync photos",
-  settings_photo_sync_note: "When off, photos are kept only on this device",
+  settings_photo_sync_note: "When off, new photos are saved only on this device",
 
   // Sync indicator
   sync_indicator_sign_in: "Sign in with Google",
@@ -355,6 +355,7 @@ export const en = {
   photo_unreadable: "Could not be read",
   photo_limit: "Up to 20 photos",
   photo_count: "{count} photos",
+  photo_count_one: "{count} photo",
   photo_loading: "Loading",
   photo_not_uploaded: "Not uploaded yet",
   photo_signed_out: "Sign in to Google to view",
@@ -364,6 +365,7 @@ export const en = {
   photo_viewer_position: "{index} / {total}",
   photo_history_empty: "No records yet",
   photo_viewer_title: "Photo",
+  photo_viewer_close: "Close",
   period_photo_summary: "{count} records, {photos} photos",
   measurement_previous: "Last {value}",
   period_summary_button: "Summarize a period",

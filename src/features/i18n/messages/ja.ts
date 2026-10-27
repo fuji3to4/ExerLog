@@ -201,7 +201,7 @@
   settings_google_drive_syncing: "同期中…",
   settings_google_drive_last_synced: "最終同期",
   settings_photo_sync_label: "写真を同期する",
-  settings_photo_sync_note: "OFFにすると、写真はこの端末の中にだけ保存されます",
+  settings_photo_sync_note: "OFFにすると、これから撮る写真はこの端末の中にだけ保存されます",
 
   // Sync indicator
   sync_indicator_sign_in: "Google でログイン",
@@ -355,6 +355,7 @@
   photo_unreadable: "読み込めませんでした",
   photo_limit: "写真は20枚までです",
   photo_count: "{count}枚",
+  photo_count_one: "{count}枚",
   photo_loading: "読み込み中",
   photo_not_uploaded: "まだアップロードされていません",
   photo_signed_out: "Googleにログインすると表示できます",
@@ -364,6 +365,7 @@
   photo_viewer_position: "{index} / {total}",
   photo_history_empty: "記録がありません",
   photo_viewer_title: "写真",
+  photo_viewer_close: "閉じる",
   period_photo_summary: "{count}件・{photos}枚",
   measurement_previous: "前回 {value}",
   period_summary_button: "期間でまとめる",

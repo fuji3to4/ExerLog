@@ -1,6 +1,6 @@
 import { GOOGLE_NAMES } from "./google-names";
 
-const DRIVE_API ="https://www.googleapis.com/drive/v3";
+const DRIVE_API = "https://www.googleapis.com/drive/v3";
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
 
 export interface SpreadsheetInfo {

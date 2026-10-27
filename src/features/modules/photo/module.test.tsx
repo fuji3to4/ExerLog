@@ -51,6 +51,20 @@ describe("photo history view", () => {
     expect(text.indexOf("新しいメモ")).toBeLessThan(text.indexOf("古いメモ"));
   });
 
+  it("en: reads 1 photo for one photo and n photos otherwise", async () => {
+    await appDb.photoRecords.clear();
+    const base = { date: "2026-10-20", note: "", updatedAt: "2026-10-20T08:00:00+09:00" };
+    await appDb.photoRecords.bulkPut([
+      { ...base, id: "one", recordedAt: "2026-10-20T08:00:00+09:00", photoIds: ["x"] },
+      { ...base, id: "two", recordedAt: "2026-10-21T08:00:00+09:00", photoIds: ["y", "z"] },
+    ]);
+    const { photoModule } = await import("./module");
+    const View = photoModule.HistoryView;
+    renderWithLanguage(<View />, { initialLanguage: "en" });
+    await waitFor(() => expect(screen.getByText(/・2 photos$/)).toBeTruthy());
+    expect(screen.getByText(/・1 photo$/)).toBeTruthy();
+  });
+
   it("shows the empty text without records", async () => {
     await appDb.photoRecords.clear();
     await renderHistory();

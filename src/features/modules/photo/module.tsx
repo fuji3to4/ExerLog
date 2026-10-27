@@ -13,13 +13,18 @@ import { PhotoStrip } from "./photo-strip";
 import { listAllPhotoRecords } from "./repository";
 import { formatRecordedAt, PhotoSummaryCard } from "./summary-card";
 
+/** "1 photo" / "n photos" (ja: n枚). */
+function photoCountMessage(count: number) {
+  return [count === 1 ? "photo_count_one" : "photo_count", { count }] as const;
+}
+
 function PhotoTimelineCard({ record, label }: { record: PhotoRecord; label: TimeLabel | null }) {
   const { t } = useTranslation();
   return (
     <>
       <span className="block">
         {"📷 "}
-        {t("photo_count", { count: record.photoIds.length })}
+        {t(...photoCountMessage(record.photoIds.length))}
         <TimeLabelTag label={label} />
       </span>
       <PhotoStrip record={record} thumbSize={48} maxThumbs={4} interactive={false} />
@@ -58,7 +63,7 @@ function PhotoHistoryView() {
           <p className="text-xs text-muted-foreground">
             {formatRecordedAt(record.recordedAt)}
             {"・"}
-            {t("photo_count", { count: record.photoIds.length })}
+            {t(...photoCountMessage(record.photoIds.length))}
           </p>
           <PhotoStrip record={record} thumbSize={72} />
           {record.note ? <p>{record.note}</p> : null}

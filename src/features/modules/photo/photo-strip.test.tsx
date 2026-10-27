@@ -49,4 +49,18 @@ describe("PhotoViewer", () => {
     fireEvent.click(screen.getByRole("button", { name: "前の写真" }));
     expect(screen.getByText("1 / 3")).toBeTruthy();
   });
+
+  it("has exactly one close button, labelled 閉じる, and clicking it closes the viewer", () => {
+    const onOpenChange = vi.fn();
+    renderWithLanguage(<PhotoViewer record={record} startIndex={0} open onOpenChange={onOpenChange} />, {
+      initialLanguage: "ja",
+    });
+    // The shared dialog close button (also named 閉じる) is hidden; only the viewer's own remains.
+    const closeButtons = screen.getAllByRole("button", { name: "閉じる" });
+    expect(closeButtons).toHaveLength(1);
+    // Only next (startIndex 0) and close.
+    expect(screen.getAllByRole("button")).toHaveLength(2);
+    fireEvent.click(closeButtons[0]);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
 });

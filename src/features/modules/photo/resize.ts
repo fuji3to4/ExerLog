@@ -51,6 +51,9 @@ export async function resizeImage(file: Blob): Promise<NewPhoto> {
     if (!context) {
       throw new Error("Canvas is not available");
     }
+    // JPEG has no alpha: paint white first so transparent areas (PNG) do not turn black.
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
     context.drawImage(decoded.source, 0, 0, width, height);
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.8));
     if (!blob) {
