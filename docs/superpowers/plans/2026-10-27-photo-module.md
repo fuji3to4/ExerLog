@@ -22,8 +22,10 @@
   - `Photos`（写真の記録）：tombstone の `table` も `Photos`。
   - `PhotoFiles`（写真1枚＝1行のドライブ対応表）：tombstone の `table` も `PhotoFiles`。
 - **ドライブ**
-  - 専用フォルダの名前は `記録写真`（アプリ名は入れない。Lymly は仮称）。写真1枚＝1ファイルで、ファイル名は `<photoId>.jpg`、mimeType は `image/jpeg`。
-  - フォルダは名前ではなく目印で探す：作成時に `appProperties: { "recordApp": "photo-folder" }` を付け、`appProperties has { key='recordApp' and value='photo-folder' } and mimeType='application/vnd.google-apps.folder' and trashed=false` で検索する。
+  - 専用フォルダの名前は `ExerLog Photos`。スプレッドシート `ExerLog Data` と同じ命名規則で、Lymly（仮称）は使わない。
+  - 写真1枚＝1ファイル。ファイル名は `<photoId>.jpg`、mimeType は `image/jpeg`。
+  - Google 上の名前は、新しいファイル `src/features/sync/google-names.ts` に集める。名前を変えるときは、ここだけを直せば済むようにする。
+  - フォルダはスプレッドシートと同じく名前で探す。`appProperties` などの見えない目印は使わない。
   - 許可は今の `drive.file` のまま。`SCOPES` は変えない。
 - **縮小**：JPEG、長い辺は最大 1600px（小さい画像は拡大しない）、画質 0.8。
 - **枚数**：1つの記録の写真は1〜20枚。0枚では保存できない。
@@ -159,10 +161,11 @@ src/features/modules/photo/
 **Files:**
 - Modify:
   - `src/features/modules/types.ts`（`syncFiles?` を足す）
+  - `src/features/sync/google-sheets.ts`（名前を `GOOGLE_NAMES.spreadsheet` に）
   - `src/features/sync/sync-engine.ts`
   - `src/features/modules/data-registry.ts`（`photoData` を4番目に）
   - ja/en（`sync_tab_Photos`、`sync_tab_PhotoFiles`、`sync_tab_PhotoDrive`）
-- Create: `photo/sync-config.ts`、`photo/drive.ts`、`photo/photo-sync-setting.ts`、`photo/file-sync.ts`、`photo/csv.ts`、`photo/data.ts`
+- Create: `src/features/sync/google-names.ts`、`photo/sync-config.ts`、`photo/drive.ts`、`photo/photo-sync-setting.ts`、`photo/file-sync.ts`、`photo/csv.ts`、`photo/data.ts`
 - Test: `photo/sync-config.test.ts`、`photo/drive.test.ts`、`photo/file-sync.test.ts`、`photo/photo-sync-setting.test.ts`、`sync-engine.test.ts`（呼び出し順のケースを足す）、`data-registry.test.ts`（4モジュール）
 
 **Interfaces:**
@@ -178,9 +181,10 @@ src/features/modules/photo/
   export function writePhotoSyncEnabled(enabled: boolean): void;
   export function usePhotoSyncEnabled(): [boolean, (enabled: boolean) => void]; // useSyncExternalStore
   // drive.ts
-  export const PHOTO_FOLDER_NAME = "記録写真";
-  export const PHOTO_FOLDER_APP_PROPERTY = { recordApp: "photo-folder" } as const;
-  export function findOrCreatePhotoFolder(accessToken: string): Promise<string>; // appProperties の目印で探し、複数なら createdTime が最古、なければ目印付きで作る。id は localStorage "record-photo-folder-id" に覚え、404 なら探し直す
+  // src/features/sync/google-names.ts（新規。Google 上に見える名前はここだけに置く）
+  export const GOOGLE_NAMES = { spreadsheet: "ExerLog Data", photoFolder: "ExerLog Photos" } as const;
+  //   google-sheets.ts の findSpreadsheet / createSpreadsheet も、直書きの "ExerLog Data" をやめて GOOGLE_NAMES.spreadsheet を使う
+  export function findOrCreatePhotoFolder(accessToken: string): Promise<string>; // GOOGLE_NAMES.photoFolder の名前・フォルダ型・ゴミ箱以外で探し、複数なら createdTime が最古、なければ作る。id は localStorage "photo-folder-id" に覚え、404 なら探し直す
   export function uploadPhoto(accessToken: string, folderId: string, photoId: string, blob: Blob): Promise<string>; // multipart upload → fileId
   export function downloadPhoto(accessToken: string, driveFileId: string): Promise<Blob>; // alt=media
   export function trashDriveFile(accessToken: string, driveFileId: string): Promise<"ok" | "failed">; // 404 は "ok"
@@ -206,8 +210,10 @@ src/features/modules/photo/
   it("round-trips a photo record with photoIds as a JSON array cell");
   it("reads an empty or malformed photoIds cell as []");
   // drive.test.ts（fetch を vi.fn で差し替え、URL・メソッド・本文を確かめる）
-  it("finds the oldest folder by the appProperties marker (not by name) and remembers its id");
-  it("creates the folder named 記録写真 with the appProperties marker");
+  it("finds the oldest folder named GOOGLE_NAMES.photoFolder and remembers its id");
+  it("creates a folder named 'ExerLog Photos' when none exists (no appProperties)");
+  // google-sheets.test.ts
+  it("findSpreadsheet / createSpreadsheet use GOOGLE_NAMES.spreadsheet");
   it("uploads multipart with name '<photoId>.jpg', mimeType image/jpeg, parents [folderId]");
   it("trashes with PATCH {trashed:true}; 404 counts as ok; 500 is failed");
   // file-sync.test.ts（drive.ts を vi.mock）
