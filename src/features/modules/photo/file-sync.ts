@@ -27,13 +27,15 @@ async function isTombstoned(photoId: string, recordId: string): Promise<boolean>
 }
 
 /**
- * Drops local photo data that is deleted or no record refers to any more:
- * - blobs and file rows of tombstoned photos or records; a tombstoned file row's
- *   Drive file is queued for the trash, so a file uploaded before the deletion
- *   arrived is still trashed by whichever device sees it;
- * - blobs and file rows of records that are gone (removed by the tombstone merge);
- * - blobs a record no longer lists (removed in an edit on another device),
- * so none of them is ever uploaded again.
+ * Tidies local photo data before uploading:
+ * - blobs and file rows of tombstoned photos or records are dropped; a tombstoned
+ *   file row's Drive file is queued for the trash, so a file uploaded before the
+ *   deletion arrived is still trashed by whichever device sees it;
+ * - blobs and file rows of records that are gone (removed by the tombstone merge)
+ *   are dropped;
+ * - a blob or file row (not tombstoned) whose record exists but does not list it
+ *   is re-attached: its id is appended to the record's photoIds (updatedAt bumped).
+ *   A photo is only ever removed through a tombstone, so it is never lost here.
  */
 async function cleanUpOrphans(): Promise<void> {
   await appDb.transaction(
@@ -44,11 +46,21 @@ async function cleanUpOrphans(): Promise<void> {
       const photoIdsByRecord = new Map(records.map((r) => [r.id, new Set(r.photoIds)]));
       const blobs = await appDb.photoBlobs.toArray();
       const files = await appDb.photoFiles.toArray();
+      /** recordId → photo ids to append, in the order found. */
+      const reattach = new Map<string, string[]>();
+      const keepOrReattach = (photoId: string, recordId: string) => {
+        const listed = photoIdsByRecord.get(recordId)!;
+        if (listed.has(photoId)) return;
+        listed.add(photoId);
+        reattach.set(recordId, [...(reattach.get(recordId) ?? []), photoId]);
+      };
 
       const staleBlobIds: string[] = [];
       for (const b of blobs) {
-        if (!photoIdsByRecord.get(b.recordId)?.has(b.id) || (await isTombstoned(b.id, b.recordId))) {
+        if ((await isTombstoned(b.id, b.recordId)) || !photoIdsByRecord.has(b.recordId)) {
           staleBlobIds.push(b.id);
+        } else {
+          keepOrReattach(b.id, b.recordId);
         }
       }
       const staleFileIds: string[] = [];
@@ -59,10 +71,18 @@ async function cleanUpOrphans(): Promise<void> {
           if (f.driveFileId) await appDb.photoTrash.put({ driveFileId: f.driveFileId, queuedAt });
         } else if (!photoIdsByRecord.has(f.recordId)) {
           staleFileIds.push(f.id);
+        } else {
+          keepOrReattach(f.id, f.recordId);
         }
       }
       await appDb.photoBlobs.bulkDelete(staleBlobIds);
       await appDb.photoFiles.bulkDelete(staleFileIds);
+
+      const updatedAt = localIsoNow();
+      for (const record of records) {
+        const added = reattach.get(record.id);
+        if (added) await appDb.photoRecords.put({ ...record, photoIds: [...record.photoIds, ...added], updatedAt });
+      }
     },
   );
 }

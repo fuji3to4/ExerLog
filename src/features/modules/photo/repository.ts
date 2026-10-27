@@ -77,31 +77,41 @@ export async function addPhotoRecord(input: {
   return record;
 }
 
-/** Updates a record. keepPhotoIds are the existing photos to keep (in order); added go last. */
+/**
+ * Updates a record from an edit form opened on `record`. The stored record is re-read
+ * inside the transaction: only photos the form knew (`record.photoIds`) and dropped
+ * from keepPhotoIds are removed (tombstoned). Photos added to the stored record since
+ * the form opened (e.g. by a sync) are kept, after the kept ones; added go last.
+ */
 export async function updatePhotoRecord(
   record: PhotoRecord,
   change: { note: string; recordedAt: string; keepPhotoIds: string[]; added: NewPhoto[] },
 ): Promise<PhotoRecord> {
-  const existing = new Set(record.photoIds);
-  const keep = [...new Set(change.keepPhotoIds)].filter((photoId) => existing.has(photoId));
-  assertPhotoCount(keep.length + change.added.length);
-  const kept = new Set(keep);
-  const removed = record.photoIds.filter((photoId) => !kept.has(photoId));
   const addedRows = toBlobRows(record.id, change.added);
-  const updated: PhotoRecord = {
-    ...record,
-    note: change.note.trim(),
-    recordedAt: change.recordedAt,
-    photoIds: [...keep, ...addedRows.map((row) => row.id)],
-    updatedAt: localIsoNow(),
-  };
-  await appDb.transaction(
+  const updated = await appDb.transaction(
     "rw",
     [appDb.photoRecords, appDb.photoBlobs, appDb.photoFiles, appDb.photoTrash, appDb.tombstones],
     async () => {
+      const stored = await appDb.photoRecords.get(record.id);
+      if (!stored) throw new Error(`Photo record ${record.id} no longer exists.`);
+      const current = new Set(stored.photoIds);
+      const known = new Set(record.photoIds);
+      const keep = [...new Set(change.keepPhotoIds)].filter((photoId) => current.has(photoId));
+      const kept = new Set(keep);
+      const unknownToForm = stored.photoIds.filter((photoId) => !known.has(photoId) && !kept.has(photoId));
+      const removed = stored.photoIds.filter((photoId) => known.has(photoId) && !kept.has(photoId));
+      assertPhotoCount(keep.length + unknownToForm.length + addedRows.length);
+      const next: PhotoRecord = {
+        ...stored,
+        note: change.note.trim(),
+        recordedAt: change.recordedAt,
+        photoIds: [...keep, ...unknownToForm, ...addedRows.map((row) => row.id)],
+        updatedAt: localIsoNow(),
+      };
       await discardPhotos(removed);
       await appDb.photoBlobs.bulkAdd(addedRows);
-      await appDb.photoRecords.put(updated);
+      await appDb.photoRecords.put(next);
+      return next;
     },
   );
   scheduleSync();

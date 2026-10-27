@@ -1,5 +1,6 @@
 import type { PhotoFile, PhotoRecord } from "@/lib/types";
 
+import { localIsoNow } from "@/lib/date/local-iso";
 import { appDb } from "@/features/storage/app-db";
 import type { TableSyncConfig } from "@/features/sync/sync-config";
 import { cell, replaceTable } from "@/features/sync/sync-helpers";
@@ -49,4 +50,16 @@ export const photoFilesSyncConfig: TableSyncConfig = {
   }),
   readFromDb: () => appDb.photoFiles.toArray(),
   replaceDb: (records) => replaceTable(appDb.photoFiles, records as PhotoFile[]),
+  /**
+   * Rows of deleted photos this device never held: the device that deleted them may
+   * not have known their Drive file, so queue each file for the trash here.
+   */
+  onTombstonedRemote: async (records) => {
+    const queuedAt = localIsoNow();
+    await appDb.photoTrash.bulkPut(
+      (records as PhotoFile[])
+        .filter((file) => file.driveFileId)
+        .map((file) => ({ driveFileId: file.driveFileId, queuedAt })),
+    );
+  },
 };

@@ -156,4 +156,47 @@ describe("photo repository", () => {
     await storeFetchedBlob("other", record.id, new Blob(["z"]));
     expect(await getPhotoBlob("other")).toBeUndefined();
   });
+
+  it("update keeps photos added to the stored record after the form opened, after the kept ones", async () => {
+    const opened = await addPhotoRecord({ date: "2026-10-20", note: "", photos: [photo(), photo()] });
+    const [a, b] = opened.photoIds;
+    // A sync appended p-new to the stored record while the form was open.
+    await appDb.photoRecords.put({ ...opened, photoIds: [a, b, "p-new"] });
+    await appDb.photoBlobs.put({ id: "p-new", recordId: opened.id, blob: new Blob(["n"]), width: 1, height: 1 });
+
+    const updated = await updatePhotoRecord(opened, {
+      note: "",
+      recordedAt: opened.recordedAt,
+      keepPhotoIds: [b],
+      added: [photo("added")],
+    });
+
+    expect(updated.photoIds.slice(0, 2)).toEqual([b, "p-new"]);
+    expect(updated.photoIds).toHaveLength(3);
+    expect((await appDb.photoRecords.get(opened.id))?.photoIds).toEqual(updated.photoIds);
+    expect(await getPhotoBlob("p-new")).toBeDefined();
+    expect(await appDb.tombstones.get("PhotoFiles:p-new")).toBeUndefined();
+    // Only the photo the form knew and dropped is removed.
+    expect(await getPhotoBlob(a)).toBeUndefined();
+    expect(await appDb.tombstones.get(`PhotoFiles:${a}`)).toBeDefined();
+  });
+
+  it("update does not re-add a kept photo that was removed from the stored record meanwhile", async () => {
+    const opened = await addPhotoRecord({ date: "2026-10-20", note: "", photos: [photo(), photo()] });
+    const [a, b] = opened.photoIds;
+    await appDb.photoRecords.put({ ...opened, photoIds: [a] });
+
+    const updated = await updatePhotoRecord(opened, { note: "", recordedAt: opened.recordedAt, keepPhotoIds: [a, b], added: [] });
+
+    expect(updated.photoIds).toEqual([a]);
+  });
+
+  it("update rejects when the stored record is gone", async () => {
+    const opened = await addPhotoRecord({ date: "2026-10-20", note: "", photos: [photo()] });
+    await appDb.photoRecords.delete(opened.id);
+    await expect(
+      updatePhotoRecord(opened, { note: "", recordedAt: opened.recordedAt, keepPhotoIds: opened.photoIds, added: [photo()] }),
+    ).rejects.toThrow();
+    expect(await appDb.photoBlobs.count()).toBe(1);
+  });
 });

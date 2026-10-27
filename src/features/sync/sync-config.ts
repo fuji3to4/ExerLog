@@ -42,6 +42,13 @@ export interface TableSyncConfig {
    * (no repositories) so syncing never records tombstones or schedules a sync.
    */
   replaceDb: (records: any[]) => Promise<void>;
+  /**
+   * Optional. Called inside the merge transaction with the remote rows the merge
+   * dropped because of a tombstone (rows this device may never have held), e.g.
+   * so their external resources can still be cleaned up. Writes only to tables in
+   * `syncedDbTables()`.
+   */
+  onTombstonedRemote?: (records: any[]) => Promise<void>;
 }
 
 /** Every Dexie table touched by sync; the merge transaction is opened over these. */

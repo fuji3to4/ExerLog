@@ -173,15 +173,20 @@ async function syncTable(
 
     const stored = await appDb.transaction("rw", syncedDbTables(), async () => {
       const local = await config.readFromDb();
+      const tombstoned = config.deletable
+        ? withLocalTombstones(deletedIds, await localDeletedIds(config.tabName))
+        : deletedIds;
       const merged = mergeRecords({
         local,
         remote,
         keyColumn: config.keyColumn,
         updatedAtKey: config.updatedAtKey,
-        deletedIds: config.deletable
-          ? withLocalTombstones(deletedIds, await localDeletedIds(config.tabName))
-          : deletedIds,
+        deletedIds: tombstoned,
       });
+      if (config.onTombstonedRemote) {
+        const droppedRemote = droppedByTombstone(config, remote, merged, tombstoned);
+        if (droppedRemote.length > 0) await config.onTombstonedRemote(droppedRemote);
+      }
       await config.replaceDb(merged);
       return config.readFromDb();
     });
@@ -200,6 +205,20 @@ async function syncTable(
   }
 
   return result;
+}
+
+/** Remote rows whose key is tombstoned and that the merge left out. */
+function droppedByTombstone(
+  config: TableSyncConfig,
+  remote: any[],
+  merged: any[],
+  tombstoned: Map<string, string>,
+): any[] {
+  const kept = new Set(merged.map((record) => String(record[config.keyColumn])));
+  return remote.filter((record) => {
+    const key = String(record[config.keyColumn]);
+    return tombstoned.has(key) && !kept.has(key);
+  });
 }
 
 function isByName(config: TableSyncConfig): boolean {

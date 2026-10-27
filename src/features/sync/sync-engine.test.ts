@@ -470,6 +470,48 @@ describe("syncAll", () => {
     expect(syncFiles).not.toHaveBeenCalled();
   });
 
+  test("a remote PhotoFiles row dropped by a local tombstone queues its Drive file for the trash; the next sync trashes it", async () => {
+    // This device deleted p1 before its PhotoFiles row arrived, so it never knew d1.
+    await appDb.tombstones.put({
+      id: "PhotoFiles:p1",
+      table: "PhotoFiles",
+      recordId: "p1",
+      deletedAt: "2026-10-21T09:00:00+09:00",
+    });
+    const header = ["id", "recordId", "driveFileId", "updatedAt"];
+    sheets.tabs.set("PhotoFiles", [
+      header,
+      ["p1", "r1", "d1", "2026-10-20T09:00:00+09:00"],
+      ["p2", "r1", "d2", "2026-10-20T09:00:00+09:00"],
+    ]);
+
+    const first = await syncAll(TOKEN);
+
+    expect(first.success).toBe(true);
+    expect((await appDb.photoTrash.toArray()).map((t) => t.driveFileId)).toEqual(["d1"]);
+    expect(sheets.tabs.get("PhotoFiles")).toEqual([header, ["p2", "r1", "d2", "2026-10-20T09:00:00+09:00"]]);
+
+    await syncAll(TOKEN);
+
+    expect(sheets.calls.some((c) => c.method === "PATCH" && c.url.endsWith("/files/d1"))).toBe(true);
+    expect(await appDb.photoTrash.count()).toBe(0);
+  });
+
+  test("a tombstone-dropped remote row of a tab without onTombstonedRemote has no side effect on the trash queue", async () => {
+    await appDb.tombstones.put({
+      id: "ExerciseLogs:log-1",
+      table: "ExerciseLogs",
+      recordId: "log-1",
+      deletedAt: "2026-10-21T09:00:00+09:00",
+    });
+    sheets.tabs.set("ExerciseLogs", [EXERCISE_LOG_HEADERS, logRow(makeLog())]);
+
+    await syncAll(TOKEN);
+
+    expect(await appDb.photoTrash.count()).toBe(0);
+    expect(sheets.tabs.get("ExerciseLogs")).toEqual([EXERCISE_LOG_HEADERS]);
+  });
+
   test("creates the spreadsheet with every tab when none exists", async () => {
     sheets.spreadsheetExists = false;
     sheets.tabs.clear();
