@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
-/** A module with file sync, appended to the real registry only while a test sets it. */
+/** A stub file-sync module that replaces the real one (photo) in the registry only while a test sets it. */
 const fileSyncModule = vi.hoisted(() => ({ current: null as null | Record<string, unknown> }));
 vi.mock("@/features/modules/data-registry", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/modules/data-registry")>();
@@ -10,7 +10,7 @@ vi.mock("@/features/modules/data-registry", async (importOriginal) => {
     ...actual,
     recordModuleData: () =>
       fileSyncModule.current
-        ? [...actual.recordModuleData(), fileSyncModule.current]
+        ? [...actual.recordModuleData().map(({ syncFiles: _real, ...rest }) => rest), fileSyncModule.current]
         : actual.recordModuleData(),
   };
 });
@@ -396,7 +396,7 @@ describe("syncAll", () => {
     expect(result.success).toBe(true);
     expect(result.spreadsheetId).toBe(SPREADSHEET_ID);
     expect(progress[0]).toBe("Tombstones");
-    expect([...progress].sort()).toEqual([...sheetTabs()].sort());
+    expect([...progress].sort()).toEqual([...sheetTabs(), "PhotoDrive"].sort());
     expect(result.results.find((r) => r.tableName === "ExerciseLogs")).toEqual({
       tableName: "ExerciseLogs",
       rowCount: 1,
