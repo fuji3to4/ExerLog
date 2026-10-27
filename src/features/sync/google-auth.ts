@@ -72,8 +72,56 @@ export async function initTokenClient(): Promise<google.accounts.oauth2.TokenCli
     client_id: GOOGLE_CLIENT_ID,
     scope: SCOPES,
     callback: () => {}, // Callback is set per-request via requestAccessToken
+    // Non-OAuth failures (popup blocked or closed, …) never reach `callback`.
+    error_callback: (error) =>
+      pendingRequest?.settle({ kind: "error", message: error.message || error.type || "unknown" }),
   });
   return tokenClient;
+}
+
+/** How one GIS token request ended. */
+type TokenOutcome =
+  | { kind: "response"; response: google.accounts.oauth2.TokenResponse }
+  | { kind: "error"; message: string }
+  /** Another request replaced this one (GIS has a single callback per client). */
+  | { kind: "superseded" }
+  | { kind: "timeout" };
+
+/** The GIS request currently waiting for its callback, if any. */
+let pendingRequest: { purpose: "signIn" | "refresh"; settle: (outcome: TokenOutcome) => void } | null = null;
+
+/** A silent refresh whose callback has not come back by then resolves to null. */
+export const SILENT_REFRESH_TIMEOUT_MS = 20_000;
+
+/**
+ * Runs one GIS token request and resolves with how it ended; never hangs when
+ * `timeoutMs` is given. A request still pending is settled as "superseded" first.
+ */
+function requestToken(
+  client: google.accounts.oauth2.TokenClient,
+  purpose: "signIn" | "refresh",
+  overrides?: { prompt?: string; hint?: string },
+  timeoutMs?: number,
+): Promise<TokenOutcome> {
+  pendingRequest?.settle({ kind: "superseded" });
+  return new Promise<TokenOutcome>((resolve) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const request = {
+      purpose,
+      settle: (outcome: TokenOutcome) => {
+        if (pendingRequest !== request) return;
+        pendingRequest = null;
+        clearTimeout(timer);
+        resolve(outcome);
+      },
+    };
+    pendingRequest = request;
+    client.callback = (response) => request.settle({ kind: "response", response });
+    if (timeoutMs !== undefined) {
+      timer = setTimeout(() => request.settle({ kind: "timeout" }), timeoutMs);
+    }
+    client.requestAccessToken(overrides);
+  });
 }
 
 /**
@@ -96,18 +144,16 @@ async function fetchUserEmail(accessToken: string): Promise<string> {
 /** Open sign-in popup. Returns the token on success. */
 export async function requestSignIn(): Promise<GoogleToken> {
   const client = await initTokenClient();
-  const token = await new Promise<GoogleToken>((resolve, reject) => {
-    client.callback = async (response) => {
-      if (response.error) {
-        reject(new Error(response.error));
-        return;
-      }
-      const parsed = parseTokenFromResponse(response, "");
-      await storeToken(parsed);
-      resolve(parsed);
-    };
-    client.requestAccessToken();
-  });
+  // Settles an in-flight silent refresh (as superseded → null) so it never hangs.
+  const outcome = await requestToken(client, "signIn");
+  if (outcome.kind !== "response") {
+    throw new Error(outcome.kind === "error" ? outcome.message : `Sign-in ${outcome.kind}`);
+  }
+  if (outcome.response.error) {
+    throw new Error(outcome.response.error);
+  }
+  const token = parseTokenFromResponse(outcome.response, "");
+  await storeToken(token);
   // Fetch the user's email now that we have a token (best-effort)
   const email = await fetchUserEmail(token.accessToken);
   const withEmail: GoogleToken = { ...token, email };
@@ -143,22 +189,25 @@ async function doSilentRefresh(): Promise<GoogleToken | null> {
     return stored;
   }
 
+  // A sign-in popup is open: don't take over its callback; the sign-in stores a new token.
+  if (pendingRequest?.purpose === "signIn") return null;
+
   // Try silent refresh via GIS
   try {
     const client = await initTokenClient();
-    const refreshed = await new Promise<GoogleToken>((resolve, reject) => {
-      client.callback = async (response) => {
-        if (response.error) {
-          reject(new Error(response.error));
-          return;
-        }
-        const parsed = parseTokenFromResponse(response, stored.email);
-        await storeToken(parsed);
-        resolve(parsed);
-      };
-      client.requestAccessToken({ prompt: "none", hint: stored.email });
-    });
-    return refreshed;
+    const outcome = await requestToken(
+      client,
+      "refresh",
+      { prompt: "none", hint: stored.email },
+      SILENT_REFRESH_TIMEOUT_MS,
+    );
+    // No answer, a popup failure or a sign-in taking over: give up for now but keep
+    // the stored token, so a later call can try again.
+    if (outcome.kind !== "response") return null;
+    if (outcome.response.error) throw new Error(outcome.response.error);
+    const parsed = parseTokenFromResponse(outcome.response, stored.email);
+    await storeToken(parsed);
+    return parsed;
   } catch {
     await clearToken();
     return null;
