@@ -4,7 +4,8 @@ import { beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
-import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
+// The tracked default catalog, not the generated one: the generated file depends on the local public/exercises.csv.
+import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
 import { appDb } from "@/features/storage/app-db";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { bodyRepository } from "@/features/modules/body/data";
