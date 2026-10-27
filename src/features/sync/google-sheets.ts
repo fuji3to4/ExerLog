@@ -1,16 +1,19 @@
-const DRIVE_API = "https://www.googleapis.com/drive/v3";
+import { GOOGLE_NAMES } from "./google-names";
+
+const DRIVE_API ="https://www.googleapis.com/drive/v3";
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
 
 export interface SpreadsheetInfo {
   spreadsheetId: string;
 }
 
-/** Search Drive for a file named "ExerLog Data". Returns first match or null. */
+/** Search Drive for the spreadsheet named GOOGLE_NAMES.spreadsheet. Returns first match or null. */
 export async function findSpreadsheet(
   accessToken: string,
 ): Promise<SpreadsheetInfo | null> {
   try {
-    const url = `${DRIVE_API}/files?q=name%3D%27ExerLog%20Data%27%20and%20mimeType%3D%27application%2Fvnd.google-apps.spreadsheet%27%20and%20trashed%3Dfalse&orderBy=modifiedTime%20desc&pageSize=1&fields=files(id%2Cname)`;
+    const q = `name='${GOOGLE_NAMES.spreadsheet}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`;
+    const url = `${DRIVE_API}/files?q=${encodeURIComponent(q)}&orderBy=modifiedTime%20desc&pageSize=1&fields=files(id%2Cname)`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -34,7 +37,7 @@ export async function createSpreadsheet(
 ): Promise<SpreadsheetInfo | null> {
   try {
     const body = {
-      properties: { title: "ExerLog Data" },
+      properties: { title: GOOGLE_NAMES.spreadsheet },
       sheets: tabs.map((title) => ({ properties: { title } })),
     };
     const res = await fetch(`${SHEETS_API}`, {

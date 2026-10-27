@@ -6,6 +6,7 @@ import {
   readAllRows,
   replaceAllRows,
 } from "./google-sheets";
+import { GOOGLE_NAMES } from "./google-names";
 
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch;
@@ -69,6 +70,21 @@ describe("createSpreadsheet", () => {
     expect(result!.spreadsheetId).toBe("new123");
     const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(callBody.sheets.map((s: any) => s.properties.title)).toEqual(["A", "B"]);
+  });
+});
+
+describe("Google-visible names", () => {
+  test("findSpreadsheet / createSpreadsheet use GOOGLE_NAMES.spreadsheet", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ files: [] }) });
+    await findSpreadsheet(FAKE_TOKEN);
+    const q = new URL(mockFetch.mock.calls[0][0]).searchParams.get("q");
+    expect(q).toBe(
+      `name='${GOOGLE_NAMES.spreadsheet}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`,
+    );
+
+    mockFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ spreadsheetId: "s" }) });
+    await createSpreadsheet(FAKE_TOKEN, ["A"]);
+    expect(JSON.parse(mockFetch.mock.calls[1][1].body).properties.title).toBe(GOOGLE_NAMES.spreadsheet);
   });
 });
 

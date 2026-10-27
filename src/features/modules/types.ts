@@ -4,6 +4,7 @@ import type { ComponentType } from "react";
 
 import type { Messages } from "@/features/i18n/messages";
 import type { TableSyncConfig } from "@/features/sync/sync-config";
+import type { SyncTableResult } from "@/features/sync/sync-engine";
 import type { WellnessLabel } from "@/features/timeline/build-timeline";
 import type { Period } from "./period";
 
@@ -28,6 +29,8 @@ export type RecordModuleData<R extends ModuleRecord = ModuleRecord> = {
   clearAll(): Promise<void>;
   count(): Promise<number>;
   csv: { fileName: string; exportLabelKey: keyof Messages; generate(): Promise<string> };
+  /** 表の同期とは別のファイル同期。Tombstones のマージ直後、ほかのタブより前に呼ばれる。 */
+  syncFiles?(accessToken: string): Promise<SyncTableResult>;
 };
 
 /** Props of a module's form. The form is mounted only while its dialog is open. */

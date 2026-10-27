@@ -1,5 +1,6 @@
 import type { Tombstone } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
+import { recordModuleData } from "@/features/modules/data-registry";
 import {
   createSpreadsheet,
   ensureSheetTabs,
@@ -65,6 +66,23 @@ async function doSyncAll(
   if (results[0].error) {
     // Without the merged tombstones, other tabs could pull deleted records back.
     return { success: false, results, spreadsheetId };
+  }
+
+  // File sync (e.g. photos on Drive) sees the merged tombstones, before the other tabs.
+  for (const moduleData of recordModuleData()) {
+    if (!moduleData.syncFiles) continue;
+    let result: SyncTableResult;
+    try {
+      result = await moduleData.syncFiles(accessToken);
+    } catch (err) {
+      result = {
+        tableName: moduleData.id,
+        rowCount: 0,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+    results.push(result);
+    onProgress(result);
   }
 
   const deletedIdsByTab = groupDeletedIds(await appDb.tombstones.toArray());

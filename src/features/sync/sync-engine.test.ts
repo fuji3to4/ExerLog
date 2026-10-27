@@ -2,6 +2,19 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
+/** A module with file sync, appended to the real registry only while a test sets it. */
+const fileSyncModule = vi.hoisted(() => ({ current: null as null | Record<string, unknown> }));
+vi.mock("@/features/modules/data-registry", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/modules/data-registry")>();
+  return {
+    ...actual,
+    recordModuleData: () =>
+      fileSyncModule.current
+        ? [...actual.recordModuleData(), fileSyncModule.current]
+        : actual.recordModuleData(),
+  };
+});
+
 import type { ExerciseLog, MeasurementRecord, Tombstone } from "@/lib/types";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
@@ -188,6 +201,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
   vi.restoreAllMocks();
+  fileSyncModule.current = null;
 });
 
 describe("syncAll", () => {
@@ -391,6 +405,69 @@ describe("syncAll", () => {
       const written = config.headerMode === "byName" ? config.buildHeaders!([]) : config.headers;
       expect(sheets.tabs.get(config.tabName)?.[0]).toEqual(written);
     }
+  });
+
+  test("runs syncFiles right after Tombstones and before other tabs; its failure marks success false but other tabs still sync", async () => {
+    await appDb.exerciseLogs.put(makeLog());
+    sheets.tabs.set("Tombstones", [
+      ["id", "table", "recordId", "deletedAt"],
+      ["WatchEvents:w-1", "WatchEvents", "w-1", "2026-10-20T10:00:00+09:00"],
+    ]);
+    const progress: string[] = [];
+    let tombstonesSeenByFileSync = -1;
+    const syncFiles = vi.fn(async (token: string) => {
+      expect(token).toBe(TOKEN);
+      tombstonesSeenByFileSync = await appDb.tombstones.count();
+      return { tableName: "PhotoDrive", rowCount: 0, error: "upload failed" };
+    });
+    fileSyncModule.current = {
+      id: "stub",
+      syncConfigs: [],
+      tables: () => [],
+      syncFiles,
+    };
+
+    const result = await syncAll(TOKEN, (r) => progress.push(r.tableName));
+
+    expect(syncFiles).toHaveBeenCalledTimes(1);
+    expect(tombstonesSeenByFileSync).toBe(1);
+    expect(progress.slice(0, 2)).toEqual(["Tombstones", "PhotoDrive"]);
+    expect([...progress.slice(2)].sort()).toEqual(sheetTabs().filter((t) => t !== "Tombstones").sort());
+    expect(result.results[1]).toEqual({ tableName: "PhotoDrive", rowCount: 0, error: "upload failed" });
+    expect(result.success).toBe(false);
+    expect(result.results.find((r) => r.tableName === "ExerciseLogs")).toEqual({
+      tableName: "ExerciseLogs",
+      rowCount: 1,
+    });
+    expect(sheets.tabs.get("ExerciseLogs")).toHaveLength(2);
+  });
+
+  test("a syncFiles that throws is reported under the module id and the other tabs still sync", async () => {
+    fileSyncModule.current = {
+      id: "stub",
+      syncConfigs: [],
+      tables: () => [],
+      syncFiles: async () => {
+        throw new Error("drive down");
+      },
+    };
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(false);
+    expect(result.results[1]).toEqual({ tableName: "stub", rowCount: 0, error: "drive down" });
+    expect(result.results).toHaveLength(sheetTabs().length + 1);
+  });
+
+  test("syncFiles is not called when the Tombstones merge fails", async () => {
+    const syncFiles = vi.fn();
+    fileSyncModule.current = { id: "stub", syncConfigs: [], tables: () => [], syncFiles };
+    sheets.failWritesFor.add("Tombstones");
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(false);
+    expect(syncFiles).not.toHaveBeenCalled();
   });
 
   test("creates the spreadsheet with every tab when none exists", async () => {
