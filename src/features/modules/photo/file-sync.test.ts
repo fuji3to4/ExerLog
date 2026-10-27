@@ -197,6 +197,59 @@ describe("syncPhotoFiles", () => {
     expect(trashDriveFile).not.toHaveBeenCalled();
   });
 
+  it("does not upload a photo whose record has a Photos tombstone while the record still exists locally", async () => {
+    await seedRecord("r1", ["p1"]);
+    await seedRecord("r2", ["p2"]);
+    await appDb.tombstones.put({ id: "Photos:r1", table: "Photos", recordId: "r1", deletedAt: "2026-10-21T09:00:00+09:00" });
+
+    const result = await syncPhotoFiles(TOKEN);
+
+    expect(result.rowCount).toBe(1);
+    expect(vi.mocked(uploadPhoto).mock.calls.map((c) => c[2])).toEqual(["p2"]);
+    expect(await appDb.photoFiles.toCollection().primaryKeys()).toEqual(["p2"]);
+    expect(await appDb.photoBlobs.toCollection().primaryKeys()).toEqual(["p2"]);
+  });
+
+  it("does not upload a photo with a PhotoFiles tombstone even though its blob still exists", async () => {
+    await seedRecord("r1", ["p1", "p2"]);
+    await appDb.tombstones.put({ id: "PhotoFiles:p2", table: "PhotoFiles", recordId: "p2", deletedAt: "2026-10-21T09:00:00+09:00" });
+
+    const result = await syncPhotoFiles(TOKEN);
+
+    expect(result.rowCount).toBe(1);
+    expect(vi.mocked(uploadPhoto).mock.calls.map((c) => c[2])).toEqual(["p1"]);
+    expect(await appDb.photoFiles.toCollection().primaryKeys()).toEqual(["p1"]);
+  });
+
+  it("queues the Drive file of a local photoFiles row whose record is tombstoned, and trashes it", async () => {
+    await seedRecord("r1", ["p1"]);
+    await appDb.photoFiles.put({ id: "p1", recordId: "r1", driveFileId: "d1", updatedAt: "2026-10-22T09:00:00+09:00" });
+    await appDb.tombstones.put({ id: "Photos:r1", table: "Photos", recordId: "r1", deletedAt: "2026-10-21T09:00:00+09:00" });
+    vi.mocked(trashDriveFile).mockResolvedValue("failed");
+
+    const result = await syncPhotoFiles(TOKEN);
+
+    expect(vi.mocked(trashDriveFile).mock.calls.map((c) => c[1])).toEqual(["d1"]);
+    expect((await appDb.photoTrash.toArray()).map((t) => t.driveFileId)).toEqual(["d1"]);
+    expect(result.error).toBeDefined();
+    expect(await appDb.photoFiles.count()).toBe(0);
+    expect(uploadPhoto).not.toHaveBeenCalled();
+  });
+
+  it("queues the new Drive file when the photo is tombstoned during its upload", async () => {
+    await seedRecord("r1", ["p1"]);
+    vi.mocked(uploadPhoto).mockImplementation(async () => {
+      await appDb.tombstones.put({ id: "PhotoFiles:p1", table: "PhotoFiles", recordId: "p1", deletedAt: "2026-10-21T09:00:00+09:00" });
+      return "drive-p1";
+    });
+
+    const result = await syncPhotoFiles(TOKEN);
+
+    expect(result.rowCount).toBe(0);
+    expect(await appDb.photoFiles.count()).toBe(0);
+    expect((await appDb.photoTrash.toArray()).map((t) => t.driveFileId)).toEqual(["drive-p1"]);
+  });
+
   it("drops a blob its record no longer lists (removed in an edit on another device) instead of uploading it", async () => {
     await seedRecord("r1", ["p1", "p2"]);
     // The merged record no longer lists p2; its file row was removed by the PhotoFiles tombstone.
