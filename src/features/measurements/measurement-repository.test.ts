@@ -69,6 +69,15 @@ test("listInDayRange is inclusive and ordered", async () => {
   expect(list[0].values).toEqual({ height: 170 });
 });
 
+test("listAll returns every record in instant order, whatever the offset", async () => {
+  // As strings, "…T08:00:00+09:00" < "…T09:00:00+00:00" < "…T10:00:00+09:00", but 08:00+09:00 is 23:00 UTC the day
+  // before, 10:00+09:00 is 01:00 UTC and 09:00+00:00 is the latest.
+  const late = await repository.add({ date: "2026-10-22", values: { weight: 61 }, note: "", recordedAt: "2026-10-22T09:00:00+00:00" });
+  const middle = await repository.add({ date: "2026-10-22", values: { weight: 60 }, note: "", recordedAt: "2026-10-22T10:00:00+09:00" });
+  const early = await repository.add({ date: "2026-10-22", values: { weight: 59 }, note: "", recordedAt: "2026-10-22T08:00:00+09:00" });
+  expect((await repository.listAll()).map((r) => r.id)).toEqual([early.id, middle.id, late.id]);
+});
+
 test("findPreviousValues returns the latest earlier value per item", async () => {
   await seed();
   expect(await repository.findPreviousValues("2026-10-22T18:00:00+09:00")).toEqual({

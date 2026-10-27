@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import { BODY_ITEMS, CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
+import { bodyRepository } from "@/features/modules/body/data";
+import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { clearAllRecords, countAllRecords } from "@/features/storage/clear-all-records";
@@ -136,12 +138,12 @@ export function DataManagement() {
   }
 
   async function handleExportBody() {
-    const records = await appDb.bodyRecords.orderBy("recordedAt").toArray();
+    const records = await bodyRepository.listAll();
     downloadCsv("body.csv", generateMeasurementsCsv(records, BODY_ITEMS));
   }
 
   async function handleExportCircumference() {
-    const records = await appDb.circumferenceRecords.orderBy("recordedAt").toArray();
+    const records = await circumferenceRepository.listAll();
     downloadCsv("circumference.csv", generateMeasurementsCsv(records, CIRCUMFERENCE_ITEMS));
   }
 

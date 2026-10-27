@@ -26,6 +26,8 @@ export type MeasurementRepository = {
   update(record: MeasurementRecord): Promise<void>;
   /** Deletes the record and records a tombstone named `tombstoneTable`. */
   remove(id: string): Promise<void>;
+  /** Every record, oldest instant first. */
+  listAll(): Promise<MeasurementRecord[]>;
   /** Records for the day, oldest first. */
   listForDay(date: string): Promise<MeasurementRecord[]>;
   /** Records whose date is within [start, end] (inclusive day keys), oldest first. */
@@ -84,6 +86,10 @@ export function createMeasurementRepository(
         await recordTombstones(tombstoneTable, [id]);
       });
       scheduleSync();
+    },
+
+    async listAll() {
+      return sortOldestFirst(await table.toArray());
     },
 
     async listForDay(date) {

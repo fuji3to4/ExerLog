@@ -1,12 +1,14 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
-import { FIELD_CLASS } from "@/features/timeline/components/timeline-dialog-parts";
+import { FIELD_CLASS, useSaveAndClose } from "@/features/timeline/components/timeline-dialog-parts";
+import { localIsoAt, timeOfIso, withLocalTime } from "@/lib/date/local-iso";
 import type { MeasurementRecord } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import type { MeasurementItem } from "../measurement-items";
+import { formatMeasurementValue, type MeasurementItem } from "../measurement-items";
+import type { MeasurementRepository } from "../measurement-repository";
 
 /** Props shared by the body and circumference forms. Mount a form only while its dialog is open. */
 export type MeasurementFormProps = {
@@ -16,6 +18,110 @@ export type MeasurementFormProps = {
   onSaved(record: MeasurementRecord): void;
   onDeleted?(): void;
 };
+
+/**
+ * State and actions shared by the body and circumference forms: time, drafts of `items`,
+ * note, previous values from `repository`, validation, save and delete.
+ */
+export function useMeasurementForm({
+  repository,
+  items,
+  date,
+  record,
+  onOpenChange,
+  onSaved,
+  onDeleted,
+}: MeasurementFormProps & { repository: MeasurementRepository; items: readonly MeasurementItem[] }) {
+  const { t } = useTranslation();
+  // For a new record the base instant is "now" on `date`, taken when the form mounts.
+  const [baseAt] = useState(() => record?.recordedAt ?? localIsoAt(date));
+  const [time, setTime] = useState(() => timeOfIso(baseAt));
+  const [drafts, setDrafts] = useState<Record<string, Draft>>(() => initialDrafts(items, record));
+  const [note, setNote] = useState(record?.note ?? "");
+  const [previous, setPrevious] = useState<Record<string, number>>({});
+  const { isSaved, isBusy, hasError, run } = useSaveAndClose();
+
+  const recordedAt = time === "" ? null : withLocalTime(baseAt, time);
+  const editingId = record?.id;
+
+  useEffect(() => {
+    if (!recordedAt) return;
+    let isCurrent = true;
+    // The record being edited must not count as its own "previous" value.
+    repository
+      .findPreviousValues(recordedAt, { excludeId: editingId })
+      .then((previousValues) => {
+        if (isCurrent) setPrevious(previousValues);
+      })
+      .catch((error: unknown) => console.error(error));
+    return () => {
+      isCurrent = false;
+    };
+  }, [repository, recordedAt, editingId]);
+
+  const parsed: Record<string, ParsedValue> = Object.fromEntries(
+    items.map((item) => [item.id, parseDraft(item, drafts[item.id], record?.values[item.id])] as const),
+  );
+  const values = buildValues(items, drafts, record);
+  const canSave = recordedAt !== null && values !== null && Object.keys(values).length > 0;
+
+  function inputProps(item: MeasurementItem): MeasurementInputProps {
+    const value = previous[item.id];
+    return {
+      item,
+      draft: drafts[item.id],
+      isInvalid: parsed[item.id]?.state === "invalid",
+      placeholder:
+        value === undefined ? undefined : t("measurement_previous", { value: formatMeasurementValue(item, value) }),
+      onChange: (draft) => setDrafts((current) => ({ ...current, [item.id]: draft })),
+    };
+  }
+
+  function save() {
+    if (!canSave || !values || !recordedAt) return;
+    const savedValues = values;
+    void run(
+      async () => {
+        if (!record) {
+          return repository.add({ date, recordedAt, values: savedValues, note });
+        }
+        const updated: MeasurementRecord = { ...record, recordedAt, values: savedValues, note };
+        await repository.update(updated);
+        return updated;
+      },
+      (saved) => {
+        onOpenChange(false);
+        onSaved(saved);
+      },
+    );
+  }
+
+  async function remove() {
+    if (!record) return;
+    await repository.remove(record.id);
+    onOpenChange(false);
+    onDeleted?.();
+  }
+
+  return {
+    time,
+    setTime,
+    note,
+    setNote,
+    recordedAt,
+    parsed,
+    inputProps,
+    /** Props for TimelineDialogFooter. */
+    footerProps: {
+      isSaved,
+      isBusy,
+      hasError,
+      canSave,
+      onSave: save,
+      onDelete: record ? remove : undefined,
+    },
+  };
+}
 
 /** What a number field holds: its text, and whether the browser saw unparsable input. */
 export type Draft = { raw: string; badInput: boolean };
