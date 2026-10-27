@@ -6,19 +6,29 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { bodyRepository } from "@/features/modules/body/data";
 import { circumferenceRepository } from "@/features/modules/circumference/data";
+import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { appDb } from "@/features/storage/app-db";
 import { localIsoAt } from "@/lib/date/local-iso";
 import type { MeasurementRecord } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
-import { RECORD_KIND_STORAGE_KEY, RecordDialog, type RecordDialogProps } from "./record-dialog";
+import { getRecordModule } from "../registry";
+import type { ModuleRecord } from "../types";
+import { ModuleRecordDialog } from "./module-record-dialog";
 
 const DATE = "2026-10-20";
 
-function renderDialog(props: Partial<RecordDialogProps> = {}) {
+function renderDialog(moduleId: string, props: { record?: ModuleRecord; onDeleted?(): void } = {}) {
   const onSaved = vi.fn();
   const onOpenChange = vi.fn();
   const utils = renderWithLanguage(
-    <RecordDialog open onOpenChange={onOpenChange} date={DATE} onSaved={onSaved} {...props} />,
+    <ModuleRecordDialog
+      module={getRecordModule(moduleId)!}
+      open
+      onOpenChange={onOpenChange}
+      date={DATE}
+      onSaved={onSaved}
+      {...props}
+    />,
     { initialLanguage: "ja" },
   );
   return { ...utils, onSaved, onOpenChange };
@@ -38,15 +48,7 @@ async function onlyRecord(table: Table<MeasurementRecord, string> = appDb.bodyRe
   return all[0];
 }
 
-async function openBody() {
-  fireEvent.click(await screen.findByRole("tab", { name: "身体" }));
-}
-
-async function openCircumference() {
-  fireEvent.click(await screen.findByRole("tab", { name: "周径" }));
-}
-
-describe("RecordDialog", () => {
+describe("ModuleRecordDialog", () => {
   beforeEach(async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 20, 7, 12, 0));
@@ -64,19 +66,33 @@ describe("RecordDialog", () => {
     vi.restoreAllMocks();
   });
 
-  it("opens on 体調 by default and offers 体調｜身体｜周径", async () => {
-    renderDialog();
+  it("shows the wellness form under the add title without kind tabs", async () => {
+    renderDialog("wellness");
 
-    const tabs = within(await screen.findByRole("tablist")).getAllByRole("tab");
-    expect(tabs.map((tab) => tab.textContent)).toEqual(["体調", "身体", "周径"]);
-    expect(tabs[0].getAttribute("aria-selected")).toBe("true");
-    expect(within(screen.getByRole("dialog")).getByRole("group", { name: "からだ" })).toBeTruthy();
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "記録する" })).toBeTruthy();
+    expect(within(dialog).queryByRole("tablist")).toBeNull();
+    expect(within(dialog).getByRole("group", { name: "からだ" })).toBeTruthy();
+    expect(within(dialog).queryByLabelText("体重")).toBeNull();
+  });
+
+  it("saves a wellness entry", async () => {
+    const { onSaved } = renderDialog("wellness");
+
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(within(dialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "4" }));
+    fireEvent.click(saveButton());
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    const [entry] = await appDb.wellnessEntries.toArray();
+    expect(entry.physicalScore).toBe(4);
+    expect(entry.date).toBe(DATE);
+    expect(onSaved).toHaveBeenCalledWith(entry.id);
   });
 
   it("saves a body record only to the body table", async () => {
-    const { onSaved } = renderDialog();
+    const { onSaved } = renderDialog("body");
 
-    await openBody();
     fireEvent.change(input("体重"), { target: { value: "60.2" } });
     fireEvent.click(saveButton());
 
@@ -90,9 +106,8 @@ describe("RecordDialog", () => {
   });
 
   it("saves a circumference record only to the circumference table", async () => {
-    const { onSaved } = renderDialog();
+    const { onSaved } = renderDialog("circumference");
 
-    await openCircumference();
     fireEvent.change(input("手首 左"), { target: { value: "15.0" } });
     fireEvent.click(saveButton());
 
@@ -103,16 +118,19 @@ describe("RecordDialog", () => {
     expect(await appDb.bodyRecords.count()).toBe(0);
   });
 
-  it("shows only body fields on 身体 and only circumference fields on 周径", async () => {
-    renderDialog();
+  it("shows only body fields on 身体", async () => {
+    renderDialog("body");
 
-    await openBody();
     const dialog = within(screen.getByRole("dialog"));
     expect(input("体重")).toBeTruthy();
     expect(dialog.queryByLabelText("手首 左")).toBeNull();
     expect(dialog.queryByRole("button", { name: "測る位置の説明" })).toBeNull();
+  });
 
-    await openCircumference();
+  it("shows only circumference fields on 周径", async () => {
+    renderDialog("circumference");
+
+    const dialog = within(screen.getByRole("dialog"));
     expect(input("手首 左")).toBeTruthy();
     expect(dialog.queryByLabelText("体重")).toBeNull();
     expect(dialog.queryByLabelText("身長")).toBeNull();
@@ -125,9 +143,8 @@ describe("RecordDialog", () => {
       values: { height: 170, bodyFat: 22.4 },
       note: "",
     });
-    const { onSaved } = renderDialog();
+    const { onSaved } = renderDialog("body");
 
-    await openBody();
     await waitFor(() => expect(input("体脂肪率").placeholder).toBe("前回 22.4"));
     expect(input("身長").placeholder).toBe("前回 170.0");
     expect(input("体重").placeholder).toBe("");
@@ -142,9 +159,8 @@ describe("RecordDialog", () => {
   });
 
   it("asks for a height when there is none and uses an entered height", async () => {
-    renderDialog();
+    renderDialog("body");
 
-    await openBody();
     expect(screen.queryByText(/BMI/)).toBeNull();
     fireEvent.change(input("体重"), { target: { value: "60" } });
     expect(await screen.findByText("身長を記録するとBMIが出ます")).toBeTruthy();
@@ -159,18 +175,16 @@ describe("RecordDialog", () => {
       values: { weight: 59.5 },
       note: "",
     });
-    renderDialog();
+    renderDialog("body");
 
-    await openBody();
     await waitFor(() => expect(input("体重").placeholder).toBe("前回 59.5"));
     fireEvent.change(input("時刻"), { target: { value: "05:30" } });
     await waitFor(() => expect(input("体重").placeholder).toBe(""));
   });
 
   it("disables save while every field is empty or a value is out of range", async () => {
-    renderDialog();
+    renderDialog("body");
 
-    await openBody();
     expect(saveButton().disabled).toBe(true);
     fireEvent.change(input("体重"), { target: { value: "600" } });
     expect(saveButton().disabled).toBe(true);
@@ -182,37 +196,11 @@ describe("RecordDialog", () => {
   });
 
   it("disables save on 周径 while every field is empty", async () => {
-    renderDialog();
+    renderDialog("circumference");
 
-    await openCircumference();
     expect(saveButton().disabled).toBe(true);
     fireEvent.change(input("手首 左"), { target: { value: "15.0" } });
     expect(saveButton().disabled).toBe(false);
-  });
-
-  it("remembers the last used kind", async () => {
-    const first = renderDialog();
-    await openCircumference();
-    expect(window.localStorage.getItem(RECORD_KIND_STORAGE_KEY)).toBe("circumference");
-    first.unmount();
-
-    renderDialog();
-    expect((await screen.findByRole("tab", { name: "周径" })).getAttribute("aria-selected")).toBe("true");
-    expect(input("手首 左")).toBeTruthy();
-  });
-
-  it.each(["measurement", "unknown"])("opens on 体調 when the remembered kind is %s", async (stored) => {
-    window.localStorage.setItem(RECORD_KIND_STORAGE_KEY, stored);
-    renderDialog();
-    expect((await screen.findByRole("tab", { name: "体調" })).getAttribute("aria-selected")).toBe("true");
-  });
-
-  it("falls back to 体調 when storage cannot be read", async () => {
-    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-      throw new Error("blocked");
-    });
-    renderDialog();
-    expect((await screen.findByRole("tab", { name: "体調" })).getAttribute("aria-selected")).toBe("true");
   });
 
   it("keeps values that are not edited and shows only the body form when editing", async () => {
@@ -222,10 +210,9 @@ describe("RecordDialog", () => {
       values: { weight: 61, waist: 80 },
       note: "朝",
     });
-    const { onSaved } = renderDialog({ editing: { kind: "body", record } });
+    const { onSaved } = renderDialog("body", { record });
 
     const dialog = await screen.findByRole("dialog");
-    expect(screen.queryByRole("tablist", { name: "記録の種類" })).toBeNull();
     expect(within(dialog).getByRole("heading", { name: "身体の記録を修正" })).toBeTruthy();
     expect(within(dialog).queryByLabelText("手首 左")).toBeNull();
     expect(input("体重").value).toBe("61");
@@ -245,7 +232,7 @@ describe("RecordDialog", () => {
       values: { weight: 61, bodyFat: 22 },
       note: "",
     });
-    const { onSaved } = renderDialog({ editing: { kind: "body", record } });
+    const { onSaved } = renderDialog("body", { record });
 
     fireEvent.change(await waitFor(() => input("体脂肪率")), { target: { value: "" } });
     fireEvent.click(saveButton());
@@ -261,7 +248,7 @@ describe("RecordDialog", () => {
       values: { weight: 60.25 },
       note: "",
     });
-    const { onSaved } = renderDialog({ editing: { kind: "body", record } });
+    const { onSaved } = renderDialog("body", { record });
 
     fireEvent.change(await waitFor(() => input("メモ")), { target: { value: "読み込み" } });
     expect(saveButton().disabled).toBe(false);
@@ -275,7 +262,7 @@ describe("RecordDialog", () => {
 
   it("validates a stored value again once the field is edited", async () => {
     const record = await bodyRepository.add({ date: DATE, values: { weight: 60.25 }, note: "" });
-    renderDialog({ editing: { kind: "body", record } });
+    renderDialog("body", { record });
 
     fireEvent.change(await waitFor(() => input("体重")), { target: { value: "60.35" } });
     expect(saveButton().disabled).toBe(true);
@@ -288,7 +275,7 @@ describe("RecordDialog", () => {
       values: { weight: 61, height: 170 },
       note: "",
     });
-    renderDialog({ editing: { kind: "body", record } });
+    renderDialog("body", { record });
 
     fireEvent.change(await waitFor(() => input("時刻")), { target: { value: "09:00" } });
     fireEvent.change(input("身長"), { target: { value: "" } });
@@ -301,7 +288,7 @@ describe("RecordDialog", () => {
   it("deletes a body record with a BodyMeasurements tombstone", async () => {
     const record = await bodyRepository.add({ date: DATE, values: { weight: 61 }, note: "" });
     const onDeleted = vi.fn();
-    renderDialog({ editing: { kind: "body", record }, onDeleted });
+    renderDialog("body", { record, onDeleted });
 
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "削除" }));
@@ -312,7 +299,7 @@ describe("RecordDialog", () => {
     expect((await appDb.tombstones.toArray()).map((t) => t.table)).toEqual(["BodyMeasurements"]);
   });
 
-  it("shows only the wellness form when editing a wellness entry", async () => {
+  it("shows the wellness form under the edit title when editing a wellness entry", async () => {
     const entry = {
       id: "w1",
       date: DATE,
@@ -322,7 +309,7 @@ describe("RecordDialog", () => {
       note: "",
       updatedAt: localIsoAt(DATE),
     };
-    renderDialog({ editing: { kind: "wellness", entry } });
+    renderDialog("wellness", { record: entry });
 
     const dialog = await screen.findByRole("dialog");
     expect(screen.queryByRole("tablist")).toBeNull();
@@ -330,19 +317,50 @@ describe("RecordDialog", () => {
     expect(within(dialog).queryByLabelText("体重")).toBeNull();
   });
 
+  it("edits a wellness entry", async () => {
+    const entry = await addWellnessEntry({
+      date: DATE,
+      recordedAt: localIsoAt(DATE, new Date(2026, 9, 20, 7, 0, 0)),
+      physicalScore: 2,
+      mentalScore: 4,
+      note: "",
+    });
+    const { onSaved } = renderDialog("wellness", { record: entry });
+
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(within(dialog).getByRole("group", { name: "こころ" })).getByRole("button", { name: "5" }));
+    fireEvent.click(saveButton());
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(entry.id), { timeout: 3000 });
+    const [saved] = await appDb.wellnessEntries.toArray();
+    expect(saved).toMatchObject({ id: entry.id, physicalScore: 2, mentalScore: 5 });
+  });
+
+  it("deletes a wellness entry with a WellnessEntries tombstone", async () => {
+    const entry = await addWellnessEntry({ date: DATE, physicalScore: 3, mentalScore: 3, note: "" });
+    const onDeleted = vi.fn();
+    renderDialog("wellness", { record: entry, onDeleted });
+
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "削除" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "削除" }));
+
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
+    expect(await appDb.wellnessEntries.count()).toBe(0);
+    expect((await appDb.tombstones.toArray()).map((t) => t.table)).toEqual(["WellnessEntries"]);
+  });
+
   describe("circumference", () => {
     it("opens on the remembered limb and shows left/right fields for its five sites only", async () => {
       window.localStorage.setItem("exerlog-circumference-limb", "leg");
-      renderDialog();
-      await openCircumference();
+      renderDialog("circumference");
       expect(screen.getByRole("tab", { name: "脚" }).getAttribute("aria-selected")).toBe("true");
       expect(input("足首 左")).toBeTruthy();
       expect(within(screen.getByRole("dialog")).queryByLabelText("手首 左")).toBeNull();
     });
 
     it("keeps arm values when switching to leg and saves both in one record", async () => {
-      const { onSaved } = renderDialog();
-      await openCircumference();
+      const { onSaved } = renderDialog("circumference");
       fireEvent.change(input("肘下5cm 右"), { target: { value: "24.5" } });
       fireEvent.click(screen.getByRole("tab", { name: "脚" }));
       fireEvent.change(input("足首 左"), { target: { value: "21.0" } });
@@ -358,8 +376,7 @@ describe("RecordDialog", () => {
     });
 
     it("blocks saving and marks the hidden limb when it holds an invalid value", async () => {
-      renderDialog();
-      await openCircumference();
+      renderDialog("circumference");
       fireEvent.change(input("手首 左"), { target: { value: "200" } });
       fireEvent.click(screen.getByRole("tab", { name: "脚" }));
       fireEvent.change(input("足首 左"), { target: { value: "21.0" } });
@@ -372,8 +389,7 @@ describe("RecordDialog", () => {
 
     it("opens the measuring help for the selected limb", async () => {
       window.localStorage.setItem("exerlog-circumference-limb", "leg");
-      renderDialog();
-      await openCircumference();
+      renderDialog("circumference");
       fireEvent.click(screen.getByRole("button", { name: "測る位置の説明" }));
       const help = await screen.findByRole("dialog", { name: "脚の測り方" });
       expect(within(help).getByText(/土踏まずのアーチ/)).toBeTruthy();
@@ -382,8 +398,7 @@ describe("RecordDialog", () => {
     });
 
     it("shows the arm help when the arm is selected", async () => {
-      renderDialog();
-      await openCircumference();
+      renderDialog("circumference");
       fireEvent.click(screen.getByRole("button", { name: "測る位置の説明" }));
       const help = await screen.findByRole("dialog", { name: "腕の測り方" });
       expect(within(help).getByText(/こぶしを握った/)).toBeTruthy();
@@ -396,8 +411,7 @@ describe("RecordDialog", () => {
         values: { armBelowElbowRight: 24.5 },
         note: "",
       });
-      renderDialog();
-      await openCircumference();
+      renderDialog("circumference");
       await waitFor(() => expect(input("肘下5cm 右").placeholder).toBe("前回 24.5"));
       expect(input("肘下5cm 左").placeholder).toBe("");
     });
@@ -410,9 +424,8 @@ describe("RecordDialog", () => {
         note: "",
       });
       window.localStorage.setItem("exerlog-circumference-limb", "arm");
-      renderDialog({ editing: { kind: "circumference", record } });
+      renderDialog("circumference", { record });
       const dialog = await screen.findByRole("dialog");
-      expect(screen.queryByRole("tablist", { name: "記録の種類" })).toBeNull();
       expect(within(dialog).getByRole("heading", { name: "周径の記録を修正" })).toBeTruthy();
       expect(within(dialog).queryByLabelText("体重")).toBeNull();
       expect((await screen.findByRole("tab", { name: "脚" })).getAttribute("aria-selected")).toBe("true");
@@ -422,7 +435,7 @@ describe("RecordDialog", () => {
     it("deletes a circumference record with a Circumference tombstone", async () => {
       const record = await circumferenceRepository.add({ date: DATE, values: { armWristLeft: 15 }, note: "" });
       const onDeleted = vi.fn();
-      renderDialog({ editing: { kind: "circumference", record }, onDeleted });
+      renderDialog("circumference", { record, onDeleted });
 
       const dialog = await screen.findByRole("dialog");
       fireEvent.click(within(dialog).getByRole("button", { name: "削除" }));

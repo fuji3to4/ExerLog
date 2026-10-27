@@ -10,6 +10,8 @@ import { bodyRepository } from "@/features/modules/body/data";
 import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { listTombstones } from "@/features/storage/tombstones.repository";
 import { listWatchEventsForDay, recordWatchEvent } from "@/features/storage/watch-events.repository";
+import { MODULE_SETTINGS_STORAGE_KEY } from "@/features/modules/module-settings";
+import { useModuleSettings } from "@/features/modules/use-module-settings";
 import { localIsoAt } from "@/lib/date/local-iso";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { useDayTimeline } from "../use-day-timeline";
@@ -18,7 +20,8 @@ import { TimelineSection } from "./timeline-section";
 const DATE = "2026-10-20";
 
 function Harness({ onChanged, date = DATE }: { onChanged?: () => void; date?: string }) {
-  const timeline = useDayTimeline(date);
+  const { enabledModules } = useModuleSettings();
+  const timeline = useDayTimeline(date, enabledModules);
   return <TimelineSection date={date} timeline={timeline} onChanged={onChanged} />;
 }
 
@@ -30,6 +33,14 @@ function wellnessRow() {
   return screen.getByRole("button", { name: /からだ4/ });
 }
 
+/** Opens the add-record sheet and picks a module tile; resolves to the module's dialog. */
+async function chooseModule(label: string) {
+  fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
+  const sheet = await screen.findByRole("dialog", { name: "何を記録しますか？" });
+  fireEvent.click(within(sheet).getByRole("button", { name: label }));
+  return screen.findByRole("dialog", { name: "記録する" });
+}
+
 async function waitForDialogToClose() {
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 3000 });
 }
@@ -39,6 +50,7 @@ describe("TimelineSection", () => {
     // Only Date is faked so that "now" is 20:00 on DATE; timers stay real.
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 20, 20, 0, 0));
+    window.localStorage.removeItem(MODULE_SETTINGS_STORAGE_KEY);
     await Promise.all([
       appDb.exerciseLogs.clear(),
       appDb.wellnessEntries.clear(),
@@ -82,9 +94,7 @@ describe("TimelineSection", () => {
     expect(await screen.findByText(/肩まわしストレッチ できた/)).toBeTruthy();
 
     // Add
-    fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
-    const addDialog = await screen.findByRole("dialog");
-    expect(within(addDialog).getByRole("tab", { name: "体調" }).getAttribute("aria-selected")).toBe("true");
+    const addDialog = await chooseModule("体調");
     expect((within(addDialog).getByLabelText("時刻") as HTMLInputElement).value).toBe("20:00");
     fireEvent.click(within(within(addDialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "4" }));
     fireEvent.click(within(addDialog).getByRole("button", { name: "保存" }));
@@ -129,9 +139,7 @@ describe("TimelineSection", () => {
     renderWithLanguage(<Harness onChanged={onChanged} />, { initialLanguage: "ja" });
     expect(await screen.findByText(/肩まわしストレッチ できた/)).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
-    const dialog = await screen.findByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("tab", { name: "身体" }));
+    const dialog = await chooseModule("身体");
     fireEvent.change(within(dialog).getByLabelText("体重"), { target: { value: "60.2" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
     await waitForDialogToClose();
@@ -144,14 +152,33 @@ describe("TimelineSection", () => {
     expect(onChanged).toHaveBeenCalledTimes(1);
 
     fireEvent.click(row);
-    const editDialog = await screen.findByRole("dialog");
-    expect(within(editDialog).queryByRole("tablist", { name: "記録の種類" })).toBeNull();
+    const editDialog = await screen.findByRole("dialog", { name: "身体の記録を修正" });
     fireEvent.change(within(editDialog).getByLabelText("体重"), { target: { value: "61" } });
     fireEvent.click(within(editDialog).getByRole("button", { name: "保存" }));
     await waitForDialogToClose();
 
     expect(await screen.findByRole("button", { name: /📏 体重 61.0kg/ })).toBeTruthy();
     expect(onChanged).toHaveBeenCalledTimes(2);
+  });
+
+  it("hides a module turned off in the settings from the timeline and the sheet", async () => {
+    await bodyRepository.add({ date: DATE, values: { weight: 60 }, note: "" });
+    const { rerender } = renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+    expect(await screen.findByRole("button", { name: /📏 体重 60.0kg/ })).toBeTruthy();
+    expect(rows()).toHaveLength(2);
+
+    window.localStorage.setItem(
+      MODULE_SETTINGS_STORAGE_KEY,
+      JSON.stringify({ order: ["wellness", "body", "circumference"], disabled: ["body"] }),
+    );
+    rerender(<Harness />);
+
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    expect(screen.queryByRole("button", { name: /📏 体重/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
+    const sheet = await screen.findByRole("dialog", { name: "何を記録しますか？" });
+    const tiles = within(within(sheet).getByRole("list")).getAllByRole("button");
+    expect(tiles.map((tile) => tile.textContent)).toEqual(["体調", "周径"]);
   });
 
   it("shows the note of a measurement row on a second line", async () => {

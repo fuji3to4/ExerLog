@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { BODY_ITEMS, formatMeasurementSummary } from "@/features/measurements/measurement-items";
 import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
 
-import { buildTimeline, labelWellness } from "./build-timeline";
+import { buildTimeline, labelAt } from "./build-timeline";
+
+const labelWellness = (entry: WellnessEntry, watches: WatchEvent[], logs: ExerciseLog[]) =>
+  labelAt(entry.recordedAt, watches, logs);
 
 const D = "2026-10-20";
 const iso = (hhmm: string) => `${D}T${hhmm}:00+09:00`;
@@ -76,71 +79,69 @@ describe("labelWellness", () => {
 
 describe("buildTimeline", () => {
   const titles = new Map([["ex1", "Stretch"]]);
+  const mods = (wellnessRecords: WellnessEntry[], body: MeasurementRecord[] = [], circumference: MeasurementRecord[] = []) => [
+    { moduleId: "wellness", records: wellnessRecords },
+    { moduleId: "body", records: body },
+    { moduleId: "circumference", records: circumference },
+  ];
+  const kinds = (items: ReturnType<typeof buildTimeline>) =>
+    items.map((i) => (i.kind === "module" ? i.moduleId : i.kind));
 
-  it("sorts by time, wellness then watch then exercise on ties", () => {
+  it("sorts by time, modules then watch then exercise on ties", () => {
     const items = buildTimeline({
-      wellness: [wellness("22:30"), wellness("07:10")],
+      moduleRecords: mods([wellness("22:30"), wellness("07:10")]),
       watches: [watch("18:03")],
       logs: [log("18:03")],
-      body: [],
-      circumference: [],
       titles,
     });
-    expect(items.map((i) => i.kind)).toEqual(["wellness", "watch", "exercise", "wellness"]);
+    expect(kinds(items)).toEqual(["wellness", "watch", "exercise", "wellness"]);
     expect(items[1]).toMatchObject({ at: iso("18:03"), id: "v-18:03", title: "Stretch" });
   });
 
   it("falls back to exerciseId when the title is missing", () => {
-    const items = buildTimeline({ wellness: [], watches: [watch("09:00")], logs: [], body: [], circumference: [], titles: new Map() });
+    const items = buildTimeline({ moduleRecords: [], watches: [watch("09:00")], logs: [], titles: new Map() });
     expect(items[0]).toMatchObject({ kind: "watch", title: "ex1" });
   });
 
   it("re-labels and re-orders when a wellness time changes", () => {
-    const base = { watches: [watch("18:03")], logs: [log("18:03")], body: [], circumference: [], titles };
-    const a = buildTimeline({ ...base, wellness: [wellness("18:02", "w1")] });
-    expect(a.map((i) => i.kind)).toEqual(["wellness", "watch", "exercise"]);
+    const base = { watches: [watch("18:03")], logs: [log("18:03")], titles };
+    const a = buildTimeline({ ...base, moduleRecords: mods([wellness("18:02", "w1")]) });
+    expect(kinds(a)).toEqual(["wellness", "watch", "exercise"]);
     expect(a[0]).toMatchObject({ label: "beforeVideo" });
-    const b = buildTimeline({ ...base, wellness: [wellness("18:30", "w1")] });
-    expect(b.map((i) => i.kind)).toEqual(["watch", "exercise", "wellness"]);
+    const b = buildTimeline({ ...base, moduleRecords: mods([wellness("18:30", "w1")]) });
+    expect(kinds(b)).toEqual(["watch", "exercise", "wellness"]);
     expect(b[2]).toMatchObject({ label: "afterVideo" });
   });
 
-  it("orders body then circumference between wellness and watch on ties and labels them", () => {
+  it("orders same-time records by the order of moduleRecords, then watch, then exercise", () => {
     const items = buildTimeline({
-      wellness: [wellness("07:12")],
+      moduleRecords: [
+        { moduleId: "circumference", records: [measurement("07:12", "c1")] },
+        { moduleId: "wellness", records: [wellness("07:12", "w1")] },
+        { moduleId: "body", records: [measurement("07:12", "b1")] },
+      ],
       watches: [watch("07:12")],
-      logs: [],
-      body: [measurement("07:12", "b1")],
-      circumference: [measurement("07:12", "c1")],
+      logs: [log("07:12")],
       titles,
     });
-    expect(items.map((i) => i.kind)).toEqual(["wellness", "body", "circumference", "watch"]);
-    expect(items[1]).toMatchObject({ id: "b1" });
-    expect(items[2]).toMatchObject({ id: "c1" });
+    expect(kinds(items)).toEqual(["circumference", "wellness", "body", "watch", "exercise"]);
+    expect(items.map((i) => i.id)).toEqual(["c1", "w1", "b1", "v-07:12", "l-07:12"]);
   });
 
-  it("labels a morning body record", () => {
-    const items = buildTimeline({
-      wellness: [],
-      watches: [],
-      logs: [],
-      body: [measurement("07:12")],
-      circumference: [],
-      titles,
-    });
-    expect(items[0]).toMatchObject({ kind: "body", label: "morning" });
+  it("keeps the record and labels a morning record of any module", () => {
+    const record = measurement("07:12");
+    const items = buildTimeline({ moduleRecords: [{ moduleId: "body", records: [record] }], watches: [], logs: [], titles });
+    expect(items[0]).toMatchObject({ kind: "module", moduleId: "body", record, label: "morning" });
   });
 
-  it("labels a measurement right after a video as afterVideo", () => {
+  it("labels a record right after a video as afterVideo", () => {
     const items = buildTimeline({
-      wellness: [],
+      moduleRecords: mods([], [], [measurement("18:10")]),
       watches: [watch("18:03")],
       logs: [],
-      body: [],
-      circumference: [measurement("18:10")],
       titles,
     });
-    expect(items[1]).toMatchObject({ kind: "circumference", label: "afterVideo" });
+    expect(items[1]).toMatchObject({ kind: "module", moduleId: "circumference", label: "afterVideo" });
   });
 });
 

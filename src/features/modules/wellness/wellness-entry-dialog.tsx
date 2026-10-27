@@ -3,31 +3,17 @@
 import { useId, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
-import { WellnessScoreInput } from "./wellness-score-input";
-import {
-  addWellnessEntry,
-  deleteWellnessEntry,
-  updateWellnessEntry,
-} from "@/features/modules/wellness/data";
+import { TimeField, TimelineDialogFooter, useSaveAndClose } from "@/features/timeline/components/timeline-dialog-parts";
 import { localIsoAt, timeOfIso, withLocalTime } from "@/lib/date/local-iso";
 import type { WellnessEntry, WellnessScore } from "@/lib/types";
-import { TimeField, TimelineDialogFooter, useSaveAndClose } from "./timeline-dialog-parts";
-
-type WellnessEntryDialogProps = {
-  open: boolean;
-  onOpenChange(open: boolean): void;
-  date: string;
-  entry?: WellnessEntry;
-  onSaved(entry: WellnessEntry): void;
-  onDeleted?(): void;
-};
-
-export type WellnessFormProps = Omit<WellnessEntryDialogProps, "open">;
+import type { RecordFormProps } from "../types";
+import { addWellnessEntry, deleteWellnessEntry, updateWellnessEntry } from "./data";
+import { WellnessScoreInput } from "./wellness-score-input";
 
 const DEFAULT_SCORE: WellnessScore = 3;
 
 /** Time, body/mind scores and note for a wellness entry. Mount it only while its dialog is open. */
-export function WellnessForm({ onOpenChange, date, entry, onSaved, onDeleted }: WellnessFormProps) {
+export function WellnessForm({ onOpenChange, date, record: entry, onSaved, onDeleted }: RecordFormProps<WellnessEntry>) {
   const { t } = useTranslation();
   const noteId = useId();
   // For a new entry the base instant is "now" on `date`, taken when the dialog opens.

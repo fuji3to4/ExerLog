@@ -5,13 +5,17 @@ import { useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { AddRecordSheet } from "@/features/modules/components/add-record-sheet";
+import { ModuleRecordDialog } from "@/features/modules/components/module-record-dialog";
+import { getRecordModule } from "@/features/modules/registry";
+import type { RecordModule } from "@/features/modules/types";
+import { useModuleSettings } from "@/features/modules/use-module-settings";
 import { toDayKey } from "@/lib/date/day-key";
 import { cn } from "@/lib/utils";
 import type { TimelineItem } from "../build-timeline";
 import type { DayTimelineState } from "../use-day-timeline";
 import { DayTimeline } from "./day-timeline";
 import { ExerciseLogDialog } from "./exercise-log-dialog";
-import { RecordDialog } from "./record-dialog";
 import { WatchEventDialog } from "./watch-event-dialog";
 
 export type TimelineSectionProps = {
@@ -22,10 +26,13 @@ export type TimelineSectionProps = {
 
 export function TimelineSection({ date, timeline, onChanged }: TimelineSectionProps) {
   const { t } = useTranslation();
-  const [isAdding, setIsAdding] = useState(false);
+  const { enabledModules } = useModuleSettings();
+  const [isChoosing, setIsChoosing] = useState(false);
+  const [adding, setAdding] = useState<RecordModule | null>(null);
   const [selected, setSelected] = useState<TimelineItem | null>(null);
   // Logging from the library always records today, so offer it only on today's timeline.
   const isToday = date === toDayKey(new Date());
+  const selectedModule = selected?.kind === "module" ? getRecordModule(selected.moduleId) : undefined;
 
   async function refresh(highlightId?: string) {
     await timeline.reload(highlightId);
@@ -39,7 +46,7 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
   return (
     <section className="space-y-4">
       <div className="flex gap-2">
-        <Button className="flex-1" onClick={() => setIsAdding(true)}>
+        <Button className="flex-1" onClick={() => setIsChoosing(true)}>
           {t("timeline_add_record")}
         </Button>
         {isToday ? (
@@ -53,19 +60,33 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
         <DayTimeline items={timeline.items} highlightId={timeline.highlightId} onSelect={setSelected} />
       ) : null}
 
-      <RecordDialog open={isAdding} onOpenChange={setIsAdding} date={date} onSaved={(id) => void refresh(id)} />
+      <AddRecordSheet
+        open={isChoosing}
+        onOpenChange={setIsChoosing}
+        modules={enabledModules}
+        onChoose={(module) => setAdding(module)}
+      />
+      {adding ? (
+        <ModuleRecordDialog
+          key={adding.data.id}
+          module={adding}
+          open
+          onOpenChange={(open) => {
+            if (!open) setAdding(null);
+          }}
+          date={date}
+          onSaved={(id) => void refresh(id)}
+        />
+      ) : null}
 
-      {selected?.kind === "wellness" || selected?.kind === "body" || selected?.kind === "circumference" ? (
-        <RecordDialog
-          key={`${selected.kind}:${selected.id}`}
+      {selected?.kind === "module" && selectedModule ? (
+        <ModuleRecordDialog
+          key={`${selected.moduleId}:${selected.id}`}
+          module={selectedModule}
           open
           onOpenChange={closeSelected}
           date={date}
-          editing={
-            selected.kind === "wellness"
-              ? { kind: "wellness", entry: selected.entry }
-              : { kind: selected.kind, record: selected.record }
-          }
+          record={selected.record}
           onSaved={() => void refresh()}
           onDeleted={() => void refresh()}
         />

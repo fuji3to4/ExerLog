@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
@@ -33,9 +33,10 @@ vi.mock("./measurement-items", async () => {
 });
 
 import { HistoryGraphs } from "@/features/history/components/history-graphs";
+import { ModuleRecordDialog } from "@/features/modules/components/module-record-dialog";
+import { getRecordModule } from "@/features/modules/registry";
 import { generateMeasurementsCsv } from "@/features/settings/csv/history-csv";
 import { tableSyncConfigs } from "@/features/sync/sync-config";
-import { RecordDialog } from "@/features/timeline/components/record-dialog";
 import type { MeasurementRecord } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { BODY_ITEMS, formatMeasurementSummary, type MeasurementItem } from "./measurement-items";
@@ -52,10 +53,16 @@ const record: MeasurementRecord = {
 describe("adding one item to BODY_ITEMS", () => {
   it("(a) shows a fourth input with unit cm in the body form", async () => {
     window.localStorage.clear();
-    renderWithLanguage(<RecordDialog open onOpenChange={vi.fn()} date="2026-10-20" onSaved={vi.fn()} />, {
-      initialLanguage: "ja",
-    });
-    fireEvent.click(await screen.findByRole("tab", { name: "身体" }));
+    renderWithLanguage(
+      <ModuleRecordDialog
+        module={getRecordModule("body")!}
+        open
+        onOpenChange={vi.fn()}
+        date="2026-10-20"
+        onSaved={vi.fn()}
+      />,
+      { initialLanguage: "ja" },
+    );
 
     const dialog = within(screen.getByRole("dialog"));
     expect(dialog.getAllByRole("spinbutton")).toHaveLength(4);

@@ -1,8 +1,14 @@
 import type { Table } from "dexie";
+import type { LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
 
 import type { Messages } from "@/features/i18n/messages";
 import type { TableSyncConfig } from "@/features/sync/sync-config";
+import type { WellnessLabel } from "@/features/timeline/build-timeline";
 import type { Period } from "./period";
+
+/** The time-of-day / around-a-video tag a timeline row may carry. */
+export type TimeLabel = WellnessLabel;
 
 export type ModuleRecord = { id: string; date: string; recordedAt: string };
 
@@ -22,4 +28,31 @@ export type RecordModuleData<R extends ModuleRecord = ModuleRecord> = {
   clearAll(): Promise<void>;
   count(): Promise<number>;
   csv: { fileName: string; exportLabelKey: keyof Messages; generate(): Promise<string> };
+};
+
+/** Props of a module's form. The form is mounted only while its dialog is open. */
+export type RecordFormProps<R> = {
+  onOpenChange(open: boolean): void;
+  date: string;
+  /** The record being edited; absent when adding. */
+  record?: R;
+  onSaved(record: R): void;
+  onDeleted?(): void;
+};
+
+/** A record module: its data layer plus the screens that show and edit its records. */
+export type RecordModule<R extends ModuleRecord = ModuleRecord> = {
+  data: RecordModuleData<R>;
+  labelKey: keyof Messages;
+  /** Short description for the settings screen. */
+  descriptionKey: keyof Messages;
+  editTitleKey: keyof Messages;
+  icon: LucideIcon;
+  /** Colour of the module's point on the timeline. */
+  color: string;
+  Form: ComponentType<RecordFormProps<R>>;
+  /** Body of a timeline row (the row chrome, time and point belong to the timeline). */
+  TimelineCard: ComponentType<{ record: R; label: TimeLabel | null }>;
+  HistoryView: ComponentType;
+  SummaryCard: ComponentType<{ period: Period }>;
 };

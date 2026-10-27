@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { getModuleData } from "@/features/modules/data-registry";
+import type { RecordModule } from "@/features/modules/types";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { listExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
-import { bodyRepository } from "@/features/modules/body/data";
-import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { listWatchEventsForDay } from "@/features/storage/watch-events.repository";
-import { listWellnessEntriesForDay } from "@/features/modules/wellness/data";
 import { buildTimeline, type TimelineItem } from "./build-timeline";
 
 /** How long a newly added row keeps its highlight (covers the pop animation). */
@@ -20,32 +19,43 @@ export type DayTimelineState = {
   reload(highlightId?: string): Promise<void>;
 };
 
-async function loadDay(date: string): Promise<TimelineItem[]> {
-  const [wellness, watches, logs, body, circumference, exercises] = await Promise.all([
-    listWellnessEntriesForDay(date),
+const ID_SEPARATOR = "\n";
+
+async function loadDay(date: string, moduleIds: readonly string[]): Promise<TimelineItem[]> {
+  const [moduleRecords, watches, logs, exercises] = await Promise.all([
+    Promise.all(
+      moduleIds.flatMap((moduleId) => {
+        const data = getModuleData(moduleId);
+        return data ? [data.listForDay(date).then((records) => ({ moduleId, records }))] : [];
+      }),
+    ),
     listWatchEventsForDay(date),
     listExerciseLogsForDay(date),
-    bodyRepository.listForDay(date),
-    circumferenceRepository.listForDay(date),
     listAllExercises(),
   ]);
   const titles = new Map(exercises.map((exercise) => [exercise.id, exercise.title]));
-  return buildTimeline({ wellness, watches, logs, body, circumference, titles });
+  return buildTimeline({ moduleRecords, watches, logs, titles });
 }
 
-export function useDayTimeline(date: string): DayTimelineState {
+/**
+ * One day's timeline over the given modules' records (in their order), watches and exercises.
+ * Reloads when the date or the list of module ids changes.
+ */
+export function useDayTimeline(date: string, modules: readonly RecordModule[]): DayTimelineState {
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const requestId = useRef(0);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A string, so a new array with the same modules does not trigger a reload.
+  const moduleIdsKey = modules.map((module) => module.data.id).join(ID_SEPARATOR);
 
   const reload = useCallback(
     async (nextHighlightId?: string) => {
       const current = ++requestId.current;
       let loaded: TimelineItem[];
       try {
-        loaded = await loadDay(date);
+        loaded = await loadDay(date, moduleIdsKey === "" ? [] : moduleIdsKey.split(ID_SEPARATOR));
       } catch (error) {
         console.error(error);
         loaded = [];
@@ -63,7 +73,7 @@ export function useDayTimeline(date: string): DayTimelineState {
         }, HIGHLIGHT_MS);
       }
     },
-    [date],
+    [date, moduleIdsKey],
   );
 
   useEffect(() => {
