@@ -56,6 +56,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  window.localStorage.removeItem("lymly-record-modules");
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -95,6 +96,21 @@ test("uses the latest wellness entry of the day for recommendations", async () =
 
   expect(await screen.findByRole("heading", { name: "Zeta" })).toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: "Gamma" })).toBeNull();
+});
+
+test("ignores wellness and uses the standard recommendations when the wellness module is off", async () => {
+  await addWellnessEntry({ date: "2026-10-20", recordedAt: "2026-10-20T19:00:00+09:00", physicalScore: 1, mentalScore: 1, note: "" });
+  window.localStorage.setItem(
+    "lymly-record-modules",
+    JSON.stringify({ order: ["wellness", "body", "circumference"], disabled: ["wellness"] }),
+  );
+
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  expect(await screen.findByRole("heading", { name: "Gamma" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Delta" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Epsilon" })).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "Zeta" })).toBeNull();
 });
 
 test("shows watch and library links for the today screen", async () => {
