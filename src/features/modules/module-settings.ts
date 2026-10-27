@@ -28,9 +28,17 @@ export function resolveModuleSettings(
 
 let cache: { raw: string | null; ids: string; value: ModuleSettings } | null = null;
 // Set only when persisting failed, so the change still shows within this tab.
-let unsaved: { raw: string; ids: string; value: ModuleSettings } | null = null;
+let unsaved: { settings: ModuleSettings; ids: string | null; value: ModuleSettings } | null = null;
 
 export function readModuleSettings(registryIds: readonly string[]): ModuleSettings {
+  const registryKey = registryIds.join("\n");
+  if (unsaved) {
+    if (unsaved.ids !== registryKey) {
+      unsaved.value = resolveModuleSettings(unsaved.settings, registryIds);
+      unsaved.ids = registryKey;
+    }
+    return unsaved.value;
+  }
   let raw: string | null = null;
   try {
     raw = window.localStorage.getItem(MODULE_SETTINGS_STORAGE_KEY);
@@ -69,7 +77,7 @@ export function writeModuleSettings(settings: ModuleSettings): void {
     unsaved = null;
   } catch {
     // Storage may be blocked; keep the change in memory for this tab.
-    unsaved = { raw, ids: "", value: { order: [...settings.order], disabled: [...settings.disabled] } };
+    unsaved = { settings: { order: [...settings.order], disabled: [...settings.disabled] }, ids: null, value: settings };
   }
   for (const listener of [...listeners]) listener();
 }

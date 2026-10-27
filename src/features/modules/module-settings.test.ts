@@ -68,6 +68,9 @@ describe("module settings", () => {
     });
     writeModuleSettings({ order: IDS, disabled: ["body"] });
     expect(listener).toHaveBeenCalledTimes(2);
+    const after = readModuleSettings(IDS);
+    expect(after.disabled).toEqual(["body"]);
+    expect(readModuleSettings(IDS)).toBe(after);
     unsubscribe();
     writeModuleSettings({ order: IDS, disabled: [] });
     expect(listener).toHaveBeenCalledTimes(2);
