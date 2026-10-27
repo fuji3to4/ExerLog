@@ -33,11 +33,10 @@ function wellnessRow() {
   return screen.getByRole("button", { name: /からだ4/ });
 }
 
-/** Opens the add-record sheet and picks a module tile; resolves to the module's dialog. */
+/** Opens the "＋ 記録する" drop-down and picks a module; resolves to the module's dialog. */
 async function chooseModule(label: string) {
-  fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
-  const sheet = await screen.findByRole("dialog", { name: "何を記録しますか？" });
-  fireEvent.click(within(sheet).getByRole("button", { name: label }));
+  fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
+  fireEvent.click(await screen.findByRole("menuitem", { name: label }));
   return screen.findByRole("dialog", { name: `${label}を記録` });
 }
 
@@ -161,7 +160,7 @@ describe("TimelineSection", () => {
     expect(onChanged).toHaveBeenCalledTimes(2);
   });
 
-  it("hides a module turned off in the settings from the timeline and the sheet", async () => {
+  it("hides a module turned off in the settings from the timeline and the add menu", async () => {
     await bodyRepository.add({ date: DATE, values: { weight: 60 }, note: "" });
     const { rerender } = renderWithLanguage(<Harness />, { initialLanguage: "ja" });
     expect(await screen.findByRole("button", { name: /📏 体重 60.0kg/ })).toBeTruthy();
@@ -175,10 +174,9 @@ describe("TimelineSection", () => {
 
     await waitFor(() => expect(rows()).toHaveLength(1));
     expect(screen.queryByRole("button", { name: /📏 体重/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
-    const sheet = await screen.findByRole("dialog", { name: "何を記録しますか？" });
-    const tiles = within(within(sheet).getByRole("list")).getAllByRole("button");
-    expect(tiles.map((tile) => tile.textContent)).toEqual(["体調", "周径"]);
+    fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((item) => item.textContent)).toEqual(["体調", "周径"]);
   });
 
   it("shows the note of a measurement row on a second line", async () => {

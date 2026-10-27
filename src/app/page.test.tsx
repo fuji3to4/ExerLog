@@ -150,9 +150,8 @@ describe("today screen timeline", () => {
     expect(await screen.findByRole("heading", { name: "Gamma" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Zeta" })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
-    const sheet = await screen.findByRole("dialog", { name: "何を記録しますか？" });
-    fireEvent.click(within(sheet).getByRole("button", { name: "体調" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "体調" }));
     const dialog = await screen.findByRole("dialog", { name: "体調を記録" });
     fireEvent.click(within(within(dialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "1" }));
     fireEvent.click(within(within(dialog).getByRole("group", { name: "こころ" })).getByRole("button", { name: "1" }));
