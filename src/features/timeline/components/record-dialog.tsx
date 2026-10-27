@@ -5,20 +5,27 @@ import { useState, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { MeasurementRecord, WellnessEntry } from "@/lib/types";
-import { MeasurementForm } from "./measurement-form";
+import { BodyForm } from "@/features/modules/body/body-form";
+import { CircumferenceForm } from "@/features/modules/circumference/circumference-form";
 import { SegmentedTabs } from "./segmented-tabs";
 import { WellnessForm } from "./wellness-entry-dialog";
 
-export type RecordKind = "wellness" | "measurement";
+export type RecordKind = "wellness" | "body" | "circumference";
 
 /** Remembers which kind a new record opens on. */
 export const RECORD_KIND_STORAGE_KEY = "exerlog-record-kind";
 
-const RECORD_KINDS: readonly RecordKind[] = ["wellness", "measurement"];
+const RECORD_KINDS: readonly RecordKind[] = ["wellness", "body", "circumference"];
+
+const KIND_LABEL_KEYS = {
+  wellness: "record_kind_wellness",
+  body: "record_kind_body",
+  circumference: "record_kind_circumference",
+} as const satisfies Record<RecordKind, string>;
 
 export type RecordDialogEditing =
   | { kind: "wellness"; entry: WellnessEntry }
-  | { kind: "measurement"; record: MeasurementRecord };
+  | { kind: "body" | "circumference"; record: MeasurementRecord };
 
 export type RecordDialogProps = {
   open: boolean;
@@ -29,9 +36,11 @@ export type RecordDialogProps = {
   onDeleted?(): void;
 };
 
+/** The remembered kind; an unknown value (e.g. the old "measurement") opens on wellness. */
 function readRecordKind(): RecordKind {
   try {
-    return window.localStorage.getItem(RECORD_KIND_STORAGE_KEY) === "measurement" ? "measurement" : "wellness";
+    const stored = window.localStorage.getItem(RECORD_KIND_STORAGE_KEY);
+    return RECORD_KINDS.find((kind) => kind === stored) ?? "wellness";
   } catch {
     return "wellness";
   }
@@ -45,7 +54,7 @@ function writeRecordKind(kind: RecordKind) {
   }
 }
 
-/** One dialog for adding or editing a wellness entry or a body measurement record. */
+/** One dialog for adding or editing a wellness entry, a body record or a circumference record. */
 export function RecordDialog(props: RecordDialogProps) {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
@@ -70,8 +79,17 @@ function RecordDialogBody({ onOpenChange, date, editing, onSaved, onDeleted }: R
     ? t("record_add_title")
     : editing.kind === "wellness"
       ? t("timeline_wellness_edit_title")
-      : t("measurement_edit_title");
+      : editing.kind === "body"
+        ? t("body_edit_title")
+        : t("circumference_edit_title");
 
+  const measurementProps = {
+    onOpenChange,
+    date,
+    record: editing && editing.kind !== "wellness" ? editing.record : undefined,
+    onSaved: (record: MeasurementRecord) => onSaved(record.id),
+    onDeleted,
+  };
   const form =
     kind === "wellness" ? (
       <WellnessForm
@@ -82,15 +100,10 @@ function RecordDialogBody({ onOpenChange, date, editing, onSaved, onDeleted }: R
         onSaved={(entry) => onSaved(entry.id)}
         onDeleted={onDeleted}
       />
+    ) : kind === "body" ? (
+      <BodyForm key="body" {...measurementProps} />
     ) : (
-      <MeasurementForm
-        key="measurement"
-        onOpenChange={onOpenChange}
-        date={date}
-        record={editing?.kind === "measurement" ? editing.record : undefined}
-        onSaved={(record) => onSaved(record.id)}
-        onDeleted={onDeleted}
-      />
+      <CircumferenceForm key="circumference" {...measurementProps} />
     );
 
   return (
@@ -119,7 +132,7 @@ function KindTabs({
       value={value}
       onChange={onChange}
       label={t("record_kind_label")}
-      renderTab={(kind) => t(kind === "wellness" ? "record_kind_wellness" : "record_kind_measurement")}
+      renderTab={(kind) => t(KIND_LABEL_KEYS[kind])}
     >
       {children}
     </SegmentedTabs>

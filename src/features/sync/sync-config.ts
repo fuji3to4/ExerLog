@@ -6,7 +6,6 @@ import type {
   ExerciseLog,
   ExerciseLogResult,
   ExerciseVideo,
-  MeasurementRecord,
   SelfCareItem,
   Tombstone,
   WatchEvent,
@@ -14,7 +13,10 @@ import type {
   WellnessScore,
 } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
-import { MEASUREMENT_FIXED_COLUMNS, MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
+import { BODY_ITEMS, CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
+import { createMeasurementSyncConfig } from "@/features/measurements/measurement-sync";
+import { bodyRepository } from "@/features/modules/body/data";
+import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { cell, keepLatestPerKey, nullableNumber, replaceTable } from "./sync-helpers";
 
 /** How one Dexie table is mirrored to one sheet tab. */
@@ -53,7 +55,8 @@ export function syncedDbTables(): Table<any, any>[] {
     appDb.exerciseLogs,
     appDb.wellnessEntries,
     appDb.watchEvents,
-    appDb.measurements,
+    appDb.bodyRecords,
+    appDb.circumferenceRecords,
     appDb.dailySelfCareLogs,
     appDb.exercises,
     appDb.selfCareCatalog,
@@ -133,67 +136,6 @@ const watchEventsConfig: TableSyncConfig = {
   }),
   readFromDb: () => appDb.watchEvents.toArray(),
   replaceDb: (records) => replaceTable(appDb.watchEvents, records as WatchEvent[]),
-};
-
-const MEASUREMENT_FIXED: readonly string[] = MEASUREMENT_FIXED_COLUMNS;
-
-/** Fixed columns, then the item list in order, then ids found only in records (sorted). */
-function measurementHeaders(records: MeasurementRecord[]): string[] {
-  const listed = MEASUREMENT_ITEMS.map((item) => item.id);
-  const unknown = new Set<string>();
-  for (const record of records) {
-    for (const id of Object.keys(record.values)) {
-      if (!listed.includes(id) && !MEASUREMENT_FIXED.includes(id)) unknown.add(id);
-    }
-  }
-  return [...MEASUREMENT_FIXED, ...listed, ...[...unknown].sort()];
-}
-
-const measurementsConfig: TableSyncConfig = {
-  tabName: "Measurements",
-  keyColumn: "id",
-  updatedAtKey: "updatedAt",
-  deletable: true,
-  headerMode: "byName",
-  headers: [...MEASUREMENT_FIXED],
-  buildHeaders: (records) => measurementHeaders(records as MeasurementRecord[]),
-  toRow: (r: MeasurementRecord, headers) =>
-    headers.map((column) => {
-      switch (column) {
-        case "id":
-          return r.id;
-        case "date":
-          return r.date;
-        case "recordedAt":
-          return r.recordedAt;
-        case "note":
-          return r.note ?? "";
-        case "updatedAt":
-          return r.updatedAt;
-        default:
-          return column in r.values ? String(r.values[column]) : "";
-      }
-    }),
-  fromRow: (row, headers): MeasurementRecord => {
-    const values: Record<string, number> = {};
-    headers.forEach((column, index) => {
-      if (column === "" || MEASUREMENT_FIXED.includes(column)) return;
-      const raw = (row[index] ?? "").trim();
-      const value = Number(raw);
-      // An empty cell means "no value", not 0; non-numeric text is dropped.
-      if (raw !== "" && Number.isFinite(value)) values[column] = value;
-    });
-    return {
-      id: cell(row, headers, "id"),
-      date: cell(row, headers, "date"),
-      recordedAt: cell(row, headers, "recordedAt"),
-      values,
-      note: cell(row, headers, "note"),
-      updatedAt: cell(row, headers, "updatedAt"),
-    };
-  },
-  readFromDb: () => appDb.measurements.toArray(),
-  replaceDb: (records) => replaceTable(appDb.measurements, records as MeasurementRecord[]),
 };
 
 const dailySelfCareConfig: TableSyncConfig = {
@@ -323,14 +265,20 @@ const tombstonesConfig: TableSyncConfig = {
 
 /**
  * One entry per sheet tab (Tombstones last). A function, not a constant, so
- * the array is built at call time and import cycles never see it half-built.
+ * the array is built at call time and import cycles never see it half-built
+ * (the measurement configs read repositories that import the sync scheduler).
  */
 export function tableSyncConfigs(): TableSyncConfig[] {
   return [
     exerciseLogsConfig,
     wellnessEntriesConfig,
     watchEventsConfig,
-    measurementsConfig,
+    createMeasurementSyncConfig({ tabName: "BodyMeasurements", items: BODY_ITEMS, repository: bodyRepository }),
+    createMeasurementSyncConfig({
+      tabName: "Circumference",
+      items: CIRCUMFERENCE_ITEMS,
+      repository: circumferenceRepository,
+    }),
     dailySelfCareConfig,
     exercisesConfig,
     selfCareCatalogConfig,

@@ -6,7 +6,7 @@ import type { ExerciseLog, MeasurementRecord, Tombstone } from "@/lib/types";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
-import { MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
+import { CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
 import { sheetTabs, tableSyncConfigs } from "./sync-config";
 import { syncAll } from "./sync-engine";
 
@@ -149,7 +149,8 @@ function logRow(log: ExerciseLog): string[] {
 }
 
 const MEASUREMENT_FIXED = ["id", "date", "recordedAt", "note", "updatedAt"];
-const MEASUREMENT_HEADERS = [...MEASUREMENT_FIXED, ...MEASUREMENT_ITEMS.map((item) => item.id)];
+const BODY_HEADERS = [...MEASUREMENT_FIXED, "weight", "bodyFat", "height"];
+const CIRCUMFERENCE_HEADERS = [...MEASUREMENT_FIXED, ...CIRCUMFERENCE_ITEMS.map((item) => item.id)];
 
 /** n empty item cells. */
 function blanks(n: number): string[] {
@@ -486,7 +487,7 @@ describe("syncAll", () => {
   });
 });
 
-describe("syncAll: Measurements tab", () => {
+describe("syncAll: BodyMeasurements and Circumference tabs", () => {
   test("a sheet missing item columns is merged and rewritten with every item column", async () => {
     const remote = makeMeasurement({ id: "m-1", values: { weight: 60 } });
     const local = makeMeasurement({
@@ -495,8 +496,8 @@ describe("syncAll: Measurements tab", () => {
       values: { bodyFat: 22 },
       updatedAt: "2026-10-20T21:00:00+09:00",
     });
-    await appDb.measurements.put(local);
-    sheets.tabs.set("Measurements", [
+    await appDb.bodyRecords.put(local);
+    sheets.tabs.set("BodyMeasurements", [
       [...MEASUREMENT_FIXED, "weight"],
       [...measurementFixedCells(remote), "60"],
     ]);
@@ -504,18 +505,18 @@ describe("syncAll: Measurements tab", () => {
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect(await appDb.measurements.orderBy("id").toArray()).toEqual([remote, local]);
-    expect(sheets.tabs.get("Measurements")).toEqual([
-      MEASUREMENT_HEADERS,
-      [...measurementFixedCells(remote), "60", ...blanks(22)],
-      [...measurementFixedCells(local), "", "22", ...blanks(21)],
+    expect(await appDb.bodyRecords.orderBy("id").toArray()).toEqual([remote, local]);
+    expect(sheets.tabs.get("BodyMeasurements")).toEqual([
+      BODY_HEADERS,
+      [...measurementFixedCells(remote), "60", ...blanks(2)],
+      [...measurementFixedCells(local), "", "22", ...blanks(1)],
     ]);
   });
 
   test("a column not in the item list is kept; non-numeric cells are dropped", async () => {
     const first = makeMeasurement({ id: "m-1", values: { weight: 60, waist: 80 } });
     const second = makeMeasurement({ id: "m-2", values: { weight: 61 } });
-    sheets.tabs.set("Measurements", [
+    sheets.tabs.set("BodyMeasurements", [
       [...MEASUREMENT_FIXED, "weight", "waist"],
       [...measurementFixedCells(first), "60", "80"],
       [...measurementFixedCells(second), "61", "abc"],
@@ -523,18 +524,18 @@ describe("syncAll: Measurements tab", () => {
 
     await syncAll(TOKEN);
 
-    expect(await appDb.measurements.orderBy("id").toArray()).toEqual([first, second]);
-    expect(sheets.tabs.get("Measurements")).toEqual([
-      [...MEASUREMENT_HEADERS, "waist"],
-      [...measurementFixedCells(first), "60", ...blanks(22), "80"],
-      [...measurementFixedCells(second), "61", ...blanks(23)],
+    expect(await appDb.bodyRecords.orderBy("id").toArray()).toEqual([first, second]);
+    expect(sheets.tabs.get("BodyMeasurements")).toEqual([
+      [...BODY_HEADERS, "waist"],
+      [...measurementFixedCells(first), "60", ...blanks(2), "80"],
+      [...measurementFixedCells(second), "61", ...blanks(3)],
     ]);
   });
 
   test("a sheet missing a fixed column is treated as empty and rewritten", async () => {
     const local = makeMeasurement();
-    await appDb.measurements.put(local);
-    sheets.tabs.set("Measurements", [
+    await appDb.bodyRecords.put(local);
+    sheets.tabs.set("BodyMeasurements", [
       ["id", "date", "weight"],
       ["m-9", "2026-10-19", "70"],
     ]);
@@ -542,44 +543,57 @@ describe("syncAll: Measurements tab", () => {
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect(await appDb.measurements.toArray()).toEqual([local]);
-    expect(sheets.tabs.get("Measurements")).toEqual([
-      MEASUREMENT_HEADERS,
-      [...measurementFixedCells(local), "60", ...blanks(22)],
+    expect(await appDb.bodyRecords.toArray()).toEqual([local]);
+    expect(sheets.tabs.get("BodyMeasurements")).toEqual([
+      BODY_HEADERS,
+      [...measurementFixedCells(local), "60", ...blanks(2)],
     ]);
   });
 
-  test("a 28-column write to a 26-column tab widens the tab first and keeps the data", async () => {
-    const local = makeMeasurement();
-    await appDb.measurements.put(local);
-    expect(MEASUREMENT_HEADERS.length).toBeGreaterThan(26);
+  test("circumference records go to the Circumference tab with every circumference column", async () => {
+    const local = makeMeasurement({ id: "c-1", values: { armWristLeft: 15 } });
+    await appDb.circumferenceRecords.put(local);
 
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect(sheets.columnCount("Measurements")).toBe(MEASUREMENT_HEADERS.length);
-    expect(sheets.tabs.get("Measurements")).toEqual([
-      MEASUREMENT_HEADERS,
-      [...measurementFixedCells(local), "60", ...blanks(22)],
-    ]);
+    const rows = sheets.tabs.get("Circumference")!;
+    expect(rows[0]).toEqual(CIRCUMFERENCE_HEADERS);
+    expect(rows[1][CIRCUMFERENCE_HEADERS.indexOf("armWristLeft")]).toBe("15");
+    expect(sheets.tabs.get("BodyMeasurements")).toEqual([BODY_HEADERS]);
+    expect(await appDb.bodyRecords.count()).toBe(0);
+  });
+
+  test("a write wider than 26 columns widens the tab first and keeps the data", async () => {
+    const local = makeMeasurement({ id: "c-1", values: { armWristLeft: 15, extraA: 1, extraB: 2 } });
+    await appDb.circumferenceRecords.put(local);
+    const headers = [...CIRCUMFERENCE_HEADERS, "extraA", "extraB"];
+    expect(headers.length).toBeGreaterThan(26);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(sheets.columnCount("Circumference")).toBe(headers.length);
+    expect(sheets.tabs.get("Circumference")?.[0]).toEqual(headers);
+    expect(await appDb.circumferenceRecords.toArray()).toEqual([local]);
   });
 
   test("when widening the tab fails, nothing is cleared", async () => {
-    const remote = makeMeasurement({ id: "m-1", values: { weight: 60 } });
+    const remote = makeMeasurement({ id: "c-1", values: { armWristLeft: 15, extraA: 1, extraB: 2 } });
     const remoteRows = [
-      [...MEASUREMENT_FIXED, "weight"],
-      [...measurementFixedCells(remote), "60"],
+      [...MEASUREMENT_FIXED, "armWristLeft", "extraA", "extraB"],
+      [...measurementFixedCells(remote), "15", "1", "2"],
     ];
-    sheets.tabs.set("Measurements", remoteRows);
+    sheets.tabs.set("Circumference", remoteRows);
     sheets.failColumnGrow = true;
 
     const result = await syncAll(TOKEN);
 
-    expect(result.results.find((r) => r.tableName === "Measurements")?.error).toBeDefined();
-    expect(sheets.tabs.get("Measurements")).toEqual(remoteRows);
+    expect(result.results.find((r) => r.tableName === "Circumference")?.error).toBeDefined();
+    expect(sheets.tabs.get("Circumference")).toEqual(remoteRows);
     expect(
       sheets.calls.some(
-        (c) => c.method === "POST" && decodeURIComponent(c.url).includes("/values/Measurements!A:ZZ:clear"),
+        (c) => c.method === "POST" && decodeURIComponent(c.url).includes("/values/Circumference!A:ZZ:clear"),
       ),
     ).toBe(false);
   });
@@ -599,20 +613,43 @@ describe("syncAll: Measurements tab", () => {
     expect(result.results.map((r) => r.tableName)).not.toContain("DailyMetrics");
   });
 
-  test("a measurement deleted locally disappears from both local and the sheet", async () => {
-    const record = makeMeasurement();
-    await appDb.tombstones.put({
-      id: "Measurements:m-1",
-      table: "Measurements",
-      recordId: "m-1",
-      deletedAt: "2026-10-20T10:00:00+09:00",
-    });
-    sheets.tabs.set("Measurements", [MEASUREMENT_HEADERS, [...measurementFixedCells(record), "60", ...blanks(22)]]);
+  test("the old Measurements tab is never read, written or deleted", async () => {
+    const oldRows = [
+      [...MEASUREMENT_FIXED, "weight"],
+      [...measurementFixedCells(makeMeasurement()), "60"],
+    ];
+    sheets.tabs.set("Measurements", oldRows);
 
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect(await appDb.measurements.toArray()).toEqual([]);
-    expect(sheets.tabs.get("Measurements")).toEqual([MEASUREMENT_HEADERS]);
+    expect(sheets.tabs.get("Measurements")).toEqual(oldRows);
+    expect(sheets.calls.some((c) => decodeURIComponent(c.url).includes("/Measurements"))).toBe(false);
+    expect(sheets.calls.some((c) => decodeURIComponent(c.url).includes("values/Measurements"))).toBe(false);
+    expect(result.results.map((r) => r.tableName)).not.toContain("Measurements");
+    expect(sheetTabs()).not.toContain("Measurements");
+    expect(await appDb.bodyRecords.count()).toBe(0);
+    expect(await appDb.circumferenceRecords.count()).toBe(0);
+  });
+
+  test.each([
+    ["BodyMeasurements", "bodyRecords"],
+    ["Circumference", "circumferenceRecords"],
+  ] as const)("a %s record deleted locally disappears from both local and the sheet", async (tab, table) => {
+    const record = makeMeasurement({ values: {} });
+    const headers = tab === "BodyMeasurements" ? BODY_HEADERS : CIRCUMFERENCE_HEADERS;
+    await appDb.tombstones.put({
+      id: `${tab}:m-1`,
+      table: tab,
+      recordId: "m-1",
+      deletedAt: "2026-10-20T10:00:00+09:00",
+    });
+    sheets.tabs.set(tab, [headers, [...measurementFixedCells(record), ...blanks(headers.length - 5)]]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(await appDb[table].toArray()).toEqual([]);
+    expect(sheets.tabs.get(tab)).toEqual([headers]);
   });
 });

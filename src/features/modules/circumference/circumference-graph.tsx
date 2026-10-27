@@ -28,8 +28,8 @@ import {
   type Side,
 } from "@/features/measurements/circumference";
 import { SegmentedTabs } from "@/features/timeline/components/segmented-tabs";
-import { buildCircumferenceSeries } from "../history-graph-query";
-import { formatPointTime } from "./history-chart";
+import { buildCircumferenceSeries } from "@/features/history/history-graph-query";
+import { formatPointTime } from "@/features/history/components/history-chart";
 
 type Translate = (key: keyof Messages, replacements?: Record<string, string | number>) => string;
 

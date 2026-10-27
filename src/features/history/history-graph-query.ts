@@ -7,7 +7,8 @@ import {
 import { getMeasurementItem } from "@/features/measurements/measurement-items";
 import { calculateBmi } from "@/features/metrics/bmi";
 import { appDb } from "@/features/storage/app-db";
-import { listMeasurementsInRange } from "@/features/storage/measurements.repository";
+import { bodyRepository } from "@/features/modules/body/data";
+import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { listWellnessEntriesInRange } from "@/features/storage/wellness-entries.repository";
 import type { DailySelfCareEntry } from "@/lib/types";
 
@@ -60,7 +61,7 @@ function mapSelfCareValue(entry: DailySelfCareEntry, measure: Extract<GraphMetri
 
 async function buildMeasurementSeries({ start, end }: GraphRange, itemId: string): Promise<GraphSeries> {
   const item = getMeasurementItem(itemId);
-  const records = await listMeasurementsInRange(start, end);
+  const records = await bodyRepository.listInDayRange(start, end);
   const points = records
     .filter((record) => itemId in record.values)
     .map((record) => ({ at: record.recordedAt, value: record.values[itemId]! }));
@@ -73,7 +74,7 @@ async function buildMeasurementSeries({ start, end }: GraphRange, itemId: string
  * before it. Records up to the range end are read once and heights walked in time order.
  */
 async function buildBmiPoints({ start, end }: GraphRange): Promise<GraphPoint[]> {
-  const upToEnd = await listMeasurementsInRange("0000-01-01", end);
+  const upToEnd = await bodyRepository.listInDayRange("0000-01-01", end);
   const heights = sortByTime(
     upToEnd
       .filter((record) => "height" in record.values)
@@ -156,6 +157,6 @@ export async function buildCircumferenceSeries(input: {
   limb: Limb;
   site: CircumferenceSite;
 }): Promise<CircumferencePoint[]> {
-  const upToEnd = await listMeasurementsInRange("0000-01-01", input.range.end);
+  const upToEnd = await circumferenceRepository.listInDayRange("0000-01-01", input.range.end);
   return buildCircumferencePoints(upToEnd, input.limb, input.site, input.range.start);
 }

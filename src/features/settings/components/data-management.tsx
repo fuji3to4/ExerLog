@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
+import { BODY_ITEMS, CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { clearAllRecords, countAllRecords } from "@/features/storage/clear-all-records";
@@ -134,9 +135,14 @@ export function DataManagement() {
     downloadCsv("watch-events.csv", generateWatchEventsCsv(events, titleMap));
   }
 
-  async function handleExportMeasurements() {
-    const entries = await appDb.measurements.orderBy("recordedAt").toArray();
-    downloadCsv("measurements.csv", generateMeasurementsCsv(entries));
+  async function handleExportBody() {
+    const records = await appDb.bodyRecords.orderBy("recordedAt").toArray();
+    downloadCsv("body.csv", generateMeasurementsCsv(records, BODY_ITEMS));
+  }
+
+  async function handleExportCircumference() {
+    const records = await appDb.circumferenceRecords.orderBy("recordedAt").toArray();
+    downloadCsv("circumference.csv", generateMeasurementsCsv(records, CIRCUMFERENCE_ITEMS));
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -246,9 +252,16 @@ export function DataManagement() {
           <button
             type="button"
             className="settings-action-button"
-            onClick={() => void handleExportMeasurements()}
+            onClick={() => void handleExportBody()}
           >
-            {t("settings_export_measurements")}
+            {t("settings_export_body")}
+          </button>
+          <button
+            type="button"
+            className="settings-action-button"
+            onClick={() => void handleExportCircumference()}
+          >
+            {t("settings_export_circumference")}
           </button>
         </div>
         <BulkDeleteButton

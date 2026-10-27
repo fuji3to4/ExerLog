@@ -7,7 +7,8 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
-import { addMeasurement } from "@/features/storage/measurements.repository";
+import { bodyRepository } from "@/features/modules/body/data";
+import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { recordWatchEvent } from "@/features/storage/watch-events.repository";
 import { addWellnessEntry } from "@/features/storage/wellness-entries.repository";
 import { renderWithLanguage } from "@/test/render-with-language";
@@ -20,7 +21,8 @@ beforeEach(async () => {
     appDb.wellnessEntries.clear(),
     appDb.watchEvents.clear(),
     appDb.exercises.clear(),
-    appDb.measurements.clear(),
+    appDb.bodyRecords.clear(),
+    appDb.circumferenceRecords.clear(),
   ]);
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
   HTMLDialogElement.prototype.showModal = vi.fn(function showModal(this: HTMLDialogElement) {
@@ -40,7 +42,7 @@ async function seedHistory() {
     durationSeconds: 300,
     performedAt: "2026-03-23T09:00:00+09:00",
   });
-  await addMeasurement({
+  await bodyRepository.add({
     date: "2026-03-23",
     recordedAt: "2026-03-23T07:00:00+09:00",
     values: { height: 171, weight: 62 },
@@ -64,10 +66,18 @@ async function seedHistory() {
   });
 
   // 3/27: body measurement only
-  await addMeasurement({
+  await bodyRepository.add({
     date: "2026-03-27",
     recordedAt: "2026-03-27T07:30:00+09:00",
     values: { weight: 61.5 },
+    note: "",
+  });
+
+  // 3/28: circumference only
+  await circumferenceRepository.add({
+    date: "2026-03-28",
+    recordedAt: "2026-03-28T07:30:00+09:00",
+    values: { armWristLeft: 15 },
     note: "",
   });
 }
@@ -94,6 +104,9 @@ test("shows a hanamaru on exercise days and a dot on record-only days", async ()
   const measurementDay = screen.getByRole("button", { name: "March 27 (recorded)" });
   expect(measurementDay.querySelector(".history-calendar__dot")).not.toBeNull();
   expect(within(measurementDay).queryByText("💮")).toBeNull();
+
+  const circumferenceDay = screen.getByRole("button", { name: "March 28 (recorded)" });
+  expect(circumferenceDay.querySelector(".history-calendar__dot")).not.toBeNull();
 
   const emptyDay = screen.getByRole("button", { name: "March 26" });
   expect(emptyDay.querySelector(".history-calendar__dot")).toBeNull();

@@ -12,7 +12,7 @@ import {
   type Limb,
 } from "@/features/measurements/circumference";
 import type { MeasurementItem } from "@/features/measurements/measurement-items";
-import { SegmentedTabs } from "./segmented-tabs";
+import { SegmentedTabs } from "@/features/timeline/components/segmented-tabs";
 
 export type CircumferenceFieldsProps = {
   limb: Limb;

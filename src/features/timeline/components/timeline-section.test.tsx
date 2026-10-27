@@ -6,7 +6,8 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 import { appDb } from "@/features/storage/app-db";
 import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
-import { addMeasurement, listMeasurementsForDay } from "@/features/storage/measurements.repository";
+import { bodyRepository } from "@/features/modules/body/data";
+import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { listTombstones } from "@/features/storage/tombstones.repository";
 import { listWatchEventsForDay, recordWatchEvent } from "@/features/storage/watch-events.repository";
 import { localIsoAt } from "@/lib/date/local-iso";
@@ -41,7 +42,8 @@ describe("TimelineSection", () => {
     await Promise.all([
       appDb.exerciseLogs.clear(),
       appDb.wellnessEntries.clear(),
-      appDb.measurements.clear(),
+      appDb.bodyRecords.clear(),
+      appDb.circumferenceRecords.clear(),
       appDb.watchEvents.clear(),
       appDb.tombstones.clear(),
       appDb.exercises.clear(),
@@ -129,7 +131,7 @@ describe("TimelineSection", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "＋ 記録する" }));
     const dialog = await screen.findByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("tab", { name: "体の数値" }));
+    fireEvent.click(within(dialog).getByRole("tab", { name: "身体" }));
     fireEvent.change(within(dialog).getByLabelText("体重"), { target: { value: "60.2" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
     await waitForDialogToClose();
@@ -137,7 +139,7 @@ describe("TimelineSection", () => {
     const row = await screen.findByRole("button", { name: /📏 体重 60.2kg/ });
     await waitFor(() => expect(row.className).toContain("timeline-item--new"));
     expect(rows()).toHaveLength(2);
-    const [saved] = await listMeasurementsForDay(DATE);
+    const [saved] = await bodyRepository.listForDay(DATE);
     expect(saved.values).toEqual({ weight: 60.2 });
     expect(onChanged).toHaveBeenCalledTimes(1);
 
@@ -153,7 +155,7 @@ describe("TimelineSection", () => {
   });
 
   it("shows the note of a measurement row on a second line", async () => {
-    await addMeasurement({ date: DATE, values: { weight: 60 }, note: "朝いちばん" });
+    await bodyRepository.add({ date: DATE, values: { weight: 60 }, note: "朝いちばん" });
     renderWithLanguage(<Harness />, { initialLanguage: "ja" });
 
     const row = await screen.findByRole("button", { name: /📏 体重 60.0kg/ });
@@ -161,10 +163,34 @@ describe("TimelineSection", () => {
   });
 
   it("shows a dash when a measurement only has values for unlisted items", async () => {
-    await addMeasurement({ date: DATE, values: { unknownItem: 1 }, note: "" });
+    await bodyRepository.add({ date: DATE, values: { unknownItem: 1 }, note: "" });
     renderWithLanguage(<Harness />, { initialLanguage: "ja" });
 
     expect(await screen.findByRole("button", { name: /📏 —/ })).toBeTruthy();
+  });
+
+  it("shows a body and a circumference record at the same time as separate rows", async () => {
+    const at = localIsoAt(DATE, new Date(2026, 9, 20, 7, 0, 0));
+    await bodyRepository.add({ date: DATE, recordedAt: at, values: { weight: 60 }, note: "" });
+    await circumferenceRepository.add({
+      date: DATE,
+      recordedAt: at,
+      values: { armWristLeft: 15, armWristRight: 15.5 },
+      note: "",
+    });
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    const bodyRow = await screen.findByRole("button", { name: /📏 体重 60.0kg/ });
+    const circumferenceRow = screen.getByRole("button", { name: /📏 腕の周径 2か所/ });
+    expect(bodyRow).not.toBe(circumferenceRow);
+    expect(bodyRow.textContent).not.toContain("周径");
+    expect(rows()).toHaveLength(3);
+
+    fireEvent.click(circumferenceRow);
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "周径の記録を修正" })).toBeTruthy();
+    expect((within(dialog).getByLabelText("手首 左") as HTMLInputElement).value).toBe("15");
+    expect(within(dialog).queryByLabelText("体重")).toBeNull();
   });
 
   it("edits the duration of an exercise log", async () => {

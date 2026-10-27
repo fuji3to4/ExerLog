@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from "dexie";
+import Dexie, { type EntityTable, type Table } from "dexie";
 
 import type {
   DailySelfCareEntry,
@@ -14,7 +14,8 @@ import type {
 export class AppDb extends Dexie {
   exerciseLogs!: EntityTable<ExerciseLog, "id">;
   wellnessEntries!: EntityTable<WellnessEntry, "id">;
-  measurements!: EntityTable<MeasurementRecord, "id">;
+  bodyRecords!: Table<MeasurementRecord, string>;
+  circumferenceRecords!: Table<MeasurementRecord, string>;
   watchEvents!: EntityTable<WatchEvent, "id">;
   tombstones!: EntityTable<Tombstone, "id">;
   exercises!: EntityTable<ExerciseVideo, "id">;
@@ -163,6 +164,22 @@ export class AppDb extends Dexie {
       tombstones: "id, table",
       exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
       measurements: "id, date, recordedAt",
+    });
+
+    // v11: body and circumference records get their own tables. No data migration:
+    // old measurements are discarded; every other table is left as it is.
+    this.version(11).stores({
+      selfCareCatalog: "id, sortOrder, isArchived",
+      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      measurements: null,
+      bodyRecords: "id, date, recordedAt",
+      circumferenceRecords: "id, date, recordedAt",
     });
   }
 }

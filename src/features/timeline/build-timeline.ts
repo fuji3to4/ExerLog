@@ -5,13 +5,20 @@ export type WellnessLabel = "morning" | "beforeVideo" | "afterVideo" | "night";
 
 export type TimelineItem =
   | { kind: "wellness"; id: string; at: string; entry: WellnessEntry; label: WellnessLabel | null }
-  | { kind: "measurement"; id: string; at: string; record: MeasurementRecord; label: WellnessLabel | null }
+  | { kind: "body"; id: string; at: string; record: MeasurementRecord; label: WellnessLabel | null }
+  | { kind: "circumference"; id: string; at: string; record: MeasurementRecord; label: WellnessLabel | null }
   | { kind: "watch"; id: string; at: string; event: WatchEvent; title: string }
   | { kind: "exercise"; id: string; at: string; log: ExerciseLog; title: string };
 
 export const LABEL_WINDOW_MS = 30 * 60_000;
 
-const KIND_ORDER: Record<TimelineItem["kind"], number> = { wellness: 0, measurement: 1, watch: 2, exercise: 3 };
+const KIND_ORDER: Record<TimelineItem["kind"], number> = {
+  wellness: 0,
+  body: 1,
+  circumference: 2,
+  watch: 3,
+  exercise: 4,
+};
 
 export function labelWellness(
   entry: WellnessEntry,
@@ -54,10 +61,11 @@ export function buildTimeline(input: {
   wellness: WellnessEntry[];
   watches: WatchEvent[];
   logs: ExerciseLog[];
-  measurements: MeasurementRecord[];
+  body: MeasurementRecord[];
+  circumference: MeasurementRecord[];
   titles: Map<string, string>;
 }): TimelineItem[] {
-  const { wellness, watches, logs, measurements, titles } = input;
+  const { wellness, watches, logs, body, circumference, titles } = input;
   const items: TimelineItem[] = [
     ...wellness.map((entry): TimelineItem => ({
       kind: "wellness",
@@ -66,8 +74,15 @@ export function buildTimeline(input: {
       entry,
       label: labelWellness(entry, watches, logs),
     })),
-    ...measurements.map((record): TimelineItem => ({
-      kind: "measurement",
+    ...body.map((record): TimelineItem => ({
+      kind: "body",
+      id: record.id,
+      at: record.recordedAt,
+      record,
+      label: labelAt(record.recordedAt, watches, logs),
+    })),
+    ...circumference.map((record): TimelineItem => ({
+      kind: "circumference",
       id: record.id,
       at: record.recordedAt,
       record,

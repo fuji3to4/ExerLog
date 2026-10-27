@@ -5,14 +5,16 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 import { selfCareCatalog } from "@/features/catalog/self-care-catalog";
 import { replaceDailySelfCareEntries } from "@/features/storage/daily-self-care.repository";
 import { appDb } from "@/features/storage/app-db";
-import { addMeasurement } from "@/features/storage/measurements.repository";
+import { bodyRepository } from "@/features/modules/body/data";
+import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { addWellnessEntry } from "@/features/storage/wellness-entries.repository";
 
 import { buildCircumferenceSeries, buildHistoryGraphSeries } from "./history-graph-query";
 
 beforeEach(async () => {
   await Promise.all([
-    appDb.measurements.clear(),
+    appDb.bodyRecords.clear(),
+    appDb.circumferenceRecords.clear(),
     appDb.dailySelfCareLogs.clear(),
     appDb.wellnessEntries.clear(),
     appDb.selfCareCatalog.clear(),
@@ -22,11 +24,11 @@ beforeEach(async () => {
 });
 
 test("plots every weight record in the range as its own point, oldest first", async () => {
-  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T21:00:00+09:00", values: { weight: 60.9 }, note: "" });
-  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T07:12:00+09:00", values: { weight: 60.2 }, note: "" });
-  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T12:00:00+09:00", values: { weight: 60.6, bodyFat: 20 }, note: "" });
-  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T13:00:00+09:00", values: { bodyFat: 21 }, note: "" });
-  await addMeasurement({ date: "2026-10-23", recordedAt: "2026-10-23T07:00:00+09:00", values: { weight: 61 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-22", recordedAt: "2026-10-22T21:00:00+09:00", values: { weight: 60.9 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-22", recordedAt: "2026-10-22T07:12:00+09:00", values: { weight: 60.2 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-22", recordedAt: "2026-10-22T12:00:00+09:00", values: { weight: 60.6, bodyFat: 20 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-22", recordedAt: "2026-10-22T13:00:00+09:00", values: { bodyFat: 21 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-23", recordedAt: "2026-10-23T07:00:00+09:00", values: { weight: 61 }, note: "" });
 
   const series = await buildHistoryGraphSeries({
     range: { start: "2026-10-22", end: "2026-10-22" },
@@ -45,8 +47,8 @@ test("plots every weight record in the range as its own point, oldest first", as
 });
 
 test("orders points by instant, not by string, when offsets differ", async () => {
-  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T08:00:00+09:00", values: { weight: 60 }, note: "" });
-  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T07:00:00+00:00", values: { weight: 61 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-22", recordedAt: "2026-10-22T08:00:00+09:00", values: { weight: 60 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-22", recordedAt: "2026-10-22T07:00:00+00:00", values: { weight: 61 }, note: "" });
 
   const series = await buildHistoryGraphSeries({
     range: { start: "2026-10-22", end: "2026-10-22" },
@@ -84,8 +86,8 @@ test("plots every wellness entry as its own point instead of a daily average", a
 });
 
 test("builds BMI from each weight with the latest height recorded at or before it, even before the range", async () => {
-  await addMeasurement({ date: "2026-10-01", recordedAt: "2026-10-01T09:00:00+09:00", values: { height: 170 }, note: "" });
-  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T07:12:00+09:00", values: { weight: 60 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-01", recordedAt: "2026-10-01T09:00:00+09:00", values: { height: 170 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-22", recordedAt: "2026-10-22T07:12:00+09:00", values: { weight: 60 }, note: "" });
 
   const series = await buildHistoryGraphSeries({
     range: { start: "2026-10-22", end: "2026-10-22" },
@@ -100,11 +102,11 @@ test("builds BMI from each weight with the latest height recorded at or before i
 });
 
 test("skips BMI points with no earlier height and switches height when a newer one is recorded", async () => {
-  await addMeasurement({ date: "2026-10-20", recordedAt: "2026-10-20T07:00:00+09:00", values: { weight: 62 }, note: "" });
-  await addMeasurement({ date: "2026-10-20", recordedAt: "2026-10-20T08:00:00+09:00", values: { height: 170 }, note: "" });
-  await addMeasurement({ date: "2026-10-21", recordedAt: "2026-10-21T07:00:00+09:00", values: { weight: 60 }, note: "" });
-  await addMeasurement({ date: "2026-10-22", recordedAt: "2026-10-22T07:00:00+09:00", values: { weight: 60, height: 160 }, note: "" });
-  await addMeasurement({ date: "2026-10-25", recordedAt: "2026-10-25T07:00:00+09:00", values: { height: 150 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-20", recordedAt: "2026-10-20T07:00:00+09:00", values: { weight: 62 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-20", recordedAt: "2026-10-20T08:00:00+09:00", values: { height: 170 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-21", recordedAt: "2026-10-21T07:00:00+09:00", values: { weight: 60 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-22", recordedAt: "2026-10-22T07:00:00+09:00", values: { weight: 60, height: 160 }, note: "" });
+  await bodyRepository.add({ date: "2026-10-25", recordedAt: "2026-10-25T07:00:00+09:00", values: { height: 150 }, note: "" });
 
   const series = await buildHistoryGraphSeries({
     range: { start: "2026-10-20", end: "2026-10-22" },
@@ -169,9 +171,9 @@ test("builds a self-care minutes series for a specific self-care item", async ()
 });
 
 test("buildCircumferenceSeries uses records before the range for deltas and returns only in-range points", async () => {
-  await addMeasurement({ date: "2026-09-30", recordedAt: "2026-09-30T07:00:00+09:00", values: { armBelowElbowRight: 24.2 }, note: "" });
-  await addMeasurement({ date: "2026-10-20", recordedAt: "2026-10-20T07:00:00+09:00", values: { armBelowElbowRight: 24.5, armBelowElbowLeft: 22.4 }, note: "" });
-  await addMeasurement({ date: "2026-10-25", recordedAt: "2026-10-25T07:00:00+09:00", values: { armBelowElbowRight: 25 }, note: "" });
+  await circumferenceRepository.add({ date: "2026-09-30", recordedAt: "2026-09-30T07:00:00+09:00", values: { armBelowElbowRight: 24.2 }, note: "" });
+  await circumferenceRepository.add({ date: "2026-10-20", recordedAt: "2026-10-20T07:00:00+09:00", values: { armBelowElbowRight: 24.5, armBelowElbowLeft: 22.4 }, note: "" });
+  await circumferenceRepository.add({ date: "2026-10-25", recordedAt: "2026-10-25T07:00:00+09:00", values: { armBelowElbowRight: 25 }, note: "" });
 
   const points = await buildCircumferenceSeries({
     range: { start: "2026-10-01", end: "2026-10-22" },
@@ -182,4 +184,36 @@ test("buildCircumferenceSeries uses records before the range for deltas and retu
   expect(points).toEqual([
     { at: "2026-10-20T07:00:00+09:00", left: { value: 22.4, delta: null }, right: { value: 24.5, delta: 24.5 - 24.2 } },
   ]);
+});
+
+test("body metrics read only body records and circumference reads only circumference records", async () => {
+  await appDb.circumferenceRecords.put({
+    id: "c-stray",
+    date: "2026-10-20",
+    recordedAt: "2026-10-20T07:00:00+09:00",
+    values: { weight: 99, armBelowElbowRight: 24.5 },
+    note: "",
+    updatedAt: "2026-10-20T07:00:00+09:00",
+  });
+  await appDb.bodyRecords.put({
+    id: "b-stray",
+    date: "2026-10-21",
+    recordedAt: "2026-10-21T07:00:00+09:00",
+    values: { weight: 60, armBelowElbowRight: 30 },
+    note: "",
+    updatedAt: "2026-10-21T07:00:00+09:00",
+  });
+
+  const weight = await buildHistoryGraphSeries({
+    range: { start: "2026-10-01", end: "2026-10-31" },
+    metric: { kind: "measurement", itemId: "weight" },
+  });
+  expect(weight.points).toEqual([{ at: "2026-10-21T07:00:00+09:00", value: 60 }]);
+
+  const circumference = await buildCircumferenceSeries({
+    range: { start: "2026-10-01", end: "2026-10-31" },
+    limb: "arm",
+    site: "belowElbow",
+  });
+  expect(circumference.map((point) => point.at)).toEqual(["2026-10-20T07:00:00+09:00"]);
 });

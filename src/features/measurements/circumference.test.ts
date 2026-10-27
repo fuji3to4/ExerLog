@@ -16,7 +16,7 @@ import {
   sideDifference,
   writeCircumferenceLimb,
 } from "./circumference";
-import { MEASUREMENT_ITEMS } from "./measurement-items";
+import { CIRCUMFERENCE_ITEMS, MEASUREMENT_ITEMS } from "./measurement-items";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -65,10 +65,10 @@ test("limb storage defaults to arm and survives a throwing storage", () => {
 });
 
 test("CSV and the sync tab get a column for every circumference id", () => {
-  const header = generateMeasurementsCsv([]).split("\n")[0];
+  const header = generateMeasurementsCsv([], CIRCUMFERENCE_ITEMS).split("\n")[0];
   expect(header).toContain("armPalmLeft");
   expect(header).toContain("legGroinRight");
-  const config = tableSyncConfigs().find((c) => c.tabName === "Measurements")!;
+  const config = tableSyncConfigs().find((c) => c.tabName === "Circumference")!;
   const headers = config.buildHeaders!([]);
   expect(headers).toContain("armPalmLeft");
   expect(headers).toContain("legGroinRight");

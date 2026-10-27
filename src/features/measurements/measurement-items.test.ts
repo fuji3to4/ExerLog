@@ -6,6 +6,8 @@ import { getMessages } from "@/features/i18n/messages";
 import type { MeasurementRecord } from "@/lib/types";
 
 import {
+  BODY_ITEMS,
+  CIRCUMFERENCE_ITEMS,
   MEASUREMENT_FIXED_COLUMNS,
   MEASUREMENT_ITEMS,
   formatMeasurementSummary,
@@ -26,6 +28,13 @@ test("every labelKey exists in ja and en", () => {
     expect(item.labelKey in ja).toBe(true);
     expect(item.labelKey in en).toBe(true);
   }
+});
+
+test("body items are weight, bodyFat, height; circumference items are the 20 limb sites", () => {
+  expect(BODY_ITEMS.map((item) => item.id)).toEqual(["weight", "bodyFat", "height"]);
+  expect(CIRCUMFERENCE_ITEMS).toHaveLength(20);
+  expect(CIRCUMFERENCE_ITEMS.every((item) => item.circumference !== undefined)).toBe(true);
+  expect(getMeasurementItem("armWristLeft")?.unit).toBe("cm");
 });
 
 test("items start with weight, bodyFat, height in that order", () => {
@@ -49,10 +58,10 @@ test("formatMeasurementSummary joins known items in list order and omits unknown
   };
   const messages = getMessages("ja");
   const t = (key: keyof typeof messages) => messages[key];
-  expect(formatMeasurementSummary(record, t)).toBe("体重 60.2kg・体脂肪率 22.0%");
+  expect(formatMeasurementSummary(record, BODY_ITEMS, t)).toBe("体重 60.2kg・体脂肪率 22.0%");
 });
 
-test("formatMeasurementSummary lists basic items, then arm and leg circumference counts", () => {
+test("formatMeasurementSummary lists only the given items: body values, or arm and leg circumference counts", () => {
   const baseRecord: MeasurementRecord = {
     id: "1",
     date: "2026-10-22",
@@ -65,6 +74,12 @@ test("formatMeasurementSummary lists basic items, then arm and leg circumference
   const t = (key: keyof typeof messages, params?: Record<string, string | number>) =>
     messages[key].replace(/\{(\w+)\}/g, (_, name) => String(params?.[name]));
   const values = { weight: 60.2, legAnkleLeft: 21, armPalmLeft: 18, armPalmRight: 19 };
-  expect(formatMeasurementSummary({ ...baseRecord, values }, t)).toBe("体重 60.2kg・腕の周径 2か所・脚の周径 1か所");
-  expect(formatMeasurementSummary({ ...baseRecord, values: { legGroinRight: 53.4 } }, t)).toBe("脚の周径 1か所");
+  expect(formatMeasurementSummary({ ...baseRecord, values }, MEASUREMENT_ITEMS, t)).toBe(
+    "体重 60.2kg・腕の周径 2か所・脚の周径 1か所",
+  );
+  expect(formatMeasurementSummary({ ...baseRecord, values }, BODY_ITEMS, t)).toBe("体重 60.2kg");
+  expect(formatMeasurementSummary({ ...baseRecord, values }, CIRCUMFERENCE_ITEMS, t)).toBe("腕の周径 2か所・脚の周径 1か所");
+  expect(formatMeasurementSummary({ ...baseRecord, values: { legGroinRight: 53.4 } }, CIRCUMFERENCE_ITEMS, t)).toBe(
+    "脚の周径 1か所",
+  );
 });

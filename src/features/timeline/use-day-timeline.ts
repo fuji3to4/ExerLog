@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { listExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
-import { listMeasurementsForDay } from "@/features/storage/measurements.repository";
+import { bodyRepository } from "@/features/modules/body/data";
+import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { listWatchEventsForDay } from "@/features/storage/watch-events.repository";
 import { listWellnessEntriesForDay } from "@/features/storage/wellness-entries.repository";
 import { buildTimeline, type TimelineItem } from "./build-timeline";
@@ -20,15 +21,16 @@ export type DayTimelineState = {
 };
 
 async function loadDay(date: string): Promise<TimelineItem[]> {
-  const [wellness, watches, logs, measurements, exercises] = await Promise.all([
+  const [wellness, watches, logs, body, circumference, exercises] = await Promise.all([
     listWellnessEntriesForDay(date),
     listWatchEventsForDay(date),
     listExerciseLogsForDay(date),
-    listMeasurementsForDay(date),
+    bodyRepository.listForDay(date),
+    circumferenceRepository.listForDay(date),
     listAllExercises(),
   ]);
   const titles = new Map(exercises.map((exercise) => [exercise.id, exercise.title]));
-  return buildTimeline({ wellness, watches, logs, measurements, titles });
+  return buildTimeline({ wellness, watches, logs, body, circumference, titles });
 }
 
 export function useDayTimeline(date: string): DayTimelineState {

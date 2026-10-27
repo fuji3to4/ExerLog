@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { Messages } from "@/features/i18n/messages";
-import { MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
+import { BODY_ITEMS } from "@/features/measurements/measurement-items";
 import { buildHistoryGraphSeries, type GraphMetricSelection, type GraphSeries } from "@/features/history/history-graph-query";
 import { toDayKey } from "@/lib/date/day-key";
-import { CircumferenceGraph } from "./circumference-graph";
+import { CircumferenceGraph } from "@/features/modules/circumference/circumference-graph";
 import { HistoryChart } from "./history-chart";
 
 type DateRangePreset = "7d" | "30d" | "90d" | "all";
@@ -17,9 +17,9 @@ type MetricOption = {
   labelKey: keyof Messages;
 };
 
-/** Graphable measurement items in list order, then circumference, BMI and the two wellness scores. */
+/** Graphable body items in list order, then circumference, BMI and the two wellness scores. */
 const METRIC_OPTIONS: MetricOption[] = [
-  ...MEASUREMENT_ITEMS.filter((item) => item.showInGraph).map(
+  ...BODY_ITEMS.filter((item) => item.showInGraph).map(
     (item): MetricOption => ({ value: { kind: "measurement", itemId: item.id }, labelKey: item.labelKey }),
   ),
   { value: { kind: "circumference" }, labelKey: "history_graph_metric_circumference" },

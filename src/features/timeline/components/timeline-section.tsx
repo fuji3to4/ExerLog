@@ -55,16 +55,16 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
 
       <RecordDialog open={isAdding} onOpenChange={setIsAdding} date={date} onSaved={(id) => void refresh(id)} />
 
-      {selected?.kind === "wellness" || selected?.kind === "measurement" ? (
+      {selected?.kind === "wellness" || selected?.kind === "body" || selected?.kind === "circumference" ? (
         <RecordDialog
-          key={selected.id}
+          key={`${selected.kind}:${selected.id}`}
           open
           onOpenChange={closeSelected}
           date={date}
           editing={
             selected.kind === "wellness"
               ? { kind: "wellness", entry: selected.entry }
-              : { kind: "measurement", record: selected.record }
+              : { kind: selected.kind, record: selected.record }
           }
           onSaved={() => void refresh()}
           onDeleted={() => void refresh()}

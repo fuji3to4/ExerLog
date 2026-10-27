@@ -5,6 +5,7 @@ import {
   generateWatchEventsCsv,
   generateWellnessEntriesCsv,
 } from "./history-csv";
+import { BODY_ITEMS, CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
 import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
 
 const makeLog = (overrides: Partial<ExerciseLog> = {}): ExerciseLog => ({
@@ -94,10 +95,14 @@ describe("generateWatchEventsCsv", () => {
 });
 
 describe("generateMeasurementsCsv", () => {
-  it("writes item columns with raw values, blanks for missing, none for unknown ids", () => {
-    const [header, row] = generateMeasurementsCsv([makeMeasurement()]).split("\n");
-    expect(header.startsWith("date,recordedAt,note,weight,bodyFat,height,armPalmLeft,")).toBe(true);
-    expect(header).not.toContain("waist");
-    expect(row).toMatch(/^2024-01-15,\d{4}-\d{2}-\d{2} \d{2}:\d{2},,60\.25,,,{20}$/);
+  it("writes the given items' columns with raw values, blanks for missing, none for unknown ids", () => {
+    const [header, row] = generateMeasurementsCsv([makeMeasurement()], BODY_ITEMS).split("\n");
+    expect(header).toBe("date,recordedAt,note,weight,bodyFat,height");
+    expect(row).toMatch(/^2024-01-15,\d{4}-\d{2}-\d{2} \d{2}:\d{2},,60\.25,,$/);
+  });
+
+  it("writes one column per circumference item, in order", () => {
+    const [header] = generateMeasurementsCsv([], CIRCUMFERENCE_ITEMS).split("\n");
+    expect(header).toBe(["date", "recordedAt", "note", ...CIRCUMFERENCE_ITEMS.map((item) => item.id)].join(","));
   });
 });
