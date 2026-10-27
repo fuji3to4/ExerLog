@@ -10,11 +10,11 @@ import type { RecordFormProps } from "../types";
 import {
   addPhotoRecord,
   deletePhotoRecord,
-  getPhotoBlob,
   MAX_PHOTOS_PER_RECORD,
   type NewPhoto,
   updatePhotoRecord,
 } from "./repository";
+import { PhotoThumb } from "./photo-thumb";
 import { resizeImage } from "./resize";
 
 type Item =
@@ -35,7 +35,6 @@ export function PhotoForm({ onOpenChange, date, record, onSaved, onDeleted }: Re
   const [items, setItems] = useState<Item[]>(() =>
     (record?.photoIds ?? []).map((photoId) => ({ key: photoId, kind: "existing", photoId })),
   );
-  const [existingUrls, setExistingUrls] = useState<Record<string, string>>({});
   const [unreadable, setUnreadable] = useState(false);
   const [overLimit, setOverLimit] = useState(false);
   const itemsRef = useRef(items);
@@ -55,21 +54,6 @@ export function PhotoForm({ onOpenChange, date, record, onSaved, onDeleted }: Re
       urls.clear();
     };
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    for (const photoId of record?.photoIds ?? []) {
-      void getPhotoBlob(photoId).then((row) => {
-        if (cancelled || !mountedRef.current || !row?.blob) return;
-        const url = URL.createObjectURL(row.blob);
-        urlsRef.current.add(url);
-        setExistingUrls((current) => ({ ...current, [photoId]: url }));
-      });
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [record]);
 
   async function addFiles(fileList: FileList | null) {
     const files = Array.from(fileList ?? []);
@@ -145,17 +129,19 @@ export function PhotoForm({ onOpenChange, date, record, onSaved, onDeleted }: Re
       <div className="space-y-1.5">
         <div className="flex flex-wrap gap-2">
           {items.map((item, index) => {
-            const url = item.kind === "existing" ? existingUrls[item.photoId] : item.url;
+            const url = item.kind === "new" ? item.url : null;
             return (
               <div key={item.key} className="relative size-16 rounded-lg bg-muted">
-                {url ? (
+                {item.kind === "existing" ? (
+                  <PhotoThumb photoId={item.photoId} recordId={record?.id ?? ""} size={64} label={String(index + 1)} />
+                ) : url ? (
                   // eslint-disable-next-line @next/next/no-img-element -- local blob URL
                   <img src={url} alt={String(index + 1)} className="size-full rounded-lg object-cover" />
-                ) : item.kind === "new" ? (
+                ) : (
                   <span className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
                     {t("photo_processing")}
                   </span>
-                ) : null}
+                )}
                 <button
                   type="button"
                   aria-label={t("photo_remove")}

@@ -1,8 +1,10 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
+vi.mock("./use-photo-url", () => ({ usePhotoUrl: () => ({ status: "loading" }) }));
 
+import { appDb } from "@/features/storage/app-db";
 import { AddRecordMenu } from "@/features/modules/components/add-record-menu";
 import { ModuleRecordDialog } from "@/features/modules/components/module-record-dialog";
 import { RECORD_MODULES } from "@/features/modules/registry";
@@ -26,5 +28,32 @@ describe("photo module registration", () => {
       { initialLanguage: "ja" },
     );
     expect(screen.getByText("写真を記録")).toBeTruthy();
+  });
+});
+
+describe("photo history view", () => {
+  async function renderHistory() {
+    const { photoModule } = await import("./module");
+    const View = photoModule.HistoryView;
+    renderWithLanguage(<View />, { initialLanguage: "ja" });
+  }
+
+  it("lists photo records newest first", async () => {
+    await appDb.photoRecords.clear();
+    const base = { date: "2026-10-20", photoIds: ["x"], updatedAt: "2026-10-20T08:00:00+09:00" };
+    await appDb.photoRecords.bulkPut([
+      { ...base, id: "old", recordedAt: "2026-10-20T08:00:00+09:00", note: "古いメモ" },
+      { ...base, id: "new", recordedAt: "2026-10-27T08:00:00+09:00", note: "新しいメモ" },
+    ]);
+    await renderHistory();
+    await waitFor(() => expect(screen.getByText("新しいメモ")).toBeTruthy());
+    const text = document.body.textContent ?? "";
+    expect(text.indexOf("新しいメモ")).toBeLessThan(text.indexOf("古いメモ"));
+  });
+
+  it("shows the empty text without records", async () => {
+    await appDb.photoRecords.clear();
+    await renderHistory();
+    await waitFor(() => expect(screen.getByText("記録がありません")).toBeTruthy());
   });
 });

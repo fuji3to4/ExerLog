@@ -134,8 +134,26 @@ describe("photo repository", () => {
     expect(await appDb.tombstones.count()).toBe(0);
   });
 
-  it("storeFetchedBlob fills a placeholder blob", async () => {
+  it("storeFetchedBlob fills a placeholder blob of a photo that is still in a record", async () => {
+    await appDb.photoRecords.add({
+      id: "r1",
+      date: "2026-10-20",
+      recordedAt: "2026-10-20T08:00:00+09:00",
+      note: "",
+      photoIds: ["p1"],
+      updatedAt: "2026-10-20T08:00:00+09:00",
+    });
+    await appDb.photoBlobs.put({ id: "p1", recordId: "r1", blob: null, width: 0, height: 0 });
     await storeFetchedBlob("p1", "r1", new Blob(["z"]));
     expect((await getPhotoBlob("p1"))?.blob).not.toBeNull();
+  });
+
+  it("storeFetchedBlob does not recreate a blob when the record or the photo is gone", async () => {
+    await storeFetchedBlob("p1", "missing", new Blob(["z"]));
+    expect(await getPhotoBlob("p1")).toBeUndefined();
+
+    const record = await addPhotoRecord({ date: "2026-10-20", note: "", photos: [photo("a")] });
+    await storeFetchedBlob("other", record.id, new Blob(["z"]));
+    expect(await getPhotoBlob("other")).toBeUndefined();
   });
 });

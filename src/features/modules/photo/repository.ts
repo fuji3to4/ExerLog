@@ -145,15 +145,22 @@ export function getPhotoBlob(photoId: string): Promise<PhotoBlob | undefined> {
   return appDb.photoBlobs.get(photoId);
 }
 
-/** Saves a photo downloaded from Drive into its (possibly placeholder) local row. */
+/**
+ * Saves a photo downloaded from Drive into its (possibly placeholder) local row. Writes
+ * nothing when the photo is no longer part of an existing record (deleted mid-download).
+ */
 export async function storeFetchedBlob(photoId: string, recordId: string, blob: Blob): Promise<void> {
-  const existing = await appDb.photoBlobs.get(photoId);
-  await appDb.photoBlobs.put({
-    id: photoId,
-    recordId,
-    blob,
-    width: existing?.width ?? 0,
-    height: existing?.height ?? 0,
+  await appDb.transaction("rw", appDb.photoRecords, appDb.photoBlobs, async () => {
+    const record = await appDb.photoRecords.get(recordId);
+    if (!record?.photoIds.includes(photoId)) return;
+    const existing = await appDb.photoBlobs.get(photoId);
+    await appDb.photoBlobs.put({
+      id: photoId,
+      recordId,
+      blob,
+      width: existing?.width ?? 0,
+      height: existing?.height ?? 0,
+    });
   });
 }
 
