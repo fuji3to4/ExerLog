@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { recordModuleData } from "@/features/modules/data-registry";
+import { useModuleSettings } from "@/features/modules/use-module-settings";
 import { toDayKey } from "@/lib/date/day-key";
 
 import { listCalendarMarksInMonth, type CalendarMark } from "./history-query";
@@ -23,16 +23,15 @@ export function useHistoryState(initialMonth?: string) {
   const [marks, setMarks] = useState<Record<string, CalendarMark>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(() => (initialMonth ? null : today));
   const marksRequest = useRef(0);
+  const { enabledModules } = useModuleSettings();
+  // A string, so a new array with the same modules does not reload the marks.
+  const enabledIds = enabledModules.map((module) => module.data.id).join(",");
 
   const refreshMarks = useCallback(async () => {
     const current = ++marksRequest.current;
-    // Until module settings are wired in (Task 6), every module marks days.
-    const next = await listCalendarMarksInMonth(
-      currentMonth,
-      recordModuleData().map((m) => m.id),
-    );
+    const next = await listCalendarMarksInMonth(currentMonth, enabledIds ? enabledIds.split(",") : []);
     if (current === marksRequest.current) setMarks(next);
-  }, [currentMonth]);
+  }, [currentMonth, enabledIds]);
 
   useEffect(() => {
     void refreshMarks();

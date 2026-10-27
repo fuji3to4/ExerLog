@@ -2,11 +2,13 @@
 
 import { Smile } from "lucide-react";
 
+import { MetricGraphView } from "@/features/history/components/metric-graph-view";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { TimeLabelTag } from "@/features/timeline/components/time-label-tag";
 import type { WellnessEntry } from "@/lib/types";
 import type { RecordModule, TimeLabel } from "../types";
 import { wellnessData } from "./data";
+import { WELLNESS_GRAPH_METRICS } from "./graph";
 import { WellnessForm } from "./wellness-entry-dialog";
 
 function WellnessTimelineCard({ record, label }: { record: WellnessEntry; label: TimeLabel | null }) {
@@ -22,9 +24,8 @@ function WellnessTimelineCard({ record, label }: { record: WellnessEntry; label:
   );
 }
 
-/** Filled in by the history task. */
 function WellnessHistoryView() {
-  return null;
+  return <MetricGraphView metrics={WELLNESS_GRAPH_METRICS} />;
 }
 
 /** Filled in by the period summary task. */

@@ -28,8 +28,10 @@ import {
   type Side,
 } from "@/features/measurements/circumference";
 import { SegmentedTabs } from "@/features/timeline/components/segmented-tabs";
-import { buildCircumferenceSeries } from "@/features/history/history-graph-query";
 import { formatPointTime } from "@/features/history/components/history-chart";
+import type { DayRange } from "@/features/history/range-presets";
+
+import { buildCircumferenceSeries } from "./series";
 
 type Translate = (key: keyof Messages, replacements?: Record<string, string | number>) => string;
 
@@ -110,7 +112,7 @@ export function SquareDot({ cx, cy, fill, size }: { cx?: number | null; cy?: num
   return <rect x={cx - size / 2} y={cy - size / 2} width={size} height={size} fill={fill} />;
 }
 
-export function CircumferenceGraph({ range }: { range: { start: string; end: string } }) {
+export function CircumferenceGraph({ range }: { range: DayRange }) {
   const { t } = useTranslation();
   const [limb, setLimb] = useState<Limb>(() => readCircumferenceLimb());
   const [site, setSite] = useState<CircumferenceSite>(() => CIRCUMFERENCE_SITES[readCircumferenceLimb()][0]!);

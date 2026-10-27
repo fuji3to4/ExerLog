@@ -1,11 +1,14 @@
 "use client";
 
 import { Ruler } from "lucide-react";
+import { useMemo, useState } from "react";
 
+import { getDateRangeForPreset, RangePresetButtons, type DateRangePreset } from "@/features/history/range-presets";
 import { MeasurementTimelineCard } from "@/features/measurements/components/measurement-timeline-card";
 import { CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
 import type { MeasurementRecord } from "@/lib/types";
 import type { RecordModule, TimeLabel } from "../types";
+import { CircumferenceGraph } from "./circumference-graph";
 import { CircumferenceForm } from "./circumference-form";
 import { circumferenceData } from "./data";
 
@@ -13,9 +16,15 @@ function CircumferenceTimelineCard({ record, label }: { record: MeasurementRecor
   return <MeasurementTimelineCard record={record} label={label} items={CIRCUMFERENCE_ITEMS} />;
 }
 
-/** Filled in by the history task. */
 function CircumferenceHistoryView() {
-  return null;
+  const [preset, setPreset] = useState<DateRangePreset>("7d");
+  const range = useMemo(() => getDateRangeForPreset(preset), [preset]);
+  return (
+    <div className="space-y-4">
+      <RangePresetButtons value={preset} onChange={setPreset} />
+      <CircumferenceGraph range={range} />
+    </div>
+  );
 }
 
 /** Filled in by the period summary task. */

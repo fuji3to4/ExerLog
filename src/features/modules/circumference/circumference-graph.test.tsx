@@ -3,10 +3,10 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { ja } from "@/features/i18n/messages/ja";
 import type { Messages } from "@/features/i18n/messages";
 import { renderWithLanguage } from "@/test/render-with-language";
-import { buildCircumferenceSeries } from "@/features/history/history-graph-query";
+import { buildCircumferenceSeries } from "./series";
 import { CircumferenceGraph, SquareDot, circumferenceTooltipLines } from "./circumference-graph";
 
-vi.mock("@/features/history/history-graph-query", () => ({
+vi.mock("./series", () => ({
   buildCircumferenceSeries: vi.fn().mockResolvedValue([
     { at: "2026-10-20T07:10:00+09:00", left: { value: 22.4, delta: null }, right: { value: 24.5, delta: 0.3 } },
     { at: "2026-10-21T07:10:00+09:00", left: { value: 22.5, delta: 0.1 } },

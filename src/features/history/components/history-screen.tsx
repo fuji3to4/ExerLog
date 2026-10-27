@@ -1,24 +1,21 @@
 "use client";
 
-import { useState } from "react";
-
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { useModuleSettings } from "@/features/modules/use-module-settings";
 
 import { useHistoryState } from "../use-history-state";
 import { HistoryCalendar } from "./history-calendar";
 import { HistoryDayTimeline } from "./history-day-timeline";
-import { HistoryGraphs } from "./history-graphs";
+import { HistoryModuleTabs } from "./history-module-tabs";
 
 type HistoryScreenProps = {
   month?: string;
 };
 
-type HistoryMode = "summary" | "graph";
-
 export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) {
   const history = useHistoryState(initialMonth);
-  const [mode, setMode] = useState<HistoryMode>("summary");
+  const { enabledModules } = useModuleSettings();
   const { t } = useTranslation();
 
   return (
@@ -30,45 +27,30 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
         </CardHeader>
       </Card>
 
-      <div className="history-screen__mode-toggle">
-        <button
-          type="button"
-          onClick={() => setMode("summary")}
-          className={`history-screen__mode-btn ${mode === "summary" ? "is-active" : ""}`}
-        >
-          {t("history_mode_summary")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("graph")}
-          className={`history-screen__mode-btn ${mode === "graph" ? "is-active" : ""}`}
-        >
-          {t("history_mode_graphs")}
-        </button>
-      </div>
-
-      {mode === "summary" && (
-        <>
-          <HistoryCalendar
-            month={history.currentMonth}
-            marks={history.marks}
-            selectedDate={history.selectedDate}
-            onSelectDate={history.selectDate}
-            onPrevMonth={history.prevMonth}
-            onNextMonth={history.nextMonth}
-          />
-
-          {history.selectedDate ? (
-            <HistoryDayTimeline
-              key={history.selectedDate}
-              date={history.selectedDate}
-              onChanged={history.handleTimelineChanged}
+      <HistoryModuleTabs
+        modules={enabledModules}
+        includeAll
+        allContent={
+          <>
+            <HistoryCalendar
+              month={history.currentMonth}
+              marks={history.marks}
+              selectedDate={history.selectedDate}
+              onSelectDate={history.selectDate}
+              onPrevMonth={history.prevMonth}
+              onNextMonth={history.nextMonth}
             />
-          ) : null}
-        </>
-      )}
 
-      {mode === "graph" && <HistoryGraphs />}
+            {history.selectedDate ? (
+              <HistoryDayTimeline
+                key={history.selectedDate}
+                date={history.selectedDate}
+                onChanged={history.handleTimelineChanged}
+              />
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

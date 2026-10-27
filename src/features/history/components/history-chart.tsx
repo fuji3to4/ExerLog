@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { GraphSeries } from "../history-graph-query";
+import type { GraphSeries } from "./metric-graph-view";
 
 type HistoryChartProps = {
   series: GraphSeries;

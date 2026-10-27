@@ -11,10 +11,6 @@ vi.mock("recharts", async (importOriginal) => {
     ),
   };
 });
-vi.mock("@/features/history/history-graph-query", () => ({
-  buildHistoryGraphSeries: vi.fn().mockResolvedValue({ unit: "kg", decimals: 1, points: [] }),
-  buildCircumferenceSeries: vi.fn().mockResolvedValue([]),
-}));
 
 // Adding one entry to BODY_ITEMS is all it takes for every body surface to pick it up. The real
 // module's helpers read their own array binding, so the item is appended to that same array.
@@ -32,7 +28,8 @@ vi.mock("./measurement-items", async () => {
   return actual;
 });
 
-import { HistoryGraphs } from "@/features/history/components/history-graphs";
+import { MetricGraphView } from "@/features/history/components/metric-graph-view";
+import { BODY_GRAPH_METRICS } from "@/features/modules/body/graph";
 import { ModuleRecordDialog } from "@/features/modules/components/module-record-dialog";
 import { getRecordModule } from "@/features/modules/registry";
 import { generateMeasurementsCsv } from "@/features/settings/csv/history-csv";
@@ -85,10 +82,10 @@ describe("adding one item to BODY_ITEMS", () => {
   });
 
   it("(e) adds one graph option", async () => {
-    renderWithLanguage(<HistoryGraphs />, { initialLanguage: "ja" });
+    renderWithLanguage(<MetricGraphView metrics={BODY_GRAPH_METRICS} />, { initialLanguage: "ja" });
     const select = (await screen.findByLabelText("表示する項目")) as HTMLSelectElement;
-    // 4 graphable body items + circumference + BMI + 2 wellness scores
+    // 4 graphable body items + BMI
     expect(BODY_ITEMS).toHaveLength(4);
-    expect(select.options).toHaveLength(8);
+    expect(select.options).toHaveLength(5);
   });
 });

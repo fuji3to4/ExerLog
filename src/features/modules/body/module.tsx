@@ -2,20 +2,21 @@
 
 import { Scale } from "lucide-react";
 
+import { MetricGraphView } from "@/features/history/components/metric-graph-view";
 import { MeasurementTimelineCard } from "@/features/measurements/components/measurement-timeline-card";
 import { BODY_ITEMS } from "@/features/measurements/measurement-items";
 import type { MeasurementRecord } from "@/lib/types";
 import type { RecordModule, TimeLabel } from "../types";
 import { BodyForm } from "./body-form";
 import { bodyData } from "./data";
+import { BODY_GRAPH_METRICS } from "./graph";
 
 function BodyTimelineCard({ record, label }: { record: MeasurementRecord; label: TimeLabel | null }) {
   return <MeasurementTimelineCard record={record} label={label} items={BODY_ITEMS} />;
 }
 
-/** Filled in by the history task. */
 function BodyHistoryView() {
-  return null;
+  return <MetricGraphView metrics={BODY_GRAPH_METRICS} />;
 }
 
 /** Filled in by the period summary task. */

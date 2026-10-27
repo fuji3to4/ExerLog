@@ -16,6 +16,7 @@ import { renderWithLanguage } from "@/test/render-with-language";
 import { HistoryScreen } from "./components/history-screen";
 
 beforeEach(async () => {
+  window.localStorage.removeItem("lymly-record-modules");
   await Promise.all([
     appDb.exerciseLogs.clear(),
     appDb.wellnessEntries.clear(),
@@ -37,7 +38,7 @@ async function seedHistory() {
   // 3/23: exercise + measurement
   await addExerciseLog({
     date: "2026-03-23",
-    exerciseId: "upper-body-shoulder-rolls",
+    exerciseId: "shoulder-roll-4",
     result: "did",
     durationSeconds: 300,
     performedAt: "2026-03-23T09:00:00+09:00",
@@ -60,7 +61,7 @@ async function seedHistory() {
 
   // 3/25: watched only
   await recordWatchEvent({
-    exerciseId: "upper-body-shoulder-rolls",
+    exerciseId: "shoulder-roll-4",
     date: "2026-03-25",
     watchedAt: "2026-03-25T10:00:00+09:00",
   });
@@ -130,13 +131,13 @@ test("shows the selected day's timeline without a day summary card", async () =>
 
   await user.click(await screen.findByRole("button", { name: "March 23, completed" }));
 
-  expect(await screen.findByRole("button", { name: /肩回し/ })).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: /Shoulder Rolls/ })).toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: /day summary/i })).toBeNull();
   expect(screen.queryByRole("heading", { name: /metrics/i })).toBeNull();
 
   await user.click(screen.getByRole("button", { name: "March 24 (recorded)" }));
   expect(await screen.findByRole("button", { name: /body 4/ })).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /肩回し/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Shoulder Rolls/ })).toBeNull();
 });
 
 test("adds a wellness entry to a past day's timeline and refreshes the calendar marks", async () => {
@@ -175,48 +176,43 @@ test("switches history copy to English", async () => {
   expect(await screen.findByRole("heading", { name: "Calendar" })).toBeInTheDocument();
 });
 
-test("switches to graph mode when clicking graphs button", async () => {
-  const user = userEvent.setup();
-
-  await seedHistory();
-
-  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "en" });
-
-  expect(await screen.findByRole("heading", { name: /calendar/i })).toBeInTheDocument();
-
-  await user.click(screen.getByRole("button", { name: "Graphs" }));
-
-  expect(screen.queryByRole("heading", { name: /calendar/i })).not.toBeInTheDocument();
-  expect(await screen.findByText("Metric")).toBeInTheDocument();
-});
-
-test("returns to summary mode when clicking summary button from graph mode", async () => {
-  const user = userEvent.setup();
-
-  await seedHistory();
-
-  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "en" });
-
-  await user.click(screen.getByRole("button", { name: "Graphs" }));
-  expect(await screen.findByText("Metric")).toBeInTheDocument();
-
-  await user.click(screen.getByRole("button", { name: "Summary" }));
-
-  expect(await screen.findByRole("heading", { name: /calendar/i })).toBeInTheDocument();
-});
-
-test("labels the mode toggle and graph controls in Japanese", async () => {
-  const user = userEvent.setup();
-
+test("has no summary/graph toggle and starts on the すべて chip", async () => {
   await seedHistory();
 
   renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "ja" });
 
-  expect(screen.getByRole("button", { name: "まとめ" })).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "グラフ" }));
+  expect(await screen.findByRole("heading", { name: "カレンダー" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "まとめ" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "グラフ" })).toBeNull();
+  const chips = within(screen.getByRole("tablist", { name: "表示する記録" })).getAllByRole("tab");
+  expect(chips.map((chip) => chip.textContent)).toEqual(["すべて", "体調", "身体", "周径"]);
+  expect(screen.getByRole("tab", { name: "すべて" })).toHaveAttribute("aria-selected", "true");
+});
 
+test("pressing a module chip shows its graph controls instead of the calendar", async () => {
+  const user = userEvent.setup();
+  await seedHistory();
+
+  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "ja" });
+
+  await user.click(await screen.findByRole("tab", { name: "身体" }));
+
+  expect(screen.queryByRole("heading", { name: "カレンダー" })).toBeNull();
   expect(await screen.findByText("表示する項目")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "7日" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "全期間" })).toBeInTheDocument();
-  expect(screen.queryByText("Summary")).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("tab", { name: "すべて" }));
+  expect(await screen.findByRole("heading", { name: "カレンダー" })).toBeInTheDocument();
+});
+
+test("a module turned OFF has no chip and its records no longer mark the calendar", async () => {
+  await seedHistory();
+  window.localStorage.setItem("lymly-record-modules", JSON.stringify({ order: ["wellness", "body", "circumference"], disabled: ["body"] }));
+
+  renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "ja" });
+
+  await screen.findByRole("button", { name: "3月24日（記録あり）" });
+  expect(screen.queryByRole("tab", { name: "身体" })).toBeNull();
+  // 3/27 had only a body measurement.
+  expect(screen.getByRole("button", { name: "3月27日" })).toBeInTheDocument();
 });
