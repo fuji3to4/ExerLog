@@ -1,19 +1,6 @@
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
 
-export const SHEET_TABS = [
-  "ExerciseLogs",
-  "WellnessEntries",
-  "WatchEvents",
-  "Measurements",
-  "DailySelfCare",
-  "Exercises",
-  "SelfCareCatalog",
-  "Tombstones",
-] as const;
-
-export type SheetTab = (typeof SHEET_TABS)[number];
-
 export interface SpreadsheetInfo {
   spreadsheetId: string;
 }
@@ -43,11 +30,12 @@ export async function findSpreadsheet(
 /** Create a new spreadsheet with every sheet tab. */
 export async function createSpreadsheet(
   accessToken: string,
+  tabs: readonly string[],
 ): Promise<SpreadsheetInfo | null> {
   try {
     const body = {
       properties: { title: "ExerLog Data" },
-      sheets: SHEET_TABS.map((title) => ({ properties: { title } })),
+      sheets: tabs.map((title) => ({ properties: { title } })),
     };
     const res = await fetch(`${SHEETS_API}`, {
       method: "POST",
@@ -95,6 +83,7 @@ export async function readAllRows(
 export async function ensureSheetTabs(
   accessToken: string,
   spreadsheetId: string,
+  tabs: readonly string[],
 ): Promise<boolean> {
   try {
     const res = await fetch(`${SHEETS_API}/${spreadsheetId}?fields=sheets.properties.title`, {
@@ -105,7 +94,7 @@ export async function ensureSheetTabs(
     const existingTabs = new Set(
       data.sheets?.map((s: any) => s.properties.title) ?? [],
     );
-    const missingTabs = SHEET_TABS.filter((t) => !existingTabs.has(t));
+    const missingTabs = tabs.filter((t) => !existingTabs.has(t));
     if (missingTabs.length === 0) return true;
 
     const batchBody = {

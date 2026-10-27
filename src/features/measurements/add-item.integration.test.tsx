@@ -34,7 +34,7 @@ vi.mock("./measurement-items", async () => {
 
 import { HistoryGraphs } from "@/features/history/components/history-graphs";
 import { generateMeasurementsCsv } from "@/features/settings/csv/history-csv";
-import { TABLE_SYNC_CONFIGS } from "@/features/sync/sync-config";
+import { tableSyncConfigs } from "@/features/sync/sync-config";
 import { RecordDialog } from "@/features/timeline/components/record-dialog";
 import type { MeasurementRecord } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
@@ -70,7 +70,7 @@ describe("adding one item to MEASUREMENT_ITEMS", () => {
   });
 
   it("(c) adds waist to the sheet headers", () => {
-    const config = TABLE_SYNC_CONFIGS.find((c) => c.tabName === "Measurements")!;
+    const config = tableSyncConfigs().find((c) => c.tabName === "Measurements")!;
     expect(config.buildHeaders!([])).toContain("waist");
   });
 

@@ -2,7 +2,7 @@ import { afterEach, expect, test, vi } from "vitest";
 
 import { getMessages } from "@/features/i18n/messages";
 import { generateMeasurementsCsv } from "@/features/settings/csv/history-csv";
-import { TABLE_SYNC_CONFIGS } from "@/features/sync/sync-config";
+import { tableSyncConfigs } from "@/features/sync/sync-config";
 
 import type { MeasurementRecord } from "@/lib/types";
 
@@ -68,7 +68,7 @@ test("CSV and the sync tab get a column for every circumference id", () => {
   const header = generateMeasurementsCsv([]).split("\n")[0];
   expect(header).toContain("armPalmLeft");
   expect(header).toContain("legGroinRight");
-  const config = TABLE_SYNC_CONFIGS.find((c) => c.tabName === "Measurements")!;
+  const config = tableSyncConfigs().find((c) => c.tabName === "Measurements")!;
   const headers = config.buildHeaders!([]);
   expect(headers).toContain("armPalmLeft");
   expect(headers).toContain("legGroinRight");

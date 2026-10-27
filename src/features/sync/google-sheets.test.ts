@@ -64,20 +64,11 @@ describe("createSpreadsheet", () => {
           spreadsheetUrl: "https://sheets.google.com/spreadsheets/d/new123",
         }),
     });
-    const result = await createSpreadsheet(FAKE_TOKEN);
+    const result = await createSpreadsheet(FAKE_TOKEN, ["A", "B"]);
     expect(result).not.toBeNull();
     expect(result!.spreadsheetId).toBe("new123");
     const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(callBody.sheets.map((s: any) => s.properties.title)).toEqual([
-      "ExerciseLogs",
-      "WellnessEntries",
-      "WatchEvents",
-      "Measurements",
-      "DailySelfCare",
-      "Exercises",
-      "SelfCareCatalog",
-      "Tombstones",
-    ]);
+    expect(callBody.sheets.map((s: any) => s.properties.title)).toEqual(["A", "B"]);
   });
 });
 
@@ -122,35 +113,19 @@ describe("readAllRows", () => {
 });
 
 describe("ensureSheetTabs", () => {
-  test("creates missing sheet tabs", async () => {
-    // First call to get spreadsheet metadata returns only 2 existing sheets
+  test("creates only the missing sheet tabs from the given list", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () =>
-        Promise.resolve({
-          sheets: [
-            { properties: { title: "ExerciseLogs" } },
-            { properties: { title: "DailyWellness" } },
-          ],
-        }),
+      json: () => Promise.resolve({ sheets: [{ properties: { title: "A" } }] }),
     });
-    // Second call is batchUpdate to add missing tabs
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ replies: [{}] }),
     });
-    const result = await ensureSheetTabs(FAKE_TOKEN, "sheet123");
+    const result = await ensureSheetTabs(FAKE_TOKEN, "sheet123", ["A", "B"]);
     expect(result).toBe(true);
     const batchBody = JSON.parse(mockFetch.mock.calls[1][1].body);
-    expect(batchBody.requests.map((r: any) => r.addSheet.properties.title)).toEqual([
-      "WellnessEntries",
-      "WatchEvents",
-      "Measurements",
-      "DailySelfCare",
-      "Exercises",
-      "SelfCareCatalog",
-      "Tombstones",
-    ]);
+    expect(batchBody.requests.map((r: any) => r.addSheet.properties.title)).toEqual(["B"]);
   });
 
   test("succeeds when all tabs exist", async () => {
@@ -158,19 +133,10 @@ describe("ensureSheetTabs", () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          sheets: [
-            { properties: { title: "ExerciseLogs" } },
-            { properties: { title: "WellnessEntries" } },
-            { properties: { title: "WatchEvents" } },
-            { properties: { title: "Measurements" } },
-            { properties: { title: "DailySelfCare" } },
-            { properties: { title: "Exercises" } },
-            { properties: { title: "SelfCareCatalog" } },
-            { properties: { title: "Tombstones" } },
-          ],
+          sheets: [{ properties: { title: "A" } }, { properties: { title: "B" } }],
         }),
     });
-    const result = await ensureSheetTabs(FAKE_TOKEN, "sheet123");
+    const result = await ensureSheetTabs(FAKE_TOKEN, "sheet123", ["A", "B"]);
     expect(result).toBe(true);
     expect(mockFetch).toHaveBeenCalledTimes(1); // No batchUpdate call
   });

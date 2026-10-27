@@ -15,11 +15,11 @@ import type {
 } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
 import { MEASUREMENT_FIXED_COLUMNS, MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
-import type { SheetTab } from "./google-sheets";
+import { cell, keepLatestPerKey, nullableNumber, replaceTable } from "./sync-helpers";
 
 /** How one Dexie table is mirrored to one sheet tab. */
 export interface TableSyncConfig {
-  tabName: SheetTab;
+  tabName: string;
   keyColumn: string;
   /** Field used for last-writer-wins; null means local always wins. */
   updatedAtKey: string | null;
@@ -59,41 +59,6 @@ export function syncedDbTables(): Table<any, any>[] {
     appDb.selfCareCatalog,
     appDb.tombstones,
   ];
-}
-
-function cell(row: string[], headers: string[], column: string): string {
-  return row[headers.indexOf(column)] ?? "";
-}
-
-function nullableNumber(value: string): number | null {
-  return value === "" ? null : Number(value);
-}
-
-async function replaceTable<T>(table: Table<T, any>, records: T[]): Promise<void> {
-  await table.clear();
-  if (records.length > 0) {
-    await table.bulkPut(records);
-  }
-}
-
-/**
- * Keeps one record per `uniqueKey` (the latest by `timeKey`) so that a merge of
- * two devices' records cannot violate a compound unique index.
- */
-function keepLatestPerKey<T extends Record<string, any>>(
-  records: T[],
-  uniqueKey: (record: T) => string,
-  timeKey: keyof T,
-): T[] {
-  const byKey = new Map<string, T>();
-  for (const record of records) {
-    const key = uniqueKey(record);
-    const current = byKey.get(key);
-    if (!current || Date.parse(record[timeKey]) > Date.parse(current[timeKey])) {
-      byKey.set(key, record);
-    }
-  }
-  return [...byKey.values()];
 }
 
 const exerciseLogsConfig: TableSyncConfig = {
@@ -356,14 +321,24 @@ const tombstonesConfig: TableSyncConfig = {
   replaceDb: (records) => replaceTable(appDb.tombstones, records as Tombstone[]),
 };
 
-/** One entry per sheet tab, in SHEET_TABS order. */
-export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
-  exerciseLogsConfig,
-  wellnessEntriesConfig,
-  watchEventsConfig,
-  measurementsConfig,
-  dailySelfCareConfig,
-  exercisesConfig,
-  selfCareCatalogConfig,
-  tombstonesConfig,
-];
+/**
+ * One entry per sheet tab (Tombstones last). A function, not a constant, so
+ * the array is built at call time and import cycles never see it half-built.
+ */
+export function tableSyncConfigs(): TableSyncConfig[] {
+  return [
+    exerciseLogsConfig,
+    wellnessEntriesConfig,
+    watchEventsConfig,
+    measurementsConfig,
+    dailySelfCareConfig,
+    exercisesConfig,
+    selfCareCatalogConfig,
+    tombstonesConfig,
+  ];
+}
+
+/** Sheet tab names, in the order of `tableSyncConfigs()`. */
+export function sheetTabs(): string[] {
+  return tableSyncConfigs().map((c) => c.tabName);
+}

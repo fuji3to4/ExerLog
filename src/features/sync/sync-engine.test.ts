@@ -7,8 +7,7 @@ import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
 import { MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
-import { SHEET_TABS } from "./google-sheets";
-import { TABLE_SYNC_CONFIGS } from "./sync-config";
+import { sheetTabs, tableSyncConfigs } from "./sync-config";
 import { syncAll } from "./sync-engine";
 
 const TOKEN = "fake-token";
@@ -35,7 +34,7 @@ class FakeSheets {
   calls: { method: string; url: string }[] = [];
 
   constructor() {
-    for (const tab of SHEET_TABS) this.tabs.set(tab, []);
+    for (const tab of sheetTabs()) this.tabs.set(tab, []);
   }
 
   handle = async (input: string, init?: { method?: string; body?: string }) => {
@@ -382,12 +381,12 @@ describe("syncAll", () => {
     expect(result.success).toBe(true);
     expect(result.spreadsheetId).toBe(SPREADSHEET_ID);
     expect(progress[0]).toBe("Tombstones");
-    expect([...progress].sort()).toEqual([...SHEET_TABS].sort());
+    expect([...progress].sort()).toEqual([...sheetTabs()].sort());
     expect(result.results.find((r) => r.tableName === "ExerciseLogs")).toEqual({
       tableName: "ExerciseLogs",
       rowCount: 1,
     });
-    for (const config of TABLE_SYNC_CONFIGS) {
+    for (const config of tableSyncConfigs()) {
       const written = config.headerMode === "byName" ? config.buildHeaders!([]) : config.headers;
       expect(sheets.tabs.get(config.tabName)?.[0]).toEqual(written);
     }
@@ -400,7 +399,7 @@ describe("syncAll", () => {
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect([...sheets.tabs.keys()].sort()).toEqual([...SHEET_TABS].sort());
+    expect([...sheets.tabs.keys()].sort()).toEqual([...sheetTabs()].sort());
   });
 
   test("a failed sheet write is reported for that table and the next tables still sync", async () => {

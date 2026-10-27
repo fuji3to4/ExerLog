@@ -9,7 +9,7 @@ import {
 } from "./google-sheets";
 import { mergeRecords } from "./merge-records";
 import type { TableSyncConfig } from "./sync-config";
-import { syncedDbTables, TABLE_SYNC_CONFIGS } from "./sync-config";
+import { sheetTabs, syncedDbTables, tableSyncConfigs } from "./sync-config";
 
 export interface SyncTableResult {
   tableName: string;
@@ -59,7 +59,8 @@ async function doSyncAll(
     onProgress(result);
   };
 
-  const tombstonesConfig = TABLE_SYNC_CONFIGS.find((c) => c.tabName === TOMBSTONES_TAB)!;
+  const configs = tableSyncConfigs();
+  const tombstonesConfig = configs.find((c) => c.tabName === TOMBSTONES_TAB)!;
   await run(tombstonesConfig, new Map());
   if (results[0].error) {
     // Without the merged tombstones, other tabs could pull deleted records back.
@@ -67,7 +68,7 @@ async function doSyncAll(
   }
 
   const deletedIdsByTab = groupDeletedIds(await appDb.tombstones.toArray());
-  for (const config of TABLE_SYNC_CONFIGS) {
+  for (const config of configs) {
     if (config === tombstonesConfig) continue;
     const deletedIds = config.deletable
       ? (deletedIdsByTab.get(config.tabName) ?? new Map<string, string>())
@@ -86,13 +87,13 @@ async function doSyncAll(
 async function prepareSpreadsheet(accessToken: string): Promise<string | SyncTableResult> {
   const existing = await findSpreadsheet(accessToken);
   if (existing) {
-    const ok = await ensureSheetTabs(accessToken, existing.spreadsheetId);
+    const ok = await ensureSheetTabs(accessToken, existing.spreadsheetId, sheetTabs());
     return ok
       ? existing.spreadsheetId
       : { tableName: "spreadsheet", rowCount: 0, error: "Failed to ensure required sheet tabs" };
   }
 
-  const created = await createSpreadsheet(accessToken);
+  const created = await createSpreadsheet(accessToken, sheetTabs());
   if (!created) {
     console.error("[sync] syncAll: could not find or create spreadsheet");
     return { tableName: "spreadsheet", rowCount: 0, error: "Failed to create spreadsheet" };
