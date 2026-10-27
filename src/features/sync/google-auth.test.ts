@@ -6,6 +6,7 @@ import {
   clearToken,
   parseTokenFromResponse,
   requestSignIn,
+  trySilentRefresh,
 } from "./google-auth";
 
 beforeEach(async () => {
@@ -121,5 +122,24 @@ describe("requestSignIn", () => {
     });
 
     await expect(requestSignIn()).rejects.toThrow("access_denied");
+  });
+});
+
+describe("trySilentRefresh", () => {
+  test("concurrent calls share one refresh; a later call starts a new one", async () => {
+    await storeToken({ accessToken: "old", expiresAt: Date.now() - 1000, email: "a@b.c" });
+    mockRequestAccessToken.mockReset();
+    mockRequestAccessToken.mockImplementation(() => {
+      setTimeout(() => mockTokenClient.callback({ access_token: "fresh", expires_in: 3600 } as any), 0);
+    });
+
+    const [first, second] = await Promise.all([trySilentRefresh(), trySilentRefresh()]);
+    expect(mockRequestAccessToken).toHaveBeenCalledTimes(1);
+    expect(first?.accessToken).toBe("fresh");
+    expect(second).toBe(first);
+
+    await storeToken({ accessToken: "old", expiresAt: Date.now() - 1000, email: "a@b.c" });
+    await trySilentRefresh();
+    expect(mockRequestAccessToken).toHaveBeenCalledTimes(2);
   });
 });

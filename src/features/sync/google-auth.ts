@@ -123,7 +123,18 @@ export async function signOut(): Promise<void> {
 }
 
 /** Attempt silent token refresh if we have a stored token. Returns token or null. */
-export async function trySilentRefresh(): Promise<GoogleToken | null> {
+export function trySilentRefresh(): Promise<GoogleToken | null> {
+  // Concurrent callers share one refresh: each GIS request overwrites the client's single
+  // callback, so a second parallel request would leave the first promise unsettled.
+  silentRefreshInFlight ??= doSilentRefresh().finally(() => {
+    silentRefreshInFlight = null;
+  });
+  return silentRefreshInFlight;
+}
+
+let silentRefreshInFlight: Promise<GoogleToken | null> | null = null;
+
+async function doSilentRefresh(): Promise<GoogleToken | null> {
   const stored = await loadStoredToken();
   if (!stored) return null;
 
