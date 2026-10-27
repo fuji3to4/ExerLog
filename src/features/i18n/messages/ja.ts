@@ -200,6 +200,8 @@
   settings_google_drive_disconnect: "連携を解除",
   settings_google_drive_syncing: "同期中…",
   settings_google_drive_last_synced: "最終同期",
+  settings_photo_sync_label: "写真を同期する",
+  settings_photo_sync_note: "OFFにすると、写真はこの端末の中にだけ保存されます",
 
   // Sync indicator
   sync_indicator_sign_in: "Google でログイン",

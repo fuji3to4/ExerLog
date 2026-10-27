@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SyncContext } from "@/features/sync/SyncProvider";
@@ -71,5 +71,31 @@ describe("GoogleDriveSettings", () => {
     const errorEl = screen.getByText(/failed to append rows/i);
     expect(errorEl).toBeInTheDocument();
     expect(errorEl.className).toContain("data-management__status--error");
+  });
+
+  describe("photo sync checkbox", () => {
+    beforeEach(() => window.localStorage.removeItem("lymly-photo-sync"));
+
+    test.each([
+      ["disconnected", { status: { type: "disconnected" as const } }],
+      ["connected", { status: { type: "synced" as const, lastSynced: new Date() }, userEmail: "a@b.c" }],
+    ])("shows 写真を同期する checked by default and stores off/on (%s)", async (_n, overrides) => {
+      const user = userEvent.setup();
+      renderWithProviders(createMockContext(overrides));
+      const box = screen.getByRole("checkbox", { name: "Sync photos" });
+      expect(box).toBeChecked();
+      await user.click(box);
+      expect(window.localStorage.getItem("lymly-photo-sync")).toBe("off");
+      expect(box).not.toBeChecked();
+      await user.click(box);
+      expect(window.localStorage.getItem("lymly-photo-sync")).toBe("on");
+    });
+
+    test("shows the note under the checkbox", () => {
+      renderWithProviders(createMockContext());
+      expect(
+        screen.getByText("When off, photos are kept only on this device"),
+      ).toBeInTheDocument();
+    });
   });
 });

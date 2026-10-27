@@ -148,3 +148,29 @@ test("still seeds the self-care catalog silently regardless of the exercise dial
 
   await waitFor(async () => expect(await appDb.selfCareCatalog.count()).toBeGreaterThan(0));
 });
+
+test("asks the browser to persist storage on start and ignores a missing API or a rejection", async () => {
+  const original = Object.getOwnPropertyDescriptor(navigator, "storage");
+  const setStorage = (value: unknown) =>
+    Object.defineProperty(navigator, "storage", { value, configurable: true });
+  try {
+    const persist = vi.fn().mockResolvedValue(true);
+    setStorage({ persist });
+    renderProvider();
+    await waitFor(() => expect(persist).toHaveBeenCalledTimes(1));
+
+    const rejecting = vi.fn().mockRejectedValue(new Error("denied"));
+    setStorage({ persist: rejecting });
+    renderProvider();
+    await waitFor(() => expect(rejecting).toHaveBeenCalledTimes(1));
+
+    setStorage({});
+    renderProvider();
+    setStorage(undefined);
+    renderProvider();
+    expect((await screen.findAllByText("app content")).length).toBe(4);
+  } finally {
+    if (original) Object.defineProperty(navigator, "storage", original);
+    else delete (navigator as unknown as Record<string, unknown>).storage;
+  }
+});

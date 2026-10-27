@@ -34,6 +34,13 @@ export function DbInitProvider({ children }: DbInitProviderProps) {
   const [showSeedConfirm, setShowSeedConfirm] = useState(false);
 
   useEffect(() => {
+    // Ask the browser not to evict this device's data (photos live only here
+    // until synced). Best effort: a missing API or a refusal changes nothing.
+    try {
+      void navigator.storage?.persist?.()?.catch(() => {});
+    } catch {
+      // ignore
+    }
     Promise.all([
       shouldOfferExerciseSeed().then((offer) => {
         if (offer) setShowSeedConfirm(true);

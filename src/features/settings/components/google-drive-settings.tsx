@@ -2,6 +2,25 @@
 
 import { useSync } from "@/features/sync/SyncProvider";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { usePhotoSyncEnabled } from "@/features/modules/photo/photo-sync-setting";
+
+function PhotoSyncCheckbox() {
+  const { t } = useTranslation();
+  const [enabled, setEnabled] = usePhotoSyncEnabled();
+  return (
+    <>
+      <label className="data-management__status">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => setEnabled(e.target.checked)}
+        />{" "}
+        {t("settings_photo_sync_label")}
+      </label>
+      <p className="data-management__status">{t("settings_photo_sync_note")}</p>
+    </>
+  );
+}
 
 export function GoogleDriveSettings() {
   const { status, signIn, disconnect, syncNow, userEmail } = useSync();
@@ -16,6 +35,7 @@ export function GoogleDriveSettings() {
         <p className="data-management__status">
           {t("settings_google_drive_description")}
         </p>
+        <PhotoSyncCheckbox />
         <div className="data-management__buttons">
           <button
             type="button"
@@ -59,6 +79,7 @@ export function GoogleDriveSettings() {
         </p>
       )}
 
+      <PhotoSyncCheckbox />
       <div className="data-management__buttons">
         <button
           type="button"

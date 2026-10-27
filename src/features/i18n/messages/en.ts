@@ -200,6 +200,8 @@ export const en = {
   settings_google_drive_disconnect: "Disconnect",
   settings_google_drive_syncing: "Syncing...",
   settings_google_drive_last_synced: "Last synced",
+  settings_photo_sync_label: "Sync photos",
+  settings_photo_sync_note: "When off, photos are kept only on this device",
 
   // Sync indicator
   sync_indicator_sign_in: "Sign in with Google",
