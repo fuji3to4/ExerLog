@@ -73,29 +73,28 @@ describe("GoogleDriveSettings", () => {
     expect(errorEl.className).toContain("data-management__status--error");
   });
 
-  describe("photo sync checkbox", () => {
+  describe("photo sync switch", () => {
     beforeEach(() => window.localStorage.removeItem("lymly-photo-sync"));
 
     test.each([
       ["disconnected", { status: { type: "disconnected" as const } }],
       ["connected", { status: { type: "synced" as const, lastSynced: new Date() }, userEmail: "a@b.c" }],
-    ])("shows 写真を同期する checked by default and stores off/on (%s)", async (_n, overrides) => {
+    ])("shows 写真を同期する on by default and stores off/on (%s)", async (_n, overrides) => {
       const user = userEvent.setup();
       renderWithProviders(createMockContext(overrides));
-      const box = screen.getByRole("checkbox", { name: "Sync photos" });
-      expect(box).toBeChecked();
-      await user.click(box);
+      const toggle = screen.getByRole("switch", { name: "Sync photos" });
+      expect(toggle).toHaveAttribute("aria-checked", "true");
+      await user.click(toggle);
       expect(window.localStorage.getItem("lymly-photo-sync")).toBe("off");
-      expect(box).not.toBeChecked();
-      await user.click(box);
+      expect(toggle).toHaveAttribute("aria-checked", "false");
+      await user.click(toggle);
       expect(window.localStorage.getItem("lymly-photo-sync")).toBe("on");
     });
 
-    test("shows the note under the checkbox", () => {
+    test("describes the switch with the note", () => {
       renderWithProviders(createMockContext());
-      expect(
-        screen.getByText("When off, new photos are saved only on this device"),
-      ).toBeInTheDocument();
+      const note = screen.getByText("When off, new photos are saved only on this device");
+      expect(screen.getByRole("switch", { name: "Sync photos" })).toHaveAttribute("aria-describedby", note.id);
     });
   });
 });
