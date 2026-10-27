@@ -103,6 +103,37 @@ describe("photo repository", () => {
     expect((await listAllPhotoRecords()).map((r) => r.id)).toEqual([early.id, late.id]);
   });
 
+  it("update keeps a duplicated keepPhotoId once and ignores unknown ids", async () => {
+    const record = await addPhotoRecord({ date: "2026-10-20", note: "", photos: [photo(), photo()] });
+    const [a, b] = record.photoIds;
+    const updated = await updatePhotoRecord(record, {
+      note: "",
+      recordedAt: record.recordedAt,
+      keepPhotoIds: [a, a, "unknown"],
+      added: [],
+    });
+    expect(updated.photoIds).toEqual([a]);
+    expect(await getPhotoBlob(b)).toBeUndefined();
+  });
+
+  it("update rejects results of 0 or more than 20 photos and writes nothing", async () => {
+    const record = await addPhotoRecord({ date: "2026-10-20", note: "", photos: [photo(), photo()] });
+    await expect(
+      updatePhotoRecord(record, { note: "x", recordedAt: record.recordedAt, keepPhotoIds: ["unknown"], added: [] }),
+    ).rejects.toThrow();
+    await expect(
+      updatePhotoRecord(record, {
+        note: "x",
+        recordedAt: record.recordedAt,
+        keepPhotoIds: record.photoIds,
+        added: Array.from({ length: 19 }, () => photo()),
+      }),
+    ).rejects.toThrow();
+    expect(await appDb.photoBlobs.count()).toBe(2);
+    expect(await appDb.photoRecords.get(record.id)).toEqual(record);
+    expect(await appDb.tombstones.count()).toBe(0);
+  });
+
   it("storeFetchedBlob fills a placeholder blob", async () => {
     await storeFetchedBlob("p1", "r1", new Blob(["z"]));
     expect((await getPhotoBlob("p1"))?.blob).not.toBeNull();

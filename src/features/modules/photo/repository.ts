@@ -83,7 +83,7 @@ export async function updatePhotoRecord(
   change: { note: string; recordedAt: string; keepPhotoIds: string[]; added: NewPhoto[] },
 ): Promise<PhotoRecord> {
   const existing = new Set(record.photoIds);
-  const keep = change.keepPhotoIds.filter((photoId) => existing.has(photoId));
+  const keep = [...new Set(change.keepPhotoIds)].filter((photoId) => existing.has(photoId));
   assertPhotoCount(keep.length + change.added.length);
   const kept = new Set(keep);
   const removed = record.photoIds.filter((photoId) => !kept.has(photoId));
