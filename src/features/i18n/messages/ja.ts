@@ -223,9 +223,7 @@
   sync_tab_Photos: "写真の記録",
   sync_tab_PhotoFiles: "写真ファイル対応表",
   sync_tab_PhotoDrive: "写真ファイル（ドライブ）",
-  sync_tab_DailySelfCare: "セルフケア",
   sync_tab_Exercises: "動画ライブラリ",
-  sync_tab_SelfCareCatalog: "セルフケア項目",
   sync_tab_Tombstones: "削除記録",
   sync_tab_spreadsheet: "スプレッドシート",
 

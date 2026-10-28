@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { localIsoAt, localIsoNow, timeOfIso, withLocalTime } from "./local-iso";
+import { inputValueOfIso, localIsoAt, localIsoFromInput, localIsoNow, timeOfIso, withLocalTime } from "./local-iso";
 
 test("returns a string matching ISO 8601 with UTC offset", () => {
   const result = localIsoNow();
@@ -49,4 +49,12 @@ test("localIsoAt uses the day key date and the clock's local time", () => {
 
 test("timeOfIso returns HH:mm", () => {
   expect(timeOfIso("2026-10-20T18:03:41+09:00")).toBe("18:03");
+});
+
+test("localIsoFromInput turns a datetime-local value into a local ISO with offset", () => {
+  expect(localIsoFromInput("2026-10-28T22:05")).toMatch(/^2026-10-28T22:05:00[+-]\d\d:\d\d$/);
+});
+
+test("inputValueOfIso returns the datetime-local part", () => {
+  expect(inputValueOfIso("2026-10-28T22:05:00+09:00")).toBe("2026-10-28T22:05");
 });

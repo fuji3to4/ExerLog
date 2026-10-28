@@ -1,18 +1,16 @@
 import type { Table } from "dexie";
 
 import type {
-  DailySelfCareEntry,
   ExerciseIntensity,
   ExerciseLog,
   ExerciseLogResult,
   ExerciseVideo,
-  SelfCareItem,
   Tombstone,
   WatchEvent,
 } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
 import { recordModuleData } from "@/features/modules/data-registry";
-import { cell, keepLatestPerKey, nullableNumber, replaceTable } from "./sync-helpers";
+import { cell, replaceTable } from "./sync-helpers";
 
 /** How one Dexie table is mirrored to one sheet tab. */
 export interface TableSyncConfig {
@@ -57,9 +55,7 @@ export function syncedDbTables(): Table<any, any>[] {
     appDb.exerciseLogs,
     ...recordModuleData().flatMap((m) => m.tables()),
     appDb.watchEvents,
-    appDb.dailySelfCareLogs,
     appDb.exercises,
-    appDb.selfCareCatalog,
     appDb.tombstones,
   ];
 }
@@ -110,45 +106,6 @@ const watchEventsConfig: TableSyncConfig = {
   replaceDb: (records) => replaceTable(appDb.watchEvents, records as WatchEvent[]),
 };
 
-const dailySelfCareConfig: TableSyncConfig = {
-  tabName: "DailySelfCare",
-  keyColumn: "id",
-  updatedAtKey: "recordedAt",
-  deletable: true,
-  headers: ["id", "date", "selfCareId", "isDone", "count", "minutes", "note", "recordedAt"],
-  toRow: (r: DailySelfCareEntry) => [
-    r.id,
-    r.date,
-    r.selfCareId,
-    r.isDone ? "TRUE" : "FALSE",
-    r.count != null ? String(r.count) : "",
-    r.minutes != null ? String(r.minutes) : "",
-    r.note ?? "",
-    r.recordedAt,
-  ],
-  fromRow: (row, headers): DailySelfCareEntry => ({
-    id: cell(row, headers, "id"),
-    date: cell(row, headers, "date"),
-    selfCareId: cell(row, headers, "selfCareId"),
-    isDone: cell(row, headers, "isDone") === "TRUE",
-    count: nullableNumber(cell(row, headers, "count")),
-    minutes: nullableNumber(cell(row, headers, "minutes")),
-    note: cell(row, headers, "note"),
-    recordedAt: cell(row, headers, "recordedAt"),
-  }),
-  readFromDb: () => appDb.dailySelfCareLogs.toArray(),
-  // Unique index &[date+selfCareId]
-  replaceDb: (records) =>
-    replaceTable(
-      appDb.dailySelfCareLogs,
-      keepLatestPerKey(
-        records as DailySelfCareEntry[],
-        (r) => `${r.date}|${r.selfCareId}`,
-        "recordedAt",
-      ),
-    ),
-};
-
 const exercisesConfig: TableSyncConfig = {
   tabName: "Exercises",
   keyColumn: "id",
@@ -194,30 +151,6 @@ const exercisesConfig: TableSyncConfig = {
   replaceDb: (records) => replaceTable(appDb.exercises, records as ExerciseVideo[]),
 };
 
-const selfCareCatalogConfig: TableSyncConfig = {
-  tabName: "SelfCareCatalog",
-  keyColumn: "id",
-  updatedAtKey: null,
-  deletable: true,
-  headers: ["id", "title", "description", "sortOrder", "isArchived"],
-  toRow: (r: SelfCareItem) => [
-    r.id,
-    r.title,
-    r.description ?? "",
-    String(r.sortOrder),
-    r.isArchived ? "TRUE" : "FALSE",
-  ],
-  fromRow: (row, headers): SelfCareItem => ({
-    id: cell(row, headers, "id"),
-    title: cell(row, headers, "title"),
-    description: cell(row, headers, "description"),
-    sortOrder: Number(cell(row, headers, "sortOrder")),
-    isArchived: cell(row, headers, "isArchived") === "TRUE",
-  }),
-  readFromDb: () => appDb.selfCareCatalog.toArray(),
-  replaceDb: (records) => replaceTable(appDb.selfCareCatalog, records as SelfCareItem[]),
-};
-
 const tombstonesConfig: TableSyncConfig = {
   tabName: "Tombstones",
   keyColumn: "id",
@@ -245,9 +178,7 @@ export function tableSyncConfigs(): TableSyncConfig[] {
     exerciseLogsConfig,
     ...recordModuleData().flatMap((m) => m.syncConfigs),
     watchEventsConfig,
-    dailySelfCareConfig,
     exercisesConfig,
-    selfCareCatalogConfig,
     tombstonesConfig,
   ];
 }

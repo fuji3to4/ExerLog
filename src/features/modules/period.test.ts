@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isValidPeriod, isWithinPeriod, periodDayKeys } from "./period";
+import { isValidPeriod, isWithinPeriod, periodDayCount, periodDayKeys, periodOfDayRange } from "./period";
 
 const P = { start: "2026-10-01T09:00:00+09:00", end: "2026-10-27T18:00:00+09:00" };
 
@@ -26,5 +26,17 @@ describe("period", () => {
 
   it("periodDayKeys returns the day keys of both ends", () => {
     expect(periodDayKeys(P)).toEqual({ start: "2026-10-01", end: "2026-10-27" });
+  });
+});
+
+describe("periodDayCount / periodOfDayRange", () => {
+  it("counts both end days", () => {
+    expect(periodDayCount({ start: "2026-10-01T09:00:00+09:00", end: "2026-10-30T08:00:00+09:00" })).toBe(30);
+  });
+
+  it("spans from the start of the first day to the end of the last day", () => {
+    const period = periodOfDayRange({ start: "2026-10-01", end: "2026-10-03" });
+    expect(period.start.startsWith("2026-10-01T00:00:00")).toBe(true);
+    expect(period.end.startsWith("2026-10-03T23:59:59")).toBe(true);
   });
 });

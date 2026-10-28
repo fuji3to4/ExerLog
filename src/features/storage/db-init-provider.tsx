@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 
 import { appDb } from "@/features/storage/app-db";
 import { seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
-import { seedSelfCareCatalogIfEmpty } from "@/features/storage/self-care-catalog.repository";
 import { syncIfNeeded } from "@/features/sync/auto-sync";
 
 import { SeedConfirmDialog } from "./components/seed-confirm-dialog";
@@ -41,12 +40,11 @@ export function DbInitProvider({ children }: DbInitProviderProps) {
     } catch {
       // ignore
     }
-    Promise.all([
-      shouldOfferExerciseSeed().then((offer) => {
+    shouldOfferExerciseSeed()
+      .then((offer) => {
         if (offer) setShowSeedConfirm(true);
-      }),
-      seedSelfCareCatalogIfEmpty(),
-    ]).catch(console.error);
+      })
+      .catch(console.error);
   }, []);
 
   async function handleConfirmSeed() {

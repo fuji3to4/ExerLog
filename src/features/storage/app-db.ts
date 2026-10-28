@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
 
 import type {
-  DailySelfCareEntry,
+  CompressionRecord,
   ExerciseLog,
   ExerciseVideo,
   MeasurementRecord,
@@ -9,7 +9,8 @@ import type {
   PhotoFile,
   PhotoRecord,
   PhotoTrashItem,
-  SelfCareItem,
+  SelfCareRecord,
+  SymptomRecord,
   Tombstone,
   WatchEvent,
   WellnessEntry,
@@ -27,8 +28,9 @@ export class AppDb extends Dexie {
   photoTrash!: EntityTable<PhotoTrashItem, "driveFileId">;
   tombstones!: EntityTable<Tombstone, "id">;
   exercises!: EntityTable<ExerciseVideo, "id">;
-  selfCareCatalog!: EntityTable<SelfCareItem, "id">;
-  dailySelfCareLogs!: EntityTable<DailySelfCareEntry, "id">;
+  selfCareRecords!: EntityTable<SelfCareRecord, "id">;
+  compressionRecords!: EntityTable<CompressionRecord, "id">;
+  symptomRecords!: EntityTable<SymptomRecord, "id">;
   googleAuth!: EntityTable<{ key: string; value: string }, "key">;
 
   constructor() {
@@ -206,6 +208,28 @@ export class AppDb extends Dexie {
       photoBlobs: "id, recordId",
       photoFiles: "id, recordId",
       photoTrash: "driveFileId",
+    });
+
+    // v13: drop the placeholder self-care tables (no data migration) and add the
+    // self-care, compression wear and symptom record tables.
+    this.version(13).stores({
+      selfCareCatalog: null,
+      dailySelfCareLogs: null,
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      bodyRecords: "id, date, recordedAt",
+      circumferenceRecords: "id, date, recordedAt",
+      photoRecords: "id, date, recordedAt",
+      photoBlobs: "id, recordId",
+      photoFiles: "id, recordId",
+      photoTrash: "driveFileId",
+      selfCareRecords: "id, date, recordedAt",
+      compressionRecords: "id, date, recordedAt, kind",
+      symptomRecords: "id, date, recordedAt",
     });
   }
 }

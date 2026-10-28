@@ -113,7 +113,7 @@ describe("v11 upgrade", () => {
     const upgraded = new AppDb();
     try {
       await upgraded.open();
-      expect(upgraded.verno).toBe(12);
+      expect(upgraded.verno).toBeGreaterThanOrEqual(12);
       expect(upgraded.tables.map((table) => table.name)).not.toContain("measurements");
       expect(await upgraded.bodyRecords.count()).toBe(0);
       expect(await upgraded.circumferenceRecords.count()).toBe(0);
@@ -156,11 +156,66 @@ describe("v12 upgrade", () => {
     const upgraded = new AppDb();
     try {
       await upgraded.open();
-      expect(upgraded.verno).toBe(12);
+      expect(upgraded.verno).toBeGreaterThanOrEqual(12);
       const names = upgraded.tables.map((table) => table.name);
       expect(names).toEqual(expect.arrayContaining(["photoRecords", "photoBlobs", "photoFiles", "photoTrash"]));
       expect(await upgraded.photoRecords.count()).toBe(0);
       expect(await upgraded.bodyRecords.count()).toBe(1);
+    } finally {
+      upgraded.close();
+      await appDb.open();
+    }
+  });
+});
+
+describe("v13 upgrade", () => {
+  test("opens v13 with the new record tables and without the placeholder self-care tables", async () => {
+    appDb.close();
+    await Dexie.delete("exercise-log-mvp");
+
+    const v12 = new Dexie("exercise-log-mvp");
+    v12.version(12).stores({
+      selfCareCatalog: "id, sortOrder, isArchived",
+      dailySelfCareLogs: "id, date, selfCareId, recordedAt, &[date+selfCareId]",
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      bodyRecords: "id, date, recordedAt",
+      circumferenceRecords: "id, date, recordedAt",
+      photoRecords: "id, date, recordedAt",
+      photoBlobs: "id, recordId",
+      photoFiles: "id, recordId",
+      photoTrash: "driveFileId",
+    });
+    await v12.table("dailySelfCareLogs").add({
+      id: "s-1",
+      date: "2026-10-20",
+      selfCareId: "x",
+      isDone: true,
+      count: null,
+      minutes: null,
+      note: "",
+      recordedAt: "2026-10-20T07:00:00+09:00",
+    });
+    await v12.table("wellnessEntries").add({
+      id: "w-1",
+      date: "2026-10-20",
+      recordedAt: "2026-10-20T07:00:00+09:00",
+    });
+    v12.close();
+
+    const upgraded = new AppDb();
+    try {
+      await upgraded.open();
+      expect(upgraded.verno).toBe(13);
+      const names = upgraded.tables.map((table) => table.name);
+      expect(names).toEqual(expect.arrayContaining(["selfCareRecords", "compressionRecords", "symptomRecords"]));
+      expect(names).not.toContain("dailySelfCareLogs");
+      expect(names).not.toContain("selfCareCatalog");
+      expect(await upgraded.wellnessEntries.count()).toBe(1);
     } finally {
       upgraded.close();
       await appDb.open();

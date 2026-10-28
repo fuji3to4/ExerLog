@@ -223,9 +223,7 @@ export const en = {
   sync_tab_Photos: "Photo records",
   sync_tab_PhotoFiles: "Photo file map",
   sync_tab_PhotoDrive: "Photo files (Drive)",
-  sync_tab_DailySelfCare: "Self-care",
   sync_tab_Exercises: "Video library",
-  sync_tab_SelfCareCatalog: "Self-care items",
   sync_tab_Tombstones: "Deletion records",
   sync_tab_spreadsheet: "Spreadsheet",
 

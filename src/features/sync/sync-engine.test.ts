@@ -591,7 +591,7 @@ describe("syncAll", () => {
           maxActive = Math.max(maxActive, active);
           await new Promise((resolve) => setTimeout(resolve, 10));
         }
-        if (url.includes("/values/SelfCareCatalog") && init?.method === "PUT") {
+        if (url.includes("/values/Tombstones") && init?.method === "PUT") {
           active--;
         }
         return handle(url, init);

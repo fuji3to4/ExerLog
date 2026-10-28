@@ -1,4 +1,5 @@
 import { toDayKey } from "@/lib/date/day-key";
+import { localIsoAt } from "@/lib/date/local-iso";
 
 /** start / end are local ISO times (with offset); both ends are included. */
 export type Period = { start: string; end: string };
@@ -16,4 +17,21 @@ export function isWithinPeriod(at: string, period: Period): boolean {
 
 export function isValidPeriod(period: Period): boolean {
   return Date.parse(period.start) <= Date.parse(period.end);
+}
+
+/** Number of calendar days from the first to the last day of the period, both included. */
+export function periodDayCount(period: Period): number {
+  const { start, end } = periodDayKeys(period);
+  const [sy, sm, sd] = start.split("-").map(Number);
+  const [ey, em, ed] = end.split("-").map(Number);
+  // UTC midnights avoid DST shifts when dividing by the length of a day.
+  return Math.round((Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / 86_400_000) + 1;
+}
+
+/** From 00:00:00 of the start day to 23:59:59 of the end day (local offset). */
+export function periodOfDayRange(range: { start: string; end: string }): Period {
+  return {
+    start: localIsoAt(range.start, new Date(2000, 0, 1, 0, 0, 0)),
+    end: localIsoAt(range.end, new Date(2000, 0, 1, 23, 59, 59)),
+  };
 }

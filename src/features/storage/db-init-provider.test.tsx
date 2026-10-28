@@ -29,7 +29,6 @@ const customExercise: ExerciseVideo = {
 
 beforeEach(async () => {
   await appDb.exercises.clear();
-  await appDb.selfCareCatalog.clear();
   mockSyncIfNeeded.mockReset();
   mockSyncIfNeeded.mockResolvedValue("not-connected");
 });
@@ -71,7 +70,6 @@ test("does not ask when the sync before seeding fails", async () => {
   renderProvider();
 
   await waitFor(() => expect(mockSyncIfNeeded).toHaveBeenCalledTimes(1));
-  await waitFor(async () => expect(await appDb.selfCareCatalog.count()).toBeGreaterThan(0));
   expect(screen.queryByText("Import starter exercises?")).not.toBeInTheDocument();
   expect(await appDb.exercises.count()).toBe(0);
 });
@@ -136,17 +134,6 @@ test("leaves the store empty when the user declines", async () => {
 
   expect(screen.queryByText("Import starter exercises?")).not.toBeInTheDocument();
   expect(await appDb.exercises.count()).toBe(0);
-});
-
-test("still seeds the self-care catalog silently regardless of the exercise dialog", async () => {
-  renderWithLanguage(
-    <DbInitProvider>
-      <p>app content</p>
-    </DbInitProvider>,
-    { initialLanguage: "en" },
-  );
-
-  await waitFor(async () => expect(await appDb.selfCareCatalog.count()).toBeGreaterThan(0));
 });
 
 test("asks the browser to persist storage on start and ignores a missing API or a rejection", async () => {

@@ -44,3 +44,19 @@ export function withLocalTime(iso: string, hhmm: string): string {
 export function timeOfIso(iso: string): string {
   return iso.slice(11, 16);
 }
+
+/**
+ * Turns an `<input type="datetime-local">` value ("YYYY-MM-DDTHH:mm") into a
+ * local ISO string with the device's offset at that moment (seconds are 00).
+ */
+export function localIsoFromInput(value: string): string {
+  const [datePart, timePart] = value.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hours, minutes] = timePart.split(":").map(Number);
+  return formatLocalIso(new Date(year, month - 1, day, hours, minutes));
+}
+
+/** The `<input type="datetime-local">` value ("YYYY-MM-DDTHH:mm") of a local ISO string. */
+export function inputValueOfIso(iso: string): string {
+  return iso.slice(0, 16);
+}

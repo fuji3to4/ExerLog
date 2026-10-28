@@ -68,23 +68,59 @@ export type Tombstone = {
   deletedAt: string;
 };
 
-export type SelfCareItem = {
-  id: string;
-  title: string;
-  description: string;
-  sortOrder: number;
-  isArchived: boolean;
-};
+export type SelfCareItemId = "skincare" | "exercise" | "other";
 
-export type DailySelfCareEntry = {
+export type SelfCareRecord = {
   id: string;
   date: string;
-  selfCareId: string;
-  isDone: boolean;
-  count: number | null;
+  recordedAt: string;
+  item: SelfCareItemId;
   minutes: number | null;
   note: string;
+  updatedAt: string;
+};
+
+export type CompressionKind = "garment" | "bandage";
+
+/** recordedAt is when it was put on; endedAt is null while still worn. */
+export type CompressionRecord = {
+  id: string;
+  date: string;
   recordedAt: string;
+  kind: CompressionKind;
+  endedAt: string | null;
+  note: string;
+  updatedAt: string;
+};
+
+export type SymptomId =
+  | "edema"
+  | "pain"
+  | "heaviness"
+  | "fatigue"
+  | "stiffness"
+  | "pitting"
+  | "skin"
+  | "cellulitis";
+export type SymptomSeverity = 1 | 2 | 3;
+export type BodySite = "armRight" | "armLeft" | "legRight" | "legLeft" | "other";
+export type CellulitisCare = "inpatient" | "outpatient" | "none";
+
+export type SymptomEntry = {
+  id: SymptomId;
+  severity: SymptomSeverity | null;
+  sites: BodySite[];
+  care: CellulitisCare | null;
+};
+
+/** An empty `symptoms` list means "no symptoms". */
+export type SymptomRecord = {
+  id: string;
+  date: string;
+  recordedAt: string;
+  symptoms: SymptomEntry[];
+  note: string;
+  updatedAt: string;
 };
 
 /** A photo record: one moment with a memo and one or more photos (in display order). */
