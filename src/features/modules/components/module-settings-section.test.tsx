@@ -36,7 +36,7 @@ describe("ModuleSettingsSection", () => {
   it("lists the modules in the default order, all ON", () => {
     renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
 
-    expect(rowNames()).toEqual(["体調", "身体", "周径", "写真", "セルフケア", "着用"]);
+    expect(rowNames()).toEqual(["体調", "身体", "周径", "写真", "セルフケア", "着用", "症状"]);
     for (const r of rows()) {
       expect(within(r).getByRole("switch").getAttribute("aria-checked")).toBe("true");
       expect(within(r).getByLabelText("並べ替え")).toBeTruthy();
@@ -50,9 +50,9 @@ describe("ModuleSettingsSection", () => {
     fireEvent.click(within(row("周径")).getByRole("button", { name: "上へ" }));
     fireEvent.click(within(row("周径")).getByRole("button", { name: "上へ" }));
 
-    expect(rowNames()).toEqual(["周径", "体調", "身体", "写真", "セルフケア", "着用"]);
+    expect(rowNames()).toEqual(["周径", "体調", "身体", "写真", "セルフケア", "着用", "症状"]);
     const stored = JSON.parse(window.localStorage.getItem("lymly-record-modules")!);
-    expect(stored.order).toEqual(["circumference", "wellness", "body", "photo", "selfcare", "compression"]);
+    expect(stored.order).toEqual(["circumference", "wellness", "body", "photo", "selfcare", "compression", "symptoms"]);
   });
 
   it("disables the first row's up button and the last row's down button", () => {
@@ -60,7 +60,7 @@ describe("ModuleSettingsSection", () => {
 
     const all = rows();
     expect((within(all[0]).getByRole("button", { name: "上へ" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((within(all[5]).getByRole("button", { name: "下へ" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((within(all[all.length - 1]).getByRole("button", { name: "下へ" }) as HTMLButtonElement).disabled).toBe(true);
     expect((within(all[0]).getByRole("button", { name: "下へ" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
@@ -73,6 +73,6 @@ describe("ModuleSettingsSection", () => {
     expect(stored.disabled).toEqual(["body"]);
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent);
-    expect(items).toEqual(["体調", "周径", "写真", "セルフケア", "着用"]);
+    expect(items).toEqual(["体調", "周径", "写真", "セルフケア", "着用", "症状"]);
   });
 });
