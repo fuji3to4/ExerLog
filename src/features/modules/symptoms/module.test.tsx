@@ -107,6 +107,19 @@ describe("symptoms history view", () => {
     expect(rows).toEqual([`${md(newer)} 入院`, `${md(older)} 通院・右脚`]);
   });
 
+  it("orders cellulitis rows by instant, not by the recordedAt string", async () => {
+    const key = toDayKey(new Date(Date.now() - 4 * 86_400_000));
+    const [, m, d] = key.split("-").map(Number);
+    // As strings "09:00+09:00" sorts after "08:00+00:00", but as instants it is 8 hours earlier.
+    const earlier = { ...makeRecord("early", key, [{ id: "cellulitis", severity: null, sites: [], care: "inpatient" }]), recordedAt: `${key}T09:00:00+09:00` };
+    const later = { ...makeRecord("late", key, [{ id: "cellulitis", severity: null, sites: [], care: "outpatient" }]), recordedAt: `${key}T08:00:00+00:00` };
+    await appDb.symptomRecords.bulkAdd([earlier, later]);
+    const View = symptomsModule.HistoryView;
+    renderWithLanguage(<View />, { initialLanguage: "ja" });
+    await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(2));
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([`${m}/${d} 通院`, `${m}/${d} 入院`]);
+  });
+
   it("shows no list without cellulitis", async () => {
     await appDb.symptomRecords.add(
       makeRecord("a", toDayKey(new Date()), [{ id: "edema", severity: 3, sites: ["armLeft"], care: null }]),

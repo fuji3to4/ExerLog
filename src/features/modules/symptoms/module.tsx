@@ -47,7 +47,7 @@ function CellulitisList({ records }: { records: SymptomRecord[] }) {
   const { t } = useTranslation();
   const rows = records
     .flatMap((record) => record.symptoms.filter((e) => e.id === "cellulitis").map((entry) => ({ record, entry })))
-    .sort((a, b) => b.record.recordedAt.localeCompare(a.record.recordedAt));
+    .sort((a, b) => Date.parse(b.record.recordedAt) - Date.parse(a.record.recordedAt));
   if (rows.length === 0) return null;
   return (
     <section className="space-y-1">
