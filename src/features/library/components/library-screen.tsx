@@ -86,7 +86,7 @@ ${t("library_delete_confirm")}`
         return false;
       }
 
-      if (filters.duration && Math.round(exercise.durationSeconds / 60) !== Number(filters.duration)) {
+      if (filters.duration && exercise.durationSeconds > Number(filters.duration)) {
         return false;
       }
 
@@ -129,6 +129,10 @@ ${t("library_delete_confirm")}`
           </button>
         </div>
       ) : null}
+
+      <p className="library-screen__count" aria-live="polite">
+        {t("library_result_count", { shown: filteredExercises.length, total: exercises.length })}
+      </p>
 
       {/* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */}
       <section className="library-screen__results grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
