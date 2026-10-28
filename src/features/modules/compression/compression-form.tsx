@@ -68,12 +68,14 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
   // New records look up the open record of the chosen kind before they can be saved.
   const [checking, setChecking] = useState(!record);
   const { isSaved, isBusy, hasError, run } = useSaveAndClose();
+  const [lookupFailed, setLookupFailed] = useState(false);
   const firstLookup = useRef(true);
 
   useEffect(() => {
     if (record) return;
     let cancelled = false;
     setChecking(true);
+    setLookupFailed(false);
     findOpenCompressionRecord(kind).then(
       (found) => {
         if (cancelled) return;
@@ -89,8 +91,13 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
         firstLookup.current = false;
         setChecking(false);
       },
-      () => {
-        if (!cancelled) setChecking(false);
+      (error: unknown) => {
+        console.error("Failed to look up the open compression record", error);
+        // Saving stays off: without the lookup a second open record could be created.
+        if (!cancelled) {
+          setLookupFailed(true);
+          setChecking(false);
+        }
       },
     );
     return () => {
@@ -102,7 +109,7 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
   const startValue = takingOff ? inputValueOfIso(open.recordedAt) : startedAt;
   const endBeforeStart =
     startValue !== "" && endedAt !== "" && Date.parse(localIsoFromInput(endedAt)) < Date.parse(localIsoFromInput(startValue));
-  const canSave = !checking && !endBeforeStart && (takingOff ? endedAt !== "" : startedAt !== "");
+  const canSave = !checking && !lookupFailed && !endBeforeStart && (takingOff ? endedAt !== "" : startedAt !== "");
 
   function startNew() {
     setForceNew(true);
@@ -170,6 +177,11 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
         <DateTimeField label={t("compression_started_at")} value={startedAt} onChange={setStartedAt} required />
       )}
       <DateTimeField label={t("compression_ended_at")} value={endedAt} onChange={setEndedAt} required={takingOff} />
+      {lookupFailed ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t("timeline_save_error")}
+        </p>
+      ) : null}
       {endBeforeStart ? (
         <p role="alert" className="text-sm text-destructive">
           {t("compression_end_before_start")}

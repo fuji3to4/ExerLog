@@ -46,7 +46,9 @@ describe("compression timeline card", () => {
   const Card = compressionModule.TimelineCard;
 
   it("shows the span and wear time of a finished record", () => {
-    renderWithLanguage(<Card record={{ ...base, endedAt: "2026-10-20T21:30:00+09:00", note: "きつめ" }} label={null} />, {
+    const recordedAt = localIsoAt("2026-10-20", new Date(2026, 0, 1, 8, 10));
+    const endedAt = localIsoAt("2026-10-20", new Date(2026, 0, 1, 21, 30));
+    renderWithLanguage(<Card record={{ ...base, recordedAt, endedAt, note: "きつめ" }} label={null} />, {
       initialLanguage: "ja",
     });
     expect(screen.getByText("弾性着衣 8:10〜21:30（13時間20分）")).toBeTruthy();
@@ -86,8 +88,8 @@ describe("compression summary card", () => {
   it("shows days of the period and the average wear", async () => {
     await appDb.compressionRecords.add({
       ...base,
-      recordedAt: "2026-10-20T08:00:00+09:00",
-      endedAt: "2026-10-20T21:20:00+09:00",
+      recordedAt: localIsoAt("2026-10-20", new Date(2026, 0, 1, 8, 0)),
+      endedAt: localIsoAt("2026-10-20", new Date(2026, 0, 1, 21, 20)),
     });
     renderWithLanguage(
       <CompressionSummaryCard

@@ -19,9 +19,9 @@ function renderForm() {
   return { onSaved };
 }
 
-/** A garment put on today at 08:10 and not yet taken off. */
-async function addOpenGarment() {
-  const recordedAt = localIsoAt(toDayKey(new Date()), new Date(2026, 0, 1, 8, 10));
+/** A garment put on at the given local time today (default 08:10) and not yet taken off. */
+async function addOpenGarment(hour = 8, minute = 10) {
+  const recordedAt = localIsoAt(toDayKey(new Date()), new Date(2026, 0, 1, hour, minute));
   await appDb.compressionRecords.add({
     id: "open",
     date: recordedAt.slice(0, 10),
@@ -54,6 +54,8 @@ describe("CompressionForm", () => {
     await addOpenGarment();
     const { onSaved } = renderForm();
     await screen.findByText("弾性着衣 8:10〜 着用中");
+    // The default take-off time is now, which can precede 08:10 early in the day.
+    fireEvent.change(screen.getByLabelText("外した時刻"), { target: { value: `${toDayKey(new Date())}T23:59` } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
     const records = await appDb.compressionRecords.toArray();
@@ -76,12 +78,39 @@ describe("CompressionForm", () => {
     expect(screen.getByLabelText("着けた時刻")).toBeTruthy();
   });
 
-  it("refuses a take-off before the put-on", () => {
+  it("refuses a take-off before the put-on", async () => {
     renderForm();
+    const save = () => screen.getByRole("button", { name: "保存" }) as HTMLButtonElement;
+    await waitFor(() => expect(save().disabled).toBe(false));
     fireEvent.change(screen.getByLabelText("着けた時刻"), { target: { value: "2026-10-20T10:00" } });
     fireEvent.change(screen.getByLabelText("外した時刻"), { target: { value: "2026-10-20T09:00" } });
     expect(screen.getByText("外した時刻は着けた時刻より後にしてください")).toBeTruthy();
+    expect(save().disabled).toBe(true);
+  });
+
+  it("refuses a take-off before the put-on of the open record", async () => {
+    await addOpenGarment();
+    renderForm();
+    await screen.findByText("弾性着衣 8:10〜 着用中");
+    const save = () => screen.getByRole("button", { name: "保存" }) as HTMLButtonElement;
+    await waitFor(() => expect(save().disabled).toBe(false));
+    fireEvent.change(screen.getByLabelText("外した時刻"), { target: { value: `${toDayKey(new Date())}T07:00` } });
+    expect(screen.getByText("外した時刻は着けた時刻より後にしてください")).toBeTruthy();
+    expect(save().disabled).toBe(true);
+  });
+
+  it("keeps saving off when the open-record lookup fails", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const where = vi.spyOn(appDb.compressionRecords, "where").mockImplementation(() => {
+      throw new Error("lookup failed");
+    });
+    renderForm();
+    await screen.findByRole("alert");
     expect((screen.getByRole("button", { name: "保存" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(error).toHaveBeenCalled();
+    where.mockRestore();
+    error.mockRestore();
+    expect(await appDb.compressionRecords.count()).toBe(0);
   });
 
   it("files a night-crossing wear under the day it was put on", async () => {
