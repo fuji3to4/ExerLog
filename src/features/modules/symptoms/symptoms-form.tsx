@@ -171,7 +171,7 @@ export function SymptomsForm({ onOpenChange, date, record, onSaved, onDeleted }:
         isSaved={isSaved}
         isBusy={isBusy}
         hasError={hasError}
-        canSave={time !== "" && entries.length > 0}
+        canSave={time !== "" && (entries.length > 0 || record?.symptoms.length === 0)}
         onSave={() => save(entries)}
         onDelete={record ? remove : undefined}
       />

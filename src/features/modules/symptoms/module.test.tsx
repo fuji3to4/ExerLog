@@ -56,6 +56,19 @@ describe("formatSymptomEntry", () => {
       screen.getByText("むくみ（中・左腕）|痛み（軽）|むくみ|蜂窩織炎（通院・右脚）|痛み（強・右腕・左脚）"),
     ).toBeTruthy();
   });
+
+  it("uses ASCII punctuation in English", () => {
+    renderWithLanguage(
+      <Probe
+        entries={[
+          { id: "edema", severity: 2, sites: ["armLeft"], care: null },
+          { id: "pain", severity: 1, sites: [], care: null },
+        ]}
+      />,
+      { initialLanguage: "en" },
+    );
+    expect(screen.getByText("Swelling (Moderate, Left arm)|Pain (Mild)")).toBeTruthy();
+  });
 });
 
 describe("symptoms timeline card", () => {
@@ -79,6 +92,18 @@ describe("symptoms timeline card", () => {
     renderWithLanguage(<Card record={record} label={null} />, { initialLanguage: "ja" });
     expect(screen.getByText("むくみ（中・左腕）、痛み（軽）")).toBeTruthy();
     expect(screen.getByText("夕方")).toBeTruthy();
+  });
+});
+
+describe("symptoms timeline card (en)", () => {
+  it("joins entries with a semicolon", () => {
+    const Card = symptomsModule.TimelineCard;
+    const record = makeRecord("a", "2026-10-20", [
+      { id: "edema", severity: 2, sites: ["armLeft"], care: null },
+      { id: "pain", severity: 1, sites: [], care: null },
+    ]);
+    renderWithLanguage(<Card record={record} label={null} />, { initialLanguage: "en" });
+    expect(screen.getByText("Swelling (Moderate, Left arm); Pain (Mild)")).toBeTruthy();
   });
 });
 
@@ -118,6 +143,22 @@ describe("symptoms history view", () => {
     renderWithLanguage(<View />, { initialLanguage: "ja" });
     await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(2));
     expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([`${m}/${d} 通院`, `${m}/${d} 入院`]);
+  });
+
+  it("uses English punctuation in the summary and the cellulitis list", async () => {
+    await appDb.symptomRecords.add(
+      makeRecord("c", toDayKey(new Date(Date.now() - 86_400_000)), [
+        { id: "cellulitis", severity: null, sites: ["legRight"], care: "outpatient" },
+        { id: "edema", severity: 2, sites: ["armLeft"], care: null },
+      ]),
+    );
+    const View = symptomsModule.HistoryView;
+    renderWithLanguage(<View />, { initialLanguage: "en" });
+    await waitFor(() => expect(screen.getByText(/Cellulitis/, { selector: "span" })).toBeTruthy());
+    expect(document.body.textContent).toContain("Cellulitis 1 days (Outpatient 1 days)");
+    expect(document.body.textContent).toContain("Worst: Moderate, Left arm");
+    expect(screen.getAllByRole("listitem")[0].textContent).toMatch(/^\d+\/\d+ Outpatient, Right leg$/);
+    for (const ch of ["・", "（", "）", "、"]) expect(document.body.textContent).not.toContain(ch);
   });
 
   it("shows no list without cellulitis", async () => {

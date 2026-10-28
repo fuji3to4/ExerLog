@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
+import { localIsoAt } from "@/lib/date/local-iso";
 import { appDb } from "@/features/storage/app-db";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { SymptomsForm } from "./symptoms-form";
@@ -65,6 +66,22 @@ describe("SymptomsForm", () => {
     expect(screen.getByRole("radio", { name: "通院" }).getAttribute("aria-checked")).toBe("true");
     fireEvent.click(screen.getByRole("radio", { name: "通院" }));
     expect(screen.getByRole("radio", { name: "通院" }).getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("saves edits to a 症状なし record while keeping it empty", async () => {
+    const at = localIsoAt(DATE);
+    const record = { id: "none1", date: DATE, recordedAt: at, symptoms: [], note: "", updatedAt: at };
+    await appDb.symptomRecords.add(record);
+    const onSaved = vi.fn();
+    renderWithLanguage(<SymptomsForm onOpenChange={vi.fn()} date={DATE} record={record} onSaved={onSaved} />, {
+      initialLanguage: "ja",
+    });
+    const save = screen.getByRole("button", { name: "保存" }) as HTMLButtonElement;
+    expect(save.disabled).toBe(false);
+    fireEvent.change(screen.getByLabelText("メモ"), { target: { value: "夕方" } });
+    fireEvent.click(save);
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    expect(await appDb.symptomRecords.toArray()).toMatchObject([{ id: "none1", symptoms: [], note: "夕方" }]);
   });
 
   it("cannot save while no symptom is chosen", () => {
