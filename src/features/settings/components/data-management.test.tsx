@@ -16,7 +16,7 @@ describe("DataManagement history export", () => {
     fireEvent.keyDown(trigger, { key: "Enter" });
 
     const items = await screen.findAllByRole("menuitem");
-    expect(items.map((item) => item.textContent)).toEqual(["運動ログ", "動画の視聴履歴", "体調", "身体", "周径", "写真"]);
+    expect(items.map((item) => item.textContent)).toEqual(["運動ログ", "動画の視聴履歴", "体調", "身体", "周径", "写真", "セルフケア"]);
   });
 
   it("downloads the chosen CSV", async () => {

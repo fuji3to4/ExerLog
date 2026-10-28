@@ -24,11 +24,11 @@ beforeEach(async () => {
 });
 
 describe("recordModuleData", () => {
-  it("lists wellness, body, circumference, photo with unique ids and tab names", () => {
+  it("lists wellness, body, circumference, photo, selfcare with unique ids and tab names", () => {
     const modules = recordModuleData();
-    expect(modules.map((m) => m.id)).toEqual(["wellness", "body", "circumference", "photo"]);
+    expect(modules.map((m) => m.id)).toEqual(["wellness", "body", "circumference", "photo", "selfcare"]);
     const tabs = modules.flatMap((m) => m.syncConfigs.map((c) => c.tabName));
-    expect(tabs).toEqual(["WellnessEntries", "BodyMeasurements", "Circumference", "Photos", "PhotoFiles"]);
+    expect(tabs).toEqual(["WellnessEntries", "BodyMeasurements", "Circumference", "Photos", "PhotoFiles", "SelfCare"]);
     expect(new Set(tabs).size).toBe(tabs.length);
     expect(recordModuleData()).toBe(modules);
     expect(getModuleData("body")).toBe(bodyData);
@@ -43,6 +43,7 @@ describe("recordModuleData", () => {
       "Circumference",
       "Photos",
       "PhotoFiles",
+      "SelfCare",
       "WatchEvents",
       "Exercises",
       "Tombstones",

@@ -185,7 +185,7 @@ test("has no summary/graph toggle and starts on the すべて chip", async () =>
   expect(screen.queryByRole("button", { name: "まとめ" })).toBeNull();
   expect(screen.queryByRole("button", { name: "グラフ" })).toBeNull();
   const chips = within(screen.getByRole("tablist", { name: "表示する記録" })).getAllByRole("tab");
-  expect(chips.map((chip) => chip.textContent)).toEqual(["すべて", "体調", "身体", "周径", "写真"]);
+  expect(chips.map((chip) => chip.textContent)).toEqual(["すべて", "体調", "身体", "周径", "写真", "セルフケア"]);
   expect(screen.getByRole("tab", { name: "すべて" })).toHaveAttribute("aria-selected", "true");
 });
 

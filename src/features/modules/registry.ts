@@ -7,6 +7,7 @@
 import { bodyModule } from "./body/module";
 import { circumferenceModule } from "./circumference/module";
 import { photoModule } from "./photo/module";
+import { selfCareModule } from "./selfcare/module";
 import type { RecordModule } from "./types";
 import { wellnessModule } from "./wellness/module";
 
@@ -21,6 +22,7 @@ export const RECORD_MODULES: readonly RecordModule[] = [
   bodyModule,
   circumferenceModule,
   photoModule,
+  selfCareModule,
 ] as unknown as readonly RecordModule[];
 
 export function getRecordModule(id: string): RecordModule | undefined {
