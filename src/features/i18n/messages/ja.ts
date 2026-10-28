@@ -183,6 +183,7 @@
   settings_export_logs: "運動ログ",
   settings_export_wellness_entries: "体調",
   settings_export_selfcare: "セルフケア",
+  settings_export_compression: "着用",
   settings_export_watch_events: "動画の視聴履歴",
   settings_export_body: "身体",
   settings_export_circumference: "周径",

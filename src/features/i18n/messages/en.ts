@@ -183,6 +183,7 @@ export const en = {
   settings_export_logs: "Exercise logs",
   settings_export_wellness_entries: "Wellness",
   settings_export_selfcare: "Self-care",
+  settings_export_compression: "Compression",
   settings_export_watch_events: "Video watch history",
   settings_export_body: "Body",
   settings_export_circumference: "Circumference",
