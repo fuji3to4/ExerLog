@@ -421,6 +421,34 @@ a {
   font: inherit;
 }
 
+.library-filters__stepper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.library-filters__stepper input {
+  flex: 1;
+  min-width: 0;
+}
+
+.library-filters__stepper button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  min-height: 48px;
+  border: 1px solid var(--border-soft);
+  border-radius: 0.9rem;
+  background: var(--surface-elevated);
+  color: inherit;
+}
+
+.library-filters__stepper button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .library-filters__field input:focus,
 .library-filters__field select:focus {
   outline: 2px solid var(--focus-ring);
@@ -889,6 +917,12 @@ a {
 .library-screen__edit-actions {
   display: flex;
   justify-content: center;
+}
+
+.library-screen__count {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
 .library-screen__card-actions {

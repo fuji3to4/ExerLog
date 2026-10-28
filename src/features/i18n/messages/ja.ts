@@ -37,6 +37,7 @@
   library_filters_subheading: "簡単な検索を使うか、1つまたは2つのフィルターでリストを絞り込みましょう。",
   library_search_label: "エクササイズを検索",
   library_search_placeholder: "タイトルまたは説明で検索",
+  library_result_count: "{total}件中 {shown}件を表示",
 
   // History screen
   history_heading: "履歴",
@@ -101,6 +102,8 @@
 
   // Duration values
   duration_any: "任意の時間",
+  library_duration_increase: "30秒増やす",
+  library_duration_decrease: "30秒減らす",
 
   // Exercise logging results
   result_did: "できた",

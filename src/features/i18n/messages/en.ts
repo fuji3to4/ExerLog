@@ -37,6 +37,7 @@ export const en = {
   library_filters_subheading: "Use a simple search or narrow the list with one or two filters.",
   library_search_label: "Search exercises",
   library_search_placeholder: "Search by title or description",
+  library_result_count: "Showing {shown} of {total}",
 
   // History screen
   history_heading: "History",
@@ -101,6 +102,8 @@ export const en = {
 
   // Duration values
   duration_any: "Any duration",
+  library_duration_increase: "Add 30 seconds",
+  library_duration_decrease: "Subtract 30 seconds",
 
   // Exercise logging results
   result_did: "Did it",
