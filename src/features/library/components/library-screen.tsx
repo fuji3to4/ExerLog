@@ -130,13 +130,14 @@ ${t("library_delete_confirm")}`
         </div>
       ) : null}
 
-      <section className="library-screen__results flex flex-wrap gap-4 justify-center">
+      {/* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */}
+      <section className="library-screen__results grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
         {filteredExercises.map((exercise) => {
           const headingId = `library-${exercise.id}`;
           const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
 
           return (
-            <Card key={exercise.id} role="article" className="recommendation-card max-w-[400px]" aria-labelledby={headingId}>
+            <Card key={exercise.id} role="article" className="recommendation-card" aria-labelledby={headingId}>
               {thumbnailUrl ? (
                 <div className="recommendation-card__thumbnail">
                   <img src={thumbnailUrl} alt={exercise.title} loading="lazy" />
