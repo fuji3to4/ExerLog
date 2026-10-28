@@ -25,7 +25,8 @@ export function HistoryDashboard({ month: initialMonth }: HistoryDashboardProps 
         </CardHeader>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Each column stays at least 20rem wide; narrower windows stack the chart under the calendar. */}
+      <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))]">
         <div className="space-y-4">
           <HistoryCalendar
             month={history.currentMonth}
