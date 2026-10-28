@@ -105,7 +105,8 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
     };
   }, [kind, record, date]);
 
-  const takingOff = !record && open !== undefined && !forceNew;
+  // `open` can be stale for a moment after the kind changes, so it must match the chosen kind.
+  const takingOff = !record && open !== undefined && open.kind === kind && !forceNew;
   const startValue = takingOff ? inputValueOfIso(open.recordedAt) : startedAt;
   const endBeforeStart =
     startValue !== "" && endedAt !== "" && Date.parse(localIsoFromInput(endedAt)) < Date.parse(localIsoFromInput(startValue));
