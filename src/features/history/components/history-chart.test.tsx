@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { localIsoAt } from "@/lib/date/local-iso";
-import { HistoryChart, formatPointTime, formatPointValue } from "./history-chart";
+import { HistoryChart, formatPointDay, formatPointTime, formatPointValue } from "./history-chart";
 import type { GraphSeries } from "./metric-graph-view";
 
 // Mock Recharts to render without ResponsiveContainer constraints in JSDOM
@@ -18,6 +18,11 @@ vi.mock("recharts", async () => {
       <original.AreaChart {...props} width={800} height={600}>
         {props.children}
       </original.AreaChart>
+    ),
+    BarChart: (props: any) => (
+      <original.BarChart {...props} width={800} height={600}>
+        {props.children}
+      </original.BarChart>
     ),
   };
 });
@@ -105,5 +110,25 @@ describe("HistoryChart", () => {
   it("formats tooltip values with the series decimals", () => {
     expect(formatPointValue(60, { unit: "kg", decimals: 1, points: [] })).toBe("60.0");
     expect(formatPointValue(4, { unit: "/5", decimals: 0, points: [] })).toBe("4");
+  });
+
+  it("draws bars instead of an area when the series asks for a bar chart", () => {
+    const bars: GraphSeries = {
+      unit: "h",
+      decimals: 1,
+      chart: "bar",
+      points: [
+        { at: "2026-10-04T12:00:00+09:00", value: 8.5 },
+        { at: "2026-10-05T12:00:00+09:00", value: 10 },
+      ],
+    };
+    const { container } = render(<HistoryChart series={bars} />);
+
+    expect(container.querySelector(".recharts-bar")).toBeInTheDocument();
+    expect(container.querySelector(".recharts-area")).not.toBeInTheDocument();
+  });
+
+  it("formats a bar's tooltip day without a time", () => {
+    expect(formatPointDay("2026-10-05T12:00:00+09:00")).toBe("10/5");
   });
 });

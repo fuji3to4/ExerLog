@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
@@ -28,6 +30,11 @@ export function formatPointTime(at: string): string {
   return `${month}/${day} ${at.slice(11, 16)}`;
 }
 
+/** "M/D" read from the ISO string's own digits, for points that stand for a whole day. */
+export function formatPointDay(at: string): string {
+  return `${Number(at.slice(5, 7))}/${Number(at.slice(8, 10))}`;
+}
+
 export function formatPointValue(value: number, series: GraphSeries): string {
   return value.toFixed(series.decimals);
 }
@@ -37,7 +44,9 @@ const CustomTooltip = ({ active, payload, series }: any) => {
     const point = payload[0].payload as { at: string; value: number };
     return (
       <div className="rounded-lg border bg-popover p-2 shadow-md">
-        <p className="text-xs text-muted-foreground">{formatPointTime(point.at)}</p>
+        <p className="text-xs text-muted-foreground">
+          {series.chart === "bar" ? formatPointDay(point.at) : formatPointTime(point.at)}
+        </p>
         <p className="text-sm font-bold text-foreground">
           {formatPointValue(point.value, series)}{" "}
           <span className="text-xs font-normal text-muted-foreground">{series.unit}</span>
@@ -56,6 +65,47 @@ export function HistoryChart({ series }: HistoryChartProps) {
       timestamp: Date.parse(point.at),
     }));
   }, [series.points]);
+
+  if (series.chart === "bar") {
+    return (
+      <div
+        className="relative min-h-[250px] min-w-[300px] rounded-xl border bg-popover p-4 shadow-sm"
+        style={{ resize: "both", overflow: "hidden", height: "350px" }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="#e5e7eb" strokeDasharray="3 3" />
+            <XAxis
+              dataKey="timestamp"
+              tickFormatter={formatTimestampToMD}
+              tick={{ fontSize: 12, fill: "#6b7280" }}
+              tickLine={false}
+              axisLine={false}
+              dy={10}
+            />
+            <YAxis
+              allowDecimals={series.decimals > 0}
+              tick={{ fontSize: 12, fill: "#6b7280" }}
+              tickLine={false}
+              axisLine={false}
+              dx={-5}
+            />
+            <Tooltip
+              content={<CustomTooltip series={series} />}
+              cursor={{ fill: "#2563eb", fillOpacity: 0.08 }}
+            />
+            <Bar
+              isAnimationActive={false}
+              dataKey="value"
+              fill="#2563eb"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={32}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
 
   return (
     <div

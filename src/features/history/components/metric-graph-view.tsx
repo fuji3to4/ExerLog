@@ -11,7 +11,13 @@ import { HistoryChart } from "./history-chart";
 /** `at` is an ISO timestamp with offset. */
 export type GraphPoint = { at: string; value: number };
 
-export type GraphSeries = { unit: string; decimals: number; points: GraphPoint[] };
+export type GraphSeries = {
+  unit: string;
+  decimals: number;
+  points: GraphPoint[];
+  /** How the points are drawn; defaults to "area". */
+  chart?: "area" | "bar";
+};
 
 /** One selectable item of a module's graph. */
 export type GraphMetric = {
