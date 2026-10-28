@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
@@ -11,15 +11,12 @@ vi.mock("recharts", async (importOriginal) => {
     ),
   };
 });
-vi.mock("@/features/history/history-graph-query", () => ({
-  buildHistoryGraphSeries: vi.fn().mockResolvedValue({ unit: "kg", decimals: 1, points: [] }),
-}));
 
-// Adding one entry to MEASUREMENT_ITEMS is all it takes for every surface to pick it up. The real
+// Adding one entry to BODY_ITEMS is all it takes for every body surface to pick it up. The real
 // module's helpers read their own array binding, so the item is appended to that same array.
 vi.mock("./measurement-items", async () => {
   const actual = await vi.importActual<typeof import("./measurement-items")>("./measurement-items");
-  (actual.MEASUREMENT_ITEMS as MeasurementItem[]).push({
+  (actual.BODY_ITEMS as MeasurementItem[]).push({
     id: "waist",
     labelKey: "measurement_item_weight",
     unit: "cm",
@@ -31,13 +28,15 @@ vi.mock("./measurement-items", async () => {
   return actual;
 });
 
-import { HistoryGraphs } from "@/features/history/components/history-graphs";
+import { MetricGraphView } from "@/features/history/components/metric-graph-view";
+import { BODY_GRAPH_METRICS } from "@/features/modules/body/graph";
+import { ModuleRecordDialog } from "@/features/modules/components/module-record-dialog";
+import { getRecordModule } from "@/features/modules/registry";
 import { generateMeasurementsCsv } from "@/features/settings/csv/history-csv";
-import { TABLE_SYNC_CONFIGS } from "@/features/sync/sync-config";
-import { RecordDialog } from "@/features/timeline/components/record-dialog";
+import { tableSyncConfigs } from "@/features/sync/sync-config";
 import type { MeasurementRecord } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
-import { MEASUREMENT_ITEMS, formatMeasurementSummary, type MeasurementItem } from "./measurement-items";
+import { BODY_ITEMS, formatMeasurementSummary, type MeasurementItem } from "./measurement-items";
 
 const record: MeasurementRecord = {
   id: "m1",
@@ -48,38 +47,45 @@ const record: MeasurementRecord = {
   updatedAt: "2026-10-20T07:00:00+09:00",
 };
 
-describe("adding one item to MEASUREMENT_ITEMS", () => {
-  it("(a) shows a fourth input with unit cm in the record dialog", async () => {
+describe("adding one item to BODY_ITEMS", () => {
+  it("(a) shows a fourth input with unit cm in the body form", async () => {
     window.localStorage.clear();
-    renderWithLanguage(<RecordDialog open onOpenChange={vi.fn()} date="2026-10-20" onSaved={vi.fn()} />, {
-      initialLanguage: "ja",
-    });
-    fireEvent.click(await screen.findByRole("tab", { name: "体の数値" }));
+    renderWithLanguage(
+      <ModuleRecordDialog
+        module={getRecordModule("body")!}
+        open
+        onOpenChange={vi.fn()}
+        date="2026-10-20"
+        onSaved={vi.fn()}
+      />,
+      { initialLanguage: "ja" },
+    );
 
     const dialog = within(screen.getByRole("dialog"));
     expect(dialog.getAllByRole("spinbutton")).toHaveLength(4);
-    expect(dialog.getAllByText("cm")).toHaveLength(2); // height and waist
+    // height and waist
+    expect(dialog.getAllByText("cm")).toHaveLength(2);
   });
 
   it("(b) includes waist in the measurement summary", () => {
-    const summary = formatMeasurementSummary(record, (key) => (key === "measurement_item_weight" ? "体重" : String(key)));
+    const summary = formatMeasurementSummary(record, BODY_ITEMS, (key) => (key === "measurement_item_weight" ? "体重" : String(key)));
     expect(summary).toContain("80.0cm");
   });
 
   it("(c) adds waist to the sheet headers", () => {
-    const config = TABLE_SYNC_CONFIGS.find((c) => c.tabName === "Measurements")!;
+    const config = tableSyncConfigs().find((c) => c.tabName === "BodyMeasurements")!;
     expect(config.buildHeaders!([])).toContain("waist");
   });
 
   it("(d) adds waist to the CSV header", () => {
-    expect(generateMeasurementsCsv([record]).split("\n")[0]).toContain("waist");
+    expect(generateMeasurementsCsv([record], BODY_ITEMS).split("\n")[0]).toContain("waist");
   });
 
   it("(e) adds one graph option", async () => {
-    renderWithLanguage(<HistoryGraphs />, { initialLanguage: "ja" });
+    renderWithLanguage(<MetricGraphView metrics={BODY_GRAPH_METRICS} />, { initialLanguage: "ja" });
     const select = (await screen.findByLabelText("表示する項目")) as HTMLSelectElement;
-    // 4 graphable items + BMI + 2 wellness scores
-    expect(MEASUREMENT_ITEMS).toHaveLength(4);
-    expect(select.options).toHaveLength(7);
+    // 4 graphable body items + BMI
+    expect(BODY_ITEMS).toHaveLength(4);
+    expect(select.options).toHaveLength(5);
   });
 });

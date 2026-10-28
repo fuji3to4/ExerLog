@@ -221,6 +221,33 @@ describe("SyncProvider", () => {
     });
   });
 
+  test.each([
+    ["Unknown", "Unknown"],
+    ["WellnessEntries", "体調記録"],
+  ])("labels table %s as %s in the progress message", async (tableName, label) => {
+    vi.mocked(trySilentRefresh).mockResolvedValue(FAKE_TOKEN);
+    vi.mocked(syncAll).mockImplementation(
+      (_token, onProgress) =>
+        new Promise<SyncAllResult>(() => {
+          onProgress?.({ tableName, rowCount: 1 });
+        }),
+    );
+
+    render(
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("sync-now"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("syncing-message").textContent).toContain(label);
+    });
+  });
+
   test("disconnect clears userEmail and resets status to disconnected", async () => {
     vi.mocked(signOut).mockResolvedValue();
     vi.mocked(requestSignIn).mockResolvedValue(FAKE_TOKEN);

@@ -1,33 +1,30 @@
+import type { Table } from "dexie";
+
+import { recordModuleData } from "@/features/modules/data-registry";
 import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
 import { recordTombstones } from "./tombstones.repository";
 
 /**
- * Deletes every exercise log, wellness entry, watch event and measurement in one
- * transaction and records a tombstone for each deleted id so sync can
- * propagate the deletion.
+ * Deletes every exercise log, watch event and record of every module (also
+ * modules that are switched off) in one transaction and records a tombstone
+ * for each deleted id so sync can propagate the deletion.
  */
 export async function clearAllRecords(): Promise<void> {
+  const modules = recordModuleData();
   await appDb.transaction(
     "rw",
-    [appDb.exerciseLogs, appDb.wellnessEntries, appDb.watchEvents, appDb.measurements, appDb.tombstones],
+    [appDb.exerciseLogs, appDb.watchEvents, appDb.tombstones, ...modules.flatMap((m) => m.tables())],
     async () => {
-      const [logIds, wellnessIds, watchIds, measurementIds] = await Promise.all([
-        appDb.exerciseLogs.toCollection().primaryKeys(),
-        appDb.wellnessEntries.toCollection().primaryKeys(),
-        appDb.watchEvents.toCollection().primaryKeys(),
-        appDb.measurements.toCollection().primaryKeys(),
-      ]);
-      await Promise.all([
-        appDb.exerciseLogs.clear(),
-        appDb.wellnessEntries.clear(),
-        appDb.watchEvents.clear(),
-        appDb.measurements.clear(),
-      ]);
-      await recordTombstones("ExerciseLogs", logIds);
-      await recordTombstones("WellnessEntries", wellnessIds);
+      const exerciseIds = await appDb.exerciseLogs.toCollection().primaryKeys();
+      const watchIds = await appDb.watchEvents.toCollection().primaryKeys();
+      await appDb.exerciseLogs.clear();
+      await appDb.watchEvents.clear();
+      await recordTombstones("ExerciseLogs", exerciseIds);
       await recordTombstones("WatchEvents", watchIds);
-      await recordTombstones("Measurements", measurementIds);
+      for (const moduleData of modules) {
+        await moduleData.clearAll();
+      }
     },
   );
   scheduleSync();
@@ -36,9 +33,8 @@ export async function clearAllRecords(): Promise<void> {
 export async function countAllRecords(): Promise<number> {
   const counts = await Promise.all([
     appDb.exerciseLogs.count(),
-    appDb.wellnessEntries.count(),
     appDb.watchEvents.count(),
-    appDb.measurements.count(),
+    ...recordModuleData().map((m) => m.count()),
   ]);
   return counts.reduce((sum, n) => sum + n, 0);
 }

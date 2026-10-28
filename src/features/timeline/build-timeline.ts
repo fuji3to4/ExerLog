@@ -1,25 +1,15 @@
+import type { ModuleRecord } from "@/features/modules/types";
 import { timeOfIso } from "@/lib/date/local-iso";
-import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
+import type { ExerciseLog, WatchEvent } from "@/lib/types";
 
 export type WellnessLabel = "morning" | "beforeVideo" | "afterVideo" | "night";
 
 export type TimelineItem =
-  | { kind: "wellness"; id: string; at: string; entry: WellnessEntry; label: WellnessLabel | null }
-  | { kind: "measurement"; id: string; at: string; record: MeasurementRecord; label: WellnessLabel | null }
+  | { kind: "module"; moduleId: string; id: string; at: string; record: ModuleRecord; label: WellnessLabel | null }
   | { kind: "watch"; id: string; at: string; event: WatchEvent; title: string }
   | { kind: "exercise"; id: string; at: string; log: ExerciseLog; title: string };
 
 export const LABEL_WINDOW_MS = 30 * 60_000;
-
-const KIND_ORDER: Record<TimelineItem["kind"], number> = { wellness: 0, measurement: 1, watch: 2, exercise: 3 };
-
-export function labelWellness(
-  entry: WellnessEntry,
-  watches: WatchEvent[],
-  logs: ExerciseLog[],
-): WellnessLabel | null {
-  return labelAt(entry.recordedAt, watches, logs);
-}
 
 export function labelAt(at: string, watches: WatchEvent[], logs: ExerciseLog[]): WellnessLabel | null {
   const e = Date.parse(at);
@@ -50,45 +40,54 @@ export function labelAt(at: string, watches: WatchEvent[], logs: ExerciseLog[]):
   return null;
 }
 
+/**
+ * Merges one day's records into a time-ordered list. Items at the same instant follow the
+ * order of `moduleRecords` (the settings order), then watches, then exercises.
+ */
 export function buildTimeline(input: {
-  wellness: WellnessEntry[];
+  moduleRecords: { moduleId: string; records: ModuleRecord[] }[];
   watches: WatchEvent[];
   logs: ExerciseLog[];
-  measurements: MeasurementRecord[];
   titles: Map<string, string>;
 }): TimelineItem[] {
-  const { wellness, watches, logs, measurements, titles } = input;
-  const items: TimelineItem[] = [
-    ...wellness.map((entry): TimelineItem => ({
-      kind: "wellness",
-      id: entry.id,
-      at: entry.recordedAt,
-      entry,
-      label: labelWellness(entry, watches, logs),
+  const { moduleRecords, watches, logs, titles } = input;
+  const watchRank = moduleRecords.length;
+  const ranked: { item: TimelineItem; rank: number }[] = [
+    ...moduleRecords.flatMap(({ moduleId, records }, rank) =>
+      records.map((record) => ({
+        rank,
+        item: {
+          kind: "module" as const,
+          moduleId,
+          id: record.id,
+          at: record.recordedAt,
+          record,
+          label: labelAt(record.recordedAt, watches, logs),
+        },
+      })),
+    ),
+    ...watches.map((event) => ({
+      rank: watchRank,
+      item: {
+        kind: "watch" as const,
+        id: event.id,
+        at: event.watchedAt,
+        event,
+        title: titles.get(event.exerciseId) ?? event.exerciseId,
+      },
     })),
-    ...measurements.map((record): TimelineItem => ({
-      kind: "measurement",
-      id: record.id,
-      at: record.recordedAt,
-      record,
-      label: labelAt(record.recordedAt, watches, logs),
-    })),
-    ...watches.map((event): TimelineItem => ({
-      kind: "watch",
-      id: event.id,
-      at: event.watchedAt,
-      event,
-      title: titles.get(event.exerciseId) ?? event.exerciseId,
-    })),
-    ...logs.map((log): TimelineItem => ({
-      kind: "exercise",
-      id: log.id,
-      at: log.performedAt,
-      log,
-      title: titles.get(log.exerciseId) ?? log.exerciseId,
+    ...logs.map((log) => ({
+      rank: watchRank + 1,
+      item: {
+        kind: "exercise" as const,
+        id: log.id,
+        at: log.performedAt,
+        log,
+        title: titles.get(log.exerciseId) ?? log.exerciseId,
+      },
     })),
   ];
-  return items.sort(
-    (a, b) => Date.parse(a.at) - Date.parse(b.at) || KIND_ORDER[a.kind] - KIND_ORDER[b.kind],
-  );
+  return ranked
+    .sort((a, b) => Date.parse(a.item.at) - Date.parse(b.item.at) || a.rank - b.rank)
+    .map(({ item }) => item);
 }

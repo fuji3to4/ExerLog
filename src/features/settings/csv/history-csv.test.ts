@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
-import {
-  generateExerciseLogsCsv,
-  generateMeasurementsCsv,
-  generateWatchEventsCsv,
-  generateWellnessEntriesCsv,
-} from "./history-csv";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
+
+import { generateWellnessEntriesCsv } from "@/features/modules/wellness/data";
+import { generateExerciseLogsCsv, generateMeasurementsCsv, generateWatchEventsCsv } from "./history-csv";
+import { BODY_ITEMS, CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
 import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
 
 const makeLog = (overrides: Partial<ExerciseLog> = {}): ExerciseLog => ({
@@ -94,10 +94,14 @@ describe("generateWatchEventsCsv", () => {
 });
 
 describe("generateMeasurementsCsv", () => {
-  it("writes item columns with raw values, blanks for missing, none for unknown ids", () => {
-    const [header, row] = generateMeasurementsCsv([makeMeasurement()]).split("\n");
+  it("writes the given items' columns with raw values, blanks for missing, none for unknown ids", () => {
+    const [header, row] = generateMeasurementsCsv([makeMeasurement()], BODY_ITEMS).split("\n");
     expect(header).toBe("date,recordedAt,note,weight,bodyFat,height");
-    expect(header).not.toContain("waist");
     expect(row).toMatch(/^2024-01-15,\d{4}-\d{2}-\d{2} \d{2}:\d{2},,60\.25,,$/);
+  });
+
+  it("writes one column per circumference item, in order", () => {
+    const [header] = generateMeasurementsCsv([], CIRCUMFERENCE_ITEMS).split("\n");
+    expect(header).toBe(["date", "recordedAt", "note", ...CIRCUMFERENCE_ITEMS.map((item) => item.id)].join(","));
   });
 });

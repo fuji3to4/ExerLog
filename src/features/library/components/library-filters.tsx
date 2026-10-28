@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { formatDuration } from "@/lib/date/duration";
@@ -46,6 +49,87 @@ function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
   );
 }
 
+const DURATION_STEP_SECONDS = 30;
+
+// "m:ss" or a plain number of minutes ("2", "1.5"). Empty means no limit (null);
+// anything unparseable is undefined so the filter keeps its last value while typing.
+function parseDurationInput(text: string): number | null | undefined {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const clock = /^(\d+):([0-5]?\d)$/.exec(trimmed);
+  if (clock) return Number(clock[1]) * 60 + Number(clock[2]);
+
+  if (/^\d+(\.\d+)?$/.test(trimmed)) return Math.round(Number(trimmed) * 60);
+
+  return undefined;
+}
+
+type DurationFilterInputProps = {
+  label: string;
+  placeholder: string;
+  increaseLabel: string;
+  decreaseLabel: string;
+  value: string;
+  onChange: (nextValue: string) => void;
+};
+
+// Free-typed maximum duration. The arrow keys and the step buttons move it in 30-second steps;
+// stepping down below 0:30 clears the limit.
+function DurationFilterInput({ label, placeholder, increaseLabel, decreaseLabel, value, onChange }: DurationFilterInputProps) {
+  const [draft, setDraft] = useState(value ? formatDuration(Number(value)) : "");
+
+  function commit(seconds: number | null) {
+    onChange(seconds === null ? "" : String(seconds));
+    setDraft(seconds === null ? "" : formatDuration(seconds));
+  }
+
+  function step(direction: 1 | -1) {
+    const current = value ? Number(value) : null;
+    if (direction === 1) {
+      commit(current === null ? DURATION_STEP_SECONDS : Math.floor(current / DURATION_STEP_SECONDS + 1) * DURATION_STEP_SECONDS);
+      return;
+    }
+
+    if (current === null) return;
+    const next = Math.ceil(current / DURATION_STEP_SECONDS - 1) * DURATION_STEP_SECONDS;
+    commit(next < DURATION_STEP_SECONDS ? null : next);
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    step(event.key === "ArrowUp" ? 1 : -1);
+  }
+
+  return (
+    <div className="library-filters__field">
+      <label htmlFor="duration-filter">{label}</label>
+      <div className="library-filters__stepper">
+        <input
+          id="duration-filter"
+          type="text"
+          value={draft}
+          placeholder={placeholder}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            const parsed = parseDurationInput(event.target.value);
+            if (parsed !== undefined) onChange(parsed === null ? "" : String(parsed));
+          }}
+          onKeyDown={handleKeyDown}
+          onBlur={() => setDraft(value ? formatDuration(Number(value)) : "")}
+        />
+        <button type="button" aria-label={decreaseLabel} onClick={() => step(-1)}>
+          <ChevronDown className="size-5" aria-hidden />
+        </button>
+        <button type="button" aria-label={increaseLabel} onClick={() => step(1)}>
+          <ChevronUp className="size-5" aria-hidden />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function LibraryFilters({ value, onChange }: LibraryFiltersProps) {
   const { t } = useTranslation();
 
@@ -63,15 +147,6 @@ export function LibraryFilters({ value, onChange }: LibraryFiltersProps) {
     { label: t("purpose_strength"), value: "strength" },
     { label: t("purpose_recovery"), value: "recovery" },
     { label: t("purpose_endurance"), value: "endurance" },
-  ];
-
-  const durationOptions: SelectOption[] = [
-    { label: t("duration_any"), value: "" },
-    { label: formatDuration(3 * 60), value: "3" },
-    { label: formatDuration(4 * 60), value: "4" },
-    { label: formatDuration(5 * 60), value: "5" },
-    { label: formatDuration(6 * 60), value: "6" },
-    { label: formatDuration(10 * 60), value: "10" },
   ];
 
   const intensityOptions: SelectOption[] = [
@@ -113,10 +188,12 @@ export function LibraryFilters({ value, onChange }: LibraryFiltersProps) {
             options={purposeOptions}
             onChange={(nextValue) => onChange({ ...value, purpose: nextValue })}
           />
-          <FilterSelect
+          <DurationFilterInput
             label={t("meta_duration")}
+            placeholder={t("duration_any")}
+            increaseLabel={t("library_duration_increase")}
+            decreaseLabel={t("library_duration_decrease")}
             value={value.duration}
-            options={durationOptions}
             onChange={(nextValue) => onChange({ ...value, duration: nextValue })}
           />
           <FilterSelect

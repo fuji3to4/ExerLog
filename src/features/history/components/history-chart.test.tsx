@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { localIsoAt } from "@/lib/date/local-iso";
 import { HistoryChart, formatPointTime, formatPointValue } from "./history-chart";
-import type { GraphSeries } from "../history-graph-query";
+import type { GraphSeries } from "./metric-graph-view";
 
 // Mock Recharts to render without ResponsiveContainer constraints in JSDOM
 vi.mock("recharts", async () => {

@@ -13,7 +13,7 @@ beforeEach(async () => {
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });
 
-test("filters the exercise library by body area and duration", async () => {
+test("filters the exercise library by body area and a typed maximum duration", async () => {
   const user = userEvent.setup();
 
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
@@ -21,10 +21,73 @@ test("filters the exercise library by body area and duration", async () => {
   await screen.findAllByRole("article");
 
   await user.selectOptions(screen.getByLabelText(/body area/i), "upper-body");
-  await user.selectOptions(screen.getByLabelText(/duration/i), "5");
+  await user.type(screen.getByLabelText(/duration/i), "4:30");
 
   expect(screen.getAllByRole("article")).toHaveLength(1);
-  expect(screen.getByRole("article", { name: /neck mobility/i })).toBeInTheDocument();
+  expect(screen.getByRole("article", { name: /shoulder rolls/i })).toBeInTheDocument();
+});
+
+test("arrow keys step the duration filter by 30 seconds", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+
+  const duration = screen.getByLabelText(/duration/i);
+  await user.click(duration);
+  await user.keyboard("{ArrowUp}");
+  expect(duration).toHaveValue("0:30");
+
+  await user.keyboard("{ArrowUp}{ArrowUp}{ArrowUp}{ArrowUp}{ArrowUp}{ArrowUp}");
+  expect(duration).toHaveValue("3:30");
+  expect(screen.getAllByRole("article")).toHaveLength(1);
+  expect(screen.getByRole("article", { name: /breathing reset/i })).toBeInTheDocument();
+
+  await user.keyboard("{ArrowDown}{ArrowDown}");
+  expect(duration).toHaveValue("2:30");
+  expect(screen.queryAllByRole("article")).toHaveLength(0);
+
+  await user.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}");
+  expect(duration).toHaveValue("");
+  expect(screen.getAllByRole("article")).toHaveLength(6);
+});
+
+test("step buttons change the duration filter by 30 seconds", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+
+  const duration = screen.getByLabelText(/duration/i);
+  const increase = screen.getByRole("button", { name: /add 30 seconds/i });
+  const decrease = screen.getByRole("button", { name: /subtract 30 seconds/i });
+
+  await user.type(duration, "4:10");
+  await user.click(increase);
+  expect(duration).toHaveValue("4:30");
+  expect(screen.getAllByRole("article")).toHaveLength(2);
+
+  await user.click(decrease);
+  await user.click(decrease);
+  expect(duration).toHaveValue("3:30");
+
+  for (let step = 0; step < 7; step += 1) await user.click(decrease);
+  expect(duration).toHaveValue("");
+  expect(screen.getAllByRole("article")).toHaveLength(6);
+});
+
+test("shows how many exercises the filters leave out of the whole library", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  expect(await screen.findByText("Showing 6 of 6")).toBeInTheDocument();
+
+  await user.selectOptions(screen.getByLabelText(/body area/i), "upper-body");
+
+  expect(screen.getByText("Showing 2 of 6")).toBeInTheDocument();
 });
 
 test("filters the exercise library by purpose and intensity", async () => {

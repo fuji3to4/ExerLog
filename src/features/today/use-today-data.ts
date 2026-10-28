@@ -6,27 +6,32 @@ import { getTodaysRecommendations } from "@/features/recommendations/get-todays-
 import { mapWellnessToCondition } from "@/features/recommendations/wellness-to-condition";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
-import { getLatestWellnessEntry } from "@/features/storage/wellness-entries.repository";
+import { useModuleSettings } from "@/features/modules/use-module-settings";
+import { getLatestConditionScores, type ConditionScores } from "@/features/modules/wellness/condition";
 import { toDayKey } from "@/lib/date/day-key";
 import { localIsoAt } from "@/lib/date/local-iso";
 import type { ExerciseLog, ExerciseLogResult, ExerciseVideo, WellnessScore } from "@/lib/types";
 
 const DEFAULT_WELLNESS_SCORE: WellnessScore = 3;
 
-type LatestScores = { physicalScore: WellnessScore; mentalScore: WellnessScore };
+type LatestScores = ConditionScores;
 
 const DEFAULT_SCORES: LatestScores = {
   physicalScore: DEFAULT_WELLNESS_SCORE,
   mentalScore: DEFAULT_WELLNESS_SCORE,
 };
 
-async function loadLatestScores(dayKey: string): Promise<LatestScores> {
-  const latest = await getLatestWellnessEntry(dayKey);
-  return latest ? { physicalScore: latest.physicalScore, mentalScore: latest.mentalScore } : DEFAULT_SCORES;
+async function loadLatestScores(dayKey: string, wellnessEnabled: boolean): Promise<LatestScores> {
+  if (!wellnessEnabled) {
+    return DEFAULT_SCORES;
+  }
+  return (await getLatestConditionScores(dayKey)) ?? DEFAULT_SCORES;
 }
 
 export function useTodayData(date: Date | string) {
   const dayKey = useMemo(() => toDayKey(date), [date]);
+  const { settings } = useModuleSettings();
+  const wellnessEnabled = !settings.disabled.includes("wellness");
   const [scores, setScores] = useState<LatestScores>(DEFAULT_SCORES);
   const [logCounts, setLogCounts] = useState<Record<string, number>>({});
   const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
@@ -46,7 +51,7 @@ export function useTodayData(date: Date | string) {
 
     async function loadTodayData() {
       const [latestScores, counts] = await Promise.all([
-        loadLatestScores(dayKey),
+        loadLatestScores(dayKey, wellnessEnabled),
         countExerciseLogsForDay(dayKey),
       ]);
 
@@ -64,7 +69,7 @@ export function useTodayData(date: Date | string) {
     return () => {
       isActive = false;
     };
-  }, [dayKey]);
+  }, [dayKey, wellnessEnabled]);
 
   const conditionLevel = useMemo(() => mapWellnessToCondition(scores), [scores]);
 
@@ -85,7 +90,7 @@ export function useTodayData(date: Date | string) {
     let counts: Record<string, number>;
     try {
       [latestScores, counts] = await Promise.all([
-        loadLatestScores(requestedDayKey),
+        loadLatestScores(requestedDayKey, wellnessEnabled),
         countExerciseLogsForDay(requestedDayKey),
       ]);
     } catch (err) {
@@ -97,7 +102,7 @@ export function useTodayData(date: Date | string) {
       setScores(latestScores);
       setLogCounts(counts);
     }
-  }, [dayKey]);
+  }, [dayKey, wellnessEnabled]);
 
   const logExercise = useCallback(
     async (exercise: ExerciseVideo, result: ExerciseLogResult): Promise<ExerciseLog> => {

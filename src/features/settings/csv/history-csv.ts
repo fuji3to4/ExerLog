@@ -1,5 +1,5 @@
-import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
-import { MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
+import type { ExerciseLog, MeasurementRecord, WatchEvent } from "@/lib/types";
+import type { MeasurementItem } from "@/features/measurements/measurement-items";
 import { formatTimestampForCsv } from "@/lib/date/format-timestamp";
 
 function escapeCsvField(value: string | number): string {
@@ -10,7 +10,7 @@ function escapeCsvField(value: string | number): string {
   return str;
 }
 
-function toCsv(headers: string[], rows: (string | number)[][]): string {
+export function toCsv(headers: string[], rows: (string | number)[][]): string {
   return [headers.join(","), ...rows.map((row) => row.map(escapeCsvField).join(","))].join("\n");
 }
 
@@ -28,19 +28,6 @@ export function generateExerciseLogsCsv(logs: ExerciseLog[], exerciseTitleMap: M
   );
 }
 
-export function generateWellnessEntriesCsv(entries: WellnessEntry[]): string {
-  return toCsv(
-    ["date", "recordedAt", "physicalScore", "mentalScore", "note"],
-    entries.map((entry) => [
-      entry.date,
-      formatTimestampForCsv(entry.recordedAt),
-      entry.physicalScore,
-      entry.mentalScore,
-      entry.note,
-    ]),
-  );
-}
-
 export function generateWatchEventsCsv(events: WatchEvent[], exerciseTitleMap: Map<string, string>): string {
   return toCsv(
     ["date", "watchedAt", "exerciseId", "exerciseTitle"],
@@ -53,14 +40,15 @@ export function generateWatchEventsCsv(events: WatchEvent[], exerciseTitleMap: M
   );
 }
 
-export function generateMeasurementsCsv(records: MeasurementRecord[]): string {
+/** One column per item of `items`, in order; values of other ids are left out. */
+export function generateMeasurementsCsv(records: MeasurementRecord[], items: readonly MeasurementItem[]): string {
   return toCsv(
-    ["date", "recordedAt", "note", ...MEASUREMENT_ITEMS.map((item) => item.id)],
+    ["date", "recordedAt", "note", ...items.map((item) => item.id)],
     records.map((record) => [
       record.date,
       formatTimestampForCsv(record.recordedAt),
       record.note,
-      ...MEASUREMENT_ITEMS.map((item) =>
+      ...items.map((item) =>
         item.id in record.values ? String(record.values[item.id]) : "",
       ),
     ]),

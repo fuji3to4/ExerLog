@@ -2,12 +2,25 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
+/** A stub file-sync module that replaces the real one (photo) in the registry only while a test sets it. */
+const fileSyncModule = vi.hoisted(() => ({ current: null as null | Record<string, unknown> }));
+vi.mock("@/features/modules/data-registry", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/modules/data-registry")>();
+  return {
+    ...actual,
+    recordModuleData: () =>
+      fileSyncModule.current
+        ? [...actual.recordModuleData().map(({ syncFiles: _real, ...rest }) => rest), fileSyncModule.current]
+        : actual.recordModuleData(),
+  };
+});
+
 import type { ExerciseLog, MeasurementRecord, Tombstone } from "@/lib/types";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
-import { SHEET_TABS } from "./google-sheets";
-import { TABLE_SYNC_CONFIGS } from "./sync-config";
+import { CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
+import { sheetTabs, tableSyncConfigs } from "./sync-config";
 import { syncAll } from "./sync-engine";
 
 const TOKEN = "fake-token";
@@ -28,10 +41,13 @@ class FakeSheets {
   tabs = new Map<string, string[][]>();
   spreadsheetExists = true;
   failWritesFor = new Set<string>();
+  /** Column count per tab; a tab not listed has the 26 (A–Z) a new tab gets. */
+  columnCounts = new Map<string, number>();
+  failColumnGrow = false;
   calls: { method: string; url: string }[] = [];
 
   constructor() {
-    for (const tab of SHEET_TABS) this.tabs.set(tab, []);
+    for (const tab of sheetTabs()) this.tabs.set(tab, []);
   }
 
   handle = async (input: string, init?: { method?: string; body?: string }) => {
@@ -61,13 +77,45 @@ class FakeSheets {
         return json({});
       }
       if (method === "PUT") {
-        this.tabs.set(tab, JSON.parse(init!.body!).values);
+        const values: string[][] = JSON.parse(init!.body!).values;
+        const width = Math.max(0, ...values.map((row) => row.length));
+        if (width > this.columnCount(tab)) {
+          return {
+            ok: false,
+            status: 400,
+            json: async () => ({}),
+            text: async () => "Range exceeds grid limits",
+          };
+        }
+        this.tabs.set(tab, values);
         return json({});
       }
     }
 
     if (url.includes(`/spreadsheets/${SPREADSHEET_ID}?fields=`)) {
-      return json({ sheets: [...this.tabs.keys()].map((title) => ({ properties: { title } })) });
+      return json({
+        sheets: [...this.tabs.keys()].map((title, sheetId) => ({
+          properties: { sheetId, title, gridProperties: { columnCount: this.columnCount(title) } },
+        })),
+      });
+    }
+
+    if (url.endsWith(`/spreadsheets/${SPREADSHEET_ID}:batchUpdate`) && method === "POST") {
+      const titles = [...this.tabs.keys()];
+      for (const request of JSON.parse(init!.body!).requests) {
+        if (request.appendDimension) {
+          if (this.failColumnGrow) {
+            return { ok: false, status: 500, json: async () => ({}), text: async () => "boom" };
+          }
+          const { sheetId, dimension, length } = request.appendDimension;
+          expect(dimension).toBe("COLUMNS");
+          const title = titles[sheetId];
+          this.columnCounts.set(title, this.columnCount(title) + length);
+        } else if (request.addSheet) {
+          this.tabs.set(request.addSheet.properties.title, []);
+        }
+      }
+      return json({ replies: [] });
     }
 
     if (url === "https://sheets.googleapis.com/v4/spreadsheets" && method === "POST") {
@@ -78,6 +126,10 @@ class FakeSheets {
 
     throw new Error(`Unexpected fetch ${method} ${url}`);
   };
+
+  columnCount(tab: string): number {
+    return this.columnCounts.get(tab) ?? 26;
+  }
 }
 
 function json(body: unknown) {
@@ -110,7 +162,13 @@ function logRow(log: ExerciseLog): string[] {
 }
 
 const MEASUREMENT_FIXED = ["id", "date", "recordedAt", "note", "updatedAt"];
-const MEASUREMENT_HEADERS = [...MEASUREMENT_FIXED, "weight", "bodyFat", "height"];
+const BODY_HEADERS = [...MEASUREMENT_FIXED, "weight", "bodyFat", "height"];
+const CIRCUMFERENCE_HEADERS = [...MEASUREMENT_FIXED, ...CIRCUMFERENCE_ITEMS.map((item) => item.id)];
+
+/** n empty item cells. */
+function blanks(n: number): string[] {
+  return Array.from({ length: n }, () => "");
+}
 
 function makeMeasurement(overrides: Partial<MeasurementRecord> = {}): MeasurementRecord {
   return {
@@ -143,6 +201,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
   vi.restoreAllMocks();
+  fileSyncModule.current = null;
 });
 
 describe("syncAll", () => {
@@ -337,15 +396,120 @@ describe("syncAll", () => {
     expect(result.success).toBe(true);
     expect(result.spreadsheetId).toBe(SPREADSHEET_ID);
     expect(progress[0]).toBe("Tombstones");
-    expect([...progress].sort()).toEqual([...SHEET_TABS].sort());
+    expect([...progress].sort()).toEqual([...sheetTabs(), "PhotoDrive"].sort());
     expect(result.results.find((r) => r.tableName === "ExerciseLogs")).toEqual({
       tableName: "ExerciseLogs",
       rowCount: 1,
     });
-    for (const config of TABLE_SYNC_CONFIGS) {
+    for (const config of tableSyncConfigs()) {
       const written = config.headerMode === "byName" ? config.buildHeaders!([]) : config.headers;
       expect(sheets.tabs.get(config.tabName)?.[0]).toEqual(written);
     }
+  });
+
+  test("runs syncFiles right after Tombstones and before other tabs; its failure marks success false but other tabs still sync", async () => {
+    await appDb.exerciseLogs.put(makeLog());
+    sheets.tabs.set("Tombstones", [
+      ["id", "table", "recordId", "deletedAt"],
+      ["WatchEvents:w-1", "WatchEvents", "w-1", "2026-10-20T10:00:00+09:00"],
+    ]);
+    const progress: string[] = [];
+    let tombstonesSeenByFileSync = -1;
+    const syncFiles = vi.fn(async (token: string) => {
+      expect(token).toBe(TOKEN);
+      tombstonesSeenByFileSync = await appDb.tombstones.count();
+      return { tableName: "PhotoDrive", rowCount: 0, error: "upload failed" };
+    });
+    fileSyncModule.current = {
+      id: "stub",
+      syncConfigs: [],
+      tables: () => [],
+      syncFiles,
+    };
+
+    const result = await syncAll(TOKEN, (r) => progress.push(r.tableName));
+
+    expect(syncFiles).toHaveBeenCalledTimes(1);
+    expect(tombstonesSeenByFileSync).toBe(1);
+    expect(progress.slice(0, 2)).toEqual(["Tombstones", "PhotoDrive"]);
+    expect([...progress.slice(2)].sort()).toEqual(sheetTabs().filter((t) => t !== "Tombstones").sort());
+    expect(result.results[1]).toEqual({ tableName: "PhotoDrive", rowCount: 0, error: "upload failed" });
+    expect(result.success).toBe(false);
+    expect(result.results.find((r) => r.tableName === "ExerciseLogs")).toEqual({
+      tableName: "ExerciseLogs",
+      rowCount: 1,
+    });
+    expect(sheets.tabs.get("ExerciseLogs")).toHaveLength(2);
+  });
+
+  test("a syncFiles that throws is reported under the module id and the other tabs still sync", async () => {
+    fileSyncModule.current = {
+      id: "stub",
+      syncConfigs: [],
+      tables: () => [],
+      syncFiles: async () => {
+        throw new Error("drive down");
+      },
+    };
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(false);
+    expect(result.results[1]).toEqual({ tableName: "stub", rowCount: 0, error: "drive down" });
+    expect(result.results).toHaveLength(sheetTabs().length + 1);
+  });
+
+  test("syncFiles is not called when the Tombstones merge fails", async () => {
+    const syncFiles = vi.fn();
+    fileSyncModule.current = { id: "stub", syncConfigs: [], tables: () => [], syncFiles };
+    sheets.failWritesFor.add("Tombstones");
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(false);
+    expect(syncFiles).not.toHaveBeenCalled();
+  });
+
+  test("a remote PhotoFiles row dropped by a local tombstone queues its Drive file for the trash; the next sync trashes it", async () => {
+    // This device deleted p1 before its PhotoFiles row arrived, so it never knew d1.
+    await appDb.tombstones.put({
+      id: "PhotoFiles:p1",
+      table: "PhotoFiles",
+      recordId: "p1",
+      deletedAt: "2026-10-21T09:00:00+09:00",
+    });
+    const header = ["id", "recordId", "driveFileId", "updatedAt"];
+    sheets.tabs.set("PhotoFiles", [
+      header,
+      ["p1", "r1", "d1", "2026-10-20T09:00:00+09:00"],
+      ["p2", "r1", "d2", "2026-10-20T09:00:00+09:00"],
+    ]);
+
+    const first = await syncAll(TOKEN);
+
+    expect(first.success).toBe(true);
+    expect((await appDb.photoTrash.toArray()).map((t) => t.driveFileId)).toEqual(["d1"]);
+    expect(sheets.tabs.get("PhotoFiles")).toEqual([header, ["p2", "r1", "d2", "2026-10-20T09:00:00+09:00"]]);
+
+    await syncAll(TOKEN);
+
+    expect(sheets.calls.some((c) => c.method === "PATCH" && c.url.endsWith("/files/d1"))).toBe(true);
+    expect(await appDb.photoTrash.count()).toBe(0);
+  });
+
+  test("a tombstone-dropped remote row of a tab without onTombstonedRemote has no side effect on the trash queue", async () => {
+    await appDb.tombstones.put({
+      id: "ExerciseLogs:log-1",
+      table: "ExerciseLogs",
+      recordId: "log-1",
+      deletedAt: "2026-10-21T09:00:00+09:00",
+    });
+    sheets.tabs.set("ExerciseLogs", [EXERCISE_LOG_HEADERS, logRow(makeLog())]);
+
+    await syncAll(TOKEN);
+
+    expect(await appDb.photoTrash.count()).toBe(0);
+    expect(sheets.tabs.get("ExerciseLogs")).toEqual([EXERCISE_LOG_HEADERS]);
   });
 
   test("creates the spreadsheet with every tab when none exists", async () => {
@@ -355,7 +519,7 @@ describe("syncAll", () => {
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect([...sheets.tabs.keys()].sort()).toEqual([...SHEET_TABS].sort());
+    expect([...sheets.tabs.keys()].sort()).toEqual([...sheetTabs()].sort());
   });
 
   test("a failed sheet write is reported for that table and the next tables still sync", async () => {
@@ -442,7 +606,7 @@ describe("syncAll", () => {
   });
 });
 
-describe("syncAll: Measurements tab", () => {
+describe("syncAll: BodyMeasurements and Circumference tabs", () => {
   test("a sheet missing item columns is merged and rewritten with every item column", async () => {
     const remote = makeMeasurement({ id: "m-1", values: { weight: 60 } });
     const local = makeMeasurement({
@@ -451,8 +615,8 @@ describe("syncAll: Measurements tab", () => {
       values: { bodyFat: 22 },
       updatedAt: "2026-10-20T21:00:00+09:00",
     });
-    await appDb.measurements.put(local);
-    sheets.tabs.set("Measurements", [
+    await appDb.bodyRecords.put(local);
+    sheets.tabs.set("BodyMeasurements", [
       [...MEASUREMENT_FIXED, "weight"],
       [...measurementFixedCells(remote), "60"],
     ]);
@@ -460,18 +624,18 @@ describe("syncAll: Measurements tab", () => {
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect(await appDb.measurements.orderBy("id").toArray()).toEqual([remote, local]);
-    expect(sheets.tabs.get("Measurements")).toEqual([
-      MEASUREMENT_HEADERS,
-      [...measurementFixedCells(remote), "60", "", ""],
-      [...measurementFixedCells(local), "", "22", ""],
+    expect(await appDb.bodyRecords.orderBy("id").toArray()).toEqual([remote, local]);
+    expect(sheets.tabs.get("BodyMeasurements")).toEqual([
+      BODY_HEADERS,
+      [...measurementFixedCells(remote), "60", ...blanks(2)],
+      [...measurementFixedCells(local), "", "22", ...blanks(1)],
     ]);
   });
 
   test("a column not in the item list is kept; non-numeric cells are dropped", async () => {
     const first = makeMeasurement({ id: "m-1", values: { weight: 60, waist: 80 } });
     const second = makeMeasurement({ id: "m-2", values: { weight: 61 } });
-    sheets.tabs.set("Measurements", [
+    sheets.tabs.set("BodyMeasurements", [
       [...MEASUREMENT_FIXED, "weight", "waist"],
       [...measurementFixedCells(first), "60", "80"],
       [...measurementFixedCells(second), "61", "abc"],
@@ -479,18 +643,18 @@ describe("syncAll: Measurements tab", () => {
 
     await syncAll(TOKEN);
 
-    expect(await appDb.measurements.orderBy("id").toArray()).toEqual([first, second]);
-    expect(sheets.tabs.get("Measurements")).toEqual([
-      [...MEASUREMENT_HEADERS, "waist"],
-      [...measurementFixedCells(first), "60", "", "", "80"],
-      [...measurementFixedCells(second), "61", "", "", ""],
+    expect(await appDb.bodyRecords.orderBy("id").toArray()).toEqual([first, second]);
+    expect(sheets.tabs.get("BodyMeasurements")).toEqual([
+      [...BODY_HEADERS, "waist"],
+      [...measurementFixedCells(first), "60", ...blanks(2), "80"],
+      [...measurementFixedCells(second), "61", ...blanks(3)],
     ]);
   });
 
   test("a sheet missing a fixed column is treated as empty and rewritten", async () => {
     const local = makeMeasurement();
-    await appDb.measurements.put(local);
-    sheets.tabs.set("Measurements", [
+    await appDb.bodyRecords.put(local);
+    sheets.tabs.set("BodyMeasurements", [
       ["id", "date", "weight"],
       ["m-9", "2026-10-19", "70"],
     ]);
@@ -498,11 +662,59 @@ describe("syncAll: Measurements tab", () => {
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect(await appDb.measurements.toArray()).toEqual([local]);
-    expect(sheets.tabs.get("Measurements")).toEqual([
-      MEASUREMENT_HEADERS,
-      [...measurementFixedCells(local), "60", "", ""],
+    expect(await appDb.bodyRecords.toArray()).toEqual([local]);
+    expect(sheets.tabs.get("BodyMeasurements")).toEqual([
+      BODY_HEADERS,
+      [...measurementFixedCells(local), "60", ...blanks(2)],
     ]);
+  });
+
+  test("circumference records go to the Circumference tab with every circumference column", async () => {
+    const local = makeMeasurement({ id: "c-1", values: { armWristLeft: 15 } });
+    await appDb.circumferenceRecords.put(local);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    const rows = sheets.tabs.get("Circumference")!;
+    expect(rows[0]).toEqual(CIRCUMFERENCE_HEADERS);
+    expect(rows[1][CIRCUMFERENCE_HEADERS.indexOf("armWristLeft")]).toBe("15");
+    expect(sheets.tabs.get("BodyMeasurements")).toEqual([BODY_HEADERS]);
+    expect(await appDb.bodyRecords.count()).toBe(0);
+  });
+
+  test("a write wider than 26 columns widens the tab first and keeps the data", async () => {
+    const local = makeMeasurement({ id: "c-1", values: { armWristLeft: 15, extraA: 1, extraB: 2 } });
+    await appDb.circumferenceRecords.put(local);
+    const headers = [...CIRCUMFERENCE_HEADERS, "extraA", "extraB"];
+    expect(headers.length).toBeGreaterThan(26);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(sheets.columnCount("Circumference")).toBe(headers.length);
+    expect(sheets.tabs.get("Circumference")?.[0]).toEqual(headers);
+    expect(await appDb.circumferenceRecords.toArray()).toEqual([local]);
+  });
+
+  test("when widening the tab fails, nothing is cleared", async () => {
+    const remote = makeMeasurement({ id: "c-1", values: { armWristLeft: 15, extraA: 1, extraB: 2 } });
+    const remoteRows = [
+      [...MEASUREMENT_FIXED, "armWristLeft", "extraA", "extraB"],
+      [...measurementFixedCells(remote), "15", "1", "2"],
+    ];
+    sheets.tabs.set("Circumference", remoteRows);
+    sheets.failColumnGrow = true;
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.results.find((r) => r.tableName === "Circumference")?.error).toBeDefined();
+    expect(sheets.tabs.get("Circumference")).toEqual(remoteRows);
+    expect(
+      sheets.calls.some(
+        (c) => c.method === "POST" && decodeURIComponent(c.url).includes("/values/Circumference!A:ZZ:clear"),
+      ),
+    ).toBe(false);
   });
 
   test("the old DailyMetrics tab is never read or written", async () => {
@@ -520,20 +732,43 @@ describe("syncAll: Measurements tab", () => {
     expect(result.results.map((r) => r.tableName)).not.toContain("DailyMetrics");
   });
 
-  test("a measurement deleted locally disappears from both local and the sheet", async () => {
-    const record = makeMeasurement();
-    await appDb.tombstones.put({
-      id: "Measurements:m-1",
-      table: "Measurements",
-      recordId: "m-1",
-      deletedAt: "2026-10-20T10:00:00+09:00",
-    });
-    sheets.tabs.set("Measurements", [MEASUREMENT_HEADERS, [...measurementFixedCells(record), "60", "", ""]]);
+  test("the old Measurements tab is never read, written or deleted", async () => {
+    const oldRows = [
+      [...MEASUREMENT_FIXED, "weight"],
+      [...measurementFixedCells(makeMeasurement()), "60"],
+    ];
+    sheets.tabs.set("Measurements", oldRows);
 
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect(await appDb.measurements.toArray()).toEqual([]);
-    expect(sheets.tabs.get("Measurements")).toEqual([MEASUREMENT_HEADERS]);
+    expect(sheets.tabs.get("Measurements")).toEqual(oldRows);
+    expect(sheets.calls.some((c) => decodeURIComponent(c.url).includes("/Measurements"))).toBe(false);
+    expect(sheets.calls.some((c) => decodeURIComponent(c.url).includes("values/Measurements"))).toBe(false);
+    expect(result.results.map((r) => r.tableName)).not.toContain("Measurements");
+    expect(sheetTabs()).not.toContain("Measurements");
+    expect(await appDb.bodyRecords.count()).toBe(0);
+    expect(await appDb.circumferenceRecords.count()).toBe(0);
+  });
+
+  test.each([
+    ["BodyMeasurements", "bodyRecords"],
+    ["Circumference", "circumferenceRecords"],
+  ] as const)("a %s record deleted locally disappears from both local and the sheet", async (tab, table) => {
+    const record = makeMeasurement({ values: {} });
+    const headers = tab === "BodyMeasurements" ? BODY_HEADERS : CIRCUMFERENCE_HEADERS;
+    await appDb.tombstones.put({
+      id: `${tab}:m-1`,
+      table: tab,
+      recordId: "m-1",
+      deletedAt: "2026-10-20T10:00:00+09:00",
+    });
+    sheets.tabs.set(tab, [headers, [...measurementFixedCells(record), ...blanks(headers.length - 5)]]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(await appDb[table].toArray()).toEqual([]);
+    expect(sheets.tabs.get(tab)).toEqual([headers]);
   });
 });

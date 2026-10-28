@@ -86,3 +86,35 @@ export type DailySelfCareEntry = {
   note: string;
   recordedAt: string;
 };
+
+/** A photo record: one moment with a memo and one or more photos (in display order). */
+export type PhotoRecord = {
+  id: string;
+  date: string;
+  recordedAt: string;
+  note: string;
+  photoIds: string[];
+  updatedAt: string;
+};
+
+/** 端末に保存した写真。blob が null なら未取得（ドライブにだけある）。 */
+export type PhotoBlob = {
+  id: string;
+  recordId: string;
+  blob: Blob | null;
+  width: number;
+  height: number;
+};
+
+/** シート PhotoFiles の1行。id = 写真の id。 */
+export type PhotoFile = {
+  id: string;
+  recordId: string;
+  driveFileId: string;
+  updatedAt: string;
+};
+
+export type PhotoTrashItem = {
+  driveFileId: string;
+  queuedAt: string;
+};

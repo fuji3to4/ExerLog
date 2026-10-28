@@ -2,12 +2,12 @@
 
 import type { CSSProperties } from "react";
 
-import { formatMeasurementSummary } from "@/features/measurements/measurement-items";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { getRecordModule } from "@/features/modules/registry";
 import { formatDuration } from "@/lib/date/duration";
 import { timeOfIso } from "@/lib/date/local-iso";
 import { cn } from "@/lib/utils";
-import type { TimelineItem, WellnessLabel } from "../build-timeline";
+import type { TimelineItem } from "../build-timeline";
 
 export type DayTimelineProps = {
   items: TimelineItem[];
@@ -15,19 +15,23 @@ export type DayTimelineProps = {
   onSelect(item: TimelineItem): void;
 };
 
-const POINT_COLORS: Record<TimelineItem["kind"], string> = {
-  wellness: "#e48a3a",
-  measurement: "#7a4fb0",
-  watch: "#4a7bd0",
-  exercise: "#3aa76d",
-};
+const WATCH_COLOR = "#4a7bd0";
+const EXERCISE_COLOR = "#3aa76d";
 
-const LABEL_KEYS = {
-  morning: "timeline_label_morning",
-  beforeVideo: "timeline_label_before_video",
-  afterVideo: "timeline_label_after_video",
-  night: "timeline_label_night",
-} as const satisfies Record<WellnessLabel, string>;
+function pointColor(item: TimelineItem): string | undefined {
+  switch (item.kind) {
+    case "module":
+      return getRecordModule(item.moduleId)?.color;
+    case "watch":
+      return WATCH_COLOR;
+    case "exercise":
+      return EXERCISE_COLOR;
+  }
+}
+
+function itemKey(item: TimelineItem): string {
+  return item.kind === "module" ? `module:${item.moduleId}:${item.id}` : `${item.kind}:${item.id}`;
+}
 
 export function DayTimeline({ items, highlightId, onSelect }: DayTimelineProps) {
   const { t } = useTranslation();
@@ -39,14 +43,14 @@ export function DayTimeline({ items, highlightId, onSelect }: DayTimelineProps) 
   return (
     <ol className="day-timeline">
       {items.map((item) => (
-        <li key={`${item.kind}:${item.id}`} className="day-timeline__row">
+        <li key={itemKey(item)} className="day-timeline__row">
           <time className="day-timeline__time" dateTime={item.at}>
             {timeOfIso(item.at)}
           </time>
           <button
             type="button"
             className={cn("timeline-item", item.id === highlightId && "timeline-item--new")}
-            style={{ "--c": POINT_COLORS[item.kind] } as CSSProperties}
+            style={{ "--c": pointColor(item) } as CSSProperties}
             onClick={() => onSelect(item)}
           >
             <ItemBody item={item} />
@@ -61,29 +65,10 @@ function ItemBody({ item }: { item: TimelineItem }) {
   const { t } = useTranslation();
 
   switch (item.kind) {
-    case "wellness":
-      return (
-        <>
-          <span className="block">
-            {t("timeline_wellness_row", {
-              physical: item.entry.physicalScore,
-              mental: item.entry.mentalScore,
-            })}
-            {item.label ? <span className="timeline-tag">{t(LABEL_KEYS[item.label])}</span> : null}
-          </span>
-          {item.entry.note ? <span className="block text-muted-foreground">{item.entry.note}</span> : null}
-        </>
-      );
-    case "measurement":
-      return (
-        <>
-          <span className="block">
-            {t("timeline_measurement_row", { summary: formatMeasurementSummary(item.record, t) || "—" })}
-            {item.label ? <span className="timeline-tag">{t(LABEL_KEYS[item.label])}</span> : null}
-          </span>
-          {item.record.note ? <span className="block text-muted-foreground">{item.record.note}</span> : null}
-        </>
-      );
+    case "module": {
+      const TimelineCard = getRecordModule(item.moduleId)?.TimelineCard;
+      return TimelineCard ? <TimelineCard record={item.record} label={item.label} /> : null;
+    }
     case "watch":
       return <span className="block">{t("timeline_watched", { title: item.title })}</span>;
     case "exercise":

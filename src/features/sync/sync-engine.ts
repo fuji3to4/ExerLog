@@ -1,5 +1,6 @@
 import type { Tombstone } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
+import { recordModuleData } from "@/features/modules/data-registry";
 import {
   createSpreadsheet,
   ensureSheetTabs,
@@ -9,7 +10,7 @@ import {
 } from "./google-sheets";
 import { mergeRecords } from "./merge-records";
 import type { TableSyncConfig } from "./sync-config";
-import { syncedDbTables, TABLE_SYNC_CONFIGS } from "./sync-config";
+import { sheetTabs, syncedDbTables, tableSyncConfigs } from "./sync-config";
 
 export interface SyncTableResult {
   tableName: string;
@@ -59,15 +60,33 @@ async function doSyncAll(
     onProgress(result);
   };
 
-  const tombstonesConfig = TABLE_SYNC_CONFIGS.find((c) => c.tabName === TOMBSTONES_TAB)!;
+  const configs = tableSyncConfigs();
+  const tombstonesConfig = configs.find((c) => c.tabName === TOMBSTONES_TAB)!;
   await run(tombstonesConfig, new Map());
   if (results[0].error) {
     // Without the merged tombstones, other tabs could pull deleted records back.
     return { success: false, results, spreadsheetId };
   }
 
+  // File sync (e.g. photos on Drive) sees the merged tombstones, before the other tabs.
+  for (const moduleData of recordModuleData()) {
+    if (!moduleData.syncFiles) continue;
+    let result: SyncTableResult;
+    try {
+      result = await moduleData.syncFiles(accessToken);
+    } catch (err) {
+      result = {
+        tableName: moduleData.id,
+        rowCount: 0,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+    results.push(result);
+    onProgress(result);
+  }
+
   const deletedIdsByTab = groupDeletedIds(await appDb.tombstones.toArray());
-  for (const config of TABLE_SYNC_CONFIGS) {
+  for (const config of configs) {
     if (config === tombstonesConfig) continue;
     const deletedIds = config.deletable
       ? (deletedIdsByTab.get(config.tabName) ?? new Map<string, string>())
@@ -86,13 +105,13 @@ async function doSyncAll(
 async function prepareSpreadsheet(accessToken: string): Promise<string | SyncTableResult> {
   const existing = await findSpreadsheet(accessToken);
   if (existing) {
-    const ok = await ensureSheetTabs(accessToken, existing.spreadsheetId);
+    const ok = await ensureSheetTabs(accessToken, existing.spreadsheetId, sheetTabs());
     return ok
       ? existing.spreadsheetId
       : { tableName: "spreadsheet", rowCount: 0, error: "Failed to ensure required sheet tabs" };
   }
 
-  const created = await createSpreadsheet(accessToken);
+  const created = await createSpreadsheet(accessToken, sheetTabs());
   if (!created) {
     console.error("[sync] syncAll: could not find or create spreadsheet");
     return { tableName: "spreadsheet", rowCount: 0, error: "Failed to create spreadsheet" };
@@ -154,15 +173,20 @@ async function syncTable(
 
     const stored = await appDb.transaction("rw", syncedDbTables(), async () => {
       const local = await config.readFromDb();
+      const tombstoned = config.deletable
+        ? withLocalTombstones(deletedIds, await localDeletedIds(config.tabName))
+        : deletedIds;
       const merged = mergeRecords({
         local,
         remote,
         keyColumn: config.keyColumn,
         updatedAtKey: config.updatedAtKey,
-        deletedIds: config.deletable
-          ? withLocalTombstones(deletedIds, await localDeletedIds(config.tabName))
-          : deletedIds,
+        deletedIds: tombstoned,
       });
+      if (config.onTombstonedRemote) {
+        const droppedRemote = droppedByTombstone(config, remote, merged, tombstoned);
+        if (droppedRemote.length > 0) await config.onTombstonedRemote(droppedRemote);
+      }
       await config.replaceDb(merged);
       return config.readFromDb();
     });
@@ -181,6 +205,20 @@ async function syncTable(
   }
 
   return result;
+}
+
+/** Remote rows whose key is tombstoned and that the merge left out. */
+function droppedByTombstone(
+  config: TableSyncConfig,
+  remote: any[],
+  merged: any[],
+  tombstoned: Map<string, string>,
+): any[] {
+  const kept = new Set(merged.map((record) => String(record[config.keyColumn])));
+  return remote.filter((record) => {
+    const key = String(record[config.keyColumn]);
+    return tombstoned.has(key) && !kept.has(key);
+  });
 }
 
 function isByName(config: TableSyncConfig): boolean {

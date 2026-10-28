@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SyncContext } from "@/features/sync/SyncProvider";
@@ -71,5 +71,30 @@ describe("GoogleDriveSettings", () => {
     const errorEl = screen.getByText(/failed to append rows/i);
     expect(errorEl).toBeInTheDocument();
     expect(errorEl.className).toContain("data-management__status--error");
+  });
+
+  describe("photo sync switch", () => {
+    beforeEach(() => window.localStorage.removeItem("lymly-photo-sync"));
+
+    test.each([
+      ["disconnected", { status: { type: "disconnected" as const } }],
+      ["connected", { status: { type: "synced" as const, lastSynced: new Date() }, userEmail: "a@b.c" }],
+    ])("shows 写真を同期する on by default and stores off/on (%s)", async (_n, overrides) => {
+      const user = userEvent.setup();
+      renderWithProviders(createMockContext(overrides));
+      const toggle = screen.getByRole("switch", { name: "Sync photos" });
+      expect(toggle).toHaveAttribute("aria-checked", "true");
+      await user.click(toggle);
+      expect(window.localStorage.getItem("lymly-photo-sync")).toBe("off");
+      expect(toggle).toHaveAttribute("aria-checked", "false");
+      await user.click(toggle);
+      expect(window.localStorage.getItem("lymly-photo-sync")).toBe("on");
+    });
+
+    test("describes the switch with the note", () => {
+      renderWithProviders(createMockContext());
+      const note = screen.getByText("When off, new photos are saved only on this device");
+      expect(screen.getByRole("switch", { name: "Sync photos" })).toHaveAttribute("aria-describedby", note.id);
+    });
   });
 });

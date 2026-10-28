@@ -13,7 +13,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    exclude: [...configDefaults.exclude, ".worktrees/**"],
+    exclude: [...configDefaults.exclude, ".worktrees/**", ".claude/**"],
     setupFiles: ["./vitest.setup.ts"],
   },
 });

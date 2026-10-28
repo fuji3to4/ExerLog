@@ -421,6 +421,34 @@ a {
   font: inherit;
 }
 
+.library-filters__stepper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.library-filters__stepper input {
+  flex: 1;
+  min-width: 0;
+}
+
+.library-filters__stepper button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  min-height: 48px;
+  border: 1px solid var(--border-soft);
+  border-radius: 0.9rem;
+  background: var(--surface-elevated);
+  color: inherit;
+}
+
+.library-filters__stepper button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .library-filters__field input:focus,
 .library-filters__field select:focus {
   outline: 2px solid var(--focus-ring);
@@ -891,6 +919,12 @@ a {
   justify-content: center;
 }
 
+.library-screen__count {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .library-screen__card-actions {
   display: flex;
   justify-content: flex-end;
@@ -965,7 +999,7 @@ a {
 /* ── Self-care and history styling ───────────────────────────────────── */
 
 /* Metric selector dropdown */
-#metric-selector {
+.metric-selector {
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-soft);
   border-radius: 0.9rem;
@@ -977,12 +1011,12 @@ a {
   transition: all 0.2s;
 }
 
-#metric-selector:hover {
+.metric-selector:hover {
   border-color: var(--accent-strong);
   background: var(--surface-soft);
 }
 
-#metric-selector:focus {
+.metric-selector:focus {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -1056,54 +1090,10 @@ a {
   font-size: 0.95rem;
 }
 
-/* Mode toggle buttons */
-.history-screen__mode-toggle {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.25rem;
-  border-radius: 0.9rem;
-  background: var(--accent-soft);
-}
-
-.history-screen__mode-btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1rem;
-  border: 0;
-  border-radius: 0.75rem;
-  background: transparent;
-  color: var(--text-strong);
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.history-screen__mode-btn:hover {
-  background: hsl(var(--foreground) / 0.04);
-}
-
-.history-screen__mode-btn.is-active {
-  background: var(--surface-elevated);
-  color: var(--text-strong);
-  box-shadow: 0 2px 8px hsl(var(--foreground) / 0.08);
-}
-
 /* Wellness card styling (migrated to primitives) — legacy per-element rules removed. */
 .wellness-card {
   display: grid;
   gap: 0.75rem;
-}
-
-/* Self-care activity log card */
-@media (max-width: 479px) {
-  .history-screen__mode-btn {
-     font-size: 0.85rem;
-     padding: 0.65rem 0.75rem;
-  }
 }
 
 /* Save feedback */

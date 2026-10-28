@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { useCelebrate } from "@/features/feedback/celebration";
+import { useModuleSettings } from "@/features/modules/use-module-settings";
 import { TimelineSection } from "@/features/timeline/components/timeline-section";
 import { useDayTimeline } from "@/features/timeline/use-day-timeline";
 import { cn } from "@/lib/utils";
@@ -26,7 +27,8 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const recommendedHeadingId = "today-recommended-heading";
   const libraryHeadingId = "today-library-heading";
   const { isHydrated, recommendations, logCounts, logExercise, refresh } = useTodayData(date);
-  const timeline = useDayTimeline(date);
+  const { enabledModules } = useModuleSettings();
+  const timeline = useDayTimeline(date, enabledModules);
   const celebrate = useCelebrate();
   const [logErrorExerciseId, setLogErrorExerciseId] = useState<string | null>(null);
 

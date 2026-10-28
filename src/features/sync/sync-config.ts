@@ -6,20 +6,17 @@ import type {
   ExerciseLog,
   ExerciseLogResult,
   ExerciseVideo,
-  MeasurementRecord,
   SelfCareItem,
   Tombstone,
   WatchEvent,
-  WellnessEntry,
-  WellnessScore,
 } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
-import { MEASUREMENT_FIXED_COLUMNS, MEASUREMENT_ITEMS } from "@/features/measurements/measurement-items";
-import type { SheetTab } from "./google-sheets";
+import { recordModuleData } from "@/features/modules/data-registry";
+import { cell, keepLatestPerKey, nullableNumber, replaceTable } from "./sync-helpers";
 
 /** How one Dexie table is mirrored to one sheet tab. */
 export interface TableSyncConfig {
-  tabName: SheetTab;
+  tabName: string;
   keyColumn: string;
   /** Field used for last-writer-wins; null means local always wins. */
   updatedAtKey: string | null;
@@ -45,55 +42,26 @@ export interface TableSyncConfig {
    * (no repositories) so syncing never records tombstones or schedules a sync.
    */
   replaceDb: (records: any[]) => Promise<void>;
+  /**
+   * Optional. Called inside the merge transaction with the remote rows the merge
+   * dropped because of a tombstone (rows this device may never have held), e.g.
+   * so their external resources can still be cleaned up. Writes only to tables in
+   * `syncedDbTables()`.
+   */
+  onTombstonedRemote?: (records: any[]) => Promise<void>;
 }
 
 /** Every Dexie table touched by sync; the merge transaction is opened over these. */
 export function syncedDbTables(): Table<any, any>[] {
   return [
     appDb.exerciseLogs,
-    appDb.wellnessEntries,
+    ...recordModuleData().flatMap((m) => m.tables()),
     appDb.watchEvents,
-    appDb.measurements,
     appDb.dailySelfCareLogs,
     appDb.exercises,
     appDb.selfCareCatalog,
     appDb.tombstones,
   ];
-}
-
-function cell(row: string[], headers: string[], column: string): string {
-  return row[headers.indexOf(column)] ?? "";
-}
-
-function nullableNumber(value: string): number | null {
-  return value === "" ? null : Number(value);
-}
-
-async function replaceTable<T>(table: Table<T, any>, records: T[]): Promise<void> {
-  await table.clear();
-  if (records.length > 0) {
-    await table.bulkPut(records);
-  }
-}
-
-/**
- * Keeps one record per `uniqueKey` (the latest by `timeKey`) so that a merge of
- * two devices' records cannot violate a compound unique index.
- */
-function keepLatestPerKey<T extends Record<string, any>>(
-  records: T[],
-  uniqueKey: (record: T) => string,
-  timeKey: keyof T,
-): T[] {
-  const byKey = new Map<string, T>();
-  for (const record of records) {
-    const key = uniqueKey(record);
-    const current = byKey.get(key);
-    if (!current || Date.parse(record[timeKey]) > Date.parse(current[timeKey])) {
-      byKey.set(key, record);
-    }
-  }
-  return [...byKey.values()];
 }
 
 const exerciseLogsConfig: TableSyncConfig = {
@@ -124,34 +92,6 @@ const exerciseLogsConfig: TableSyncConfig = {
   replaceDb: (records) => replaceTable(appDb.exerciseLogs, records as ExerciseLog[]),
 };
 
-const wellnessEntriesConfig: TableSyncConfig = {
-  tabName: "WellnessEntries",
-  keyColumn: "id",
-  updatedAtKey: "updatedAt",
-  deletable: true,
-  headers: ["id", "date", "recordedAt", "physicalScore", "mentalScore", "note", "updatedAt"],
-  toRow: (r: WellnessEntry) => [
-    r.id,
-    r.date,
-    r.recordedAt,
-    String(r.physicalScore),
-    String(r.mentalScore),
-    r.note ?? "",
-    r.updatedAt,
-  ],
-  fromRow: (row, headers): WellnessEntry => ({
-    id: cell(row, headers, "id"),
-    date: cell(row, headers, "date"),
-    recordedAt: cell(row, headers, "recordedAt"),
-    physicalScore: Number(cell(row, headers, "physicalScore")) as WellnessScore,
-    mentalScore: Number(cell(row, headers, "mentalScore")) as WellnessScore,
-    note: cell(row, headers, "note"),
-    updatedAt: cell(row, headers, "updatedAt"),
-  }),
-  readFromDb: () => appDb.wellnessEntries.toArray(),
-  replaceDb: (records) => replaceTable(appDb.wellnessEntries, records as WellnessEntry[]),
-};
-
 const watchEventsConfig: TableSyncConfig = {
   tabName: "WatchEvents",
   keyColumn: "id",
@@ -168,67 +108,6 @@ const watchEventsConfig: TableSyncConfig = {
   }),
   readFromDb: () => appDb.watchEvents.toArray(),
   replaceDb: (records) => replaceTable(appDb.watchEvents, records as WatchEvent[]),
-};
-
-const MEASUREMENT_FIXED: readonly string[] = MEASUREMENT_FIXED_COLUMNS;
-
-/** Fixed columns, then the item list in order, then ids found only in records (sorted). */
-function measurementHeaders(records: MeasurementRecord[]): string[] {
-  const listed = MEASUREMENT_ITEMS.map((item) => item.id);
-  const unknown = new Set<string>();
-  for (const record of records) {
-    for (const id of Object.keys(record.values)) {
-      if (!listed.includes(id) && !MEASUREMENT_FIXED.includes(id)) unknown.add(id);
-    }
-  }
-  return [...MEASUREMENT_FIXED, ...listed, ...[...unknown].sort()];
-}
-
-const measurementsConfig: TableSyncConfig = {
-  tabName: "Measurements",
-  keyColumn: "id",
-  updatedAtKey: "updatedAt",
-  deletable: true,
-  headerMode: "byName",
-  headers: [...MEASUREMENT_FIXED],
-  buildHeaders: (records) => measurementHeaders(records as MeasurementRecord[]),
-  toRow: (r: MeasurementRecord, headers) =>
-    headers.map((column) => {
-      switch (column) {
-        case "id":
-          return r.id;
-        case "date":
-          return r.date;
-        case "recordedAt":
-          return r.recordedAt;
-        case "note":
-          return r.note ?? "";
-        case "updatedAt":
-          return r.updatedAt;
-        default:
-          return column in r.values ? String(r.values[column]) : "";
-      }
-    }),
-  fromRow: (row, headers): MeasurementRecord => {
-    const values: Record<string, number> = {};
-    headers.forEach((column, index) => {
-      if (column === "" || MEASUREMENT_FIXED.includes(column)) return;
-      const raw = (row[index] ?? "").trim();
-      const value = Number(raw);
-      // An empty cell means "no value", not 0; non-numeric text is dropped.
-      if (raw !== "" && Number.isFinite(value)) values[column] = value;
-    });
-    return {
-      id: cell(row, headers, "id"),
-      date: cell(row, headers, "date"),
-      recordedAt: cell(row, headers, "recordedAt"),
-      values,
-      note: cell(row, headers, "note"),
-      updatedAt: cell(row, headers, "updatedAt"),
-    };
-  },
-  readFromDb: () => appDb.measurements.toArray(),
-  replaceDb: (records) => replaceTable(appDb.measurements, records as MeasurementRecord[]),
 };
 
 const dailySelfCareConfig: TableSyncConfig = {
@@ -356,14 +235,24 @@ const tombstonesConfig: TableSyncConfig = {
   replaceDb: (records) => replaceTable(appDb.tombstones, records as Tombstone[]),
 };
 
-/** One entry per sheet tab, in SHEET_TABS order. */
-export const TABLE_SYNC_CONFIGS: TableSyncConfig[] = [
-  exerciseLogsConfig,
-  wellnessEntriesConfig,
-  watchEventsConfig,
-  measurementsConfig,
-  dailySelfCareConfig,
-  exercisesConfig,
-  selfCareCatalogConfig,
-  tombstonesConfig,
-];
+/**
+ * One entry per sheet tab (Tombstones last). A function, not a constant, so
+ * the array is built at call time and import cycles never see it half-built
+ * (module data files import the sync scheduler).
+ */
+export function tableSyncConfigs(): TableSyncConfig[] {
+  return [
+    exerciseLogsConfig,
+    ...recordModuleData().flatMap((m) => m.syncConfigs),
+    watchEventsConfig,
+    dailySelfCareConfig,
+    exercisesConfig,
+    selfCareCatalogConfig,
+    tombstonesConfig,
+  ];
+}
+
+/** Sheet tab names, in the order of `tableSyncConfigs()`. */
+export function sheetTabs(): string[] {
+  return tableSyncConfigs().map((c) => c.tabName);
+}
