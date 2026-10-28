@@ -1,5 +1,6 @@
 import { bodyData } from "./body/data";
 import { circumferenceData } from "./circumference/data";
+import { compressionData } from "./compression/data";
 import { photoData } from "./photo/data";
 import { selfCareData } from "./selfcare/data";
 import type { RecordModuleData } from "./types";
@@ -13,7 +14,7 @@ let cached: readonly RecordModuleData[] | undefined;
  * registry. Built on first call and cached; every call returns the same array.
  */
 export function recordModuleData(): readonly RecordModuleData[] {
-  cached ??= [wellnessData, bodyData, circumferenceData, photoData, selfCareData] as readonly RecordModuleData[];
+  cached ??= [wellnessData, bodyData, circumferenceData, photoData, selfCareData, compressionData] as readonly RecordModuleData[];
   return cached;
 }
 

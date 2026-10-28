@@ -18,7 +18,7 @@ describe("photo module registration", () => {
     });
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = screen.getAllByRole("menuitem");
-    expect(items).toHaveLength(5);
+    expect(items).toHaveLength(6);
     expect(items[3].textContent).toBe("写真");
     fireEvent.click(items[3]);
     expect(chosen.current?.data.id).toBe("photo");

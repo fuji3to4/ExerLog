@@ -6,6 +6,7 @@
 //  5. `module_<id>_*` and `sync_tab_<Tab>` i18n keys in ja.ts and en.ts.
 import { bodyModule } from "./body/module";
 import { circumferenceModule } from "./circumference/module";
+import { compressionModule } from "./compression/module";
 import { photoModule } from "./photo/module";
 import { selfCareModule } from "./selfcare/module";
 import type { RecordModule } from "./types";
@@ -23,6 +24,7 @@ export const RECORD_MODULES: readonly RecordModule[] = [
   circumferenceModule,
   photoModule,
   selfCareModule,
+  compressionModule,
 ] as unknown as readonly RecordModule[];
 
 export function getRecordModule(id: string): RecordModule | undefined {
