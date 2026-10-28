@@ -22,7 +22,7 @@ export function SelfCareSummaryBody({ summary, dayCount }: { summary: SelfCareSu
         <p key={item}>
           <span className="font-medium">{t(`selfcare_item_${item}` as const)}</span>{" "}
           {dayCount === null ? t("period_days", { days }) : t("period_days_of", { days, total: dayCount })}
-          {totalMinutes !== null ? `・${t("period_total_minutes", { m: totalMinutes })}` : null}
+          {totalMinutes !== null ? `${t("sep_dot")}${t("period_total_minutes", { m: totalMinutes })}` : null}
         </p>
       ))}
     </>

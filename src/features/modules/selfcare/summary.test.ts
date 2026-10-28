@@ -26,4 +26,9 @@ describe("summarizeSelfCare", () => {
     const s = summarizeSelfCare([rec("other", "2026-10-01"), rec("skincare", "2026-10-01")]);
     expect(s?.items.map((i) => i.item)).toEqual(["skincare", "other"]);
   });
+
+  it("has a null total when no exercise record has minutes", () => {
+    const s = summarizeSelfCare([rec("exercise", "2026-10-01"), rec("exercise", "2026-10-02")]);
+    expect(s?.items).toEqual([{ item: "exercise", days: 2, totalMinutes: null }]);
+  });
 });

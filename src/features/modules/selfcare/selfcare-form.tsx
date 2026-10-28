@@ -29,7 +29,7 @@ export function SelfCareForm({ onOpenChange, date, record, onSaved, onDeleted }:
   function save() {
     const recordedAt = withLocalTime(baseAt, time);
     const parsed = Number(minutes);
-    const savedMinutes = item === "exercise" && minutes !== "" && Number.isFinite(parsed) ? parsed : null;
+    const savedMinutes = item === "exercise" && minutes !== "" && Number.isInteger(parsed) && parsed > 0 ? parsed : null;
     void run(
       async () => {
         if (!record) return addSelfCareRecord({ date, recordedAt, item, minutes: savedMinutes, note });

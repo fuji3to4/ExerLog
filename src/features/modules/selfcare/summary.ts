@@ -13,7 +13,9 @@ export function summarizeSelfCare(records: SelfCareRecord[]): SelfCareSummary | 
     const own = records.filter((r) => r.item === item);
     const days = new Set(own.map((r) => r.date)).size;
     if (days === 0) continue;
-    const totalMinutes = item === "exercise" ? own.reduce((sum, r) => sum + (r.minutes ?? 0), 0) : null;
+    // Null when no exercise record has minutes, so a total of 0 is never shown.
+    const withMinutes = item === "exercise" ? own.filter((r) => r.minutes !== null) : [];
+    const totalMinutes = withMinutes.length > 0 ? withMinutes.reduce((sum, r) => sum + (r.minutes ?? 0), 0) : null;
     items.push({ item, days, totalMinutes });
   }
   return { items };

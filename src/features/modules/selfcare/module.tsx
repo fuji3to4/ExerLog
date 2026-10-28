@@ -23,7 +23,7 @@ function SelfCareTimelineCard({ record, label }: { record: SelfCareRecord; label
   return (
     <>
       <span className="block">
-        {inlineNote ? `${itemLabel}：${record.note}` : itemLabel}
+        {inlineNote ? t("selfcare_other_inline", { item: itemLabel, note: record.note }) : itemLabel}
         {record.minutes !== null ? ` ${t("selfcare_minutes_value", { m: record.minutes })}` : null}
         <TimeLabelTag label={label} />
       </span>

@@ -76,4 +76,49 @@ describe("selfcare history view", () => {
       expect(screen.getAllByText((_, el) => el?.tagName === "P" && el.textContent === "スキンケア 1日／30日")).toHaveLength(1),
     );
   });
+
+  async function addExercise(id: string, minutes: number | null) {
+    await appDb.selfCareRecords.add({
+      ...base,
+      id,
+      date: toDayKey(new Date()),
+      recordedAt: localIsoNow(),
+      item: "exercise",
+      minutes,
+      note: "",
+    });
+  }
+
+  it("omits the total when no exercise record has minutes", async () => {
+    await addExercise("e1", null);
+    const View = selfCareModule.HistoryView;
+    renderWithLanguage(<View />, { initialLanguage: "ja" });
+    await waitFor(() => expect(screen.getByText(/運動/)).toBeTruthy());
+    expect(screen.queryByText(/合計/)).toBeNull();
+  });
+
+  it("shows the total when minutes exist", async () => {
+    await addExercise("e1", 45);
+    const View = selfCareModule.HistoryView;
+    renderWithLanguage(<View />, { initialLanguage: "ja" });
+    await waitFor(() => expect(screen.getByText(/合計 45分/)).toBeTruthy());
+  });
+
+  it("uses an English separator", async () => {
+    await addExercise("e1", 45);
+    const View = selfCareModule.HistoryView;
+    renderWithLanguage(<View />, { initialLanguage: "en" });
+    await waitFor(() => expect(screen.getByText(/45 min in total/)).toBeTruthy());
+    expect(document.body.textContent).not.toContain("・");
+  });
+});
+
+describe("selfcare timeline card (en)", () => {
+  it("separates other and its note with an ASCII colon", () => {
+    const Card = selfCareModule.TimelineCard;
+    renderWithLanguage(<Card record={{ ...base, item: "other", minutes: null, note: "Drainage" }} label={null} />, {
+      initialLanguage: "en",
+    });
+    expect(screen.getByText("Other: Drainage")).toBeTruthy();
+  });
 });

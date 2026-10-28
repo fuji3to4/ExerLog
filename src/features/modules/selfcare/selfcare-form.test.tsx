@@ -47,4 +47,13 @@ describe("SelfCareForm", () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
     expect(await appDb.selfCareRecords.toArray()).toMatchObject([{ item: "other", minutes: null, note: "" }]);
   });
+
+  it.each(["-30", "0", "2.5"])("saves minutes %s as null", async (value) => {
+    const { onSaved } = renderForm();
+    fireEvent.click(screen.getByRole("radio", { name: "運動" }));
+    fireEvent.change(screen.getByLabelText("分数"), { target: { value } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    expect(await appDb.selfCareRecords.toArray()).toMatchObject([{ item: "exercise", minutes: null }]);
+  });
 });
