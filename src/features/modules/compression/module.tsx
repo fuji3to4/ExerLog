@@ -20,14 +20,17 @@ function CompressionTimelineCard({ record, label }: { record: CompressionRecord;
   const minutes = wearMinutes(record);
   let line: string;
   if (record.endedAt === null) {
-    line = `${kind} ${startLabel(record)}〜 ${t("compression_wearing")}`;
+    line = `${kind} ${t("compression_since", { start: startLabel(record) })} ${t("compression_wearing")}`;
   } else {
     // Start is shown as a clock time only; the date is added to the end when it falls on another day.
-    const span = `${kind} ${clockOf(record.recordedAt)}〜${endLabel({ recordedAt: record.recordedAt, endedAt: record.endedAt })}`;
+    const range = t("compression_range", {
+      start: clockOf(record.recordedAt),
+      end: endLabel({ recordedAt: record.recordedAt, endedAt: record.endedAt }),
+    });
+    const span = `${kind} ${range}`;
     if (minutes === null) line = span;
     else {
-      const duration = formatWearMinutes(minutes, language);
-      line = language === "ja" ? `${span}（${duration}）` : `${span} (${duration})`;
+      line = t("compression_span_duration", { span, duration: formatWearMinutes(minutes, language) });
     }
   }
   return (

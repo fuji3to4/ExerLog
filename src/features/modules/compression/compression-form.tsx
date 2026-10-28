@@ -70,6 +70,7 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
   const { isSaved, isBusy, hasError, run } = useSaveAndClose();
   const [lookupFailed, setLookupFailed] = useState(false);
   const firstLookup = useRef(true);
+  const prefilledNote = useRef<string | null>(null);
 
   useEffect(() => {
     if (record) return;
@@ -81,12 +82,17 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
         if (cancelled) return;
         setOpen(found);
         setForceNew(false);
+        // The open record's note is shown (and edited) in take-off mode; leaving that mode clears it.
+        const prefilled = prefilledNote.current;
+        prefilledNote.current = found?.note ?? null;
         if (found) {
           setEndedAt(inputValueOfIso(localIsoNow()));
+          setNote(found.note);
         } else if (!firstLookup.current) {
           // Defaults are already in place on the first lookup; only a kind switch resets them.
           setStartedAt(inputValueOfIso(localIsoAt(date)));
           setEndedAt("");
+          if (prefilled !== null) setNote((current) => (current === prefilled ? "" : current));
         }
         firstLookup.current = false;
         setChecking(false);
@@ -114,6 +120,7 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
 
   function startNew() {
     setForceNew(true);
+    setNote("");
     setStartedAt(inputValueOfIso(localIsoAt(date)));
     setEndedAt("");
   }
@@ -123,7 +130,7 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
     void run(
       async () => {
         if (takingOff) {
-          const updated: CompressionRecord = { ...open, endedAt: endedIso, note: note !== "" ? note : open.note };
+          const updated: CompressionRecord = { ...open, endedAt: endedIso, note };
           await updateCompressionRecord(updated);
           return updated;
         }
@@ -168,7 +175,7 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
       {takingOff ? (
         <div className="space-y-2">
           <p className="text-sm font-medium">
-            {t(`compression_kind_${kind}` as const)} {startLabel(open)}〜 {t("compression_wearing")}
+            {t(`compression_kind_${kind}` as const)} {t("compression_since", { start: startLabel(open) })} {t("compression_wearing")}
           </p>
           <Button type="button" variant="outline" className="w-full" onClick={startNew}>
             {t("compression_start_new")}

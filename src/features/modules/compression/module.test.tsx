@@ -80,6 +80,28 @@ describe("compression timeline card", () => {
   });
 });
 
+describe("compression timeline card (en)", () => {
+  const Card = compressionModule.TimelineCard;
+
+  it("uses an en dash and ASCII parentheses", () => {
+    const recordedAt = localIsoAt("2026-10-20", new Date(2026, 0, 1, 8, 10));
+    const endedAt = localIsoAt("2026-10-20", new Date(2026, 0, 1, 21, 30));
+    renderWithLanguage(<Card record={{ ...base, recordedAt, endedAt }} label={null} />, { initialLanguage: "en" });
+    expect(screen.getByText(/^Compression garment 8:10–21:30 \(/)).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/[〜（）]/);
+  });
+
+  it("shows an open record with an en dash", () => {
+    const today = toDayKey(new Date());
+    const recordedAt = localIsoAt(today, new Date(2026, 0, 1, 8, 10));
+    renderWithLanguage(<Card record={{ ...base, date: today, recordedAt, endedAt: null }} label={null} />, {
+      initialLanguage: "en",
+    });
+    expect(document.body.textContent).toMatch(/^Compression garment 8:10– /);
+    expect(document.body.textContent).not.toContain("〜");
+  });
+});
+
 describe("compression summary card", () => {
   beforeEach(async () => {
     await appDb.compressionRecords.clear();

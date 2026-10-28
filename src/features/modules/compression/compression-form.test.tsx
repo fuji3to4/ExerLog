@@ -20,7 +20,7 @@ function renderForm() {
 }
 
 /** A garment put on at the given local time today (default 08:10) and not yet taken off. */
-async function addOpenGarment(hour = 8, minute = 10) {
+async function addOpenGarment(hour = 8, minute = 10, note = "") {
   const recordedAt = localIsoAt(toDayKey(new Date()), new Date(2026, 0, 1, hour, minute));
   await appDb.compressionRecords.add({
     id: "open",
@@ -28,7 +28,7 @@ async function addOpenGarment(hour = 8, minute = 10) {
     recordedAt,
     kind: "garment",
     endedAt: null,
-    note: "",
+    note,
     updatedAt: recordedAt,
   });
 }
@@ -62,6 +62,26 @@ describe("CompressionForm", () => {
     expect(records).toHaveLength(1);
     expect(records[0].id).toBe("open");
     expect(records[0].endedAt).not.toBeNull();
+  });
+
+  it("shows the open record's note in take-off mode and clears it for a new record", async () => {
+    await addOpenGarment(8, 10, "きつめ");
+    const { onSaved } = renderForm();
+    await screen.findByText("弾性着衣 8:10〜 着用中");
+    expect((screen.getByLabelText("メモ") as HTMLTextAreaElement).value).toBe("きつめ");
+    fireEvent.change(screen.getByLabelText("外した時刻"), { target: { value: `${toDayKey(new Date())}T23:59` } });
+    fireEvent.change(screen.getByLabelText("メモ"), { target: { value: "きつめ、夕方に外した" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    expect(await appDb.compressionRecords.toArray()).toMatchObject([{ id: "open", note: "きつめ、夕方に外した" }]);
+  });
+
+  it("clears the prefilled note when starting a new record", async () => {
+    await addOpenGarment(8, 10, "きつめ");
+    renderForm();
+    await screen.findByText("弾性着衣 8:10〜 着用中");
+    fireEvent.click(screen.getByRole("button", { name: "新しく着けた記録にする" }));
+    expect((screen.getByLabelText("メモ") as HTMLTextAreaElement).value).toBe("");
   });
 
   it("switches to a new put-on for another kind or on request", async () => {
