@@ -26,7 +26,7 @@ A local-first exercise and wellness tracking PWA. Record how you feel, body meas
 | UI | React 19, shadcn/ui (Radix primitives), Tailwind CSS |
 | Charts | Recharts |
 | Local storage | IndexedDB (Dexie.js) |
-| Optional sync | Google Sheets API (OAuth 2.0) |
+| Optional sync | Google Sheets API, Google Drive API (OAuth 2.0) |
 | PWA | next-pwa |
 | Tests | Vitest, Testing Library |
 | Deployment | GitHub Pages (GitHub Actions) |
@@ -39,6 +39,30 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## Google Sync Setup
+
+Google sync is optional. Without a client ID the app works locally, but Google sign-in is unavailable.
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create or select a project.
+2. Under **APIs & Services → Library**, enable **both** of these APIs:
+
+   | API | Used for |
+   |---|---|
+   | Google Sheets API | Creating the "ExerLog Data" spreadsheet and reading/writing all records |
+   | Google Drive API | Finding the spreadsheet, and the "ExerLog Photos" folder and photo files |
+
+   If the Sheets API is disabled, sync fails with "Failed to create spreadsheet".
+3. Configure the **OAuth consent screen**. The app requests the `drive.file` and `userinfo.email` scopes. While the app is in testing, add each Google account that will sign in as a test user.
+4. Under **APIs & Services → Credentials**, create an **OAuth 2.0 Client ID** of type **Web application**, and add the authorized JavaScript origins (for example `http://localhost:3000` and `https://fuji3to4.github.io`). No redirect URI is needed.
+5. Copy `.env.example` to `.env.local` and set the client ID:
+
+   ```bash
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   ```
+
+   Restart `npm run dev` after changing it. The value is embedded at build time.
+6. For the GitHub Pages deployment, add the same value as the repository secret `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (used by `.github/workflows/deploy.yml`).
 
 ## Build and Test
 
@@ -94,7 +118,7 @@ ExerLogは、運動とコンディションを記録するローカルファー�
 | UI | React 19、shadcn/ui (Radix primitives)、Tailwind CSS |
 | グラフ | Recharts |
 | ローカルストレージ | IndexedDB (Dexie.js) |
-| 任意の同期 | Google Sheets API (OAuth 2.0) |
+| 任意の同期 | Google Sheets API、Google Drive API (OAuth 2.0) |
 | PWA | next-pwa |
 | テスト | Vitest、Testing Library |
 | デプロイ | GitHub Pages (GitHub Actions) |
@@ -107,6 +131,30 @@ npm run dev
 ```
 
 `http://localhost:3000` を開いてください。
+
+## Google同期の設定
+
+Google同期は任意です。クライアントIDを設定しなくてもアプリはローカルで動作しますが、Googleサインインは使えません。
+
+1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクトを作成または選択します。
+2. **APIとサービス → ライブラリ** で、次の2つの API を**両方**有効にします。
+
+   | API | 用途 |
+   |---|---|
+   | Google Sheets API | 「ExerLog Data」スプレッドシートの作成、全データの読み書き |
+   | Google Drive API | スプレッドシートの検索、「ExerLog Photos」フォルダと写真ファイル |
+
+   Sheets API が無効だと、同期時に「Failed to create spreadsheet」になります。
+3. **OAuth 同意画面**を設定します。アプリが要求するスコープは `drive.file` と `userinfo.email` です。テスト中の場合は、サインインする Google アカウントをテストユーザーに追加してください。
+4. **APIとサービス → 認証情報** で、種類「**ウェブ アプリケーション**」の **OAuth 2.0 クライアント ID** を作成し、承認済みの JavaScript 生成元（例: `http://localhost:3000`、`https://fuji3to4.github.io`）を追加します。リダイレクト URI は不要です。
+5. `.env.example` を `.env.local` にコピーし、クライアントIDを設定します。
+
+   ```bash
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   ```
+
+   値はビルド時に埋め込まれるため、変更後は `npm run dev` を再起動してください。
+6. GitHub Pages へのデプロイでは、同じ値をリポジトリのシークレット `NEXT_PUBLIC_GOOGLE_CLIENT_ID` に登録します（`.github/workflows/deploy.yml` で使用）。
 
 ## ビルドとテスト
 
