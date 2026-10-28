@@ -58,7 +58,7 @@ export async function findOpenCompressionRecord(kind: CompressionKind): Promise<
     .equals(kind)
     .filter((r) => r.endedAt === null)
     .toArray();
-  return open.sort((a, b) => (a.recordedAt < b.recordedAt ? 1 : a.recordedAt > b.recordedAt ? -1 : 0))[0];
+  return open.sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt))[0];
 }
 
 /** Records whose date is within [start, end] (inclusive day keys), oldest first. */

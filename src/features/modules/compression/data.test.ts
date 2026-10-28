@@ -36,6 +36,12 @@ describe("compression data", () => {
     expect(await findOpenCompressionRecord("bandage")).toBeUndefined();
   });
 
+  it("orders open records by instant, not by string, across offsets", async () => {
+    await addCompressionRecord({ kind: "garment", recordedAt: "2026-10-28T09:00:00+09:00", endedAt: null, note: "" });
+    const newer = await addCompressionRecord({ kind: "garment", recordedAt: "2026-10-28T08:00:00+00:00", endedAt: null, note: "" });
+    expect((await findOpenCompressionRecord("garment"))?.id).toBe(newer.id);
+  });
+
   it("delete leaves a tombstone", async () => {
     const rec = await addCompressionRecord({ kind: "garment", recordedAt: "2026-10-01T08:00:00+09:00", endedAt: null, note: "" });
     await deleteCompressionRecord(rec.id);
