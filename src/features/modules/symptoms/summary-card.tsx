@@ -37,15 +37,15 @@ export function SymptomsSummaryBody({ summary }: { summary: SymptomsSummary | nu
           <p key={id}>
             <span className="font-medium">{t(`symptom_${id}` as const)}</span> {t("period_days", { days })}
             {maxSeverity !== null
-              ? `・${t("period_max_severity", { severity: t(`symptom_severity_${maxSeverity}` as const) })}`
+              ? `${t("sep_dot")}${t("period_max_severity", { severity: t(`symptom_severity_${maxSeverity}` as const) })}`
               : null}
-            {sites.map((site) => `・${t(`body_site_${site}` as const)}`).join("")}
+            {sites.map((site) => `${t("sep_dot")}${t(`body_site_${site}` as const)}`).join("")}
           </p>
         ))}
       {cellulitis ? (
         <p>
           <span className="font-medium">{t("symptom_cellulitis")}</span> {t("period_days", { days: cellulitis.days })}
-          {careParts.length > 0 ? `（${careParts.join("・")}）` : null}
+          {careParts.length > 0 ? t("symptom_care_detail", { details: careParts.join(t("sep_dot")) }) : null}
         </p>
       ) : null}
     </>

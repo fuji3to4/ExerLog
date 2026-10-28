@@ -22,7 +22,7 @@ export function formatSymptomEntry(entry: SymptomEntry, t: Translate): string {
   if (entry.care !== null) parts.push(t(`cellulitis_care_${entry.care}` as const));
   for (const site of entry.sites) parts.push(t(`body_site_${site}` as const));
   const name = t(`symptom_${entry.id}` as const);
-  return parts.length > 0 ? `${name}（${parts.join("・")}）` : name;
+  return parts.length > 0 ? t("symptom_entry_detail", { name, details: parts.join(t("sep_dot")) }) : name;
 }
 
 function SymptomsTimelineCard({ record, label }: { record: SymptomRecord; label: TimeLabel | null }) {
@@ -30,7 +30,7 @@ function SymptomsTimelineCard({ record, label }: { record: SymptomRecord; label:
   const line =
     record.symptoms.length === 0
       ? t("symptoms_none")
-      : record.symptoms.map((entry) => formatSymptomEntry(entry, t)).join("、");
+      : record.symptoms.map((entry) => formatSymptomEntry(entry, t)).join(t("sep_comma"));
   return (
     <>
       <span className="block">
@@ -58,7 +58,7 @@ function CellulitisList({ records }: { records: SymptomRecord[] }) {
           const details = [
             ...(entry.care !== null ? [t(`cellulitis_care_${entry.care}` as const)] : []),
             ...entry.sites.map((site) => t(`body_site_${site}` as const)),
-          ].join("・");
+          ].join(t("sep_dot"));
           return <li key={record.id}>{details ? `${month}/${day} ${details}` : `${month}/${day}`}</li>;
         })}
       </ul>
