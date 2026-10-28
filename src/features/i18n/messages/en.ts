@@ -42,7 +42,7 @@ export const en = {
   history_heading: "History",
   history_subheading: "Look back on the days you logged on the calendar.",
   history_calendar_heading: "Calendar",
-  history_calendar_text: "💮 marks days you exercised; a dot marks days with any other record (items that are ON, or videos).",
+  history_calendar_text: "💮 marks days you exercised; a dot marks days with any other record.",
   history_calendar_completed_label: "{date}, completed",
   history_calendar_recorded_label: "{date} (recorded)",
   history_calendar_prev_month: "Previous month",

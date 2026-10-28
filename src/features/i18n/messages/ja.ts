@@ -42,7 +42,7 @@
   history_heading: "履歴",
   history_subheading: "記録した日をカレンダーで振り返れます。",
   history_calendar_heading: "カレンダー",
-  history_calendar_text: "💮は運動した日、・は運動以外の記録（ONの項目・視聴）をした日です。",
+  history_calendar_text: "💮は運動した日、・は運動以外の記録をした日です。",
   history_calendar_completed_label: "{date}、実施済み",
   history_calendar_recorded_label: "{date}（記録あり）",
   history_calendar_prev_month: "前の月",
