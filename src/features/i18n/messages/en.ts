@@ -473,4 +473,5 @@ export const en = {
   set_name_new_title: "New set",
   set_name_label: "Set name",
   set_name_placeholder: "e.g. Morning",
+  set_save_error: "Couldn't save. Please try again.",
 } as const;

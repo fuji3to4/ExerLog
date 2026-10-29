@@ -18,10 +18,14 @@ export function SetNameDialog({ open, title, initialName, onSubmit, onOpenChange
   const { t } = useTranslation();
   const [name, setName] = useState(initialName);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   // Start from the current name every time the dialog opens.
   useEffect(() => {
-    if (open) setName(initialName);
+    if (open) {
+      setName(initialName);
+      setHasError(false);
+    }
   }, [open, initialName]);
 
   const trimmed = name.trim();
@@ -30,8 +34,12 @@ export function SetNameDialog({ open, title, initialName, onSubmit, onOpenChange
     event.preventDefault();
     if (!trimmed || isSaving) return;
     setIsSaving(true);
+    setHasError(false);
     try {
       await onSubmit(trimmed);
+    } catch (error) {
+      console.error(error);
+      setHasError(true);
     } finally {
       setIsSaving(false);
     }
@@ -54,6 +62,11 @@ export function SetNameDialog({ open, title, initialName, onSubmit, onOpenChange
               autoFocus
             />
           </label>
+          {hasError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t("set_save_error")}
+            </p>
+          ) : null}
           <DialogFooter>
             <button
               type="button"

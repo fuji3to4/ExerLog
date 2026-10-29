@@ -26,14 +26,24 @@ export function ExerciseSetMenu({ exercise, sets, onChanged }: ExerciseSetMenuPr
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
 
   async function handleToggle(set: ExerciseSet, included: boolean) {
-    await setExerciseInSet(set.id, exercise.id, included);
-    onChanged();
+    try {
+      await setExerciseInSet(set.id, exercise.id, included);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      // Re-sync the checkboxes with the store whether or not the write succeeded.
+      onChanged();
+    }
   }
 
   async function handleCreate(name: string) {
-    await createExerciseSet(name, [exercise.id]);
-    setIsNameDialogOpen(false);
-    onChanged();
+    // A failure propagates so the dialog stays open and shows its error.
+    try {
+      await createExerciseSet(name, [exercise.id]);
+      setIsNameDialogOpen(false);
+    } finally {
+      onChanged();
+    }
   }
 
   return (

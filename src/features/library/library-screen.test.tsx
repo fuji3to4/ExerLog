@@ -1,11 +1,21 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
 import { appDb } from "@/features/storage/app-db";
-import { createExerciseSet, listExerciseSets } from "@/features/storage/exercise-sets.repository";
+import { createExerciseSet, listExerciseSets, setExerciseInSet } from "@/features/storage/exercise-sets.repository";
 import { renderWithLanguage } from "@/test/render-with-language";
+
+// Wrap the repository writes so single tests can make them reject while the rest hit the real store.
+vi.mock("@/features/storage/exercise-sets.repository", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/storage/exercise-sets.repository")>();
+  return {
+    ...actual,
+    setExerciseInSet: vi.fn(actual.setExerciseInSet),
+    createExerciseSet: vi.fn(actual.createExerciseSet),
+  };
+});
 
 import { LibraryScreen } from "./components/library-screen";
 
@@ -255,4 +265,45 @@ test("cannot save a set with a blank name", async () => {
   const dialog = await screen.findByRole("dialog");
   await user.type(within(dialog).getByLabelText("Set name"), "   ");
   expect(within(dialog).getByRole("button", { name: "Save" })).toBeDisabled();
+});
+
+test("a failed toggle is logged and the checkbox still reflects the store", async () => {
+  const user = userEvent.setup();
+  const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+  await createExerciseSet("Morning");
+  vi.mocked(setExerciseInSet).mockRejectedValueOnce(new Error("boom"));
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
+  await user.click(await screen.findByRole("menuitemcheckbox", { name: "Morning" }));
+
+  await waitFor(() => expect(consoleError).toHaveBeenCalled());
+  expect(screen.getByRole("menuitemcheckbox", { name: "Morning" })).toHaveAttribute("aria-checked", "false");
+  expect((await listExerciseSets())[0].exerciseIds).toEqual([]);
+  consoleError.mockRestore();
+});
+
+test("the name dialog stays open and shows an error when creating a set fails", async () => {
+  const user = userEvent.setup();
+  const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.mocked(createExerciseSet).mockRejectedValueOnce(new Error("boom"));
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
+  await user.click(await screen.findByRole("menuitem", { name: "+ New set" }));
+
+  const dialog = await screen.findByRole("dialog");
+  await user.type(within(dialog).getByLabelText("Set name"), "Morning");
+  await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+  expect(await within(dialog).findByRole("alert")).toHaveTextContent("Couldn't save. Please try again.");
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
+  expect(await listExerciseSets()).toEqual([]);
+  consoleError.mockRestore();
 });

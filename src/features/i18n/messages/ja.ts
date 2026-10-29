@@ -473,4 +473,5 @@
   set_name_new_title: "新しいセット",
   set_name_label: "セットの名前",
   set_name_placeholder: "例：朝用",
+  set_save_error: "保存できませんでした。もう一度お試しください。",
 } as const;
