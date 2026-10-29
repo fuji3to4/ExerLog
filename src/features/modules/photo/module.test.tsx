@@ -11,16 +11,16 @@ import { RECORD_MODULES } from "@/features/modules/registry";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 describe("photo module registration", () => {
-  it("the add menu lists 写真 as the 4th module and opens 写真を記録", () => {
+  it("the add menu lists 写真 as the 5th module and opens 写真を記録", () => {
     const chosen: { current?: (typeof RECORD_MODULES)[number] } = {};
     renderWithLanguage(<AddRecordMenu modules={RECORD_MODULES} onChoose={(m) => (chosen.current = m)} />, {
       initialLanguage: "ja",
     });
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = screen.getAllByRole("menuitem");
-    expect(items).toHaveLength(7);
-    expect(items[3].textContent).toBe("写真");
-    fireEvent.click(items[3]);
+    expect(items).toHaveLength(8);
+    expect(items[4].textContent).toBe("写真");
+    fireEvent.click(items[4]);
     expect(chosen.current?.data.id).toBe("photo");
 
     renderWithLanguage(

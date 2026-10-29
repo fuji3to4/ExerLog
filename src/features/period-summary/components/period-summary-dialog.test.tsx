@@ -49,7 +49,7 @@ describe("PeriodSummaryDialog", () => {
     );
     renderDialog();
     await waitFor(() => expect(screen.getAllByText("記録なし").length).toBeGreaterThan(0));
-    expect(headings()).toEqual(["腕・脚周径", "身体", "写真", "セルフケア", "着用", "症状", "運動"]);
+    expect(headings()).toEqual(["腕・脚周径", "身体", "胸囲・腹囲", "写真", "セルフケア", "着用", "症状", "運動"]);
   });
 
   it("shows 記録なし for a module without records and the summary for one with records", async () => {

@@ -23,15 +23,15 @@ const base = {
 };
 
 describe("compression module registration", () => {
-  it("the add menu lists 着用 6th and opens the form", () => {
+  it("the add menu lists 着用 7th and opens the form", () => {
     const chosen: { current?: (typeof RECORD_MODULES)[number] } = {};
     renderWithLanguage(<AddRecordMenu modules={RECORD_MODULES} onChoose={(m) => (chosen.current = m)} />, {
       initialLanguage: "ja",
     });
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = screen.getAllByRole("menuitem");
-    expect(items[5].textContent).toBe("着用");
-    fireEvent.click(items[5]);
+    expect(items[6].textContent).toBe("着用");
+    fireEvent.click(items[6]);
     expect(chosen.current?.data.id).toBe("compression");
 
     renderWithLanguage(

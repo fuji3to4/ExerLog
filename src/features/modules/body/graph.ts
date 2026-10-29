@@ -5,16 +5,17 @@ import {
 } from "@/features/history/components/metric-graph-view";
 import type { DayRange } from "@/features/history/range-presets";
 import { BODY_ITEMS, type MeasurementItem } from "@/features/measurements/measurement-items";
+import type { MeasurementRepository } from "@/features/measurements/measurement-repository";
 import { calculateBmi } from "@/features/metrics/bmi";
 
 import { bodyRepository } from "./data";
 
-function itemMetric(item: MeasurementItem): GraphMetric {
+export function itemMetric(repository: MeasurementRepository, item: MeasurementItem): GraphMetric {
   return {
     key: item.id,
     labelKey: item.labelKey,
     async load({ start, end }) {
-      const records = await bodyRepository.listInDayRange(start, end);
+      const records = await repository.listInDayRange(start, end);
       const points = records
         .filter((record) => item.id in record.values)
         .map((record) => ({ at: record.recordedAt, value: record.values[item.id]! }));
@@ -58,7 +59,7 @@ async function buildBmiPoints({ start, end }: DayRange): Promise<GraphPoint[]> {
 
 /** Graphable body items in list order, then BMI. */
 export const BODY_GRAPH_METRICS: readonly GraphMetric[] = [
-  ...BODY_ITEMS.filter((item) => item.showInGraph).map(itemMetric),
+  ...BODY_ITEMS.filter((item) => item.showInGraph).map((item) => itemMetric(bodyRepository, item)),
   {
     key: "bmi",
     labelKey: "history_graph_metric_bmi",

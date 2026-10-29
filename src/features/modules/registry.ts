@@ -8,6 +8,7 @@
 import { bodyModule } from "./body/module";
 import { circumferenceModule } from "./circumference/module";
 import { compressionModule } from "./compression/module";
+import { girthModule } from "./girth/module";
 import { photoModule } from "./photo/module";
 import { selfCareModule } from "./selfcare/module";
 import { symptomsModule } from "./symptoms/module";
@@ -23,6 +24,7 @@ import { wellnessModule } from "./wellness/module";
 export const RECORD_MODULES: readonly RecordModule[] = [
   wellnessModule,
   bodyModule,
+  girthModule,
   circumferenceModule,
   photoModule,
   selfCareModule,

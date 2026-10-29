@@ -17,6 +17,10 @@ describe("RECORD_MODULES", () => {
     expect(tagged).toEqual(["selfcare", "compression", "symptoms"]);
   });
 
+  it("does not tag girth, so it starts ON in every build", () => {
+    expect(getRecordModule("girth")?.tags).toBeUndefined();
+  });
+
   it("finds a module by id", () => {
     expect(getRecordModule("body")?.data.id).toBe("body");
     expect(getRecordModule("unknown")).toBeUndefined();

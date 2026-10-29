@@ -178,7 +178,7 @@ describe("TimelineSection", () => {
     expect(screen.queryByRole("button", { name: /📏 体重/ })).toBeNull();
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = await screen.findAllByRole("menuitem");
-    expect(items.map((item) => item.textContent)).toEqual(["体調", "腕・脚周径", "写真", "セルフケア", "着用", "症状"]);
+    expect(items.map((item) => item.textContent)).toEqual(["体調", "腕・脚周径", "胸囲・腹囲", "写真", "セルフケア", "着用", "症状"]);
   });
 
   it("shows the note of a measurement row on a second line", async () => {

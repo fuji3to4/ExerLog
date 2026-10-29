@@ -19,16 +19,16 @@ function makeRecord(id: string, date: string, symptoms: SymptomEntry[], note = "
 }
 
 describe("symptoms module registration", () => {
-  it("the add menu lists 症状 7th", () => {
+  it("the add menu lists 症状 8th", () => {
     const chosen: { current?: (typeof RECORD_MODULES)[number] } = {};
     renderWithLanguage(<AddRecordMenu modules={RECORD_MODULES} onChoose={(m) => (chosen.current = m)} />, {
       initialLanguage: "ja",
     });
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = screen.getAllByRole("menuitem");
-    expect(items).toHaveLength(7);
-    expect(items[6].textContent).toBe("症状");
-    fireEvent.click(items[6]);
+    expect(items).toHaveLength(8);
+    expect(items[7].textContent).toBe("症状");
+    fireEvent.click(items[7]);
     expect(chosen.current?.data.id).toBe("symptoms");
   });
 });

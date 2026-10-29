@@ -2,7 +2,7 @@ import type { MeasurementRecord } from "@/lib/types";
 
 export type FirstLast = { first: number; last: number; diff: number; min: number; max: number };
 
-function firstLast(sorted: MeasurementRecord[], itemId: string): FirstLast | null {
+export function firstLast(sorted: MeasurementRecord[], itemId: string): FirstLast | null {
   const values = sorted.flatMap((record) => (itemId in record.values ? [record.values[itemId]] : []));
   if (values.length === 0) return null;
   const first = values[0];

@@ -15,15 +15,15 @@ import { selfCareModule } from "./module";
 const base = { id: "a", date: "2026-10-20", recordedAt: "2026-10-20T08:00:00+09:00", updatedAt: "2026-10-20T08:00:00+09:00" };
 
 describe("selfcare module registration", () => {
-  it("the add menu lists セルフケア 5th and opens セルフケアを記録", () => {
+  it("the add menu lists セルフケア 6th and opens セルフケアを記録", () => {
     const chosen: { current?: (typeof RECORD_MODULES)[number] } = {};
     renderWithLanguage(<AddRecordMenu modules={RECORD_MODULES} onChoose={(m) => (chosen.current = m)} />, {
       initialLanguage: "ja",
     });
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = screen.getAllByRole("menuitem");
-    expect(items[4].textContent).toBe("セルフケア");
-    fireEvent.click(items[4]);
+    expect(items[5].textContent).toBe("セルフケア");
+    fireEvent.click(items[5]);
     expect(chosen.current?.data.id).toBe("selfcare");
 
     renderWithLanguage(
