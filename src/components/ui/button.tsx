@@ -4,22 +4,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-full border border-transparent px-4 py-2 text-sm font-semibold transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full border border-transparent px-3.5 text-[0.8125rem] font-semibold transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       size: {
-        default: "h-12",
-        sm: "h-10 px-3 text-xs",
-        lg: "h-14 px-6 text-base",
-        icon: "size-12 rounded-2xl p-0",
+        default: "h-9",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-10 px-4",
+        icon: "size-9 rounded-xl p-0",
       },
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm shadow-primary/25 hover:bg-primary/90",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/85",
-        outline: "border-border bg-card/80 text-foreground hover:bg-muted",
+        default: "bg-[var(--tonal-bg)] text-[var(--tonal-text)] hover:bg-[var(--tonal-bg-hover)]",
+        secondary: "border-border bg-transparent text-foreground hover:bg-muted",
+        outline: "border-border bg-transparent text-foreground hover:bg-muted",
         ghost: "text-foreground hover:bg-accent hover:text-accent-foreground",
         link: "h-auto min-h-0 rounded-md px-0 py-0 text-primary underline-offset-4 hover:underline",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30 hover:bg-destructive/90",
+        destructive: "bg-[var(--danger-bg)] text-[var(--danger-text)] hover:opacity-80",
       },
     },
     defaultVariants: {

@@ -42,6 +42,10 @@
   --success-text: #166534;
   --danger-bg: #fdecea;
   --danger-text: #b91c1c;
+  --tonal-bg: hsl(var(--primary) / 0.12);
+  --tonal-bg-hover: hsl(var(--primary) / 0.18);
+  --tonal-border: hsl(var(--primary) / 0.35);
+  --tonal-text: hsl(16 42% 33%);
   background: var(--bg-top);
   color: var(--text-strong);
 }
@@ -67,6 +71,7 @@
   --border: 210 30% 87%;
   --input: 210 30% 87%;
   --ring: 200 48% 55%;
+  --tonal-text: hsl(200 55% 28%);
 }
 
 [data-theme="dark"] {
@@ -90,6 +95,11 @@
   --border: 222 20% 26%;
   --input: 222 20% 26%;
   --ring: 18 65% 60%;
+  --success-bg: hsl(145 40% 18%);
+  --success-text: hsl(145 55% 72%);
+  --danger-bg: hsl(0 50% 20%);
+  --danger-text: hsl(0 80% 75%);
+  --tonal-text: hsl(18 70% 70%);
 }
 
 /* Theme overrides re-map the shadcn base tokens so the semantic aliases
