@@ -34,6 +34,7 @@ jobs:
         env:
           GITHUB_ACTIONS: true
           NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+          NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS: ${{ vars.DEFAULT_ON_MODULE_TAGS }}
 
       - name: Fix manifest for GitHub Pages
         run: |

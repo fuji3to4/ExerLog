@@ -52,6 +52,7 @@ export const selfCareModule: RecordModule<SelfCareRecord> = {
   descriptionKey: "module_selfcare_description",
   editTitleKey: "selfcare_edit_title",
   icon: HandHeart,
+  tags: ["lymphedema"],
   color: "#3a9e7e",
   Form: SelfCareForm,
   TimelineCard: SelfCareTimelineCard,

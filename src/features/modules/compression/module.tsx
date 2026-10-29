@@ -54,6 +54,7 @@ export const compressionModule: RecordModule<CompressionRecord> = {
   descriptionKey: "module_compression_description",
   editTitleKey: "compression_edit_title",
   icon: Shirt,
+  tags: ["lymphedema"],
   color: "#5b7fd6",
   Form: CompressionForm,
   TimelineCard: CompressionTimelineCard,

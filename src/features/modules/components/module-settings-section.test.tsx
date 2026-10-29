@@ -1,5 +1,5 @@
 import { fireEvent, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
@@ -32,16 +32,23 @@ describe("ModuleSettingsSection", () => {
   beforeEach(() => {
     window.localStorage.removeItem("lymly-record-modules");
   });
+  afterEach(() => vi.unstubAllEnvs());
 
-  it("lists the modules in the default order, all ON", () => {
+  it("starts tagged modules OFF when no tag is enabled at build time", () => {
+    vi.stubEnv("NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS", "");
     renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
 
     expect(rowNames()).toEqual(["体調", "身体", "周径", "写真", "セルフケア", "着用", "症状"]);
-    for (const r of rows()) {
-      expect(within(r).getByRole("switch").getAttribute("aria-checked")).toBe("true");
-      expect(within(r).getByLabelText("並べ替え")).toBeTruthy();
-    }
+    const checked = rows().map((r) => within(r).getByRole("switch").getAttribute("aria-checked"));
+    expect(checked).toEqual(["true", "true", "true", "true", "false", "false", "false"]);
+    for (const r of rows()) expect(within(r).getByLabelText("並べ替え")).toBeTruthy();
     expect(screen.getByText("この順に「＋記録する」や履歴に並びます")).toBeTruthy();
+  });
+
+  it("starts every module ON when lymphedema is enabled at build time", () => {
+    vi.stubEnv("NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS", "lymphedema");
+    renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
+    for (const r of rows()) expect(within(r).getByRole("switch").getAttribute("aria-checked")).toBe("true");
   });
 
   it("moves a module up with the button and stores the order", () => {
@@ -65,6 +72,7 @@ describe("ModuleSettingsSection", () => {
   });
 
   it("turning a module OFF stores it and removes its item from the add menu", () => {
+    vi.stubEnv("NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS", "lymphedema");
     renderWithLanguage(<Harness />, { initialLanguage: "ja" });
 
     fireEvent.click(within(row("身体")).getByRole("switch"));

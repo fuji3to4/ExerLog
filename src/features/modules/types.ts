@@ -6,6 +6,7 @@ import type { Messages } from "@/features/i18n/messages";
 import type { TableSyncConfig } from "@/features/sync/sync-config";
 import type { SyncTableResult } from "@/features/sync/sync-engine";
 import type { WellnessLabel } from "@/features/timeline/build-timeline";
+import type { ModuleTag } from "./module-tags";
 import type { Period } from "./period";
 
 /** The time-of-day / around-a-video tag a timeline row may carry. */
@@ -51,6 +52,8 @@ export type RecordModule<R extends ModuleRecord = ModuleRecord> = {
   descriptionKey: keyof Messages;
   editTitleKey: keyof Messages;
   icon: LucideIcon;
+  /** Audience tags shown in settings; tagged modules start OFF unless a tag is in NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS. */
+  tags?: readonly ModuleTag[];
   /** Colour of the module's point on the timeline. */
   color: string;
   Form: ComponentType<RecordFormProps<R>>;

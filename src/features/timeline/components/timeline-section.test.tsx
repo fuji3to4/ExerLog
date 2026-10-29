@@ -82,6 +82,7 @@ describe("TimelineSection", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
@@ -161,6 +162,7 @@ describe("TimelineSection", () => {
   });
 
   it("hides a module turned off in the settings from the timeline and the add menu", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS", "lymphedema");
     await bodyRepository.add({ date: DATE, values: { weight: 60 }, note: "" });
     const { rerender } = renderWithLanguage(<Harness />, { initialLanguage: "ja" });
     expect(await screen.findByRole("button", { name: /📏 体重 60.0kg/ })).toBeTruthy();

@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
@@ -15,6 +15,8 @@ import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 import { HistoryScreen } from "./components/history-screen";
+
+afterEach(() => vi.unstubAllEnvs());
 
 beforeEach(async () => {
   window.localStorage.removeItem("lymly-record-modules");
@@ -177,6 +179,7 @@ test("switches history copy to English", async () => {
 });
 
 test("has no summary/graph toggle and starts on the すべて chip", async () => {
+  vi.stubEnv("NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS", "lymphedema");
   await seedHistory();
 
   renderWithLanguage(<HistoryScreen month="2026-03" />, { initialLanguage: "ja" });

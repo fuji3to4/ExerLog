@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
@@ -13,6 +13,8 @@ import { renderWithLanguage } from "@/test/render-with-language";
 import { defaultPeriod, PeriodSummaryDialog } from "./period-summary-dialog";
 
 const PERIOD = { start: "2026-10-01T00:00:00+09:00", end: "2026-10-27T23:00:00+09:00" };
+
+afterEach(() => vi.unstubAllEnvs());
 
 beforeEach(async () => {
   window.localStorage.removeItem("lymly-record-modules");
@@ -40,6 +42,7 @@ function headings() {
 
 describe("PeriodSummaryDialog", () => {
   it("shows enabled module cards in settings order, then exercise", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS", "lymphedema");
     window.localStorage.setItem(
       "lymly-record-modules",
       JSON.stringify({ order: ["circumference", "body", "wellness"], disabled: ["wellness"] }),

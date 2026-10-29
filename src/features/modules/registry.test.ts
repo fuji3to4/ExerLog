@@ -12,6 +12,11 @@ describe("RECORD_MODULES", () => {
     RECORD_MODULES.forEach((module, index) => expect(module.data).toBe(data[index]));
   });
 
+  it("tags the lymphedema-only modules", () => {
+    const tagged = RECORD_MODULES.filter((m) => m.tags?.includes("lymphedema")).map((m) => m.data.id);
+    expect(tagged).toEqual(["selfcare", "compression", "symptoms"]);
+  });
+
   it("finds a module by id", () => {
     expect(getRecordModule("body")?.data.id).toBe("body");
     expect(getRecordModule("unknown")).toBeUndefined();

@@ -89,6 +89,7 @@ export const symptomsModule: RecordModule<SymptomRecord> = {
   descriptionKey: "module_symptoms_description",
   editTitleKey: "symptoms_edit_title",
   icon: Activity,
+  tags: ["lymphedema"],
   color: "#c2577a",
   Form: SymptomsForm,
   TimelineCard: SymptomsTimelineCard,

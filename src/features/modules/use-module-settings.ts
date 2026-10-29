@@ -11,6 +11,7 @@ import {
   writeModuleSettings,
   type ModuleSettings,
 } from "./module-settings";
+import { defaultOffModuleIds, defaultOnModuleTags } from "./module-tags";
 import { getRecordModule, RECORD_MODULES } from "./registry";
 import type { RecordModule } from "./types";
 
@@ -19,15 +20,17 @@ import type { RecordModule } from "./types";
 
 const registryIds = (): string[] => RECORD_MODULES.map((module) => module.data.id);
 
+const defaultOffIds = (): string[] => defaultOffModuleIds(RECORD_MODULES, defaultOnModuleTags());
+
 let serverSnapshot: ModuleSettings | undefined;
 
 function getSnapshot(): ModuleSettings {
   // readModuleSettings returns the same object while the stored value is unchanged.
-  return readModuleSettings(registryIds());
+  return readModuleSettings(registryIds(), defaultOffIds());
 }
 
 function getServerSnapshot(): ModuleSettings {
-  serverSnapshot ??= resolveModuleSettings(null, registryIds());
+  serverSnapshot ??= resolveModuleSettings(null, registryIds(), defaultOffIds());
   return serverSnapshot;
 }
 

@@ -3,7 +3,8 @@
 //  2. one line in data-registry.ts;
 //  3. one line in registry.ts (this file);
 //  4. its Dexie table in app-db.ts (new version);
-//  5. `module_<id>_*` and `sync_tab_<Tab>` i18n keys in ja.ts and en.ts.
+//  5. `module_<id>_*` and `sync_tab_<Tab>` i18n keys in ja.ts and en.ts;
+//  6. optionally `tags` (module-tags.ts) when the module only serves one audience; tagged modules start OFF unless the build enables the tag.
 import { bodyModule } from "./body/module";
 import { circumferenceModule } from "./circumference/module";
 import { compressionModule } from "./compression/module";
