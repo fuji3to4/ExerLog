@@ -210,7 +210,7 @@ describe("TimelineSection", () => {
     const bodyRow = await screen.findByRole("button", { name: /📏 体重 60.0kg/ });
     const circumferenceRow = screen.getByRole("button", { name: /📏 腕の周径 2か所/ });
     expect(bodyRow).not.toBe(circumferenceRow);
-    expect(bodyRow.textContent).not.toContain("腕・脚周径");
+    expect(bodyRow.textContent).not.toContain("周径");
     expect(rows()).toHaveLength(3);
 
     fireEvent.click(circumferenceRow);

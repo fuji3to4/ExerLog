@@ -126,6 +126,8 @@ describe("module settings", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("blocked");
     });
-    expect(readModuleSettings(IDS, ["circumference"])).toEqual({ order: IDS, disabled: ["circumference"] });
+    const first = readModuleSettings(IDS, ["circumference"]);
+    expect(first).toEqual({ order: IDS, disabled: ["circumference"] });
+    expect(readModuleSettings(IDS, ["circumference"])).toBe(first);
   });
 });
