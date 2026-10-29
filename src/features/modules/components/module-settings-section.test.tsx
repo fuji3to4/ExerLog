@@ -51,6 +51,14 @@ describe("ModuleSettingsSection", () => {
     for (const r of rows()) expect(within(r).getByRole("switch").getAttribute("aria-checked")).toBe("true");
   });
 
+  it("shows the lymphedema tag next to the tagged modules only", () => {
+    renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
+    const tagged = rows()
+      .filter((r) => within(r).queryByText("リンパ浮腫"))
+      .map((r) => within(r).getByRole("switch").getAttribute("aria-label"));
+    expect(tagged).toEqual(["セルフケア", "着用", "症状"]);
+  });
+
   it("moves a module up with the button and stores the order", () => {
     renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
 

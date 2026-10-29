@@ -422,6 +422,7 @@
   period_average_wear: "平均 {duration}",
   module_symptoms_label: "症状",
   module_symptoms_description: "むくみ・痛みなどの状態",
+  module_tag_lymphedema: "リンパ浮腫",
   symptoms_edit_title: "症状の記録を編集",
   symptoms_none: "症状なし",
   symptom_edema: "むくみ",

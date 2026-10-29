@@ -19,8 +19,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 
+import { badgeVariants } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { cn } from "@/lib/utils";
 import type { RecordModule } from "../types";
 import { useModuleSettings } from "../use-module-settings";
 
@@ -61,7 +63,17 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
       </button>
       <Icon aria-hidden className="h-5 w-5 shrink-0" style={{ color: module.color }} />
       <span className="min-w-0 flex-1 text-sm">
-        <span className="block font-medium">{label}</span>
+        <span className="block font-medium">
+          {label}
+          {module.tags?.map((tag) => (
+            <span
+              key={tag}
+              className={cn(badgeVariants({ variant: "secondary" }), "ml-2 px-1.5 py-0 align-middle text-[10px] font-medium")}
+            >
+              {t(`module_tag_${tag}` as const)}
+            </span>
+          ))}
+        </span>
         <span className="block text-xs text-muted-foreground">{t(module.descriptionKey)}</span>
       </span>
       <button

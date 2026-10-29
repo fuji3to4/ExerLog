@@ -422,6 +422,7 @@ export const en = {
   period_average_wear: "Avg {duration}",
   module_symptoms_label: "Symptoms",
   module_symptoms_description: "Swelling, pain and more",
+  module_tag_lymphedema: "Lymphedema",
   symptoms_edit_title: "Edit symptoms",
   symptoms_none: "No symptoms",
   symptom_edema: "Swelling",
