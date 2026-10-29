@@ -244,6 +244,7 @@
   sync_tab_Symptoms: "症状",
   sync_tab_SelfCare: "セルフケア",
   sync_tab_Exercises: "動画ライブラリ",
+  sync_tab_ExerciseSets: "セット",
   sync_tab_Tombstones: "削除記録",
   sync_tab_spreadsheet: "スプレッドシート",
 

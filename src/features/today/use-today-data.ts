@@ -52,6 +52,7 @@ export function useTodayData(date: Date | string) {
   const [reshuffle, setReshuffle] = useState(0);
   const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
+  const [isCatalogLoaded, setIsCatalogLoaded] = useState(false);
   const [sets, setSets] = useState<ExerciseSet[]>([]);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const dayKeyRef = useRef(dayKey);
@@ -61,7 +62,10 @@ export function useTodayData(date: Date | string) {
   }, [dayKey]);
 
   useEffect(() => {
-    listAllExercises().then(setExercises).catch(console.error);
+    listAllExercises()
+      .then(setExercises)
+      .catch(console.error)
+      .finally(() => setIsCatalogLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -172,7 +176,7 @@ export function useTodayData(date: Date | string) {
   );
 
   return {
-    isHydrated: hydratedDayKey === dayKey,
+    isHydrated: hydratedDayKey === dayKey && isCatalogLoaded,
     recommendations,
     logCounts,
     logExercise,

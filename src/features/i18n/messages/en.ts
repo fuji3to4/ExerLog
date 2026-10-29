@@ -244,6 +244,7 @@ export const en = {
   sync_tab_Symptoms: "Symptoms",
   sync_tab_SelfCare: "Self-care",
   sync_tab_Exercises: "Video library",
+  sync_tab_ExerciseSets: "Sets",
   sync_tab_Tombstones: "Deletion records",
   sync_tab_spreadsheet: "Spreadsheet",
 
