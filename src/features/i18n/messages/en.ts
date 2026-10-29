@@ -40,12 +40,8 @@ export const en = {
 
   // Library screen
   library_heading: "Library",
-  library_subheading: "Browse the full exercise catalog and open a detail page when you want the video and quick logging tools.",
-  library_filters_heading: "Find an exercise",
-  library_filters_subheading: "Use a simple search or narrow the list with one or two filters.",
   library_search_label: "Search exercises",
   library_search_placeholder: "Search by title or description",
-  library_result_count: "Showing {shown} of {total}",
   library_sort_label: "Sort by",
   library_sort_default: "Catalog order",
   library_sort_most_watched: "Most watched",
@@ -480,7 +476,6 @@ export const en = {
   set_name_label: "Set name",
   set_name_placeholder: "e.g. Morning",
   set_save_error: "Couldn't save. Please try again.",
-  library_set_label: "Set",
   library_set_all: "All",
   library_set_actions_aria: "Set actions",
   library_set_rename: "Rename",
@@ -488,4 +483,10 @@ export const en = {
   library_set_delete: "Delete this set",
   library_set_delete_confirm: 'Delete the set "{name}"? The videos stay in the library.',
   library_set_count: "{name}: {count} videos",
+  library_sets_aria: "Sets",
+  library_filters_toggle: "Filters",
+  library_filters_toggle_count: "Filters {count}",
+  library_count_all: "{total} videos",
+  library_count_filtered: "{shown} / {total} videos",
+  library_set_count_filtered: "{name}: {shown} / {total} videos",
 } as const;

@@ -40,12 +40,8 @@
 
   // Library screen
   library_heading: "ライブラリ",
-  library_subheading: "全エクササイズカタログを閲覧し、動画と簡単な記録ツールが必要な場合は詳細ページを開きましょう。",
-  library_filters_heading: "エクササイズを探す",
-  library_filters_subheading: "簡単な検索を使うか、1つまたは2つのフィルターでリストを絞り込みましょう。",
   library_search_label: "エクササイズを検索",
   library_search_placeholder: "タイトルまたは説明で検索",
-  library_result_count: "{total}件中 {shown}件を表示",
   library_sort_label: "並び順",
   library_sort_default: "登録順",
   library_sort_most_watched: "よく見る順",
@@ -480,7 +476,6 @@
   set_name_label: "セットの名前",
   set_name_placeholder: "例：朝用",
   set_save_error: "保存できませんでした。もう一度お試しください。",
-  library_set_label: "セット",
   library_set_all: "すべて",
   library_set_actions_aria: "セットの操作",
   library_set_rename: "名前を変える",
@@ -488,4 +483,10 @@
   library_set_delete: "このセットを消す",
   library_set_delete_confirm: "セット「{name}」を消しますか？動画はライブラリに残ります。",
   library_set_count: "{name}：{count}本",
+  library_sets_aria: "セット",
+  library_filters_toggle: "絞り込み",
+  library_filters_toggle_count: "絞り込み {count}",
+  library_count_all: "{total}件",
+  library_count_filtered: "{shown}件 / {total}件",
+  library_set_count_filtered: "{name}：{shown}本 / {total}本",
 } as const;

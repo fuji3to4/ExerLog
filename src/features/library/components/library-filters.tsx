@@ -1,15 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChevronDown, ChevronUp, Ellipsis } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { formatDuration } from "@/lib/date/duration";
-import type { ExerciseSet } from "@/lib/types";
 
-type LibraryFiltersValue = {
+export type LibraryFiltersValue = {
   search: string;
   set: string;
   bodyArea: string;
@@ -22,13 +19,7 @@ type LibraryFiltersValue = {
 type LibraryFiltersProps = {
   value: LibraryFiltersValue;
   onChange: (nextValue: LibraryFiltersValue) => void;
-  sets: ExerciseSet[];
-  onRenameSet: (set: ExerciseSet) => void;
-  onDeleteSet: (set: ExerciseSet) => void;
 };
-
-const MENU_ITEM_CLASS =
-  "flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-secondary";
 
 type SelectOption = {
   label: string;
@@ -140,14 +131,8 @@ function DurationFilterInput({ label, placeholder, increaseLabel, decreaseLabel,
   );
 }
 
-export function LibraryFilters({ value, onChange, sets, onRenameSet, onDeleteSet }: LibraryFiltersProps) {
+export function LibraryFilters({ value, onChange }: LibraryFiltersProps) {
   const { t } = useTranslation();
-
-  const selectedSet = sets.find((set) => set.id === value.set);
-  const setOptions: SelectOption[] = [
-    { label: t("library_set_all"), value: "" },
-    ...sets.map((set) => ({ label: set.name, value: set.id })),
-  ];
 
   const bodyAreaOptions: SelectOption[] = [
     { label: t("body_area_all"), value: "" },
@@ -172,96 +157,36 @@ export function LibraryFilters({ value, onChange, sets, onRenameSet, onDeleteSet
     { label: t("intensity_high"), value: "high" },
   ];
 
-  const sortOptions: SelectOption[] = [
-    { label: t("library_sort_default"), value: "" },
-    { label: t("library_sort_most_watched"), value: "most-watched" },
-  ];
-
   return (
-    <Card className="library-filters">
-      <CardHeader>
-        <CardTitle>{t("library_filters_heading")}</CardTitle>
-        <p>{t("library_filters_subheading")}</p>
-      </CardHeader>
-
-      <CardContent>
-        <label className="library-filters__field" htmlFor="search-exercises">
-          <span>{t("library_search_label")}</span>
-          <input
-            id="search-exercises"
-            type="search"
-            value={value.search}
-            placeholder={t("library_search_placeholder")}
-            onChange={(event) => onChange({ ...value, search: event.target.value })}
-          />
-        </label>
-
-        <div className="library-filters__grid">
-          <div className="library-filters__set">
-            <FilterSelect
-              label={t("library_set_label")}
-              value={value.set}
-              options={setOptions}
-              onChange={(nextValue) => onChange({ ...value, set: nextValue })}
-            />
-            {selectedSet ? (
-              <DropdownMenu.Root modal={false}>
-                <DropdownMenu.Trigger asChild>
-                  <button type="button" className="exercise-set-menu__trigger" aria-label={t("library_set_actions_aria")}>
-                    <Ellipsis aria-hidden className="h-5 w-5" />
-                  </button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Portal>
-                  <DropdownMenu.Content
-                    align="end"
-                    sideOffset={6}
-                    className="z-50 min-w-48 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
-                  >
-                    <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={() => onRenameSet(selectedSet)}>
-                      {t("library_set_rename")}
-                    </DropdownMenu.Item>
-                    <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={() => onDeleteSet(selectedSet)}>
-                      {t("library_set_delete")}
-                    </DropdownMenu.Item>
-                  </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-              </DropdownMenu.Root>
-            ) : null}
-          </div>
-          <FilterSelect
-            label={t("meta_body_area")}
-            value={value.bodyArea}
-            options={bodyAreaOptions}
-            onChange={(nextValue) => onChange({ ...value, bodyArea: nextValue })}
-          />
-          <FilterSelect
-            label={t("meta_purpose")}
-            value={value.purpose}
-            options={purposeOptions}
-            onChange={(nextValue) => onChange({ ...value, purpose: nextValue })}
-          />
-          <DurationFilterInput
-            label={t("meta_duration")}
-            placeholder={t("duration_any")}
-            increaseLabel={t("library_duration_increase")}
-            decreaseLabel={t("library_duration_decrease")}
-            value={value.duration}
-            onChange={(nextValue) => onChange({ ...value, duration: nextValue })}
-          />
-          <FilterSelect
-            label={t("meta_intensity")}
-            value={value.intensity}
-            options={intensityOptions}
-            onChange={(nextValue) => onChange({ ...value, intensity: nextValue })}
-          />
-          <FilterSelect
-            label={t("library_sort_label")}
-            value={value.sort}
-            options={sortOptions}
-            onChange={(nextValue) => onChange({ ...value, sort: nextValue })}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="library-filters">
+      <div className="library-filters__grid">
+        <FilterSelect
+          label={t("meta_body_area")}
+          value={value.bodyArea}
+          options={bodyAreaOptions}
+          onChange={(nextValue) => onChange({ ...value, bodyArea: nextValue })}
+        />
+        <FilterSelect
+          label={t("meta_purpose")}
+          value={value.purpose}
+          options={purposeOptions}
+          onChange={(nextValue) => onChange({ ...value, purpose: nextValue })}
+        />
+        <DurationFilterInput
+          label={t("meta_duration")}
+          placeholder={t("duration_any")}
+          increaseLabel={t("library_duration_increase")}
+          decreaseLabel={t("library_duration_decrease")}
+          value={value.duration}
+          onChange={(nextValue) => onChange({ ...value, duration: nextValue })}
+        />
+        <FilterSelect
+          label={t("meta_intensity")}
+          value={value.intensity}
+          options={intensityOptions}
+          onChange={(nextValue) => onChange({ ...value, intensity: nextValue })}
+        />
+      </div>
+    </div>
   );
 }
