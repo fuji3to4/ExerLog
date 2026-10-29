@@ -465,4 +465,12 @@
   cellulitis_care_label: "治療",
   period_recorded_days: "記録 {days}日（症状なし {none}日）",
   period_max_severity: "最大 {severity}",
+
+  // Exercise sets (my lists)
+  set_menu_aria: "{title}をセットに入れる",
+  set_menu_title: "セットに入れる",
+  set_menu_new: "＋ 新しいセットを作る",
+  set_name_new_title: "新しいセット",
+  set_name_label: "セットの名前",
+  set_name_placeholder: "例：朝用",
 } as const;

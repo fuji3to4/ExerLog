@@ -465,4 +465,12 @@ export const en = {
   cellulitis_care_label: "Treatment",
   period_recorded_days: "Recorded on {days} days ({none} without symptoms)",
   period_max_severity: "Worst: {severity}",
+
+  // Exercise sets (my lists)
+  set_menu_aria: "Add {title} to a set",
+  set_menu_title: "Add to set",
+  set_menu_new: "+ New set",
+  set_name_new_title: "New set",
+  set_name_label: "Set name",
+  set_name_placeholder: "e.g. Morning",
 } as const;

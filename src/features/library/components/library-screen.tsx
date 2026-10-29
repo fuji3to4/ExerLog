@@ -5,11 +5,13 @@ import Link from "next/link";
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { ExerciseSetMenu } from "@/features/exercise-sets/components/exercise-set-menu";
 import { appDb } from "@/features/storage/app-db";
 import { deleteExercise, listAllExercises } from "@/features/storage/exercise-catalog.repository";
+import { listExerciseSets } from "@/features/storage/exercise-sets.repository";
 import { countWatchesByExercise } from "@/features/storage/watch-events.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
-import type { ExerciseVideo } from "@/lib/types";
+import type { ExerciseSet, ExerciseVideo } from "@/lib/types";
 import { formatDuration } from "@/lib/date/duration";
 import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
@@ -38,14 +40,20 @@ export function LibraryScreen() {
   const [filters, setFilters] = useState<LibraryFilterState>(initialFilters);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
   const [watchCounts, setWatchCounts] = useState<Map<string, number>>(new Map());
+  const [exerciseSets, setExerciseSets] = useState<ExerciseSet[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseVideo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
 
   const loadExercises = useCallback(async () => {
-    const [nextExercises, nextWatchCounts] = await Promise.all([listAllExercises(), countWatchesByExercise()]);
+    const [nextExercises, nextWatchCounts, nextSets] = await Promise.all([
+      listAllExercises(),
+      countWatchesByExercise(),
+      listExerciseSets(),
+    ]);
     setExercises(nextExercises);
+    setExerciseSets(nextSets);
     setWatchCounts(nextWatchCounts);
   }, []);
 
@@ -169,13 +177,16 @@ ${t("library_delete_confirm")}`
                     <p className="library-screen__watch-count">{t("library_watch_count", { count: watchCount })}</p>
                   ) : null}
                 </div>
-                <Link
-                  href={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
-                  className="recommendation-card__watch-link"
-                  aria-label={t("action_watch_aria", { title: exercise.title })}
-                >
-                  {t("action_watch")}
-                </Link>
+                <div className="recommendation-card__actions">
+                  <Link
+                    href={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
+                    className="recommendation-card__watch-link"
+                    aria-label={t("action_watch_aria", { title: exercise.title })}
+                  >
+                    {t("action_watch")}
+                  </Link>
+                  <ExerciseSetMenu exercise={exercise} sets={exerciseSets} onChanged={() => void loadExercises()} />
+                </div>
               </div>
 
               <dl className="recommendation-card__meta">

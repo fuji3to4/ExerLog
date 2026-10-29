@@ -1,9 +1,10 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test } from "vitest";
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
 import { appDb } from "@/features/storage/app-db";
+import { createExerciseSet, listExerciseSets } from "@/features/storage/exercise-sets.repository";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 import { LibraryScreen } from "./components/library-screen";
@@ -11,6 +12,7 @@ import { LibraryScreen } from "./components/library-screen";
 beforeEach(async () => {
   await appDb.watchEvents.clear();
   await appDb.exercises.clear();
+  await appDb.exerciseSets.clear();
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });
 
@@ -190,4 +192,67 @@ test("sorts by most watched, keeping catalog order for ties", async () => {
   expect(titles.slice(0, 2)).toEqual(["Neck Mobility", "Walk in Place"]);
   const rest = defaultOrder.filter((id) => id !== "library-neck-mobility-5" && id !== "library-walk-in-place-10");
   expect(screen.getAllByRole("article").slice(2).map((card) => card.getAttribute("aria-labelledby"))).toEqual(rest);
+});
+
+test("adds a video to a new set from the card menu", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
+  await user.click(await screen.findByRole("menuitem", { name: "+ New set" }));
+
+  const dialog = await screen.findByRole("dialog");
+  await user.type(within(dialog).getByLabelText("Set name"), "Morning");
+  await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+  await waitFor(async () => {
+    const sets = await listExerciseSets();
+    expect(sets).toEqual([expect.objectContaining({ name: "Morning", exerciseIds: ["shoulder-roll-4"] })]);
+  });
+});
+
+test("toggles set membership with checkboxes and keeps the menu open", async () => {
+  const user = userEvent.setup();
+  await createExerciseSet("Morning");
+  await createExerciseSet("Evening");
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
+  await user.click(await screen.findByRole("menuitemcheckbox", { name: "Morning" }));
+  expect(screen.getByRole("menuitemcheckbox", { name: "Evening" })).toBeInTheDocument();
+  await user.click(screen.getByRole("menuitemcheckbox", { name: "Evening" }));
+
+  await waitFor(async () => {
+    const sets = await listExerciseSets();
+    expect(sets.map((set) => set.exerciseIds)).toEqual([["shoulder-roll-4"], ["shoulder-roll-4"]]);
+  });
+
+  await user.click(screen.getByRole("menuitemcheckbox", { name: "Morning" }));
+
+  await waitFor(async () => {
+    const sets = await listExerciseSets();
+    expect(sets.find((set) => set.name === "Morning")?.exerciseIds).toEqual([]);
+    expect(sets.find((set) => set.name === "Evening")?.exerciseIds).toEqual(["shoulder-roll-4"]);
+  });
+});
+
+test("cannot save a set with a blank name", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
+  await user.click(await screen.findByRole("menuitem", { name: "+ New set" }));
+
+  const dialog = await screen.findByRole("dialog");
+  await user.type(within(dialog).getByLabelText("Set name"), "   ");
+  expect(within(dialog).getByRole("button", { name: "Save" })).toBeDisabled();
 });
