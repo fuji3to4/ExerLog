@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslation } from "@/features/i18n/use-translation";
 import {
   MeasurementField,
   MeasurementNote,

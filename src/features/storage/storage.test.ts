@@ -169,7 +169,7 @@ describe("v12 upgrade", () => {
 });
 
 describe("v14 upgrade", () => {
-  test("opens v13 with the new record tables and without the placeholder self-care tables", async () => {
+  test("opens v14 with the new record tables and without the placeholder self-care tables", async () => {
     appDb.close();
     await Dexie.delete("exercise-log-mvp");
 

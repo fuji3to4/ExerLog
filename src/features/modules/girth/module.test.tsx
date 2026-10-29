@@ -11,6 +11,6 @@ describe("girth module registration", () => {
     window.localStorage.removeItem("lymly-record-modules");
     renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "en" });
     expect(screen.getByLabelText("Chest & waist")).toBeTruthy();
-    expect(screen.queryByText("胸囲")).toBeNull();
+    expect(screen.queryByText(/胸囲|腹囲/)).toBeNull();
   });
 });

@@ -8,6 +8,7 @@ import type { MeasurementRecord } from "@/lib/types";
 import {
   BODY_ITEMS,
   CIRCUMFERENCE_ITEMS,
+  GIRTH_ITEMS,
   MEASUREMENT_FIXED_COLUMNS,
   MEASUREMENT_ITEMS,
   formatMeasurementSummary,
@@ -16,7 +17,7 @@ import {
 } from "./measurement-items";
 
 test("item ids are unique and avoid the sheet fixed columns", () => {
-  const ids = MEASUREMENT_ITEMS.map((item) => item.id);
+  const ids = [...MEASUREMENT_ITEMS, ...GIRTH_ITEMS].map((item) => item.id);
   expect(new Set(ids).size).toBe(ids.length);
   for (const id of ids) {
     expect(MEASUREMENT_FIXED_COLUMNS as readonly string[]).not.toContain(id);
@@ -24,7 +25,7 @@ test("item ids are unique and avoid the sheet fixed columns", () => {
 });
 
 test("every labelKey exists in ja and en", () => {
-  for (const item of MEASUREMENT_ITEMS) {
+  for (const item of [...MEASUREMENT_ITEMS, ...GIRTH_ITEMS]) {
     expect(item.labelKey in ja).toBe(true);
     expect(item.labelKey in en).toBe(true);
   }
