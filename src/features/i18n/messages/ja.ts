@@ -403,7 +403,7 @@
   selfcare_item_skincare: "スキンケア",
   selfcare_item_exercise: "運動",
   selfcare_item_other: "その他",
-  selfcare_minutes: "分数",
+  selfcare_minutes: "時間（分）",
   selfcare_minutes_value: "{m}分",
   period_days_of: "{days}日／{total}日",
   period_days: "{days}日",
