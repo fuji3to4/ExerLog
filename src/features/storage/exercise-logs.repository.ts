@@ -45,6 +45,11 @@ export function listExerciseLogsForDay(date: string): Promise<ExerciseLog[]> {
   return appDb.exerciseLogs.where("date").equals(date).sortBy("performedAt");
 }
 
+/** Logs on days before `date`. */
+export function listExerciseLogsBefore(date: string): Promise<ExerciseLog[]> {
+  return appDb.exerciseLogs.where("date").below(date).toArray();
+}
+
 /** Number of logs per exerciseId for the day. */
 export async function countExerciseLogsForDay(date: string): Promise<Record<string, number>> {
   const logs = await appDb.exerciseLogs.where("date").equals(date).toArray();

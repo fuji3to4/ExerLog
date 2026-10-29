@@ -80,8 +80,7 @@ describe("today screen timeline", () => {
     };
   }
 
-  // Read back in id order; on 2026-10-20 (offset 10*20=200): "okay" shows Delta, Epsilon, Gamma;
-  // "tired" drops high-intensity items and shows Zeta, Delta, Epsilon.
+  // "tired" drops the high-intensity items, leaving exactly Delta, Epsilon and Zeta.
   const catalog = [
     exercise("alpha", "Alpha", "high"),
     exercise("beta", "Beta", "high"),
@@ -147,8 +146,9 @@ describe("today screen timeline", () => {
   test("a low condition entry switches recommendations to the tired set", async () => {
     await renderTodayScreen();
 
-    expect(await screen.findByRole("heading", { name: "Gamma" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Zeta" })).toBeNull();
+    const region = await screen.findByRole("region", { name: "今日のおすすめ" });
+    const titles = () => within(region).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent).sort();
+    expect(titles().some((title) => ["Alpha", "Beta", "Gamma"].includes(title ?? ""))).toBe(true);
 
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     fireEvent.click(await screen.findByRole("menuitem", { name: "体調" }));
@@ -157,9 +157,6 @@ describe("today screen timeline", () => {
     fireEvent.click(within(within(dialog).getByRole("group", { name: "こころ" })).getByRole("button", { name: "1" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
 
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Zeta" })).toBeInTheDocument(), {
-      timeout: 3000,
-    });
-    expect(screen.queryByRole("heading", { name: "Gamma" })).toBeNull();
+    await waitFor(() => expect(titles()).toEqual(["Delta", "Epsilon", "Zeta"]), { timeout: 3000 });
   });
 });

@@ -75,6 +75,11 @@ export async function countWatchesByExercise(): Promise<Map<string, number>> {
   return counts;
 }
 
+/** Watches on days before `date`. */
+export function listWatchEventsBefore(date: string): Promise<WatchEvent[]> {
+  return appDb.watchEvents.where("date").below(date).toArray();
+}
+
 /** Watches for the day, oldest first. */
 export function listWatchEventsForDay(date: string): Promise<WatchEvent[]> {
   return appDb.watchEvents.where("date").equals(date).sortBy("watchedAt");

@@ -2,10 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { getTodaysRecommendations } from "@/features/recommendations/get-todays-recommendations";
+import {
+  getTodaysRecommendations,
+  type RecommendationHistory,
+} from "@/features/recommendations/get-todays-recommendations";
+import { readReshuffle, writeReshuffle } from "@/features/recommendations/reshuffle-store";
 import { mapWellnessToCondition } from "@/features/recommendations/wellness-to-condition";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
-import { addExerciseLog, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
+import {
+  addExerciseLog,
+  countExerciseLogsForDay,
+  listExerciseLogsBefore,
+} from "@/features/storage/exercise-logs.repository";
+import { listWatchEventsBefore } from "@/features/storage/watch-events.repository";
 import { useModuleSettings } from "@/features/modules/use-module-settings";
 import { getLatestConditionScores, type ConditionScores } from "@/features/modules/wellness/condition";
 import { toDayKey } from "@/lib/date/day-key";
@@ -21,6 +30,8 @@ const DEFAULT_SCORES: LatestScores = {
   mentalScore: DEFAULT_WELLNESS_SCORE,
 };
 
+const EMPTY_HISTORY: RecommendationHistory = { watches: [], logs: [] };
+
 async function loadLatestScores(dayKey: string, wellnessEnabled: boolean): Promise<LatestScores> {
   if (!wellnessEnabled) {
     return DEFAULT_SCORES;
@@ -34,6 +45,8 @@ export function useTodayData(date: Date | string) {
   const wellnessEnabled = !settings.disabled.includes("wellness");
   const [scores, setScores] = useState<LatestScores>(DEFAULT_SCORES);
   const [logCounts, setLogCounts] = useState<Record<string, number>>({});
+  const [history, setHistory] = useState<RecommendationHistory>(EMPTY_HISTORY);
+  const [reshuffle, setReshuffle] = useState(0);
   const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
   const dayKeyRef = useRef(dayKey);
@@ -50,9 +63,11 @@ export function useTodayData(date: Date | string) {
     let isActive = true;
 
     async function loadTodayData() {
-      const [latestScores, counts] = await Promise.all([
+      const [latestScores, counts, watches, logs] = await Promise.all([
         loadLatestScores(dayKey, wellnessEnabled),
         countExerciseLogsForDay(dayKey),
+        listWatchEventsBefore(dayKey),
+        listExerciseLogsBefore(dayKey),
       ]);
 
       if (!isActive) {
@@ -61,6 +76,8 @@ export function useTodayData(date: Date | string) {
 
       setScores(latestScores);
       setLogCounts(counts);
+      setHistory({ watches, logs });
+      setReshuffle(readReshuffle(dayKey));
       setHydratedDayKey(dayKey);
     }
 
@@ -79,9 +96,18 @@ export function useTodayData(date: Date | string) {
         catalog: exercises,
         conditionLevel,
         date: dayKey,
+        history,
+        reshuffle,
       }),
-    [exercises, conditionLevel, dayKey],
+    [exercises, conditionLevel, dayKey, history, reshuffle],
   );
+
+  /** Swaps in a different set for the rest of the day. */
+  const reshuffleRecommendations = useCallback(() => {
+    const next = reshuffle + 1;
+    writeReshuffle(dayKey, next);
+    setReshuffle(next);
+  }, [dayKey, reshuffle]);
 
   /** Reloads the latest wellness scores and today's log counts (after timeline edits or deletes). */
   const refresh = useCallback(async () => {
@@ -130,5 +156,6 @@ export function useTodayData(date: Date | string) {
     logCounts,
     logExercise,
     refresh,
+    reshuffleRecommendations,
   };
 }

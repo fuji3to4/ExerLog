@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { useCelebrate } from "@/features/feedback/celebration";
@@ -26,7 +26,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const { t, formatDate } = useTranslation();
   const recommendedHeadingId = "today-recommended-heading";
   const libraryHeadingId = "today-library-heading";
-  const { isHydrated, recommendations, logCounts, logExercise, refresh } = useTodayData(date);
+  const { isHydrated, recommendations, logCounts, logExercise, refresh, reshuffleRecommendations } = useTodayData(date);
   const { enabledModules } = useModuleSettings();
   const timeline = useDayTimeline(date, enabledModules);
   const celebrate = useCelebrate();
@@ -77,13 +77,19 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                 {t("today_recommended_heading")}
               </h2>
               <CardDescription>{t("today_recommended_text")}</CardDescription>
+              <div className="button-row">
+                <Button type="button" variant="secondary" onClick={reshuffleRecommendations}>
+                  {t("today_recommended_reshuffle")}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="today-screen__recommendations">
-                {recommendations.map((exercise) => (
+                {recommendations.map(({ exercise, slot }) => (
                   <div key={exercise.id} className="grid gap-2">
                     <RecommendedExerciseCard
                       exercise={exercise}
+                      slot={slot}
                       todayCount={logCounts[exercise.id] ?? 0}
                       watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
                       onLog={(result) => void handleLog(exercise, result)}

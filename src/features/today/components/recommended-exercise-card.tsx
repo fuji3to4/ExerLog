@@ -6,11 +6,13 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/date/duration";
+import type { RecommendationSlot } from "@/features/recommendations/get-todays-recommendations";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
 import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
 type RecommendedExerciseCardProps = {
   exercise: ExerciseVideo;
+  slot?: RecommendationSlot;
   todayCount: number;
   watchHref: string;
   onLog: (result: ExerciseLogResult) => void;
@@ -18,6 +20,7 @@ type RecommendedExerciseCardProps = {
 
 export function RecommendedExerciseCard({
   exercise,
+  slot = null,
   todayCount,
   watchHref,
   onLog,
@@ -36,6 +39,9 @@ export function RecommendedExerciseCard({
       <CardContent className="space-y-4 p-4 sm:p-5">
         <div className="grid gap-3 min-[480px]:grid-cols-[minmax(0,1fr)_auto] min-[480px]:items-start">
           <div>
+            {slot ? (
+              <p className="mb-1 text-sm font-semibold text-muted-foreground">{t(`recommendation_slot_${slot}`)}</p>
+            ) : null}
             <h3 id={headingId}>{exercise.title}</h3>
             <p>{exercise.description}</p>
           </div>

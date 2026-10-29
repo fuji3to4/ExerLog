@@ -10,6 +10,7 @@ import { appDb } from "@/features/storage/app-db";
 import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { addWellnessEntry } from "@/features/modules/wellness/data";
+import { RESHUFFLE_STORAGE_KEY } from "@/features/recommendations/reshuffle-store";
 import type { ExerciseDraft } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
 
@@ -29,18 +30,24 @@ function exercise(id: string, title: string, intensity: ExerciseDraft["intensity
   };
 }
 
-// The catalog is read back in id order (alpha, beta, delta, epsilon, gamma, zeta).
-// On 2026-10-20 (offset 10*20=200): "okay" shows Delta, Epsilon, Gamma;
-// "tired" drops high-intensity items and shows Zeta, Delta, Epsilon.
-// On 2026-10-21 (offset 210): "okay" shows Alpha, Beta, Delta.
-const catalog = [
+// Three low-intensity exercises: every one of them is always recommended.
+const catalog = [exercise("delta", "Delta", "low"), exercise("epsilon", "Epsilon", "low"), exercise("zeta", "Zeta", "low")];
+
+// Adds high-intensity exercises so that only some are recommended and "tired" changes the set.
+const largeCatalog = [
   exercise("alpha", "Alpha", "high"),
   exercise("beta", "Beta", "high"),
   exercise("gamma", "Gamma", "high"),
-  exercise("delta", "Delta", "low"),
-  exercise("epsilon", "Epsilon", "low"),
-  exercise("zeta", "Zeta", "low"),
+  ...catalog,
 ];
+
+async function recommendedTitles() {
+  const region = await screen.findByRole("region", { name: /recommended/i });
+  return within(region)
+    .getAllByRole("heading", { level: 3 })
+    .map((heading) => heading.textContent)
+    .sort();
+}
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -57,6 +64,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   window.localStorage.removeItem("lymly-record-modules");
+  window.localStorage.removeItem(RESHUFFLE_STORAGE_KEY);
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -79,26 +87,42 @@ test("places the timeline under the header and above the recommendations", async
   expect(screen.queryByRole("region", { name: /daily condition/i })).toBeNull();
 });
 
-test("recommends for an okay condition when nothing is recorded", async () => {
+test("recommends three exercises when nothing is recorded", async () => {
   renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
 
-  expect(await screen.findByRole("heading", { name: "Gamma" })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Delta" })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Epsilon" })).toBeInTheDocument();
+  expect(await recommendedTitles()).toEqual(["Delta", "Epsilon", "Zeta"]);
   expect(screen.getAllByRole("link", { name: /^watch /i })).toHaveLength(3);
+  expect(screen.getByText("Something new")).toBeInTheDocument();
+});
+
+test("labels the usual pick from earlier watches", async () => {
+  await appDb.watchEvents.bulkAdd([
+    { id: "w1", date: "2026-10-18", exerciseId: "epsilon", watchedAt: "2026-10-18T09:00:00+09:00", updatedAt: "2026-10-18T09:00:00+09:00" },
+    { id: "w2", date: "2026-10-19", exerciseId: "epsilon", watchedAt: "2026-10-19T09:00:00+09:00", updatedAt: "2026-10-19T09:00:00+09:00" },
+  ]);
+
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  const card = await screen.findByRole("article", { name: "Epsilon" });
+  expect(within(card).getByText("Your usual")).toBeInTheDocument();
 });
 
 test("uses the latest wellness entry of the day for recommendations", async () => {
+  await replaceAllExercises(largeCatalog);
   await addWellnessEntry({ date: "2026-10-20", recordedAt: "2026-10-20T07:00:00+09:00", physicalScore: 5, mentalScore: 5, note: "" });
   await addWellnessEntry({ date: "2026-10-20", recordedAt: "2026-10-20T19:00:00+09:00", physicalScore: 1, mentalScore: 2, note: "" });
 
   renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
 
-  expect(await screen.findByRole("heading", { name: "Zeta" })).toBeInTheDocument();
-  expect(screen.queryByRole("heading", { name: "Gamma" })).toBeNull();
+  expect(await recommendedTitles()).toEqual(["Delta", "Epsilon", "Zeta"]);
 });
 
 test("ignores wellness and uses the standard recommendations when the wellness module is off", async () => {
+  await replaceAllExercises(largeCatalog);
+  const standard = renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+  const expected = await recommendedTitles();
+  standard.unmount();
+
   await addWellnessEntry({ date: "2026-10-20", recordedAt: "2026-10-20T19:00:00+09:00", physicalScore: 1, mentalScore: 1, note: "" });
   window.localStorage.setItem(
     "lymly-record-modules",
@@ -107,10 +131,34 @@ test("ignores wellness and uses the standard recommendations when the wellness m
 
   renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
 
-  expect(await screen.findByRole("heading", { name: "Gamma" })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Delta" })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Epsilon" })).toBeInTheDocument();
-  expect(screen.queryByRole("heading", { name: "Zeta" })).toBeNull();
+  expect(await recommendedTitles()).toEqual(expected);
+});
+
+test("keeps the day's recommendations after logging one of them", async () => {
+  await replaceAllExercises(largeCatalog);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  const before = await recommendedTitles();
+  const region = screen.getByRole("region", { name: /recommended/i });
+  fireEvent.click(within(region).getAllByRole("button", { name: "Did it" })[0]);
+  await waitFor(() => expect(within(region).getByText("1 times today")).toBeInTheDocument());
+
+  expect(await recommendedTitles()).toEqual(before);
+});
+
+test("the reshuffle button swaps in other exercises and the new set survives a reload", async () => {
+  await replaceAllExercises(largeCatalog);
+  const first = renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  const before = await recommendedTitles();
+  fireEvent.click(screen.getByRole("button", { name: "Show 3 others" }));
+  const after = await recommendedTitles();
+
+  expect(after.filter((title) => before.includes(title))).toEqual([]);
+  first.unmount();
+
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+  expect(await recommendedTitles()).toEqual(after);
 });
 
 test("shows watch and library links for the today screen", async () => {
