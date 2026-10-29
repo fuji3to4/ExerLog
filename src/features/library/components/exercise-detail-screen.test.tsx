@@ -183,9 +183,10 @@ test("logging still works and the description box shows today's status", async (
   );
 
   const box = (await screen.findByText("Slow squats for the legs.")).closest(".exercise-detail__description") as HTMLElement;
-  expect(within(box).getByText("Not logged yet")).toBeInTheDocument();
+  // The description renders before the async today-count load finishes, so wait for the status.
+  expect(await within(box).findByText("Not logged yet")).toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Did it" }));
+  await user.click(await screen.findByRole("button", { name: "Did it" }));
 
   expect(await within(box).findByText("1 times today")).toBeInTheDocument();
 });
