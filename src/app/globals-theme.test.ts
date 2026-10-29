@@ -139,48 +139,18 @@ describe("globals.css warm theme contract", () => {
       "font-family",
       "var(--font-sans)",
     );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".today-screen__primary-button", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "background",
-      "var(--accent-strong)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".button-row a", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "background",
-      "var(--accent-strong)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".button-row a", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "color",
-      "var(--surface-elevated)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".button-row .button-secondary", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "background",
-      "var(--accent-soft)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".button-row .button-secondary", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "color",
-      "var(--accent-strong)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".today-screen__primary-button", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "background",
-      "var(--accent-strong)",
-    );
+    for (const selector of [".today-screen__primary-button", ".button-row a"]) {
+      const block = getCssBlock(globalsCss, selector, {
+        matches: (b) => b.includes("background:"),
+      });
+      expectDeclaration(block, "background", "var(--tonal-bg)");
+      expectDeclaration(block, "color", "var(--tonal-text)");
+    }
+    const secondaryRow = getCssBlock(globalsCss, ".button-row .button-secondary", {
+      matches: (block) => block.includes("background:"),
+    });
+    expectDeclaration(secondaryRow, "background", "transparent");
+    expectDeclaration(secondaryRow, "color", "var(--text-strong)");
     expectDeclaration(
       getCssBlock(globalsCss, ".exercise-log-actions__button", {
         matches: (block) => block.includes("background:"),
@@ -193,15 +163,40 @@ describe("globals.css warm theme contract", () => {
         matches: (block) => block.includes("color:"),
       }),
       "color",
-      "var(--accent-strong)",
+      "var(--text-strong)",
     );
+    const selectedLogAction = getCssBlock(globalsCss, ".exercise-log-actions__button.is-selected", {
+      matches: (block) => block.includes("background:"),
+    });
+    expectDeclaration(selectedLogAction, "background", "var(--tonal-bg)");
+    expectDeclaration(selectedLogAction, "color", "var(--tonal-text)");
+    expectDeclaration(selectedLogAction, "border-color", "var(--tonal-border)");
     expectDeclaration(
-      getCssBlock(globalsCss, ".exercise-log-actions__button.is-selected", {
+      getCssBlock(globalsCss, ".set-switcher__button", {
         matches: (block) => block.includes("background:"),
       }),
       "background",
-      "var(--accent-strong)",
+      "transparent",
     );
+    const pressedSwitcher = getCssBlock(globalsCss, '.set-switcher__button[aria-pressed="true"]');
+    expectDeclaration(pressedSwitcher, "background", "var(--tonal-bg)");
+    expectDeclaration(pressedSwitcher, "color", "var(--tonal-text)");
+    const saved = getCssBlock(globalsCss, ".save-button--saved", {
+      matches: (block) => block.includes("background:"),
+    });
+    expectDeclaration(saved, "background", "var(--success-bg)");
+    expectDeclaration(saved, "color", "var(--success-text)");
+    const uncommentedCss = globalsCss.replace(/\/\*[\s\S]*?\*\//g, "");
+    const settingsPrimary = getCssBlock(uncommentedCss, ".settings-action-button", {
+      matches: (block) => block.includes("background:"),
+    });
+    expectDeclaration(settingsPrimary, "background", "var(--tonal-bg)");
+    expectDeclaration(settingsPrimary, "color", "var(--tonal-text)");
+    const settingsDanger = getCssBlock(uncommentedCss, ".settings-action-button--danger", {
+      matches: (block) => block.includes("background:"),
+    });
+    expectDeclaration(settingsDanger, "background", "var(--danger-bg)");
+    expectDeclaration(settingsDanger, "color", "var(--danger-text)");
     expectDeclaration(
       getCssBlock(globalsCss, ".bottom-nav", {
         matches: (block) => block.includes("background:"),

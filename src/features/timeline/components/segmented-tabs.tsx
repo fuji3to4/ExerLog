@@ -55,8 +55,8 @@ export function SegmentedTabs<T extends string>({
               aria-controls={panelId}
               tabIndex={isSelected ? 0 : -1}
               className={cn(
-                "h-10 flex-1 rounded-xl text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-muted/80",
+                "h-9 flex-1 rounded-xl text-[0.8125rem] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                isSelected ? "bg-[var(--tonal-bg)] text-[var(--tonal-text)] border border-[var(--tonal-border)]" : "bg-transparent text-foreground border border-border hover:bg-muted",
               )}
               onClick={() => onChange(option)}
             >

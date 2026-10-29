@@ -73,8 +73,8 @@ export function HistoryModuleTabs({ modules, includeAll, allContent }: HistoryMo
               tabIndex={isSelected ? 0 : -1}
               onClick={() => setSelected(chip.id)}
               className={cn(
-                "inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-muted/80",
+                "inline-flex shrink-0 items-center gap-1 h-9 rounded-full px-3.5 text-[0.8125rem] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                isSelected ? "bg-[var(--tonal-bg)] text-[var(--tonal-text)] border border-[var(--tonal-border)]" : "bg-transparent text-foreground border border-border hover:bg-muted",
               )}
             >
               {Icon ? <Icon aria-hidden="true" className="size-4" /> : null}
