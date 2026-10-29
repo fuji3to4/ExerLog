@@ -11,7 +11,11 @@ import {
 
 const IDS = ["wellness", "body", "circumference"];
 
-beforeEach(() => window.localStorage.clear());
+beforeEach(() => {
+  // A successful write clears any in-memory fallback left by a blocked-storage test.
+  writeModuleSettings({ order: [], disabled: [] });
+  window.localStorage.clear();
+});
 afterEach(() => vi.restoreAllMocks());
 
 describe("module settings", () => {
@@ -74,5 +78,54 @@ describe("module settings", () => {
     unsubscribe();
     writeModuleSettings({ order: IDS, disabled: [] });
     expect(listener).toHaveBeenCalledTimes(2);
+  });
+
+  it("applies default-off ids on a fresh device", () => {
+    expect(resolveModuleSettings(null, IDS, ["circumference"])).toEqual({
+      order: IDS,
+      disabled: ["circumference"],
+    });
+  });
+
+  it("treats an empty or broken order as a fresh device", () => {
+    for (const stored of [{ order: [], disabled: [] }, { order: ["ghost"] }, "x"]) {
+      expect(resolveModuleSettings(stored, IDS, ["circumference"]).disabled).toEqual(["circumference"]);
+    }
+  });
+
+  it("keeps modules already in the stored order as stored", () => {
+    expect(
+      resolveModuleSettings({ order: ["circumference", "wellness"], disabled: [] }, IDS, ["circumference", "body"]),
+    ).toEqual({ order: ["circumference", "wellness", "body"], disabled: ["body"] });
+  });
+
+  it("persists the first resolution so a later default change does not flip it", () => {
+    expect(readModuleSettings(IDS, ["circumference"]).disabled).toEqual(["circumference"]);
+    expect(JSON.parse(window.localStorage.getItem(MODULE_SETTINGS_STORAGE_KEY)!)).toEqual({
+      order: IDS,
+      disabled: ["circumference"],
+    });
+    expect(readModuleSettings(IDS, []).disabled).toEqual(["circumference"]);
+  });
+
+  it("persists when a new registry id gets its default", () => {
+    window.localStorage.setItem(MODULE_SETTINGS_STORAGE_KEY, JSON.stringify({ order: ["wellness", "body"], disabled: [] }));
+    readModuleSettings(IDS, ["circumference"]);
+    expect(JSON.parse(window.localStorage.getItem(MODULE_SETTINGS_STORAGE_KEY)!).order).toEqual(IDS);
+  });
+
+  it("returns the same object on repeated reads after persisting", () => {
+    const first = readModuleSettings(IDS, ["circumference"]);
+    expect(readModuleSettings(IDS, ["circumference"])).toBe(first);
+  });
+
+  it("still applies defaults when storage is blocked", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    expect(readModuleSettings(IDS, ["circumference"])).toEqual({ order: IDS, disabled: ["circumference"] });
   });
 });
