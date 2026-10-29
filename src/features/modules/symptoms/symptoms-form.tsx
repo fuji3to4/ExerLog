@@ -13,8 +13,8 @@ import { addSymptomRecord, deleteSymptomRecord, updateSymptomRecord } from "./da
 const SEVERITIES: readonly SymptomSeverity[] = [1, 2, 3];
 const CARES: readonly CellulitisCare[] = ["inpatient", "outpatient", "none"];
 
-const OPTION_CLASS = "h-10 flex-1 rounded-xl border px-2 text-sm";
-const optionState = (on: boolean) => (on ? "border-primary bg-primary/10 font-medium" : "border-input");
+const OPTION_CLASS = "h-9 flex-1 rounded-xl border px-2 text-[0.8125rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const optionState = (on: boolean) => (on ? "border-[var(--tonal-border)] bg-[var(--tonal-bg)] text-[var(--tonal-text)] font-semibold" : "border-border bg-transparent");
 
 /** Time, symptoms (with severity / care and sites) and note. Mount it only while its dialog is open. */
 export function SymptomsForm({ onOpenChange, date, record, onSaved, onDeleted }: RecordFormProps<SymptomRecord>) {
@@ -75,7 +75,7 @@ export function SymptomsForm({ onOpenChange, date, record, onSaved, onDeleted }:
         type="button"
         disabled={entries.length > 0 || isBusy}
         onClick={() => save([])}
-        className="h-11 w-full rounded-xl border border-input text-sm disabled:opacity-50"
+        className="h-9 w-full rounded-xl border border-border bg-transparent text-[0.8125rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
         {t("symptoms_none")}
       </button>
@@ -88,7 +88,7 @@ export function SymptomsForm({ onOpenChange, date, record, onSaved, onDeleted }:
                 type="button"
                 aria-pressed={entry !== undefined}
                 onClick={() => toggleSymptom(id)}
-                className={`min-h-11 w-full rounded-xl border px-3 text-left text-sm ${optionState(entry !== undefined)}`}
+                className={`min-h-11 w-full rounded-xl border px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${optionState(entry !== undefined)}`}
               >
                 {t(`symptom_${id}` as const)}
               </button>
@@ -141,7 +141,7 @@ export function SymptomsForm({ onOpenChange, date, record, onSaved, onDeleted }:
                             type="button"
                             aria-pressed={entry.sites.includes(site)}
                             onClick={() => toggleSite(entry, site)}
-                            className={`h-10 rounded-xl border px-3 text-sm ${optionState(entry.sites.includes(site))}`}
+                            className={`h-9 rounded-xl border px-3 text-[0.8125rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${optionState(entry.sites.includes(site))}`}
                           >
                             {t(`body_site_${site}` as const)}
                           </button>

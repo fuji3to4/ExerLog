@@ -164,8 +164,8 @@ export function CompressionForm({ onOpenChange, date, record, onSaved, onDeleted
             role="radio"
             aria-checked={kind === id}
             onClick={() => setKind(id)}
-            className={`h-11 flex-1 rounded-xl border px-2 text-sm ${
-              kind === id ? "border-primary bg-primary/10 font-medium" : "border-input"
+            className={`h-9 flex-1 rounded-xl border px-2 text-[0.8125rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              kind === id ? "border-[var(--tonal-border)] bg-[var(--tonal-bg)] text-[var(--tonal-text)] font-semibold" : "border-border bg-transparent"
             }`}
           >
             {t(`compression_kind_${id}` as const)}

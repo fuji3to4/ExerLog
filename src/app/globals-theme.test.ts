@@ -139,18 +139,18 @@ describe("globals.css warm theme contract", () => {
       "font-family",
       "var(--font-sans)",
     );
-    for (const selector of [".today-screen__primary-button", ".button-row a"]) {
+    for (const selector of [".today-screen__primary-button"]) {
       const block = getCssBlock(globalsCss, selector, {
         matches: (b) => b.includes("background:"),
       });
       expectDeclaration(block, "background", "var(--tonal-bg)");
       expectDeclaration(block, "color", "var(--tonal-text)");
     }
-    const secondaryRow = getCssBlock(globalsCss, ".button-row .button-secondary", {
-      matches: (block) => block.includes("background:"),
-    });
-    expectDeclaration(secondaryRow, "background", "transparent");
-    expectDeclaration(secondaryRow, "color", "var(--text-strong)");
+    expectDeclaration(
+      getCssBlock(globalsCss, ".today-screen__recommendations"),
+      "grid-template-columns",
+      "minmax(0, 1fr)",
+    );
     expectDeclaration(
       getCssBlock(globalsCss, ".exercise-log-actions__button", {
         matches: (block) => block.includes("background:"),

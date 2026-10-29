@@ -19,7 +19,7 @@ const buttonVariants = cva(
         outline: "border-border bg-transparent text-foreground hover:bg-muted",
         ghost: "text-foreground hover:bg-accent hover:text-accent-foreground",
         link: "h-auto min-h-0 rounded-md px-0 py-0 text-primary underline-offset-4 hover:underline",
-        destructive: "bg-[var(--danger-bg)] text-[var(--danger-text)] hover:opacity-80",
+        destructive: "border-destructive/30 bg-[var(--danger-bg)] text-[var(--danger-text)] hover:bg-[var(--danger-bg-hover)]",
       },
     },
     defaultVariants: {

@@ -166,7 +166,7 @@ export function TimelineDialogFooter({
         </p>
       ) : null}
       {isConfirming ? (
-        <div className="space-y-2 rounded-2xl border border-destructive/40 bg-destructive/5 p-3">
+        <div className="space-y-2 rounded-2xl border border-destructive/40 p-3">
           <p className="text-sm">{t("timeline_delete_confirm")}</p>
           <div className="flex gap-2">
             <Button variant="destructive" className="flex-1" disabled={isDeleting} onClick={confirmDelete}>

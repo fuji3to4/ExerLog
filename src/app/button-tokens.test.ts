@@ -82,6 +82,17 @@ describe("button tokens", () => {
     }
   });
 
+  test.each(Object.keys(themes))("danger text is readable on the danger hover background in every theme (%s)", (name) => {
+    const vars = themes[name];
+    const hover = vars["--danger-bg-hover"];
+    expect(hover).toBeTruthy();
+    const nums = hover.match(/[\d.]+/g)!.map(Number);
+    const alpha = hover.includes("/") ? nums[3] : 1;
+    const surface = hslTriplet(vars["--card"]);
+    const bg = alpha < 1 ? over(hslTriplet(hover), surface, alpha) : hslTriplet(hover);
+    expect(contrast(parseColor(vars["--danger-text"]), bg)).toBeGreaterThanOrEqual(4.5);
+  });
+
   test("tonal tokens are defined in :root", () => {
     for (const k of ["--tonal-bg", "--tonal-bg-hover", "--tonal-border", "--tonal-text"]) {
       expect(root[k]).toBeTruthy();

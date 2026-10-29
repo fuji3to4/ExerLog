@@ -21,8 +21,7 @@ export function WellnessScoreInput({ label, value, onChange }: WellnessScoreInpu
           <Button
             key={score}
             variant={value === score ? "default" : "outline"}
-            size="icon"
-            className={cn("h-12 w-full rounded-2xl", value === score && "shadow-sm shadow-primary/25")}
+            className={cn("w-full", value === score && "border border-[var(--tonal-border)]")}
             aria-pressed={value === score}
             onClick={() => onChange(score)}
           >

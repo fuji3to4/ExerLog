@@ -94,6 +94,7 @@ function ExerciseLogForm({ onOpenChange, log, onSaved, onDeleted }: ExerciseLogD
             <Button
               key={option.value}
               variant={result === option.value ? "default" : "outline"}
+              className={result === option.value ? "border-[var(--tonal-border)]" : undefined}
               aria-pressed={result === option.value}
               onClick={() => setResult(option.value)}
             >

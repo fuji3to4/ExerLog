@@ -36,7 +36,7 @@ describe("button fills audit", () => {
 
     for (const match of css.matchAll(rulePattern)) {
       const selector = match[1].trim();
-      if (!/button|btn|-action|__actions/.test(selector)) continue;
+      if (!/button|btn|-btn|-action|__actions|__back|__close|-toggle/.test(selector)) continue;
       if (EXCLUDED_SELECTORS.some((excluded) => selector.includes(excluded))) continue;
 
       const background = [...match[2].matchAll(/(?:^|;)\s*background(?:-color)?\s*:\s*([^;]+)/g)]
@@ -60,10 +60,15 @@ describe("button fills audit", () => {
       "skeleton.tsx",
     ];
     const files = [...walk(join(srcDir, "features")), ...walk(join(srcDir, "components"))].filter(
-      (file) => !excluded.some((name) => file.endsWith(name)),
+      (file) => !file.endsWith(".test.tsx") && !excluded.some((name) => file.endsWith(name)),
     );
     const offenders = files
-      .filter((file) => /bg-primary text-primary-foreground/.test(readFileSync(file, "utf8")))
+      .filter((file) => {
+        const src = readFileSync(file, "utf8");
+        return (
+          /bg-primary(?![\w/-])/.test(src) && /(?<![\w-])text-primary-foreground/.test(src)
+        ) || /(?<![\w:-])bg-destructive(?![\w/-])/.test(src);
+      })
       .map((file) => relative(srcDir, file));
 
     expect(offenders).toEqual([]);

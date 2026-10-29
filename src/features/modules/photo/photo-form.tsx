@@ -21,7 +21,7 @@ type Item =
   | { key: string; kind: "existing"; photoId: string }
   | { key: string; kind: "new"; photo: NewPhoto | null; url: string | null };
 
-const BUTTON_CLASS = "flex-1 rounded-lg bg-muted px-3 py-2 text-sm";
+const BUTTON_CLASS = "flex-1 rounded-full border border-border bg-transparent px-3 text-[0.8125rem] font-semibold h-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const NOTE_CLASS =
   "w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-ring";
 
