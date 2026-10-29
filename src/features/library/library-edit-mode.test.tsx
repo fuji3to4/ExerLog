@@ -38,7 +38,7 @@ test("hides add, edit and delete until the edit switch is turned on", async () =
   const user = userEvent.setup();
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
-  await screen.findByRole("heading", { name: /Alpha Stretch/ });
+  await screen.findByRole("heading", { name: "Alpha Stretch" });
   expect(screen.queryByRole("button", { name: /add exercise/i })).toBeNull();
   expect(screen.queryByRole("button", { name: /^edit/i })).toBeNull();
   expect(screen.queryByRole("button", { name: /^delete/i })).toBeNull();
@@ -59,7 +59,7 @@ test("adds an exercise from the library in edit mode", async () => {
   const user = userEvent.setup();
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
-  await screen.findByRole("heading", { name: /Alpha Stretch/ });
+  await screen.findByRole("heading", { name: "Alpha Stretch" });
   await user.click(screen.getByRole("switch", { name: /edit/i }));
   await user.click(screen.getByRole("button", { name: /add exercise/i }));
 
@@ -69,7 +69,7 @@ test("adds an exercise from the library in edit mode", async () => {
   await user.type(within(dialog).getByLabelText(/minutes/i), "3");
   await user.click(within(dialog).getByRole("button", { name: /save/i }));
 
-  expect(await screen.findByRole("heading", { name: /Gamma Plank/ })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "Gamma Plank" })).toBeInTheDocument();
   expect(screen.queryByRole("dialog")).toBeNull();
 });
 
@@ -77,7 +77,7 @@ test("edits an exercise from the library in edit mode", async () => {
   const user = userEvent.setup();
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
-  await screen.findByRole("heading", { name: /Alpha Stretch/ });
+  await screen.findByRole("heading", { name: "Alpha Stretch" });
   await user.click(screen.getByRole("switch", { name: /edit/i }));
   await user.click(screen.getByRole("button", { name: /edit alpha stretch/i }));
 
@@ -87,7 +87,7 @@ test("edits an exercise from the library in edit mode", async () => {
   await user.type(title, "Alpha Stretch Long");
   await user.click(within(dialog).getByRole("button", { name: /save/i }));
 
-  expect(await screen.findByRole("heading", { name: /Alpha Stretch Long/ })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "Alpha Stretch Long" })).toBeInTheDocument();
 });
 
 test("deletes an exercise after confirming, mentioning its logs", async () => {
@@ -105,12 +105,12 @@ test("deletes an exercise after confirming, mentioning its logs", async () => {
 
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
-  await screen.findByRole("heading", { name: /Beta Squat/ });
+  await screen.findByRole("heading", { name: "Beta Squat" });
   await user.click(screen.getByRole("switch", { name: /edit/i }));
   await user.click(screen.getByRole("button", { name: /delete beta squat/i }));
 
   expect(confirm).toHaveBeenCalledWith(expect.stringMatching(/1 log/));
-  await waitFor(() => expect(screen.queryByRole("heading", { name: /Beta Squat/ })).toBeNull());
+  await waitFor(() => expect(screen.queryByRole("heading", { name: "Beta Squat" })).toBeNull());
   expect(await appDb.exercises.get("ex-b")).toBeUndefined();
 });
 
@@ -120,10 +120,10 @@ test("keeps the exercise when deletion is cancelled", async () => {
 
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
-  await screen.findByRole("heading", { name: /Beta Squat/ });
+  await screen.findByRole("heading", { name: "Beta Squat" });
   await user.click(screen.getByRole("switch", { name: /edit/i }));
   await user.click(screen.getByRole("button", { name: /delete beta squat/i }));
 
-  expect(screen.getByRole("heading", { name: /Beta Squat/ })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Beta Squat" })).toBeInTheDocument();
   expect(await appDb.exercises.get("ex-b")).toBeDefined();
 });

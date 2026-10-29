@@ -87,3 +87,12 @@ test("renders eyebrow, menu and footer slots", () => {
   expect(screen.getByRole("button", { name: "m" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "f" })).toBeInTheDocument();
 });
+
+test("names the article and heading by the plain title, not the watch label", () => {
+  renderWithLanguage(<VideoCard exercise={exercise} href={href} headingLevel={2} meta={[]} />, {
+    initialLanguage: "en",
+  });
+
+  expect(screen.getByRole("article", { name: "Neck Mobility" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Neck Mobility" })).toBeInTheDocument();
+});

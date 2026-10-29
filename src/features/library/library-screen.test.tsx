@@ -195,14 +195,14 @@ test("sorts by most watched, keeping catalog order for ties", async () => {
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
   await screen.findByText(/Watched 5 times/);
-  const defaultOrder = screen.getAllByRole("article").map((card) => card.getAttribute("aria-labelledby"));
+  const cardTitles = () => screen.getAllByRole("article").map((card) => within(card).getByRole("heading").textContent);
+  const defaultOrder = cardTitles();
 
   await user.selectOptions(screen.getByLabelText(/sort by/i), "most-watched");
 
-  const titles = screen.getAllByRole("article").map((card) => within(card).getByRole("heading").textContent);
+  const titles = cardTitles();
   expect(titles.slice(0, 2)).toEqual(["Neck Mobility", "Walk in Place"]);
-  const rest = defaultOrder.filter((id) => id !== "library-neck-mobility-5" && id !== "library-walk-in-place-10");
-  expect(screen.getAllByRole("article").slice(2).map((card) => card.getAttribute("aria-labelledby"))).toEqual(rest);
+  expect(titles.slice(2)).toEqual(defaultOrder.filter((title) => title !== "Neck Mobility" && title !== "Walk in Place"));
 });
 
 test("adds a video to a new set from the card menu", async () => {
