@@ -26,13 +26,13 @@ describe("SelfCareForm", () => {
     renderForm();
     expect(screen.getAllByRole("radio")).toHaveLength(3);
     expect(screen.getByRole("radio", { name: "スキンケア" }).getAttribute("aria-checked")).toBe("true");
-    expect(screen.queryByLabelText("分数")).toBeNull();
+    expect(screen.queryByLabelText("時間（分）")).toBeNull();
   });
 
   it("shows the minutes field for exercise and saves the minutes", async () => {
     const { onSaved } = renderForm();
     fireEvent.click(screen.getByRole("radio", { name: "運動" }));
-    fireEvent.change(screen.getByLabelText("分数"), { target: { value: "30" } });
+    fireEvent.change(screen.getByLabelText("時間（分）"), { target: { value: "30" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
     const records = await appDb.selfCareRecords.toArray();
@@ -51,7 +51,7 @@ describe("SelfCareForm", () => {
   it.each(["-30", "0", "2.5"])("saves minutes %s as null", async (value) => {
     const { onSaved } = renderForm();
     fireEvent.click(screen.getByRole("radio", { name: "運動" }));
-    fireEvent.change(screen.getByLabelText("分数"), { target: { value } });
+    fireEvent.change(screen.getByLabelText("時間（分）"), { target: { value } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
     expect(await appDb.selfCareRecords.toArray()).toMatchObject([{ item: "exercise", minutes: null }]);
