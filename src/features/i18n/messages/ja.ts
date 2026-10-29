@@ -17,7 +17,7 @@
   today_loading_text: "この日の保存された状態とエクササイズ結果を確認中です。",
   today_recommended_heading: "今日のおすすめ",
   today_source_aria: "表示するもの",
-  today_set_empty: "このセットにはまだ動画がありません。ライブラリのカードの「⋯」から追加できます。",
+  today_set_empty: "このセットにはまだ動画がありません。動画カードの「⋮」から追加できます。",
   today_recommended_reshuffle: "別の3本",
   recommendation_slot_usual: "いつもの",
   recommendation_slot_new: "はじめて",
@@ -129,7 +129,6 @@
   result_group_label: "運動結果を記録",
 
   // Common actions
-  action_watch: "見る",
   action_watch_aria: "{title}を見る",
   action_watch_video: "動画を見る",
   action_play_video_aria: "{title}の動画を再生",

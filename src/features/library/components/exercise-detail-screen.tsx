@@ -136,7 +136,7 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
         </div>
       ) : null}
       <CardContent className="exercise-detail__body">
-        <h1 className="exercise-detail__title">{exercise.title}</h1>
+        <h2 className="exercise-detail__title">{exercise.title}</h2>
         <p className="exercise-detail__meta">
           {[
             formatDuration(exercise.durationSeconds),

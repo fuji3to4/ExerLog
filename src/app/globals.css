@@ -231,6 +231,8 @@ a {
   gap: 0.5rem;
   overflow-x: auto;
   white-space: nowrap;
+  padding: 4px;
+  margin: -4px;
 }
 
 .set-switcher__button {
@@ -429,7 +431,7 @@ a {
 }
 
 .exercise-log-actions__button {
-  min-height: 2rem;
+  min-height: 2.25rem;
   padding: 0 0.9rem;
   border: 1px solid var(--accent-strong);
   border-radius: 999px;
@@ -466,7 +468,6 @@ a {
 }
 
 .library-filters,
-.library-filters__heading,
 .exercise-detail,
 .exercise-detail__loading {
   display: grid;
@@ -1225,8 +1226,9 @@ a {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  min-height: 44px;
-  padding: 0 1.1rem;
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  font-size: 0.85rem;
   border: 1px solid var(--border-soft);
   border-radius: 999px;
   background: var(--surface-soft);

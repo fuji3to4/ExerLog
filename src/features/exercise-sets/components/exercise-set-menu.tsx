@@ -22,7 +22,7 @@ export type ExerciseSetMenuProps = {
 const ITEM_CLASS =
   "flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-secondary";
 
-/** "⋯" button on a library card that drops down the sets this video can be added to. */
+/** "⋮" / "+ Set" menu on a video card (library, Today, detail) that drops down the sets this video can be added to. */
 export function ExerciseSetMenu({ exercise, sets, onChanged, variant = "icon" }: ExerciseSetMenuProps) {
   const { t } = useTranslation();
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);

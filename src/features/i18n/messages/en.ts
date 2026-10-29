@@ -17,7 +17,7 @@ export const en = {
   today_loading_text: "Checking your saved condition and exercise results for this day.",
   today_recommended_heading: "Recommended for today",
   today_source_aria: "Show",
-  today_set_empty: 'This set has no videos yet. Add some from the "⋯" menu on a library card.',
+  today_set_empty: 'This set has no videos yet. Add some from the "⋮" menu on a video card.',
   today_recommended_reshuffle: "Show 3 others",
   recommendation_slot_usual: "Your usual",
   recommendation_slot_new: "Something new",
@@ -129,7 +129,6 @@ export const en = {
   result_group_label: "Log exercise result",
 
   // Common actions
-  action_watch: "Watch",
   action_watch_aria: "Watch {title}",
   action_watch_video: "Watch video",
   action_play_video_aria: "Play {title}",

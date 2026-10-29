@@ -291,7 +291,7 @@ test("an empty set shows a hint linking to the library", async () => {
 
   const region = await screen.findByRole("region", { name: "Empty" });
   expect(
-    within(region).getByText('This set has no videos yet. Add some from the "⋯" menu on a library card.'),
+    within(region).getByText('This set has no videos yet. Add some from the "⋮" menu on a video card.'),
   ).toBeInTheDocument();
   expect(within(region).getByRole("link", { name: "Library" })).toHaveAttribute("href", "/library");
 });
