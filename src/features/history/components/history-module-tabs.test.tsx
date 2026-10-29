@@ -27,7 +27,7 @@ describe("HistoryModuleTabs", () => {
       { initialLanguage: "ja" },
     );
     const tabs = within(screen.getByRole("tablist", { name: "表示する記録" })).getAllByRole("tab");
-    expect(tabs.map((tab) => tab.textContent)).toEqual(["すべて", "体調", "身体", "周径"]);
+    expect(tabs.map((tab) => tab.textContent)).toEqual(["すべて", "体調", "身体", "腕・脚周径"]);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("まとめの中身")).toBeInTheDocument();
   });
@@ -38,7 +38,7 @@ describe("HistoryModuleTabs", () => {
       <HistoryModuleTabs modules={[wellness, body, circumference]} includeAll allContent={<p>まとめの中身</p>} />,
       { initialLanguage: "ja" },
     );
-    await user.click(screen.getByRole("tab", { name: "周径" }));
+    await user.click(screen.getByRole("tab", { name: "腕・脚周径" }));
     expect(screen.getByText("周径の見返し")).toBeInTheDocument();
     expect(screen.queryByText("まとめの中身")).toBeNull();
   });
@@ -56,12 +56,12 @@ describe("HistoryModuleTabs", () => {
     expect(tab("体調")).toHaveFocus();
     expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", tab("体調").id);
     await user.keyboard("{End}");
-    expect(tab("周径")).toHaveAttribute("aria-selected", "true");
-    expect(tab("周径")).toHaveFocus();
+    expect(tab("腕・脚周径")).toHaveAttribute("aria-selected", "true");
+    expect(tab("腕・脚周径")).toHaveFocus();
     await user.keyboard("{ArrowRight}");
     expect(tab("すべて")).toHaveFocus();
     await user.keyboard("{ArrowLeft}");
-    expect(tab("周径")).toHaveFocus();
+    expect(tab("腕・脚周径")).toHaveFocus();
     await user.keyboard("{Home}");
     expect(tab("すべて")).toHaveAttribute("aria-selected", "true");
     expect(tab("すべて")).toHaveFocus();
@@ -73,10 +73,10 @@ describe("HistoryModuleTabs", () => {
       <HistoryModuleTabs modules={[wellness, body, circumference]} includeAll allContent={<p>まとめの中身</p>} />,
       { initialLanguage: "ja" },
     );
-    await user.click(screen.getByRole("tab", { name: "周径" }));
+    await user.click(screen.getByRole("tab", { name: "腕・脚周径" }));
     rerender(<HistoryModuleTabs modules={[wellness, body]} includeAll allContent={<p>まとめの中身</p>} />);
     expect(screen.getByRole("tab", { name: "すべて" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.queryByRole("tab", { name: "周径" })).toBeNull();
+    expect(screen.queryByRole("tab", { name: "腕・脚周径" })).toBeNull();
     expect(screen.getByText("まとめの中身")).toBeInTheDocument();
   });
 
@@ -88,7 +88,7 @@ describe("HistoryModuleTabs", () => {
     );
     expect(screen.queryByRole("tab", { name: "すべて" })).toBeNull();
     expect(screen.getByText("体調の見返し")).toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: "周径" }));
+    await user.click(screen.getByRole("tab", { name: "腕・脚周径" }));
     rerender(<HistoryModuleTabs modules={[wellness, body]} includeAll={false} />);
     expect(screen.getByRole("tab", { name: "体調" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("体調の見返し")).toBeInTheDocument();

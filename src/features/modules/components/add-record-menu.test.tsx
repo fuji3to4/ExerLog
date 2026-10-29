@@ -27,7 +27,7 @@ describe("AddRecordMenu", () => {
 
     const menu = screen.getByRole("menu");
     expect(menu).toHaveTextContent("何を記録しますか？");
-    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["周径", "体調"]);
+    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["腕・脚周径", "体調"]);
   });
 
   it("closes and reports the chosen module", () => {
@@ -35,7 +35,7 @@ describe("AddRecordMenu", () => {
     const { onChoose } = renderMenu([circumference, getRecordModule("wellness")!]);
 
     openMenu();
-    fireEvent.click(screen.getByRole("menuitem", { name: "周径" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "腕・脚周径" }));
 
     expect(onChoose).toHaveBeenCalledTimes(1);
     expect(onChoose).toHaveBeenCalledWith(circumference);

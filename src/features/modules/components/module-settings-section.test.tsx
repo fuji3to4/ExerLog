@@ -38,7 +38,7 @@ describe("ModuleSettingsSection", () => {
     vi.stubEnv("NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS", "");
     renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
 
-    expect(rowNames()).toEqual(["体調", "身体", "周径", "写真", "セルフケア", "着用", "症状"]);
+    expect(rowNames()).toEqual(["体調", "身体", "腕・脚周径", "写真", "セルフケア", "着用", "症状"]);
     const checked = rows().map((r) => within(r).getByRole("switch").getAttribute("aria-checked"));
     expect(checked).toEqual(["true", "true", "true", "true", "false", "false", "false"]);
     for (const r of rows()) expect(within(r).getByLabelText("並べ替え")).toBeTruthy();
@@ -62,10 +62,10 @@ describe("ModuleSettingsSection", () => {
   it("moves a module up with the button and stores the order", () => {
     renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
 
-    fireEvent.click(within(row("周径")).getByRole("button", { name: "上へ" }));
-    fireEvent.click(within(row("周径")).getByRole("button", { name: "上へ" }));
+    fireEvent.click(within(row("腕・脚周径")).getByRole("button", { name: "上へ" }));
+    fireEvent.click(within(row("腕・脚周径")).getByRole("button", { name: "上へ" }));
 
-    expect(rowNames()).toEqual(["周径", "体調", "身体", "写真", "セルフケア", "着用", "症状"]);
+    expect(rowNames()).toEqual(["腕・脚周径", "体調", "身体", "写真", "セルフケア", "着用", "症状"]);
     const stored = JSON.parse(window.localStorage.getItem("lymly-record-modules")!);
     expect(stored.order).toEqual(["circumference", "wellness", "body", "photo", "selfcare", "compression", "symptoms"]);
   });
@@ -89,6 +89,6 @@ describe("ModuleSettingsSection", () => {
     expect(stored.disabled).toEqual(["body"]);
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent);
-    expect(items).toEqual(["体調", "周径", "写真", "セルフケア", "着用", "症状"]);
+    expect(items).toEqual(["体調", "腕・脚周径", "写真", "セルフケア", "着用", "症状"]);
   });
 });

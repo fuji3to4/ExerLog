@@ -127,7 +127,7 @@ describe("ModuleRecordDialog", () => {
     expect(dialog.queryByRole("button", { name: "測る位置の説明" })).toBeNull();
   });
 
-  it("shows only circumference fields on 周径", async () => {
+  it("shows only circumference fields on 腕・脚周径", async () => {
     renderDialog("circumference");
 
     const dialog = within(screen.getByRole("dialog"));
@@ -195,7 +195,7 @@ describe("ModuleRecordDialog", () => {
     expect(input("体重").step).toBe("0.1");
   });
 
-  it("disables save on 周径 while every field is empty", async () => {
+  it("disables save on 腕・脚周径 while every field is empty", async () => {
     renderDialog("circumference");
 
     expect(saveButton().disabled).toBe(true);
@@ -426,7 +426,7 @@ describe("ModuleRecordDialog", () => {
       window.localStorage.setItem("exerlog-circumference-limb", "arm");
       renderDialog("circumference", { record });
       const dialog = await screen.findByRole("dialog");
-      expect(within(dialog).getByRole("heading", { name: "周径の記録を編集" })).toBeTruthy();
+      expect(within(dialog).getByRole("heading", { name: "腕・脚周径の記録を編集" })).toBeTruthy();
       expect(within(dialog).queryByLabelText("体重")).toBeNull();
       expect((await screen.findByRole("tab", { name: "脚" })).getAttribute("aria-selected")).toBe("true");
       expect(input("足首 左").value).toBe("21");

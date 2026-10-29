@@ -178,7 +178,7 @@ describe("TimelineSection", () => {
     expect(screen.queryByRole("button", { name: /📏 体重/ })).toBeNull();
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = await screen.findAllByRole("menuitem");
-    expect(items.map((item) => item.textContent)).toEqual(["体調", "周径", "写真", "セルフケア", "着用", "症状"]);
+    expect(items.map((item) => item.textContent)).toEqual(["体調", "腕・脚周径", "写真", "セルフケア", "着用", "症状"]);
   });
 
   it("shows the note of a measurement row on a second line", async () => {
@@ -210,12 +210,12 @@ describe("TimelineSection", () => {
     const bodyRow = await screen.findByRole("button", { name: /📏 体重 60.0kg/ });
     const circumferenceRow = screen.getByRole("button", { name: /📏 腕の周径 2か所/ });
     expect(bodyRow).not.toBe(circumferenceRow);
-    expect(bodyRow.textContent).not.toContain("周径");
+    expect(bodyRow.textContent).not.toContain("腕・脚周径");
     expect(rows()).toHaveLength(3);
 
     fireEvent.click(circumferenceRow);
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("heading", { name: "周径の記録を編集" })).toBeTruthy();
+    expect(within(dialog).getByRole("heading", { name: "腕・脚周径の記録を編集" })).toBeTruthy();
     expect((within(dialog).getByLabelText("手首 左") as HTMLInputElement).value).toBe("15");
     expect(within(dialog).queryByLabelText("体重")).toBeNull();
   });
