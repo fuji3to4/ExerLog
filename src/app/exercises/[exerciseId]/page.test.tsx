@@ -46,8 +46,7 @@ test("exercise detail page shows video, metadata, and logging actions", async ()
   });
 
   expect(await screen.findByText(/gentle seated mobility work/i)).toBeInTheDocument();
-  expect(screen.getByText(/^mobility$/i)).toBeInTheDocument();
-  expect(screen.getByText("5:00")).toBeInTheDocument();
+  expect(screen.getByText(/^5:00 · .*Mobility/)).toBeInTheDocument();
   expect(await screen.findByRole("button", { name: /did it/i })).toBeInTheDocument();
 
   await user.click(await screen.findByRole("button", { name: /play neck mobility/i }));

@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { ExerciseSetMenu } from "@/features/exercise-sets/components/exercise-set-menu";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
 import { useCelebrate } from "@/features/feedback/celebration";
 import { addExerciseLog, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
-import { recordWatchEvent } from "@/features/storage/watch-events.repository";
+import { listExerciseSets } from "@/features/storage/exercise-sets.repository";
+import { countWatchesByExercise, recordWatchEvent } from "@/features/storage/watch-events.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import { formatDuration } from "@/lib/date/duration";
-import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
+import type { ExerciseLogResult, ExerciseSet, ExerciseVideo } from "@/lib/types";
 import { getYouTubeEmbedUrl, resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 import { useTranslation } from "@/features/i18n/use-translation";
 
@@ -22,6 +24,8 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [logError, setLogError] = useState(false);
+  const [sets, setSets] = useState<ExerciseSet[]>([]);
+  const [watchCount, setWatchCount] = useState(0);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
   const celebrate = useCelebrate();
   const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
@@ -49,6 +53,30 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
 
     void loadTodayCount();
 
+    return () => {
+      isActive = false;
+    };
+  }, [exercise.id]);
+
+  const loadSets = useCallback(async () => {
+    try {
+      setSets(await listExerciseSets());
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSets();
+  }, [loadSets]);
+
+  useEffect(() => {
+    let isActive = true;
+    countWatchesByExercise()
+      .then((counts) => {
+        if (isActive) setWatchCount(counts.get(exercise.id) ?? 0);
+      })
+      .catch(console.error);
     return () => {
       isActive = false;
     };
@@ -107,55 +135,50 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
           )}
         </div>
       ) : null}
-      <CardHeader>
-        <div className="exercise-detail__header">
-          <div className="exercise-detail__heading">
-            <CardTitle>{exercise.title}</CardTitle>
-            <p>{exercise.description}</p>
-          </div>
+      <CardContent className="exercise-detail__body">
+        <h1 className="exercise-detail__title">{exercise.title}</h1>
+        <p className="exercise-detail__meta">
+          {[
+            formatDuration(exercise.durationSeconds),
+            t("meta_intensity_value", { value: formatIntensity(exercise.intensity) }),
+            formatBodyArea(exercise.bodyArea),
+            formatPurpose(exercise.purpose),
+            watchCount > 0 ? t("library_watch_count", { count: watchCount }) : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+
+        <div className="exercise-detail__actions">
           {!embedUrl ? (
             <a href={exercise.videoUrl} className="today-screen__primary-button" target="_blank" rel="noreferrer" onClick={handleWatch}>
               {t("action_watch_video")}
             </a>
           ) : null}
+          {isHydrated ? (
+            <ExerciseLogActions todayCount={todayCount} onLog={(result) => void handleLog(result)} showStatus={false} />
+          ) : null}
+          <ExerciseSetMenu exercise={exercise} sets={sets} onChanged={() => void loadSets()} variant="button" />
         </div>
-      </CardHeader>
+        {logError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {t("log_save_error")}
+          </p>
+        ) : null}
 
-      <CardContent>
-        <dl className="recommendation-card__meta">
-          <div>
-            <dt>{t("meta_purpose")}</dt>
-            <dd>{formatPurpose(exercise.purpose)}</dd>
-          </div>
-          <div>
-            <dt>{t("meta_duration")}</dt>
-            <dd>{formatDuration(exercise.durationSeconds)}</dd>
-          </div>
-          <div>
-            <dt>{t("meta_intensity")}</dt>
-            <dd>{formatIntensity(exercise.intensity)}</dd>
-          </div>
-          <div>
-            <dt>{t("meta_body_area")}</dt>
-            <dd>{formatBodyArea(exercise.bodyArea)}</dd>
-          </div>
-        </dl>
-
-        {!isHydrated ? (
-          <div className="exercise-detail__loading" aria-live="polite">
-            <h2>{t("detail_loading_heading")}</h2>
-            <p>{t("detail_loading_text")}</p>
-          </div>
-        ) : (
-          <>
-            <ExerciseLogActions todayCount={todayCount} onLog={(result) => void handleLog(result)} />
-            {logError ? (
-              <p role="alert" className="text-sm text-destructive">
-                {t("log_save_error")}
-              </p>
-            ) : null}
-          </>
-        )}
+        <div className="exercise-detail__description">
+          {!isHydrated ? (
+            <div className="exercise-detail__loading" aria-live="polite">
+              <h2>{t("detail_loading_heading")}</h2>
+              <p>{t("detail_loading_text")}</p>
+            </div>
+          ) : (
+            <p className="exercise-detail__status" aria-live="polite">
+              {todayCount > 0 ? t("log_count_today", { count: todayCount }) : t("result_not_logged")}
+            </p>
+          )}
+          {exercise.description ? <p>{exercise.description}</p> : null}
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 
@@ -10,13 +10,14 @@ vi.mock("@/features/sync/auto-sync", async (importOriginal) => ({
 import { CelebrationProvider } from "@/features/feedback/celebration";
 
 import { appDb } from "@/features/storage/app-db";
+import { listExerciseSets } from "@/features/storage/exercise-sets.repository";
 import { renderWithLanguage } from "@/test/render-with-language";
 import type { ExerciseVideo } from "@/lib/types";
 
 import { ExerciseDetailScreen } from "./exercise-detail-screen";
 
 beforeEach(async () => {
-  await Promise.all([appDb.exerciseLogs.clear(), appDb.watchEvents.clear(), appDb.tombstones.clear()]);
+  await Promise.all([appDb.exerciseLogs.clear(), appDb.watchEvents.clear(), appDb.tombstones.clear(), appDb.exerciseSets.clear()]);
 });
 
 const youtubeExercise: ExerciseVideo = {
@@ -130,4 +131,61 @@ test("pressing did logs the exercise with its duration, celebrates, and can repe
 
   await user.click(screen.getByRole("button", { name: "Did it" }));
   await waitFor(async () => expect(await appDb.exerciseLogs.count()).toBe(2));
+});
+
+const strengthExercise: ExerciseVideo = {
+  id: "squat-1",
+  title: "Squat Basics",
+  description: "Slow squats for the legs.",
+  videoUrl: "https://www.youtube.com/watch?v=equcr3cpxNQ",
+  thumbnailUrl: "",
+  bodyArea: "lower-body",
+  purpose: "strength",
+  durationSeconds: 60,
+  intensity: "high",
+  updatedAt: "2026-10-20T00:00:00+09:00",
+};
+
+test("shows title and a single meta line instead of boxes", async () => {
+  renderWithLanguage(<ExerciseDetailScreen exercise={strengthExercise} />, { initialLanguage: "en" });
+
+  expect(await screen.findByRole("heading", { name: "Squat Basics" })).toBeInTheDocument();
+  expect(screen.getByText("1:00 · High intensity · Lower body · Strength")).toBeInTheDocument();
+  expect(screen.queryByText("Purpose")).not.toBeInTheDocument();
+});
+
+test("adds the video to a new set from the + Set button", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(<ExerciseDetailScreen exercise={strengthExercise} />, { initialLanguage: "en" });
+
+  await user.click(await screen.findByRole("button", { name: "Add Squat Basics to a set" }));
+  await user.click(await screen.findByRole("menuitem", { name: "+ New set" }));
+
+  const dialog = await screen.findByRole("dialog");
+  await user.type(within(dialog).getByLabelText("Set name"), "Morning");
+  await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+  await waitFor(async () => {
+    const sets = await listExerciseSets();
+    expect(sets).toEqual([expect.objectContaining({ name: "Morning", exerciseIds: ["squat-1"] })]);
+  });
+});
+
+test("logging still works and the description box shows today's status", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(
+    <CelebrationProvider>
+      <ExerciseDetailScreen exercise={strengthExercise} />
+    </CelebrationProvider>,
+    { initialLanguage: "en" },
+  );
+
+  const box = (await screen.findByText("Slow squats for the legs.")).closest(".exercise-detail__description") as HTMLElement;
+  expect(within(box).getByText("Not logged yet")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Did it" }));
+
+  expect(await within(box).findByText("1 times today")).toBeInTheDocument();
 });

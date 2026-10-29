@@ -4,10 +4,12 @@ import type { ExerciseLogResult } from "@/lib/types";
 type ExerciseLogActionsProps = {
   todayCount: number;
   onLog: (result: ExerciseLogResult) => void;
+  /** Set false when the caller shows today's status itself. */
+  showStatus?: boolean;
 };
 
 /** Every press adds one log; the status shows how many logs exist today. */
-export function ExerciseLogActions({ todayCount, onLog }: ExerciseLogActionsProps) {
+export function ExerciseLogActions({ todayCount, onLog, showStatus = true }: ExerciseLogActionsProps) {
   const { t } = useTranslation();
 
   const logActions: Array<{ label: string; value: ExerciseLogResult }> = [
@@ -29,9 +31,11 @@ export function ExerciseLogActions({ todayCount, onLog }: ExerciseLogActionsProp
           </button>
         ))}
       </div>
-      <p className="exercise-log-actions__status" aria-live="polite">
-        {todayCount > 0 ? t("log_count_today", { count: todayCount }) : t("result_not_logged")}
-      </p>
+      {showStatus ? (
+        <p className="exercise-log-actions__status" aria-live="polite">
+          {todayCount > 0 ? t("log_count_today", { count: todayCount }) : t("result_not_logged")}
+        </p>
+      ) : null}
     </div>
   );
 }
