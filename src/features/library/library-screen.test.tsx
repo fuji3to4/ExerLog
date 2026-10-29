@@ -156,7 +156,7 @@ test("library shows the shared thumbnail fallback for a blank-thumbnail YouTube 
 
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
-  expect(await screen.findByRole("img", { name: /blank thumbnail exercise/i })).toBeInTheDocument();
+  expect(await screen.findByRole("img", { name: /blank thumbnail exercise/i, hidden: true })).toBeInTheDocument();
 });
 
 test("renders Japanese library filters by default", async () => {
@@ -183,8 +183,9 @@ test("shows each card's own watch count and hides it when never watched", async 
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
   const hip = await screen.findByRole("article", { name: /hip mobility/i });
-  expect(await within(hip).findByText("Watched: 3")).toBeInTheDocument();
-  expect(within(screen.getByRole("article", { name: /shoulder rolls/i })).queryByText(/watched:/i)).toBeNull();
+  expect(await within(hip).findByText(/Watched 3 times/)).toBeInTheDocument();
+  expect(within(hip).queryByText("Watch")).toBeNull();
+  expect(within(screen.getByRole("article", { name: /shoulder rolls/i })).queryByText(/watched \d+ times/i)).toBeNull();
 });
 
 test("sorts by most watched, keeping catalog order for ties", async () => {
@@ -193,7 +194,7 @@ test("sorts by most watched, keeping catalog order for ties", async () => {
 
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
-  await screen.findByText("Watched: 5");
+  await screen.findByText(/Watched 5 times/);
   const defaultOrder = screen.getAllByRole("article").map((card) => card.getAttribute("aria-labelledby"));
 
   await user.selectOptions(screen.getByLabelText(/sort by/i), "most-watched");

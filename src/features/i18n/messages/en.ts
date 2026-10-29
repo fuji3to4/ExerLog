@@ -49,7 +49,7 @@ export const en = {
   library_sort_label: "Sort by",
   library_sort_default: "Catalog order",
   library_sort_most_watched: "Most watched",
-  library_watch_count: "Watched: {count}",
+  library_watch_count: "Watched {count} times",
 
   // History screen
   history_heading: "History",
@@ -92,6 +92,7 @@ export const en = {
 
   // Metadata labels
   meta_duration: "Duration",
+  meta_intensity_value: "{value} intensity",
   meta_intensity: "Intensity",
   meta_body_area: "Body area",
   meta_purpose: "Purpose",
@@ -472,6 +473,7 @@ export const en = {
 
   // Exercise sets (my lists)
   set_menu_aria: "Add {title} to a set",
+  set_menu_button: "Set",
   set_menu_title: "Add to set",
   set_menu_new: "+ New set",
   set_name_new_title: "New set",

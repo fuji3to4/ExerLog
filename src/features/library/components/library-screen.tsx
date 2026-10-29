@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -14,11 +13,10 @@ import { deleteExerciseSet, listExerciseSets, renameExerciseSet } from "@/featur
 import { countWatchesByExercise } from "@/features/storage/watch-events.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { ExerciseSet, ExerciseVideo } from "@/lib/types";
-import { formatDuration } from "@/lib/date/duration";
-import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
 import { ExerciseFormModal } from "./exercise-form-modal";
 import { LibraryFilters } from "./library-filters";
+import { VideoCard } from "./video-card";
 
 type LibraryFilterState = {
   search: string;
@@ -210,56 +208,22 @@ ${t("library_delete_confirm")}`
       {/* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */}
       <section className="library-screen__results grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
         {filteredExercises.map((exercise) => {
-          const headingId = `library-${exercise.id}`;
-          const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
           const watchCount = watchCounts.get(exercise.id) ?? 0;
 
           return (
-            <Card key={exercise.id} role="article" className="recommendation-card" aria-labelledby={headingId}>
-              {thumbnailUrl ? (
-                <div className="recommendation-card__thumbnail">
-                  <img src={thumbnailUrl} alt={exercise.title} loading="lazy" />
-                </div>
-              ) : null}
-              <div className="recommendation-card__header">
-                <div>
-                  <h2 id={headingId}>{exercise.title}</h2>
-                  <p>{exercise.description}</p>
-                  {watchCount > 0 ? (
-                    <p className="library-screen__watch-count">{t("library_watch_count", { count: watchCount })}</p>
-                  ) : null}
-                </div>
-                <div className="recommendation-card__actions">
-                  <Link
-                    href={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
-                    className="recommendation-card__watch-link"
-                    aria-label={t("action_watch_aria", { title: exercise.title })}
-                  >
-                    {t("action_watch")}
-                  </Link>
-                  <ExerciseSetMenu exercise={exercise} sets={exerciseSets} onChanged={() => void loadExercises()} />
-                </div>
-              </div>
-
-              <dl className="recommendation-card__meta">
-                <div>
-                  <dt>{t("meta_duration")}</dt>
-                  <dd>{formatDuration(exercise.durationSeconds)}</dd>
-                </div>
-                <div>
-                  <dt>{t("meta_intensity")}</dt>
-                  <dd>{formatIntensity(exercise.intensity)}</dd>
-                </div>
-                <div>
-                  <dt>{t("meta_body_area")}</dt>
-                  <dd>{formatBodyArea(exercise.bodyArea)}</dd>
-                </div>
-                <div>
-                  <dt>{t("meta_purpose")}</dt>
-                  <dd>{formatPurpose(exercise.purpose)}</dd>
-                </div>
-              </dl>
-
+            <VideoCard
+              key={exercise.id}
+              exercise={exercise}
+              href={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
+              headingLevel={2}
+              meta={[
+                t("meta_intensity_value", { value: formatIntensity(exercise.intensity) }),
+                formatBodyArea(exercise.bodyArea),
+                formatPurpose(exercise.purpose),
+                watchCount > 0 ? t("library_watch_count", { count: watchCount }) : "",
+              ]}
+              menu={<ExerciseSetMenu exercise={exercise} sets={exerciseSets} onChanged={() => void loadExercises()} />}
+            >
               {isEditMode ? (
                 <div className="library-screen__card-actions">
                   <button
@@ -280,7 +244,7 @@ ${t("library_delete_confirm")}`
                   </button>
                 </div>
               ) : null}
-            </Card>
+            </VideoCard>
           );
         })}
       </section>

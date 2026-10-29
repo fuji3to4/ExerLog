@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Check, Ellipsis } from "lucide-react";
+import { Check, EllipsisVertical, Plus } from "lucide-react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import { createExerciseSet, setExerciseInSet } from "@/features/storage/exercise-sets.repository";
@@ -15,13 +15,15 @@ export type ExerciseSetMenuProps = {
   sets: ExerciseSet[];
   /** Called after a set was created or a membership changed, so the caller can reload. */
   onChanged(): void;
+  /** "icon" is the small ⋮ for cards; "button" is a labelled round button for detail pages. */
+  variant?: "icon" | "button";
 };
 
 const ITEM_CLASS =
   "flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-secondary";
 
 /** "⋯" button on a library card that drops down the sets this video can be added to. */
-export function ExerciseSetMenu({ exercise, sets, onChanged }: ExerciseSetMenuProps) {
+export function ExerciseSetMenu({ exercise, sets, onChanged, variant = "icon" }: ExerciseSetMenuProps) {
   const { t } = useTranslation();
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
 
@@ -53,10 +55,17 @@ export function ExerciseSetMenu({ exercise, sets, onChanged }: ExerciseSetMenuPr
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
-            className="exercise-set-menu__trigger"
+            className={variant === "button" ? "exercise-set-menu__button" : "exercise-set-menu__icon"}
             aria-label={t("set_menu_aria", { title: exercise.title })}
           >
-            <Ellipsis aria-hidden className="h-5 w-5" />
+            {variant === "button" ? (
+              <>
+                <Plus aria-hidden className="h-5 w-5" />
+                <span>{t("set_menu_button")}</span>
+              </>
+            ) : (
+              <EllipsisVertical aria-hidden className="h-5 w-5" />
+            )}
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>

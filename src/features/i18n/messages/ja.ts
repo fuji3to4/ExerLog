@@ -92,6 +92,7 @@
 
   // Metadata labels
   meta_duration: "時間",
+  meta_intensity_value: "強度 {value}",
   meta_intensity: "強度",
   meta_body_area: "体の部位",
   meta_purpose: "目的",
@@ -472,6 +473,7 @@
 
   // Exercise sets (my lists)
   set_menu_aria: "{title}をセットに入れる",
+  set_menu_button: "セット",
   set_menu_title: "セットに入れる",
   set_menu_new: "＋ 新しいセットを作る",
   set_name_new_title: "新しいセット",
