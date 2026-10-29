@@ -127,6 +127,15 @@ export function useTodayData(date: Date | string) {
     setSelectedSetId(id);
   }, []);
 
+  /** Re-reads the sets (after one was edited from a card menu); a deleted selection falls back to the recommendations. */
+  const reloadSets = useCallback(async () => {
+    try {
+      setSets(await listExerciseSets());
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   /** Swaps in a different set for the rest of the day. */
   const reshuffleRecommendations = useCallback(() => {
     const next = reshuffle + 1;
@@ -186,5 +195,6 @@ export function useTodayData(date: Date | string) {
     selectedSet,
     selectedSetExercises,
     selectSet,
+    reloadSets,
   };
 }

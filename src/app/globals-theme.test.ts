@@ -175,7 +175,7 @@ describe("globals.css warm theme contract", () => {
       "var(--accent-strong)",
     );
     expectDeclaration(
-      getCssBlock(globalsCss, ".recommendation-card__watch-link", {
+      getCssBlock(globalsCss, ".today-screen__primary-button", {
         matches: (block) => block.includes("background:"),
       }),
       "background",
@@ -186,7 +186,7 @@ describe("globals.css warm theme contract", () => {
         matches: (block) => block.includes("background:"),
       }),
       "background",
-      "var(--accent-soft)",
+      "transparent",
     );
     expectDeclaration(
       getCssBlock(globalsCss, ".exercise-log-actions__button", {

@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { RotateCw } from "lucide-react";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
 import { useCelebrate } from "@/features/feedback/celebration";
 import { useModuleSettings } from "@/features/modules/use-module-settings";
 import { TimelineSection } from "@/features/timeline/components/timeline-section";
@@ -37,6 +39,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
     selectedSet,
     selectedSetExercises,
     selectSet,
+    reloadSets,
   } = useTodayData(date);
   const { enabledModules } = useModuleSettings();
   const timeline = useDayTimeline(date, enabledModules);
@@ -87,41 +90,25 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
             aria-labelledby={recommendedHeadingId}
             className="grid gap-4"
           >
-            <CardHeader className="gap-2">
-              <h2 id={recommendedHeadingId} className="text-xl font-semibold">
-                {selectedSet?.name ?? t("today_recommended_heading")}
-              </h2>
-              {sets.length > 0 ? (
-                <div role="group" aria-label={t("today_source_aria")} className="today-screen__source-switcher">
-                  <button
-                    type="button"
-                    aria-pressed={selectedSet === null}
-                    className="today-screen__source-button"
-                    onClick={() => selectSet(null)}
-                  >
-                    {t("today_recommended_heading")}
-                  </button>
-                  {sets.map((set) => (
-                    <button
-                      key={set.id}
-                      type="button"
-                      aria-pressed={selectedSet?.id === set.id}
-                      className="today-screen__source-button"
-                      onClick={() => selectSet(set.id)}
-                    >
-                      {set.name}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <CardDescription>{selectedSet ? t("today_set_text") : t("today_recommended_text")}</CardDescription>
-              {selectedSet ? null : (
-                <div className="button-row">
-                  <Button type="button" variant="secondary" onClick={reshuffleRecommendations}>
+            <CardHeader className="gap-3">
+              <div className="today-screen__heading-row">
+                <h2 id={recommendedHeadingId} className="text-xl font-semibold">
+                  {selectedSet?.name ?? t("today_recommended_heading")}
+                </h2>
+                {selectedSet ? null : (
+                  <button type="button" className="today-screen__reshuffle" onClick={reshuffleRecommendations}>
+                    <RotateCw aria-hidden="true" size={14} />
                     {t("today_recommended_reshuffle")}
-                  </Button>
-                </div>
-              )}
+                  </button>
+                )}
+              </div>
+              <SetSwitcher
+                ariaLabel={t("today_source_aria")}
+                allLabel={t("today_recommended_heading")}
+                sets={sets}
+                selectedId={selectedSet?.id ?? null}
+                onSelect={selectSet}
+              />
             </CardHeader>
             <CardContent>
               {selectedSet && selectedSetExercises.length === 0 ? (
@@ -141,6 +128,8 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                         exercise={exercise}
                         slot={slot}
                         todayCount={logCounts[exercise.id] ?? 0}
+                        sets={sets}
+                        onSetsChanged={() => void reloadSets()}
                         watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
                         onLog={(result) => void handleLog(exercise, result)}
                       />

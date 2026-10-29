@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", async (importOriginal) => ({
@@ -9,7 +10,7 @@ vi.mock("@/features/sync/auto-sync", async (importOriginal) => ({
 import { appDb } from "@/features/storage/app-db";
 import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
-import { createExerciseSet } from "@/features/storage/exercise-sets.repository";
+import { createExerciseSet, listExerciseSets } from "@/features/storage/exercise-sets.repository";
 import { writeSelectedSetId } from "@/features/exercise-sets/selected-set-store";
 import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { RESHUFFLE_STORAGE_KEY } from "@/features/recommendations/reshuffle-store";
@@ -305,4 +306,55 @@ test("logging from a set card works like a recommendation", async () => {
 
   await waitFor(() => expect(within(region).getByText("1 times today")).toBeInTheDocument());
   expect(await appDb.exerciseLogs.count()).toBe(1);
+});
+
+test("reshuffle is a small link-style button next to the heading", async () => {
+  await replaceAllExercises(largeCatalog);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  const before = await recommendedTitles();
+  fireEvent.click(screen.getByRole("button", { name: "Show 3 others" }));
+  const after = await recommendedTitles();
+
+  expect(after.filter((title) => before.includes(title))).toEqual([]);
+  expect(screen.queryByText(/Today's list stays short/)).toBeNull();
+});
+
+test("cards open the video from the title and have no Watch button text", async () => {
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  expect(await screen.findByRole("link", { name: /watch delta/i })).toHaveAttribute(
+    "href",
+    "/exercises?exerciseId=delta",
+  );
+  expect(screen.queryByText("Watch")).toBeNull();
+});
+
+test("set menu on a Today card adds the video to a set", async () => {
+  const user = userEvent.setup();
+  await createExerciseSet("Morning");
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  await user.click(await screen.findByRole("button", { name: "Add Delta to a set" }));
+  await user.click(await screen.findByRole("menuitemcheckbox", { name: "Morning" }));
+
+  await waitFor(async () => {
+    const sets = await listExerciseSets();
+    expect(sets.find((set) => set.name === "Morning")?.exerciseIds).toEqual(["delta"]);
+  });
+});
+
+test("removing a video from the shown set makes its card disappear", async () => {
+  const user = userEvent.setup();
+  await createExerciseSet("Morning", ["delta", "epsilon"]);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  await user.click(await screen.findByRole("button", { name: "Morning" }));
+  const region = await screen.findByRole("region", { name: "Morning" });
+  await user.click(within(region).getByRole("button", { name: "Add Delta to a set" }));
+  await user.click(await screen.findByRole("menuitemcheckbox", { name: "Morning" }));
+
+  await waitFor(() =>
+    expect(within(region).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(["Epsilon"]),
+  );
 });

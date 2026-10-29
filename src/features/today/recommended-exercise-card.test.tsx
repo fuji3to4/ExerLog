@@ -29,10 +29,10 @@ test("renders a derived thumbnail image when a YouTube exercise has no stored th
   };
 
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={exercise} todayCount={0} watchHref="/watch" onLog={vi.fn()} />,
+    <RecommendedExerciseCard exercise={exercise} todayCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/watch" onLog={vi.fn()} />,
   );
 
-  expect(screen.getByRole("img", { name: /blank thumbnail exercise/i })).toHaveAttribute(
+  expect(screen.getByAltText("Blank Thumbnail Exercise")).toHaveAttribute(
     "src",
     "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
   );
@@ -40,7 +40,7 @@ test("renders a derived thumbnail image when a YouTube exercise has no stored th
 
 test("uses the watch destination provided by the container", () => {
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} watchHref="/custom-watch-path" onLog={vi.fn()} />,
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/custom-watch-path" onLog={vi.fn()} />,
     { initialLanguage: "en" },
   );
 
@@ -49,13 +49,12 @@ test("uses the watch destination provided by the container", () => {
 
 test("translates metadata labels and actions while keeping exercise title raw", () => {
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} watchHref="/custom-watch-path" onLog={vi.fn()} />,
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/custom-watch-path" onLog={vi.fn()} />,
   );
 
   expect(screen.getByRole("heading", { name: "Neck Mobility" })).toBeInTheDocument();
-  expect(screen.getByText("時間")).toBeInTheDocument();
-  expect(screen.getByText("強度")).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /見る/i })).toBeInTheDocument();
+  expect(screen.getByText(/強度/)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /Neck Mobility.*を見る/ })).toBeInTheDocument();
 });
 
 test("logs every press and shows today's count", async () => {
@@ -63,7 +62,7 @@ test("logs every press and shows today's count", async () => {
   const onLog = vi.fn();
 
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={neckMobility} todayCount={2} watchHref="/watch" onLog={onLog} />,
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={2} sets={[]} onSetsChanged={vi.fn()} watchHref="/watch" onLog={onLog} />,
   );
 
   await user.click(screen.getByRole("button", { name: "できた" }));
