@@ -474,4 +474,12 @@ export const en = {
   set_name_label: "Set name",
   set_name_placeholder: "e.g. Morning",
   set_save_error: "Couldn't save. Please try again.",
+  library_set_label: "Set",
+  library_set_all: "All",
+  library_set_actions_aria: "Set actions",
+  library_set_rename: "Rename",
+  set_name_rename_title: "Rename set",
+  library_set_delete: "Delete this set",
+  library_set_delete_confirm: 'Delete the set "{name}"? The videos stay in the library.',
+  library_set_count: "{name}: {count} videos",
 } as const;

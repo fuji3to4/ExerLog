@@ -354,6 +354,16 @@ a {
   color: inherit;
 }
 
+.library-filters__set {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.library-filters__set .library-filters__field {
+  flex: 1;
+}
+
 .set-name-dialog {
   display: grid;
   gap: 1rem;

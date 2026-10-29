@@ -307,3 +307,88 @@ test("the name dialog stays open and shows an error when creating a set fails", 
   expect(await listExerciseSets()).toEqual([]);
   consoleError.mockRestore();
 });
+
+function articleTitles() {
+  return screen.getAllByRole("article").map((card) => within(card).getByRole("heading").textContent);
+}
+
+test("filters by set in the order videos were added, skipping deleted ones", async () => {
+  const user = userEvent.setup();
+  await createExerciseSet("Morning", ["neck-mobility-5", "gone", "shoulder-roll-4"]);
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+  await user.selectOptions(screen.getByLabelText("Set"), "Morning");
+
+  expect(articleTitles()).toEqual(["Neck Mobility", "Shoulder Rolls"]);
+  expect(screen.getByText("Morning: 2 videos")).toBeInTheDocument();
+});
+
+test("set filter combines with other filters", async () => {
+  const user = userEvent.setup();
+  await createExerciseSet("Morning", ["hip-mobility-6", "neck-mobility-5", "shoulder-roll-4"]);
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+  await user.selectOptions(screen.getByLabelText("Set"), "Morning");
+  await user.selectOptions(screen.getByLabelText(/body area/i), "upper-body");
+
+  expect(articleTitles()).toEqual(["Neck Mobility", "Shoulder Rolls"]);
+});
+
+test("renames the selected set", async () => {
+  const user = userEvent.setup();
+  await createExerciseSet("Morning", ["shoulder-roll-4"]);
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+  await user.selectOptions(screen.getByLabelText("Set"), "Morning");
+  await user.click(screen.getByRole("button", { name: "Set actions" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Rename" }));
+
+  const dialog = await screen.findByRole("dialog");
+  const input = within(dialog).getByLabelText("Set name");
+  expect(input).toHaveValue("Morning");
+  await user.clear(input);
+  await user.type(input, "Daily");
+  await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+  await waitFor(() => expect(screen.getByLabelText("Set")).toHaveDisplayValue("Daily"));
+  expect((await listExerciseSets())[0].name).toBe("Daily");
+});
+
+test("deleting the selected set returns the filter to All and keeps the videos", async () => {
+  const user = userEvent.setup();
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+  await createExerciseSet("Morning", ["shoulder-roll-4"]);
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+  await user.selectOptions(screen.getByLabelText("Set"), "Morning");
+  await user.click(screen.getByRole("button", { name: "Set actions" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Delete this set" }));
+
+  expect(confirm).toHaveBeenCalledWith('Delete the set "Morning"? The videos stay in the library.');
+  await waitFor(() => expect(screen.getByLabelText("Set")).toHaveValue(""));
+  expect(screen.getAllByRole("article")).toHaveLength(6);
+  expect(await appDb.exercises.count()).toBe(6);
+  expect(await listExerciseSets()).toEqual([]);
+  confirm.mockRestore();
+});
+
+test("set actions button only appears while a set is selected", async () => {
+  const user = userEvent.setup();
+  await createExerciseSet("Morning", ["shoulder-roll-4"]);
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+  expect(screen.queryByRole("button", { name: "Set actions" })).not.toBeInTheDocument();
+
+  await user.selectOptions(screen.getByLabelText("Set"), "Morning");
+  expect(screen.getByRole("button", { name: "Set actions" })).toBeInTheDocument();
+});

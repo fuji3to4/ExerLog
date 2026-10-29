@@ -474,4 +474,12 @@
   set_name_label: "セットの名前",
   set_name_placeholder: "例：朝用",
   set_save_error: "保存できませんでした。もう一度お試しください。",
+  library_set_label: "セット",
+  library_set_all: "すべて",
+  library_set_actions_aria: "セットの操作",
+  library_set_rename: "名前を変える",
+  set_name_rename_title: "セットの名前を変える",
+  library_set_delete: "このセットを消す",
+  library_set_delete_confirm: "セット「{name}」を消しますか？動画はライブラリに残ります。",
+  library_set_count: "{name}：{count}本",
 } as const;

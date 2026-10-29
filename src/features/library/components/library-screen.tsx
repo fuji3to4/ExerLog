@@ -5,10 +5,12 @@ import Link from "next/link";
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { resolveSetExercises } from "@/features/exercise-sets/resolve-set-exercises";
 import { ExerciseSetMenu } from "@/features/exercise-sets/components/exercise-set-menu";
 import { appDb } from "@/features/storage/app-db";
 import { deleteExercise, listAllExercises } from "@/features/storage/exercise-catalog.repository";
-import { listExerciseSets } from "@/features/storage/exercise-sets.repository";
+import { SetNameDialog } from "@/features/exercise-sets/components/set-name-dialog";
+import { deleteExerciseSet, listExerciseSets, renameExerciseSet } from "@/features/storage/exercise-sets.repository";
 import { countWatchesByExercise } from "@/features/storage/watch-events.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { ExerciseSet, ExerciseVideo } from "@/lib/types";
@@ -20,6 +22,7 @@ import { LibraryFilters } from "./library-filters";
 
 type LibraryFilterState = {
   search: string;
+  set: string;
   bodyArea: string;
   purpose: string;
   duration: string;
@@ -29,6 +32,7 @@ type LibraryFilterState = {
 
 const initialFilters: LibraryFilterState = {
   search: "",
+  set: "",
   bodyArea: "",
   purpose: "",
   duration: "",
@@ -44,6 +48,7 @@ export function LibraryScreen() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseVideo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [renamingSet, setRenamingSet] = useState<ExerciseSet | null>(null);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
 
   const loadExercises = useCallback(async () => {
@@ -54,6 +59,10 @@ export function LibraryScreen() {
     ]);
     setExercises(nextExercises);
     setExerciseSets(nextSets);
+    // A selected set that no longer exists (deleted here or arrived through sync) falls back to "All".
+    setFilters((current) =>
+      current.set && !nextSets.some((set) => set.id === current.set) ? { ...current, set: "" } : current,
+    );
     setWatchCounts(nextWatchCounts);
   }, []);
 
@@ -77,6 +86,30 @@ ${t("library_delete_confirm")}`
     await loadExercises();
   }
 
+  async function handleDeleteSet(set: ExerciseSet) {
+    if (!window.confirm(t("library_set_delete_confirm", { name: set.name }))) return;
+
+    try {
+      await deleteExerciseSet(set.id);
+      setFilters((current) => ({ ...current, set: "" }));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      await loadExercises();
+    }
+  }
+
+  async function handleRenameSet(name: string) {
+    if (!renamingSet) return;
+    // A failure propagates so the dialog stays open and shows its error.
+    try {
+      await renameExerciseSet(renamingSet.id, name);
+      setRenamingSet(null);
+    } finally {
+      await loadExercises();
+    }
+  }
+
   async function handleFormSaved() {
     setEditingExercise(null);
     setIsAdding(false);
@@ -88,10 +121,17 @@ ${t("library_delete_confirm")}`
     setIsAdding(false);
   }
 
+  const selectedSet = exerciseSets.find((set) => set.id === filters.set);
+  // Videos of the selected set, in the set's order, before any other filter.
+  const baseExercises = useMemo(
+    () => (selectedSet ? resolveSetExercises(selectedSet, exercises) : exercises),
+    [selectedSet, exercises],
+  );
+
   const filteredExercises = useMemo(() => {
     const searchTerm = filters.search.trim().toLowerCase();
 
-    const matches = exercises.filter((exercise) => {
+    const matches = baseExercises.filter((exercise) => {
       if (filters.bodyArea && exercise.bodyArea !== filters.bodyArea) {
         return false;
       }
@@ -124,7 +164,7 @@ ${t("library_delete_confirm")}`
 
     // Array.prototype.sort is stable, so ties keep catalog order.
     return matches.sort((a, b) => (watchCounts.get(b.id) ?? 0) - (watchCounts.get(a.id) ?? 0));
-  }, [exercises, filters, watchCounts]);
+  }, [baseExercises, filters, watchCounts]);
 
   return (
     <>
@@ -141,7 +181,13 @@ ${t("library_delete_confirm")}`
         </CardHeader>
       </Card>
 
-      <LibraryFilters value={filters} onChange={setFilters} />
+      <LibraryFilters
+        value={filters}
+        onChange={setFilters}
+        sets={exerciseSets}
+        onRenameSet={setRenamingSet}
+        onDeleteSet={(set) => void handleDeleteSet(set)}
+      />
 
       {isEditMode ? (
         <div className="library-screen__edit-actions">
@@ -152,7 +198,13 @@ ${t("library_delete_confirm")}`
       ) : null}
 
       <p className="library-screen__count" aria-live="polite">
-        {t("library_result_count", { shown: filteredExercises.length, total: exercises.length })}
+        {selectedSet ? (
+          <>
+            <span>{t("library_set_count", { name: selectedSet.name, count: baseExercises.length })}</span>
+            {" · "}
+          </>
+        ) : null}
+        <span>{t("library_result_count", { shown: filteredExercises.length, total: exercises.length })}</span>
       </p>
 
       {/* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */}
@@ -232,6 +284,16 @@ ${t("library_delete_confirm")}`
           );
         })}
       </section>
+
+      <SetNameDialog
+        open={renamingSet !== null}
+        title={t("set_name_rename_title")}
+        initialName={renamingSet?.name ?? ""}
+        onSubmit={handleRenameSet}
+        onOpenChange={(open) => {
+          if (!open) setRenamingSet(null);
+        }}
+      />
 
       {(isAdding || editingExercise !== null) && (
         <ExerciseFormModal
