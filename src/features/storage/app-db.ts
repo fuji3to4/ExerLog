@@ -20,6 +20,7 @@ export class AppDb extends Dexie {
   exerciseLogs!: EntityTable<ExerciseLog, "id">;
   wellnessEntries!: EntityTable<WellnessEntry, "id">;
   bodyRecords!: Table<MeasurementRecord, string>;
+  girthRecords!: Table<MeasurementRecord, string>;
   circumferenceRecords!: Table<MeasurementRecord, string>;
   watchEvents!: EntityTable<WatchEvent, "id">;
   photoRecords!: EntityTable<PhotoRecord, "id">;
@@ -222,6 +223,28 @@ export class AppDb extends Dexie {
       tombstones: "id, table",
       exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
       bodyRecords: "id, date, recordedAt",
+      circumferenceRecords: "id, date, recordedAt",
+      photoRecords: "id, date, recordedAt",
+      photoBlobs: "id, recordId",
+      photoFiles: "id, recordId",
+      photoTrash: "driveFileId",
+      selfCareRecords: "id, date, recordedAt",
+      compressionRecords: "id, date, recordedAt, kind",
+      symptomRecords: "id, date, recordedAt",
+    });
+
+    // v14: chest & waist girth records.
+    this.version(14).stores({
+      selfCareCatalog: null,
+      dailySelfCareLogs: null,
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      bodyRecords: "id, date, recordedAt",
+      girthRecords: "id, date, recordedAt",
       circumferenceRecords: "id, date, recordedAt",
       photoRecords: "id, date, recordedAt",
       photoBlobs: "id, recordId",

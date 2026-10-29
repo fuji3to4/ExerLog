@@ -168,7 +168,7 @@ describe("v12 upgrade", () => {
   });
 });
 
-describe("v13 upgrade", () => {
+describe("v14 upgrade", () => {
   test("opens v13 with the new record tables and without the placeholder self-care tables", async () => {
     appDb.close();
     await Dexie.delete("exercise-log-mvp");
@@ -210,9 +210,9 @@ describe("v13 upgrade", () => {
     const upgraded = new AppDb();
     try {
       await upgraded.open();
-      expect(upgraded.verno).toBe(13);
+      expect(upgraded.verno).toBe(14);
       const names = upgraded.tables.map((table) => table.name);
-      expect(names).toEqual(expect.arrayContaining(["selfCareRecords", "compressionRecords", "symptomRecords"]));
+      expect(names).toEqual(expect.arrayContaining(["selfCareRecords", "compressionRecords", "symptomRecords", "girthRecords"]));
       expect(names).not.toContain("dailySelfCareLogs");
       expect(names).not.toContain("selfCareCatalog");
       expect(await upgraded.wellnessEntries.count()).toBe(1);

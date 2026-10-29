@@ -28,6 +28,12 @@ export const BODY_ITEMS: readonly MeasurementItem[] = [
   { id: "height", labelKey: "measurement_item_height", unit: "cm", decimals: 1, min: 30, max: 300, showInGraph: true },
 ];
 
+/** Chest and waist girth items. Display order = array order. */
+export const GIRTH_ITEMS: readonly MeasurementItem[] = [
+  { id: "chest", labelKey: "measurement_item_chest", unit: "cm", decimals: 1, min: 30, max: 250, showInGraph: true },
+  { id: "waist", labelKey: "measurement_item_waist", unit: "cm", decimals: 1, min: 30, max: 250, showInGraph: true },
+];
+
 /** Circumference items: arm then leg, sites in order, left then right. */
 export const CIRCUMFERENCE_ITEMS: readonly MeasurementItem[] = LIMBS.flatMap((limb) =>
   CIRCUMFERENCE_SITES[limb].flatMap((site) =>
@@ -54,7 +60,11 @@ export const MEASUREMENT_ITEMS: readonly MeasurementItem[] = [...BODY_ITEMS, ...
 export const MEASUREMENT_FIXED_COLUMNS = ["id", "date", "recordedAt", "note", "updatedAt"] as const;
 
 export function getMeasurementItem(id: string): MeasurementItem | undefined {
-  return BODY_ITEMS.find((item) => item.id === id) ?? CIRCUMFERENCE_ITEMS.find((item) => item.id === id);
+  return (
+    BODY_ITEMS.find((item) => item.id === id) ??
+    GIRTH_ITEMS.find((item) => item.id === id) ??
+    CIRCUMFERENCE_ITEMS.find((item) => item.id === id)
+  );
 }
 
 export function formatMeasurementValue(item: MeasurementItem, value: number): string {
