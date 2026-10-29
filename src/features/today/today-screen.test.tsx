@@ -9,6 +9,8 @@ vi.mock("@/features/sync/auto-sync", async (importOriginal) => ({
 import { appDb } from "@/features/storage/app-db";
 import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { createExerciseSet } from "@/features/storage/exercise-sets.repository";
+import { writeSelectedSetId } from "@/features/exercise-sets/selected-set-store";
 import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { RESHUFFLE_STORAGE_KEY } from "@/features/recommendations/reshuffle-store";
 import type { ExerciseDraft } from "@/lib/types";
@@ -58,6 +60,7 @@ beforeEach(async () => {
     appDb.watchEvents.clear(),
     appDb.tombstones.clear(),
     appDb.exercises.clear(),
+    appDb.exerciseSets.clear(),
   ]);
   await replaceAllExercises(catalog);
 });
@@ -233,4 +236,73 @@ test("shows an inline alert when a log cannot be saved", async () => {
 
   await waitFor(() => expect(within(card).getByText("今日1回")).toBeInTheDocument());
   expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("shows no switcher when there are no sets", async () => {
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  expect(await recommendedTitles()).toEqual(["Delta", "Epsilon", "Zeta"]);
+  expect(screen.queryByRole("group", { name: "Show" })).toBeNull();
+});
+
+test("switching to a set shows all its videos in order without slot labels or reshuffle", async () => {
+  await createExerciseSet("Morning", ["zeta", "delta", "gone"]);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  const switcher = await screen.findByRole("group", { name: "Show" });
+  fireEvent.click(within(switcher).getByRole("button", { name: "Morning" }));
+
+  const region = await screen.findByRole("region", { name: "Morning" });
+  expect(screen.getByRole("heading", { name: "Morning", level: 2 })).toBeInTheDocument();
+  expect(within(region).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(["Zeta", "Delta"]);
+  expect(within(switcher).getByRole("button", { name: "Morning" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.queryByRole("button", { name: "Show 3 others" })).toBeNull();
+  for (const label of ["Your usual", "Something new", "It's been a while", "A change of pace"]) {
+    expect(screen.queryByText(label)).toBeNull();
+  }
+});
+
+test("remembers the chosen set on the next open", async () => {
+  await createExerciseSet("Morning", ["zeta"]);
+  const first = renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  fireEvent.click(await screen.findByRole("button", { name: "Morning" }));
+  await screen.findByRole("region", { name: "Morning" });
+  first.unmount();
+
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+  expect(await screen.findByRole("region", { name: "Morning" })).toBeInTheDocument();
+});
+
+test("falls back to recommendations when the remembered set no longer exists", async () => {
+  writeSelectedSetId("deleted-id");
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  expect(await recommendedTitles()).toEqual(["Delta", "Epsilon", "Zeta"]);
+  expect(screen.getByRole("heading", { name: "Recommended for today", level: 2 })).toBeInTheDocument();
+});
+
+test("an empty set shows a hint linking to the library", async () => {
+  await createExerciseSet("Empty");
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  fireEvent.click(await screen.findByRole("button", { name: "Empty" }));
+
+  const region = await screen.findByRole("region", { name: "Empty" });
+  expect(
+    within(region).getByText('This set has no videos yet. Add some from the "⋯" menu on a library card.'),
+  ).toBeInTheDocument();
+  expect(within(region).getByRole("link", { name: "Library" })).toHaveAttribute("href", "/library");
+});
+
+test("logging from a set card works like a recommendation", async () => {
+  await createExerciseSet("Morning", ["delta"]);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  fireEvent.click(await screen.findByRole("button", { name: "Morning" }));
+  const region = await screen.findByRole("region", { name: "Morning" });
+  fireEvent.click(within(region).getByRole("button", { name: "Did it" }));
+
+  await waitFor(() => expect(within(region).getByText("1 times today")).toBeInTheDocument());
+  expect(await appDb.exerciseLogs.count()).toBe(1);
 });

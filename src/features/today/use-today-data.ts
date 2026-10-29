@@ -8,18 +8,21 @@ import {
 } from "@/features/recommendations/get-todays-recommendations";
 import { readReshuffle, writeReshuffle } from "@/features/recommendations/reshuffle-store";
 import { mapWellnessToCondition } from "@/features/recommendations/wellness-to-condition";
+import { resolveSetExercises } from "@/features/exercise-sets/resolve-set-exercises";
+import { readSelectedSetId, writeSelectedSetId } from "@/features/exercise-sets/selected-set-store";
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import {
   addExerciseLog,
   countExerciseLogsForDay,
   listExerciseLogsBefore,
 } from "@/features/storage/exercise-logs.repository";
+import { listExerciseSets } from "@/features/storage/exercise-sets.repository";
 import { listWatchEventsBefore } from "@/features/storage/watch-events.repository";
 import { useModuleSettings } from "@/features/modules/use-module-settings";
 import { getLatestConditionScores, type ConditionScores } from "@/features/modules/wellness/condition";
 import { toDayKey } from "@/lib/date/day-key";
 import { localIsoAt } from "@/lib/date/local-iso";
-import type { ExerciseLog, ExerciseLogResult, ExerciseVideo, WellnessScore } from "@/lib/types";
+import type { ExerciseLog, ExerciseLogResult, ExerciseSet, ExerciseVideo, WellnessScore } from "@/lib/types";
 
 const DEFAULT_WELLNESS_SCORE: WellnessScore = 3;
 
@@ -49,6 +52,8 @@ export function useTodayData(date: Date | string) {
   const [reshuffle, setReshuffle] = useState(0);
   const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
+  const [sets, setSets] = useState<ExerciseSet[]>([]);
+  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const dayKeyRef = useRef(dayKey);
 
   useEffect(() => {
@@ -63,11 +68,12 @@ export function useTodayData(date: Date | string) {
     let isActive = true;
 
     async function loadTodayData() {
-      const [latestScores, counts, watches, logs] = await Promise.all([
+      const [latestScores, counts, watches, logs, loadedSets] = await Promise.all([
         loadLatestScores(dayKey, wellnessEnabled),
         countExerciseLogsForDay(dayKey),
         listWatchEventsBefore(dayKey),
         listExerciseLogsBefore(dayKey),
+        listExerciseSets(),
       ]);
 
       if (!isActive) {
@@ -78,6 +84,8 @@ export function useTodayData(date: Date | string) {
       setLogCounts(counts);
       setHistory({ watches, logs });
       setReshuffle(readReshuffle(dayKey));
+      setSets(loadedSets);
+      setSelectedSetId(readSelectedSetId());
       setHydratedDayKey(dayKey);
     }
 
@@ -101,6 +109,19 @@ export function useTodayData(date: Date | string) {
       }),
     [exercises, conditionLevel, dayKey, history, reshuffle],
   );
+
+  const selectedSet = useMemo(() => sets.find((set) => set.id === selectedSetId) ?? null, [sets, selectedSetId]);
+
+  const selectedSetExercises = useMemo(
+    () => (selectedSet ? resolveSetExercises(selectedSet, exercises) : []),
+    [selectedSet, exercises],
+  );
+
+  /** Switches between the recommendations (`null`) and one of the user's sets. */
+  const selectSet = useCallback((id: string | null) => {
+    writeSelectedSetId(id);
+    setSelectedSetId(id);
+  }, []);
 
   /** Swaps in a different set for the rest of the day. */
   const reshuffleRecommendations = useCallback(() => {
@@ -157,5 +178,9 @@ export function useTodayData(date: Date | string) {
     logExercise,
     refresh,
     reshuffleRecommendations,
+    sets,
+    selectedSet,
+    selectedSetExercises,
+    selectSet,
   };
 }

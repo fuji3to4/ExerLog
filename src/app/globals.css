@@ -194,6 +194,31 @@ a {
   gap: 1rem;
 }
 
+.today-screen__source-switcher {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.today-screen__source-button {
+  flex: none;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.today-screen__source-button[aria-pressed="true"] {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
 .today-screen__primary-button,
 .recommendation-card__watch-link,
 .exercise-log-actions__button {
