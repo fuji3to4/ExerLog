@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { appDb } from "@/features/storage/app-db";
 import { deleteExercise, listAllExercises } from "@/features/storage/exercise-catalog.repository";
+import { countWatchesByExercise } from "@/features/storage/watch-events.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { ExerciseVideo } from "@/lib/types";
 import { formatDuration } from "@/lib/date/duration";
@@ -21,6 +22,7 @@ type LibraryFilterState = {
   purpose: string;
   duration: string;
   intensity: string;
+  sort: string;
 };
 
 const initialFilters: LibraryFilterState = {
@@ -29,18 +31,22 @@ const initialFilters: LibraryFilterState = {
   purpose: "",
   duration: "",
   intensity: "",
+  sort: "",
 };
 
 export function LibraryScreen() {
   const [filters, setFilters] = useState<LibraryFilterState>(initialFilters);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
+  const [watchCounts, setWatchCounts] = useState<Map<string, number>>(new Map());
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseVideo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
 
   const loadExercises = useCallback(async () => {
-    setExercises(await listAllExercises());
+    const [nextExercises, nextWatchCounts] = await Promise.all([listAllExercises(), countWatchesByExercise()]);
+    setExercises(nextExercises);
+    setWatchCounts(nextWatchCounts);
   }, []);
 
   useEffect(() => {
@@ -77,7 +83,7 @@ ${t("library_delete_confirm")}`
   const filteredExercises = useMemo(() => {
     const searchTerm = filters.search.trim().toLowerCase();
 
-    return exercises.filter((exercise) => {
+    const matches = exercises.filter((exercise) => {
       if (filters.bodyArea && exercise.bodyArea !== filters.bodyArea) {
         return false;
       }
@@ -103,7 +109,14 @@ ${t("library_delete_confirm")}`
         exercise.description.toLowerCase().includes(searchTerm)
       );
     });
-  }, [exercises, filters]);
+
+    if (filters.sort !== "most-watched") {
+      return matches;
+    }
+
+    // Array.prototype.sort is stable, so ties keep catalog order.
+    return matches.sort((a, b) => (watchCounts.get(b.id) ?? 0) - (watchCounts.get(a.id) ?? 0));
+  }, [exercises, filters, watchCounts]);
 
   return (
     <>
@@ -139,6 +152,7 @@ ${t("library_delete_confirm")}`
         {filteredExercises.map((exercise) => {
           const headingId = `library-${exercise.id}`;
           const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
+          const watchCount = watchCounts.get(exercise.id) ?? 0;
 
           return (
             <Card key={exercise.id} role="article" className="recommendation-card" aria-labelledby={headingId}>
@@ -151,6 +165,9 @@ ${t("library_delete_confirm")}`
                 <div>
                   <h2 id={headingId}>{exercise.title}</h2>
                   <p>{exercise.description}</p>
+                  {watchCount > 0 ? (
+                    <p className="library-screen__watch-count">{t("library_watch_count", { count: watchCount })}</p>
+                  ) : null}
                 </div>
                 <Link
                   href={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}

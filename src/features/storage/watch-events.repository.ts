@@ -66,6 +66,15 @@ export async function deleteWatchEvent(id: string): Promise<void> {
   scheduleSync();
 }
 
+/** Number of recorded watches per exercise id; exercises never watched are absent. */
+export async function countWatchesByExercise(): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  await appDb.watchEvents.each((event) => {
+    counts.set(event.exerciseId, (counts.get(event.exerciseId) ?? 0) + 1);
+  });
+  return counts;
+}
+
 /** Watches for the day, oldest first. */
 export function listWatchEventsForDay(date: string): Promise<WatchEvent[]> {
   return appDb.watchEvents.where("date").equals(date).sortBy("watchedAt");

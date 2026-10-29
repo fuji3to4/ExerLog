@@ -38,6 +38,10 @@ export const en = {
   library_search_label: "Search exercises",
   library_search_placeholder: "Search by title or description",
   library_result_count: "Showing {shown} of {total}",
+  library_sort_label: "Sort by",
+  library_sort_default: "Catalog order",
+  library_sort_most_watched: "Most watched",
+  library_watch_count: "Watched: {count}",
 
   // History screen
   history_heading: "History",

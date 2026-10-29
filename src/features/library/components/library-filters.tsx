@@ -13,6 +13,7 @@ type LibraryFiltersValue = {
   purpose: string;
   duration: string;
   intensity: string;
+  sort: string;
 };
 
 type LibraryFiltersProps = {
@@ -156,6 +157,11 @@ export function LibraryFilters({ value, onChange }: LibraryFiltersProps) {
     { label: t("intensity_high"), value: "high" },
   ];
 
+  const sortOptions: SelectOption[] = [
+    { label: t("library_sort_default"), value: "" },
+    { label: t("library_sort_most_watched"), value: "most-watched" },
+  ];
+
   return (
     <Card className="library-filters">
       <CardHeader>
@@ -201,6 +207,12 @@ export function LibraryFilters({ value, onChange }: LibraryFiltersProps) {
             value={value.intensity}
             options={intensityOptions}
             onChange={(nextValue) => onChange({ ...value, intensity: nextValue })}
+          />
+          <FilterSelect
+            label={t("library_sort_label")}
+            value={value.sort}
+            options={sortOptions}
+            onChange={(nextValue) => onChange({ ...value, sort: nextValue })}
           />
         </div>
       </CardContent>

@@ -38,6 +38,10 @@
   library_search_label: "エクササイズを検索",
   library_search_placeholder: "タイトルまたは説明で検索",
   library_result_count: "{total}件中 {shown}件を表示",
+  library_sort_label: "並び順",
+  library_sort_default: "登録順",
+  library_sort_most_watched: "よく見る順",
+  library_watch_count: "視聴 {count}回",
 
   // History screen
   history_heading: "履歴",

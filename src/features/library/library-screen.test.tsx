@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test } from "vitest";
 
@@ -9,6 +9,7 @@ import { renderWithLanguage } from "@/test/render-with-language";
 import { LibraryScreen } from "./components/library-screen";
 
 beforeEach(async () => {
+  await appDb.watchEvents.clear();
   await appDb.exercises.clear();
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });
@@ -152,4 +153,41 @@ test("renders Japanese library filters by default", async () => {
   expect(screen.getByRole("heading", { name: /ライブラリ/i })).toBeInTheDocument();
   expect(screen.getByLabelText(/エクササイズを検索/i)).toHaveAttribute("placeholder", "タイトルまたは説明で検索");
   expect(await screen.findByRole("link", { name: /Neck Mobility.*見る/i })).toBeInTheDocument();
+});
+
+function watch(exerciseId: string, count: number) {
+  return Array.from({ length: count }, (_, index) => ({
+    id: `${exerciseId}-${index}`,
+    date: "2026-10-20",
+    exerciseId,
+    watchedAt: `2026-10-20T0${index}:00:00+09:00`,
+    updatedAt: "2026-10-20T00:00:00+09:00",
+  }));
+}
+
+test("shows each card's own watch count and hides it when never watched", async () => {
+  await appDb.watchEvents.bulkAdd(watch("hip-mobility-6", 3));
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  const hip = await screen.findByRole("article", { name: /hip mobility/i });
+  expect(await within(hip).findByText("Watched: 3")).toBeInTheDocument();
+  expect(within(screen.getByRole("article", { name: /shoulder rolls/i })).queryByText(/watched:/i)).toBeNull();
+});
+
+test("sorts by most watched, keeping catalog order for ties", async () => {
+  const user = userEvent.setup();
+  await appDb.watchEvents.bulkAdd([...watch("walk-in-place-10", 2), ...watch("neck-mobility-5", 5)]);
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findByText("Watched: 5");
+  const defaultOrder = screen.getAllByRole("article").map((card) => card.getAttribute("aria-labelledby"));
+
+  await user.selectOptions(screen.getByLabelText(/sort by/i), "most-watched");
+
+  const titles = screen.getAllByRole("article").map((card) => within(card).getByRole("heading").textContent);
+  expect(titles.slice(0, 2)).toEqual(["Neck Mobility", "Walk in Place"]);
+  const rest = defaultOrder.filter((id) => id !== "library-neck-mobility-5" && id !== "library-walk-in-place-10");
+  expect(screen.getAllByRole("article").slice(2).map((card) => card.getAttribute("aria-labelledby"))).toEqual(rest);
 });
