@@ -23,6 +23,19 @@ export type ExerciseVideo = {
 /** Exercise fields supplied by callers; repositories stamp `updatedAt` on write. */
 export type ExerciseDraft = Omit<ExerciseVideo, "updatedAt">;
 
+/**
+ * A user-made list of exercises ("my list"). `exerciseIds` holds the order; ids no longer
+ * in the library are skipped at read time, never rewritten when a video is deleted.
+ */
+export type ExerciseSet = {
+  id: string;
+  name: string;
+  exerciseIds: string[];
+  createdAt: string;
+  /** Local ISO time of the last write; used by sync (last-writer-wins, tombstones). */
+  updatedAt: string;
+};
+
 export type ExerciseLog = {
   id: string;
   date: string;

@@ -4,6 +4,7 @@ import type {
   ExerciseIntensity,
   ExerciseLog,
   ExerciseLogResult,
+  ExerciseSet,
   ExerciseVideo,
   Tombstone,
   WatchEvent,
@@ -56,6 +57,7 @@ export function syncedDbTables(): Table<any, any>[] {
     ...recordModuleData().flatMap((m) => m.tables()),
     appDb.watchEvents,
     appDb.exercises,
+    appDb.exerciseSets,
     appDb.tombstones,
   ];
 }
@@ -151,6 +153,33 @@ const exercisesConfig: TableSyncConfig = {
   replaceDb: (records) => replaceTable(appDb.exercises, records as ExerciseVideo[]),
 };
 
+function parseExerciseIds(raw: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+const exerciseSetsConfig: TableSyncConfig = {
+  tabName: "ExerciseSets",
+  keyColumn: "id",
+  updatedAtKey: "updatedAt",
+  deletable: true,
+  headers: ["id", "name", "exerciseIds", "createdAt", "updatedAt"],
+  toRow: (r: ExerciseSet) => [r.id, r.name, JSON.stringify(r.exerciseIds), r.createdAt, r.updatedAt],
+  fromRow: (row, headers): ExerciseSet => ({
+    id: cell(row, headers, "id"),
+    name: cell(row, headers, "name"),
+    exerciseIds: parseExerciseIds(cell(row, headers, "exerciseIds")),
+    createdAt: cell(row, headers, "createdAt"),
+    updatedAt: cell(row, headers, "updatedAt"),
+  }),
+  readFromDb: () => appDb.exerciseSets.toArray(),
+  replaceDb: (records) => replaceTable(appDb.exerciseSets, records as ExerciseSet[]),
+};
+
 const tombstonesConfig: TableSyncConfig = {
   tabName: "Tombstones",
   keyColumn: "id",
@@ -179,6 +208,7 @@ export function tableSyncConfigs(): TableSyncConfig[] {
     ...recordModuleData().flatMap((m) => m.syncConfigs),
     watchEventsConfig,
     exercisesConfig,
+    exerciseSetsConfig,
     tombstonesConfig,
   ];
 }
