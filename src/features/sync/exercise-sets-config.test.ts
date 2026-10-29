@@ -16,5 +16,5 @@ test("fromRow parses exerciseIds JSON and falls back to []", () => {
 
 test("toRow and fromRow round-trip", () => {
   const set: ExerciseSet = { id: "s", name: "朝用", exerciseIds: ["a", "b"], createdAt: "c", updatedAt: "u" };
-  expect(config.fromRow(config.toRow(set), config.headers)).toEqual(set);
+  expect(config.fromRow(config.toRow(set, config.headers), config.headers)).toEqual(set);
 });
