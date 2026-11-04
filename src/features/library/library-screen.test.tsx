@@ -313,13 +313,25 @@ function articleTitles() {
   return screen.getAllByRole("article").map((card) => within(card).getByRole("heading").textContent);
 }
 
-test("set row filters the list and is hidden when there are no sets", async () => {
+test("set row stays with All and New set when there are no sets, and creating one selects it", async () => {
   const user = userEvent.setup();
-
-  const first = renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
   await screen.findAllByRole("article");
-  expect(screen.queryByRole("group", { name: "Sets" })).toBeNull();
-  first.unmount();
+
+  const group = screen.getByRole("group", { name: "Sets" });
+  expect(within(group).getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+  await user.click(within(group).getByRole("button", { name: "+ New set" }));
+
+  const dialog = await screen.findByRole("dialog");
+  await user.type(within(dialog).getByLabelText("Set name"), "Morning");
+  await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+  expect(await screen.findByRole("button", { name: "Morning" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+test("set row filters the list", async () => {
+  const user = userEvent.setup();
 
   await createExerciseSet("Morning", ["neck-mobility-5", "gone", "shoulder-roll-4"]);
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });

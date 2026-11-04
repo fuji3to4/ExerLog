@@ -13,10 +13,20 @@ type SetSwitcherProps = {
   onSelect: (id: string | null) => void;
   /** Shown at the end of the row (for example a set actions menu). */
   trailing?: ReactNode;
+  /** Keep the row (the first button and `trailing`) even when there are no sets. */
+  alwaysShow?: boolean;
 };
 
-export function SetSwitcher({ ariaLabel, allLabel, sets, selectedId, onSelect, trailing }: SetSwitcherProps) {
-  if (sets.length === 0) return null;
+export function SetSwitcher({
+  ariaLabel,
+  allLabel,
+  sets,
+  selectedId,
+  onSelect,
+  trailing,
+  alwaysShow = false,
+}: SetSwitcherProps) {
+  if (sets.length === 0 && !alwaysShow) return null;
 
   return (
     <div role="group" aria-label={ariaLabel} className="set-switcher">

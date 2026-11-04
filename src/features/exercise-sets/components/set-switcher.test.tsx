@@ -19,6 +19,23 @@ test("renders nothing when there are no sets", () => {
   expect(container).toBeEmptyDOMElement();
 });
 
+test("keeps the first button and trailing content with no sets when alwaysShow is set", () => {
+  render(
+    <SetSwitcher
+      ariaLabel="Sets"
+      allLabel="All"
+      sets={[]}
+      selectedId={null}
+      onSelect={() => {}}
+      alwaysShow
+      trailing={<button type="button">New set</button>}
+    />,
+  );
+
+  expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "New set" })).toBeInTheDocument();
+});
+
 test("passes the set id, or null for the first button, to onSelect", async () => {
   const user = userEvent.setup();
   const onSelect = vi.fn();

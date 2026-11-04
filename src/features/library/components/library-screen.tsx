@@ -12,7 +12,7 @@ import { ExerciseSetMenu } from "@/features/exercise-sets/components/exercise-se
 import { appDb } from "@/features/storage/app-db";
 import { deleteExercise, listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { SetNameDialog } from "@/features/exercise-sets/components/set-name-dialog";
-import { deleteExerciseSet, listExerciseSets, renameExerciseSet } from "@/features/storage/exercise-sets.repository";
+import { createExerciseSet, deleteExerciseSet, listExerciseSets, renameExerciseSet } from "@/features/storage/exercise-sets.repository";
 import { countWatchesByExercise } from "@/features/storage/watch-events.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { useCelebrate } from "@/features/feedback/celebration";
@@ -62,6 +62,7 @@ export function LibraryScreen() {
   const [editingExercise, setEditingExercise] = useState<ExerciseVideo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [renamingSet, setRenamingSet] = useState<ExerciseSet | null>(null);
+  const [isCreatingSet, setIsCreatingSet] = useState(false);
   // undefined until the URL is read; null means "log for today".
   const [logDate, setLogDate] = useState<string | null | undefined>(undefined);
   const [logCounts, setLogCounts] = useState<Record<string, number> | null>(null);
@@ -172,6 +173,14 @@ ${t("library_delete_confirm")}`
     }
   }
 
+  async function handleCreateSet(name: string) {
+    // A failure propagates so the dialog stays open and shows its error.
+    const created = await createExerciseSet(name);
+    setIsCreatingSet(false);
+    await loadExercises();
+    setFilters((current) => ({ ...current, set: created.id }));
+  }
+
   async function handleFormSaved() {
     setEditingExercise(null);
     setIsAdding(false);
@@ -263,30 +272,36 @@ ${t("library_delete_confirm")}`
         sets={exerciseSets}
         selectedId={selectedSet?.id ?? null}
         onSelect={(id) => setFilters((current) => ({ ...current, set: id ?? "" }))}
+        alwaysShow
         trailing={
-          selectedSet ? (
-            <DropdownMenu.Root modal={false}>
-              <DropdownMenu.Trigger asChild>
-                <button type="button" className="set-switcher__more" aria-label={t("library_set_actions_aria")}>
-                  <Ellipsis aria-hidden className="h-5 w-5" />
-                </button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  align="end"
-                  sideOffset={6}
-                  className="z-50 min-w-48 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
-                >
-                  <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={() => setRenamingSet(selectedSet)}>
-                    {t("library_set_rename")}
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={() => void handleDeleteSet(selectedSet)}>
-                    {t("library_set_delete")}
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-          ) : null
+          <>
+            {selectedSet ? (
+              <DropdownMenu.Root modal={false}>
+                <DropdownMenu.Trigger asChild>
+                  <button type="button" className="set-switcher__more" aria-label={t("library_set_actions_aria")}>
+                    <Ellipsis aria-hidden className="h-5 w-5" />
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    align="end"
+                    sideOffset={6}
+                    className="z-50 min-w-48 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                  >
+                    <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={() => setRenamingSet(selectedSet)}>
+                      {t("library_set_rename")}
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={() => void handleDeleteSet(selectedSet)}>
+                      {t("library_set_delete")}
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            ) : null}
+            <button type="button" className="set-switcher__button" onClick={() => setIsCreatingSet(true)}>
+              {t("set_menu_new")}
+            </button>
+          </>
         }
       />
 
@@ -396,6 +411,14 @@ ${t("library_delete_confirm")}`
           );
         })}
       </section>
+
+      <SetNameDialog
+        open={isCreatingSet}
+        title={t("set_name_new_title")}
+        initialName=""
+        onSubmit={handleCreateSet}
+        onOpenChange={setIsCreatingSet}
+      />
 
       <SetNameDialog
         open={renamingSet !== null}
