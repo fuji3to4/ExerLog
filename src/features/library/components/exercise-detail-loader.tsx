@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getExerciseById } from "@/features/storage/exercise-catalog.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { LogDateNotice } from "@/features/logging/components/log-date-notice";
+import { parseLogDate } from "@/features/logging/log-date";
 import type { ExerciseVideo } from "@/lib/types";
 
 import { ExerciseDetailScreen } from "./exercise-detail-screen";
@@ -35,17 +37,22 @@ function BackButton() {
 }
 
 export function ExerciseDetailLoader({ exerciseId }: ExerciseDetailLoaderProps) {
+  // Read after mount: the static export prerenders without a URL.
+  const [logDate, setLogDate] = useState<string | null>(null);
+  useEffect(() => setLogDate(parseLogDate(window.location.search)), []);
+
   return (
     <div className="flex flex-col gap-4">
       <div>
         <BackButton />
       </div>
-      <ExerciseDetailContent exerciseId={exerciseId} />
+      <LogDateNotice logDate={logDate} />
+      <ExerciseDetailContent exerciseId={exerciseId} logDate={logDate} />
     </div>
   );
 }
 
-function ExerciseDetailContent({ exerciseId }: ExerciseDetailLoaderProps) {
+function ExerciseDetailContent({ exerciseId, logDate }: ExerciseDetailLoaderProps & { logDate: string | null }) {
   const [exercise, setExercise] = useState<ExerciseVideo | null | undefined>(undefined);
   const { t } = useTranslation();
   const resolvedExerciseId =
@@ -84,5 +91,5 @@ function ExerciseDetailContent({ exerciseId }: ExerciseDetailLoaderProps) {
     );
   }
 
-  return <ExerciseDetailScreen exercise={exercise} />;
+  return <ExerciseDetailScreen exercise={exercise} logDate={logDate} />;
 }

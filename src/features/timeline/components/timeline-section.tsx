@@ -10,7 +10,7 @@ import { ModuleRecordDialog } from "@/features/modules/components/module-record-
 import { getRecordModule } from "@/features/modules/registry";
 import type { RecordModule } from "@/features/modules/types";
 import { useModuleSettings } from "@/features/modules/use-module-settings";
-import { toDayKey } from "@/lib/date/day-key";
+import { withLogDate } from "@/features/logging/log-date";
 import { cn } from "@/lib/utils";
 import type { TimelineItem } from "../build-timeline";
 import type { DayTimelineState } from "../use-day-timeline";
@@ -29,8 +29,6 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
   const { enabledModules } = useModuleSettings();
   const [adding, setAdding] = useState<RecordModule | null>(null);
   const [selected, setSelected] = useState<TimelineItem | null>(null);
-  // Logging from the library always records today, so offer it only on today's timeline.
-  const isToday = date === toDayKey(new Date());
   const selectedModule = selected?.kind === "module" ? getRecordModule(selected.moduleId) : undefined;
 
   async function refresh(highlightId?: string) {
@@ -46,11 +44,10 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
     <section className="space-y-4">
       <div className="flex gap-2">
         <AddRecordMenu className="flex-1" modules={enabledModules} onChoose={setAdding} />
-        {isToday ? (
-          <Link href="/library" className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}>
-            {t("timeline_choose_video")}
-          </Link>
-        ) : null}
+        {/* The library files the log under this day, today or past. */}
+        <Link href={withLogDate("/library", date)} className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}>
+          {t("timeline_choose_video")}
+        </Link>
       </div>
 
       {timeline.isLoaded ? (

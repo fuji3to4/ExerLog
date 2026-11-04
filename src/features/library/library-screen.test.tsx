@@ -3,8 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
+import { CelebrationProvider } from "@/features/feedback/celebration";
 import { appDb } from "@/features/storage/app-db";
 import { createExerciseSet, listExerciseSets, setExerciseInSet } from "@/features/storage/exercise-sets.repository";
+import { toDayKey } from "@/lib/date/day-key";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 // Wrap the repository writes so single tests can make them reject while the rest hit the real store.
@@ -25,6 +27,7 @@ async function openFilters(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(async () => {
   await appDb.watchEvents.clear();
+  await appDb.exerciseLogs.clear();
   await appDb.exercises.clear();
   await appDb.exerciseSets.clear();
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
@@ -402,4 +405,84 @@ test("count line shows shown / total and the set size", async () => {
   await openFilters(user);
   await user.selectOptions(screen.getByLabelText(/body area/i), "upper-body");
   expect(screen.getByText("Morning: 2 / 4 videos")).toBeInTheDocument();
+});
+
+test("opened for a past day, says so and carries the day into each video link", async () => {
+  window.history.pushState({}, "", "/library?date=2026-10-19");
+  try {
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "ja" });
+
+    expect(await screen.findByRole("status")).toHaveTextContent("2026年10月19日月曜日の記録として登録します");
+    const card = (await screen.findAllByRole("article"))[0];
+    const link = within(card).getAllByRole("link").at(-1) as HTMLAnchorElement;
+    expect(link.getAttribute("href")).toMatch(/^\/exercises\?exerciseId=[^&]+&date=2026-10-19$/);
+  } finally {
+    window.history.pushState({}, "", "/");
+  }
+});
+
+test("opened without a day, shows no notice and plain video links", async () => {
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "ja" });
+
+  const card = (await screen.findAllByRole("article"))[0];
+  expect(screen.queryByText(/の記録として登録します/)).not.toBeInTheDocument();
+  expect(within(card).getAllByRole("link").at(-1)?.getAttribute("href")).not.toContain("date=");
+});
+
+test("each card logs today from the list, like today's picks", async () => {
+  const user = userEvent.setup();
+  renderWithLanguage(
+    <CelebrationProvider>
+      <LibraryScreen />
+    </CelebrationProvider>,
+    { initialLanguage: "en" },
+  );
+
+  const card = await screen.findByRole("article", { name: /shoulder rolls/i });
+  expect(await within(card).findByText("Not logged yet")).toBeInTheDocument();
+  await user.click(within(card).getByRole("button", { name: "Did it" }));
+
+  expect(await within(card).findByText("1 times today")).toBeInTheDocument();
+  expect(await screen.findByText(/Nice work!/)).toBeInTheDocument();
+  const logs = await appDb.exerciseLogs.toArray();
+  expect(logs).toHaveLength(1);
+  expect(logs[0].date).toBe(toDayKey(new Date()));
+  expect(logs[0].result).toBe("did");
+});
+
+test("for a past day, card buttons log that day without celebrating", async () => {
+  const user = userEvent.setup();
+  window.history.pushState({}, "", "/library?date=2026-10-19");
+  try {
+    renderWithLanguage(
+      <CelebrationProvider>
+        <LibraryScreen />
+      </CelebrationProvider>,
+      { initialLanguage: "en" },
+    );
+
+    const card = await screen.findByRole("article", { name: /shoulder rolls/i });
+    await user.click(await within(card).findByRole("button", { name: "Partly" }));
+
+    expect(await within(card).findByText("1 times on 10/19")).toBeInTheDocument();
+    const logs = await appDb.exerciseLogs.toArray();
+    expect(logs).toHaveLength(1);
+    expect(logs[0].date).toBe("2026-10-19");
+    expect(logs[0].result).toBe("partial");
+    expect(screen.queryByText(/Nice work!/)).not.toBeInTheDocument();
+  } finally {
+    window.history.pushState({}, "", "/");
+  }
+});
+
+test("edit mode swaps the log buttons for edit and delete", async () => {
+  const user = userEvent.setup();
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  const card = await screen.findByRole("article", { name: /shoulder rolls/i });
+  expect(await within(card).findByRole("button", { name: "Did it" })).toBeInTheDocument();
+  await user.click(screen.getByRole("switch"));
+
+  expect(within(card).queryByRole("button", { name: "Did it" })).not.toBeInTheDocument();
+  expect(within(card).getByRole("button", { name: /edit/i })).toBeInTheDocument();
 });

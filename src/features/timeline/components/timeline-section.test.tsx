@@ -301,14 +301,14 @@ describe("TimelineSection", () => {
     renderWithLanguage(<Harness />, { initialLanguage: "ja" });
 
     expect(await screen.findByText("まだ記録はありません。")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "動画を選ぶ" }).getAttribute("href")).toBe("/library");
+    expect(screen.getByRole("link", { name: "動画を選ぶ" }).getAttribute("href")).toBe(`/library?date=${DATE}`);
   });
 
-  it("hides the library link on a past day", async () => {
+  it("offers the library on a past day too, carrying that day", async () => {
     renderWithLanguage(<Harness date="2026-10-19" />, { initialLanguage: "ja" });
 
     expect(await screen.findByText("まだ記録はありません。")).toBeTruthy();
-    expect(screen.queryByRole("link", { name: "動画を選ぶ" })).toBeNull();
+    expect(screen.getByRole("link", { name: "動画を選ぶ" }).getAttribute("href")).toBe("/library?date=2026-10-19");
   });
 });
 

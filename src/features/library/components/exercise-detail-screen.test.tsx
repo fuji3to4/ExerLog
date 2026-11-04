@@ -190,3 +190,26 @@ test("logging still works and the description box shows today's status", async (
 
   expect(await within(box).findByText("1 times today")).toBeInTheDocument();
 });
+
+test("logging for a past day files the log under that day without celebrating", async () => {
+  const user = userEvent.setup();
+
+  renderWithLanguage(
+    <CelebrationProvider>
+      <ExerciseDetailScreen exercise={strengthExercise} logDate="2026-10-19" />
+    </CelebrationProvider>,
+    { initialLanguage: "en" },
+  );
+
+  const box = (await screen.findByText("Slow squats for the legs.")).closest(".exercise-detail__description") as HTMLElement;
+  expect(await within(box).findByText("Not logged yet")).toBeInTheDocument();
+
+  await user.click(await screen.findByRole("button", { name: "Did it" }));
+
+  expect(await within(box).findByText("1 times on 10/19")).toBeInTheDocument();
+  const logs = await appDb.exerciseLogs.toArray();
+  expect(logs).toHaveLength(1);
+  expect(logs[0].date).toBe("2026-10-19");
+  expect(logs[0].performedAt.startsWith("2026-10-19T")).toBe(true);
+  expect(screen.queryByText(/Nice work!/)).not.toBeInTheDocument();
+});

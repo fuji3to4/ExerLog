@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ExerciseSetMenu } from "@/features/exercise-sets/components/exercise-set-menu";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
 import { useCelebrate } from "@/features/feedback/celebration";
+import { shortDayLabel } from "@/features/logging/log-date";
 import { addExerciseLog, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
 import { listExerciseSets } from "@/features/storage/exercise-sets.repository";
 import { countWatchesByExercise, recordWatchEvent } from "@/features/storage/watch-events.repository";
@@ -17,9 +18,11 @@ import { useTranslation } from "@/features/i18n/use-translation";
 
 type ExerciseDetailScreenProps = {
   exercise: ExerciseVideo;
+  /** Day to file logs under (from `?date=`); null means today. */
+  logDate?: string | null;
 };
 
-export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
+export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetailScreenProps) {
   const [todayCount, setTodayCount] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -30,6 +33,10 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
   const celebrate = useCelebrate();
   const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
   const embedUrl = getYouTubeEmbedUrl(exercise.videoUrl);
+  // Resolved per render so a page left open past midnight still logs to the new today.
+  const today = toDayKey(new Date());
+  const targetDate = logDate ?? today;
+  const isPastDay = targetDate !== today;
 
   useEffect(() => {
     let isActive = true;
@@ -37,7 +44,7 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
     async function loadTodayCount() {
       let count = 0;
       try {
-        const counts = await countExerciseLogsForDay(toDayKey(new Date()));
+        const counts = await countExerciseLogsForDay(targetDate);
         count = counts[exercise.id] ?? 0;
       } catch (error) {
         console.error(error);
@@ -56,7 +63,7 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
     return () => {
       isActive = false;
     };
-  }, [exercise.id]);
+  }, [exercise.id, targetDate]);
 
   const loadSets = useCallback(async () => {
     try {
@@ -91,19 +98,20 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
       setLogError(false);
       try {
         const log = await addExerciseLog({
-          date: toDayKey(new Date()),
+          date: targetDate,
           exerciseId: exercise.id,
           result,
           durationSeconds: exercise.durationSeconds,
         });
         setTodayCount((count) => count + 1);
-        celebrate({ result, durationSeconds: log.durationSeconds });
+        // Catching up on a past day is bookkeeping, not an achievement just now: no celebration.
+        if (!isPastDay) celebrate({ result, durationSeconds: log.durationSeconds });
       } catch (error) {
         console.error(error);
         setLogError(true);
       }
     },
-    [exercise.id, exercise.durationSeconds, celebrate],
+    [exercise.id, exercise.durationSeconds, celebrate, targetDate, isPastDay],
   );
 
   return (
@@ -174,7 +182,11 @@ export function ExerciseDetailScreen({ exercise }: ExerciseDetailScreenProps) {
             </div>
           ) : (
             <p className="exercise-detail__status" aria-live="polite">
-              {todayCount > 0 ? t("log_count_today", { count: todayCount }) : t("result_not_logged")}
+              {todayCount === 0
+                ? t("result_not_logged")
+                : isPastDay
+                  ? t("log_count_on_day", { date: shortDayLabel(targetDate), count: todayCount })
+                  : t("log_count_today", { count: todayCount })}
             </p>
           )}
           {exercise.description ? <p>{exercise.description}</p> : null}

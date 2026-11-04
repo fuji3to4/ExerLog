@@ -15,7 +15,13 @@ import { SetNameDialog } from "@/features/exercise-sets/components/set-name-dial
 import { deleteExerciseSet, listExerciseSets, renameExerciseSet } from "@/features/storage/exercise-sets.repository";
 import { countWatchesByExercise } from "@/features/storage/watch-events.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
-import type { ExerciseSet, ExerciseVideo } from "@/lib/types";
+import { useCelebrate } from "@/features/feedback/celebration";
+import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
+import { addExerciseLog, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
+import { toDayKey } from "@/lib/date/day-key";
+import { LogDateNotice } from "@/features/logging/components/log-date-notice";
+import { parseLogDate, shortDayLabel, withLogDate } from "@/features/logging/log-date";
+import type { ExerciseLogResult, ExerciseSet, ExerciseVideo } from "@/lib/types";
 
 import { ExerciseFormModal } from "./exercise-form-modal";
 import { LibraryFilters } from "./library-filters";
@@ -54,7 +60,55 @@ export function LibraryScreen() {
   const [editingExercise, setEditingExercise] = useState<ExerciseVideo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [renamingSet, setRenamingSet] = useState<ExerciseSet | null>(null);
+  // undefined until the URL is read; null means "log for today".
+  const [logDate, setLogDate] = useState<string | null | undefined>(undefined);
+  const [logCounts, setLogCounts] = useState<Record<string, number> | null>(null);
+  const [logErrorExerciseId, setLogErrorExerciseId] = useState<string | null>(null);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
+  const celebrate = useCelebrate();
+
+  useEffect(() => {
+    // Opened from a day's timeline: carry that day through to the detail page.
+    setLogDate(parseLogDate(window.location.search));
+  }, []);
+
+  const today = toDayKey(new Date());
+  const targetDate = logDate ?? today;
+  const isPastDay = targetDate !== today;
+
+  useEffect(() => {
+    if (logDate === undefined) return;
+    let isActive = true;
+    countExerciseLogsForDay(targetDate)
+      .then((counts) => {
+        if (isActive) setLogCounts(counts);
+      })
+      .catch((error) => {
+        console.error(error);
+        if (isActive) setLogCounts({});
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [logDate, targetDate]);
+
+  async function handleLog(exercise: ExerciseVideo, result: ExerciseLogResult) {
+    setLogErrorExerciseId(null);
+    try {
+      const log = await addExerciseLog({
+        date: targetDate,
+        exerciseId: exercise.id,
+        result,
+        durationSeconds: exercise.durationSeconds,
+      });
+      setLogCounts((counts) => ({ ...counts, [exercise.id]: (counts?.[exercise.id] ?? 0) + 1 }));
+      // Catching up on a past day is bookkeeping, not an achievement just now: no celebration.
+      if (!isPastDay) celebrate({ result, durationSeconds: log.durationSeconds });
+    } catch (error) {
+      console.error(error);
+      setLogErrorExerciseId(exercise.id);
+    }
+  }
 
   const loadExercises = useCallback(async () => {
     const [nextExercises, nextWatchCounts, nextSets] = await Promise.all([
@@ -198,6 +252,8 @@ ${t("library_delete_confirm")}`
         </CardHeader>
       </Card>
 
+      <LogDateNotice logDate={logDate ?? null} />
+
       <SetSwitcher
         ariaLabel={t("library_sets_aria")}
         allLabel={t("library_set_all")}
@@ -287,7 +343,7 @@ ${t("library_delete_confirm")}`
             <VideoCard
               key={exercise.id}
               exercise={exercise}
-              href={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
+              href={withLogDate(`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`, logDate ?? null)}
               headingLevel={2}
               meta={[
                 t("meta_intensity_value", { value: formatIntensity(exercise.intensity) }),
@@ -316,6 +372,20 @@ ${t("library_delete_confirm")}`
                     {t("action_delete")}
                   </button>
                 </div>
+              ) : logCounts ? (
+                // Hidden in edit mode so tidying the library can't log by accident.
+                <>
+                  <ExerciseLogActions
+                    todayCount={logCounts[exercise.id] ?? 0}
+                    onLog={(result) => void handleLog(exercise, result)}
+                    dayLabel={isPastDay ? shortDayLabel(targetDate) : undefined}
+                  />
+                  {logErrorExerciseId === exercise.id ? (
+                    <p role="alert" className="text-sm text-destructive">
+                      {t("log_save_error")}
+                    </p>
+                  ) : null}
+                </>
               ) : null}
             </VideoCard>
           );
