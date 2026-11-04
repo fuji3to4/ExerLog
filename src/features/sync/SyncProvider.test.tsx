@@ -1,5 +1,5 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { LanguageProvider } from "@/features/i18n/language-provider";
 import { SyncProvider, useSync } from "./SyncProvider";
 
@@ -8,13 +8,14 @@ vi.mock("./google-auth", () => ({
   trySilentRefresh: vi.fn(),
   requestSignIn: vi.fn(),
   signOut: vi.fn(),
+  onRefreshSignedOut: vi.fn(() => () => {}),
 }));
 
 vi.mock("./sync-engine", () => ({
   syncAll: vi.fn(),
 }));
 
-import { trySilentRefresh, requestSignIn, signOut } from "./google-auth";
+import { trySilentRefresh, requestSignIn, signOut, onRefreshSignedOut } from "./google-auth";
 import { syncAll } from "./sync-engine";
 import type { GoogleToken } from "./google-auth";
 import type { SyncAllResult, SyncTableResult } from "./sync-engine";
@@ -275,6 +276,28 @@ describe("SyncProvider", () => {
     });
     expect(screen.getByTestId("status").textContent).toBe("disconnected");
     expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  test("a sign-out during a background refresh shows the disconnected state", async () => {
+    vi.mocked(trySilentRefresh).mockResolvedValue(FAKE_TOKEN);
+    vi.mocked(syncAll).mockResolvedValue(makeResult());
+
+    render(
+      <LanguageProvider>
+        <SyncProvider>
+          <TestConsumer />
+        </SyncProvider>
+      </LanguageProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status").textContent).toBe("synced");
+    });
+    const listener = vi.mocked(onRefreshSignedOut).mock.calls.at(-1)![0];
+    act(() => listener());
+
+    expect(screen.getByTestId("status").textContent).toBe("disconnected");
+    expect(screen.getByTestId("user-email").textContent).toBe("");
   });
 
   test("on-mount silent refresh with valid token runs sync", async () => {

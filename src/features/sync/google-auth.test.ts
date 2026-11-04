@@ -7,6 +7,8 @@ import {
   parseTokenFromResponse,
   requestSignIn,
   trySilentRefresh,
+  onRefreshSignedOut,
+  signOut,
   SILENT_REFRESH_TIMEOUT_MS,
 } from "./google-auth";
 
@@ -186,6 +188,63 @@ describe("trySilentRefresh never hangs", () => {
 
     expect(await trySilentRefresh()).toBeNull();
     expect((await loadStoredToken())?.accessToken).toBe("old");
+  });
+
+  test("closing the refresh popup signs out: the token is cleared, listeners hear it, and no popup opens again", async () => {
+    await storeToken(expired());
+    const listener = vi.fn();
+    const unsubscribe = onRefreshSignedOut(listener);
+    mockRequestAccessToken.mockReset();
+    mockRequestAccessToken.mockImplementation(() => {
+      setTimeout(() => lastErrorCallback()({ type: "popup_closed", message: "Popup window closed" }), 0);
+    });
+
+    try {
+      expect(await trySilentRefresh()).toBeNull();
+      expect(await loadStoredToken()).toBeNull();
+      expect(listener).toHaveBeenCalledTimes(1);
+
+      expect(await trySilentRefresh()).toBeNull();
+      expect(mockRequestAccessToken).toHaveBeenCalledTimes(1);
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  test("a refresh the OAuth server refuses clears the token and tells listeners", async () => {
+    await storeToken(expired());
+    const listener = vi.fn();
+    const unsubscribe = onRefreshSignedOut(listener);
+    mockRequestAccessToken.mockReset();
+    mockRequestAccessToken.mockImplementation(() => {
+      setTimeout(() => mockTokenClient.callback({ error: "interaction_required" } as any), 0);
+    });
+
+    try {
+      expect(await trySilentRefresh()).toBeNull();
+      expect(await loadStoredToken()).toBeNull();
+      expect(listener).toHaveBeenCalledTimes(1);
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  test("when GIS can't load (offline) the token is kept and nobody is told of a sign-out", async () => {
+    await signOut(); // drop the cached client so the next refresh initializes one
+    await storeToken(expired());
+    const listener = vi.fn();
+    const unsubscribe = onRefreshSignedOut(listener);
+    vi.mocked(google.accounts.oauth2.initTokenClient).mockImplementationOnce(() => {
+      throw new Error("Failed to load GIS script");
+    });
+
+    try {
+      expect(await trySilentRefresh()).toBeNull();
+      expect((await loadStoredToken())?.accessToken).toBe("old");
+      expect(listener).not.toHaveBeenCalled();
+    } finally {
+      unsubscribe();
+    }
   });
 
   test("error_callback rejects a pending sign-in", async () => {

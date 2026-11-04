@@ -74,7 +74,11 @@ export async function initTokenClient(): Promise<google.accounts.oauth2.TokenCli
     callback: () => {}, // Callback is set per-request via requestAccessToken
     // Non-OAuth failures (popup blocked or closed, …) never reach `callback`.
     error_callback: (error) =>
-      pendingRequest?.settle({ kind: "error", message: error.message || error.type || "unknown" }),
+      pendingRequest?.settle({
+        kind: "error",
+        type: error.type,
+        message: error.message || error.type || "unknown",
+      }),
   });
   return tokenClient;
 }
@@ -82,7 +86,7 @@ export async function initTokenClient(): Promise<google.accounts.oauth2.TokenCli
 /** How one GIS token request ended. */
 type TokenOutcome =
   | { kind: "response"; response: google.accounts.oauth2.TokenResponse }
-  | { kind: "error"; message: string }
+  | { kind: "error"; type?: string; message: string }
   /** Another request replaced this one (GIS has a single callback per client). */
   | { kind: "superseded" }
   | { kind: "timeout" };
@@ -180,6 +184,25 @@ export function trySilentRefresh(): Promise<GoogleToken | null> {
 
 let silentRefreshInFlight: Promise<GoogleToken | null> | null = null;
 
+const refreshSignedOutListeners = new Set<() => void>();
+
+/**
+ * Listen for a background refresh that ended the connection (the user closed its
+ * popup, or Google refused it). Returns an unsubscribe function.
+ */
+export function onRefreshSignedOut(listener: () => void): () => void {
+  refreshSignedOutListeners.add(listener);
+  return () => {
+    refreshSignedOutListeners.delete(listener);
+  };
+}
+
+/** Same as the user disconnecting: forget the token so nothing reconnects on its own. */
+async function signOutFromRefresh(): Promise<void> {
+  await clearToken();
+  for (const listener of refreshSignedOutListeners) listener();
+}
+
 async function doSilentRefresh(): Promise<GoogleToken | null> {
   const stored = await loadStoredToken();
   if (!stored) return null;
@@ -192,26 +215,34 @@ async function doSilentRefresh(): Promise<GoogleToken | null> {
   // A sign-in popup is open: don't take over its callback; the sign-in stores a new token.
   if (pendingRequest?.purpose === "signIn") return null;
 
-  // Try silent refresh via GIS
+  // Try silent refresh via GIS. Offline (the GIS script won't load) is not a sign-out:
+  // keep the token so the next start reconnects.
+  let client: google.accounts.oauth2.TokenClient;
   try {
-    const client = await initTokenClient();
-    const outcome = await requestToken(
-      client,
-      "refresh",
-      { prompt: "none", hint: stored.email },
-      SILENT_REFRESH_TIMEOUT_MS,
-    );
-    // No answer, a popup failure or a sign-in taking over: give up for now but keep
-    // the stored token, so a later call can try again.
-    if (outcome.kind !== "response") return null;
-    if (outcome.response.error) throw new Error(outcome.response.error);
-    const parsed = parseTokenFromResponse(outcome.response, stored.email);
-    await storeToken(parsed);
-    return parsed;
+    client = await initTokenClient();
   } catch {
-    await clearToken();
     return null;
   }
+  const outcome = await requestToken(
+    client,
+    "refresh",
+    { prompt: "none", hint: stored.email },
+    SILENT_REFRESH_TIMEOUT_MS,
+  );
+  // The user closed the popup, or Google refused: same as disconnecting.
+  if (
+    (outcome.kind === "error" && outcome.type === "popup_closed") ||
+    (outcome.kind === "response" && outcome.response.error)
+  ) {
+    await signOutFromRefresh();
+    return null;
+  }
+  // No answer, a blocked popup or a sign-in taking over: give up for now but keep
+  // the stored token, so a later call can try again.
+  if (outcome.kind !== "response") return null;
+  const parsed = parseTokenFromResponse(outcome.response, stored.email);
+  await storeToken(parsed);
+  return parsed;
 }
 
 /** Check if a stored token exists and is not expired (within 5-minute buffer). */

@@ -11,7 +11,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "@/features/i18n/use-translation";
-import { trySilentRefresh, requestSignIn, signOut } from "./google-auth";
+import { onRefreshSignedOut, trySilentRefresh, requestSignIn, signOut } from "./google-auth";
 import { isMessageKey } from "@/features/i18n/messages";
 import { syncAll } from "./sync-engine";
 import type { SyncAllResult, SyncTableResult } from "./sync-engine";
@@ -121,6 +121,17 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setUserEmail(null);
     setStatus({ type: "disconnected" });
   }, []);
+
+  // A background refresh can end the connection (popup closed); show it right away.
+  useEffect(
+    () =>
+      onRefreshSignedOut(() => {
+        if (!mountedRef.current) return;
+        setUserEmail(null);
+        setStatus({ type: "disconnected" });
+      }),
+    [],
+  );
 
   // On mount, try silent refresh and sync
   useEffect(() => {
