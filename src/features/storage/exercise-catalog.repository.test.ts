@@ -4,7 +4,7 @@ import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import type { ExerciseVideo } from "@/lib/types";
 
 import { appDb } from "./app-db";
-import { listAllExercises, seedIfEmpty } from "./exercise-catalog.repository";
+import { importStarterExercises, listAllExercises } from "./exercise-catalog.repository";
 
 const customExercise: ExerciseVideo = {
   id: "custom-exercise",
@@ -38,16 +38,29 @@ test("listAllExercises returns stored exercises without seeding", async () => {
   expect(result).toEqual([customExercise]);
 });
 
-test("seedIfEmpty seeds the catalog when the store is empty", async () => {
-  await seedIfEmpty();
+test("importStarterExercises adds the whole starter catalog to an empty store", async () => {
+  const added = await importStarterExercises();
 
+  expect(added).toBe(exerciseCatalog.length);
   expect(await appDb.exercises.count()).toBe(exerciseCatalog.length);
 });
 
-test("seedIfEmpty does not overwrite existing data", async () => {
-  await appDb.exercises.add(customExercise);
+test("importStarterExercises adds only the missing starter entries and keeps edited ones", async () => {
+  const [first, ...rest] = exerciseCatalog;
+  const edited: ExerciseVideo = { ...first, title: "Edited", updatedAt: "2026-10-20T00:00:00+09:00" };
+  await appDb.exercises.bulkAdd([edited, customExercise]);
 
-  await seedIfEmpty();
+  const added = await importStarterExercises();
 
-  expect(await appDb.exercises.count()).toBe(1);
+  expect(added).toBe(rest.length);
+  expect(await appDb.exercises.count()).toBe(exerciseCatalog.length + 1);
+  expect((await appDb.exercises.get(first.id))?.title).toBe("Edited");
+});
+
+test("importStarterExercises stamps added entries so they win over earlier tombstones", async () => {
+  await importStarterExercises();
+
+  const stored = await appDb.exercises.get(exerciseCatalog[0].id);
+  expect(stored?.updatedAt).toBeTruthy();
+  expect(stored!.updatedAt > "2026-01-01").toBe(true);
 });

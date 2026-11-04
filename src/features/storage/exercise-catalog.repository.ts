@@ -14,11 +14,21 @@ function stamp(exercises: ExerciseDraft[]): ExerciseVideo[] {
   return exercises.map((exercise) => ({ ...exercise, updatedAt }));
 }
 
-export async function seedIfEmpty(): Promise<void> {
-  const count = await appDb.exercises.count();
-  if (count === 0) {
-    await appDb.exercises.bulkAdd(stamp(exerciseCatalog));
-  }
+/**
+ * Add the starter catalog entries the library doesn't have yet (matched by id).
+ * Existing entries, including edited starter ones, are left as they are. The
+ * added entries are stamped now, so they also win over earlier deletions when
+ * synced. Returns how many entries were added.
+ */
+export async function importStarterExercises(): Promise<number> {
+  const added = await appDb.transaction("rw", appDb.exercises, async () => {
+    const existingIds = new Set(await appDb.exercises.toCollection().primaryKeys());
+    const missing = exerciseCatalog.filter((exercise) => !existingIds.has(exercise.id));
+    await appDb.exercises.bulkAdd(stamp(missing));
+    return missing.length;
+  });
+  if (added > 0) scheduleSync();
+  return added;
 }
 
 export async function listAllExercises(): Promise<ExerciseVideo[]> {

@@ -110,8 +110,8 @@ export class AppDb extends Dexie {
     });
 
     // v7: multi-entry timeline records + tombstones. No data migration: old
-    // records are discarded and the exercise catalog is emptied so the seed
-    // prompt re-inserts it with durations in seconds.
+    // records are discarded and the exercise catalog is emptied (the starter
+    // catalog can be re-imported from Settings with durations in seconds).
     this.version(7)
       .stores({
         logs: "++id, date, exerciseId, result, loggedAt, &[date+exerciseId]",

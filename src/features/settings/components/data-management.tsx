@@ -6,7 +6,12 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { recordModuleData } from "@/features/modules/data-registry";
 import type { RecordModuleData } from "@/features/modules/types";
 import { appDb } from "@/features/storage/app-db";
-import { clearAllExercises, listAllExercises, replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
+import {
+  clearAllExercises,
+  importStarterExercises,
+  listAllExercises,
+  replaceAllExercises,
+} from "@/features/storage/exercise-catalog.repository";
 import { clearAllRecords, countAllRecords } from "@/features/storage/clear-all-records";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
 import { generateExerciseLogsCsv, generateWatchEventsCsv } from "../csv/history-csv";
@@ -158,6 +163,18 @@ export function DataManagement() {
     e.target.value = "";
   }
 
+  async function handleImportStarter() {
+    try {
+      const added = await importStarterExercises();
+      setImportStatus(
+        added > 0 ? t("settings_import_starter_success", { count: added }) : t("settings_import_starter_none"),
+      );
+      setExerciseCount(await appDb.exercises.count());
+    } catch {
+      setImportStatus(t("settings_import_error", { error: t("settings_import_save_failed") }));
+    }
+  }
+
   async function handleDeleteAllExercises() {
     await clearAllExercises();
     setExerciseCount(0);
@@ -190,6 +207,13 @@ export function DataManagement() {
             onClick={() => fileInputRef.current?.click()}
           >
             {t("settings_import_exercises")}
+          </button>
+          <button
+            type="button"
+            className="settings-action-button"
+            onClick={() => void handleImportStarter()}
+          >
+            {t("settings_import_starter")}
           </button>
           <input
             ref={fileInputRef}

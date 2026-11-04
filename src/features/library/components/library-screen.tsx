@@ -25,6 +25,7 @@ import type { ExerciseLogResult, ExerciseSet, ExerciseVideo } from "@/lib/types"
 
 import { ExerciseFormModal } from "./exercise-form-modal";
 import { LibraryFilters } from "./library-filters";
+import { StarterImportHint } from "./starter-import-hint";
 import { VideoCard } from "./video-card";
 
 type LibraryFilterState = {
@@ -53,6 +54,7 @@ const MENU_ITEM_CLASS =
 export function LibraryScreen() {
   const [filters, setFilters] = useState<LibraryFilterState>(initialFilters);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [watchCounts, setWatchCounts] = useState<Map<string, number>>(new Map());
   const [exerciseSets, setExerciseSets] = useState<ExerciseSet[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
@@ -117,6 +119,7 @@ export function LibraryScreen() {
       listExerciseSets(),
     ]);
     setExercises(nextExercises);
+    setIsLoaded(true);
     setExerciseSets(nextSets);
     // A selected set that no longer exists (deleted here or arrived through sync) falls back to "All".
     setFilters((current) =>
@@ -333,6 +336,8 @@ ${t("library_delete_confirm")}`
           </select>
         </label>
       </div>
+
+      {isLoaded && exercises.length === 0 ? <StarterImportHint onImported={loadExercises} /> : null}
 
       {/* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */}
       <section className="library-screen__results grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">

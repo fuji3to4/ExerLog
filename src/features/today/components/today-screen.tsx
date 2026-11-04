@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import { useTranslation } from "@/features/i18n/use-translation";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
 import { useCelebrate } from "@/features/feedback/celebration";
+import { StarterImportHint } from "@/features/library/components/starter-import-hint";
 import { useModuleSettings } from "@/features/modules/use-module-settings";
 import { TimelineSection } from "@/features/timeline/components/timeline-section";
 import { useDayTimeline } from "@/features/timeline/use-day-timeline";
@@ -30,6 +31,8 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const libraryHeadingId = "today-library-heading";
   const {
     isHydrated,
+    isLibraryEmpty,
+    reloadExercises,
     recommendations,
     logCounts,
     logExercise,
@@ -95,7 +98,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                 <h2 id={recommendedHeadingId} className="text-xl font-semibold">
                   {selectedSet?.name ?? t("today_recommended_heading")}
                 </h2>
-                {selectedSet ? null : (
+                {selectedSet || isLibraryEmpty ? null : (
                   <button type="button" className="today-screen__reshuffle" onClick={reshuffleRecommendations}>
                     <RotateCw aria-hidden="true" size={14} />
                     {t("today_recommended_reshuffle")}
@@ -111,7 +114,9 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
               />
             </CardHeader>
             <CardContent>
-              {selectedSet && selectedSetExercises.length === 0 ? (
+              {isLibraryEmpty ? (
+                <StarterImportHint onImported={reloadExercises} />
+              ) : selectedSet && selectedSetExercises.length === 0 ? (
                 <div className="grid gap-3">
                   <p className="text-sm text-muted-foreground">{t("today_set_empty")}</p>
                   <div className="button-row">

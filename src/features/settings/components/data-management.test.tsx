@@ -1,9 +1,11 @@
 import { fireEvent, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { renderWithLanguage } from "@/test/render-with-language";
+import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
+import { appDb } from "@/features/storage/app-db";
 import { DataManagement } from "./data-management";
 
 describe("DataManagement history export", () => {
@@ -32,5 +34,33 @@ describe("DataManagement history export", () => {
     await vi.waitFor(() => expect(click).toHaveBeenCalledTimes(1));
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     click.mockRestore();
+  });
+});
+
+describe("DataManagement starter exercises", () => {
+  beforeEach(async () => {
+    await appDb.exercises.clear();
+  });
+
+  it("imports the starter exercises from the library section", async () => {
+    renderWithLanguage(<DataManagement />, { initialLanguage: "ja" });
+
+    fireEvent.click(screen.getByRole("button", { name: "初期データをインポート" }));
+
+    expect(
+      await screen.findByText(`初期データから${exerciseCatalog.length}件のエクササイズを追加しました。`),
+    ).toBeInTheDocument();
+    expect(await appDb.exercises.count()).toBe(exerciseCatalog.length);
+  });
+
+  it("says so when every starter exercise is already registered", async () => {
+    renderWithLanguage(<DataManagement />, { initialLanguage: "ja" });
+    const button = screen.getByRole("button", { name: "初期データをインポート" });
+
+    fireEvent.click(button);
+    await screen.findByText(/初期データから/);
+    fireEvent.click(button);
+
+    expect(await screen.findByText("初期データはすべて登録済みです。")).toBeInTheDocument();
   });
 });

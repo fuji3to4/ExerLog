@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 
+import { exerciseCatalog as starterCatalog } from "@/features/catalog/exercise-catalog";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
 import { CelebrationProvider } from "@/features/feedback/celebration";
 import { appDb } from "@/features/storage/app-db";
@@ -485,4 +486,24 @@ test("edit mode swaps the log buttons for edit and delete", async () => {
 
   expect(within(card).queryByRole("button", { name: "Did it" })).not.toBeInTheDocument();
   expect(within(card).getByRole("button", { name: /edit/i })).toBeInTheDocument();
+});
+
+test("an empty library offers the starter exercises and shows them once imported", async () => {
+  await appDb.exercises.clear();
+  const user = userEvent.setup();
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  expect(await screen.findByText("No videos yet. Import the starter exercises to get going.")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Import starter exercises" }));
+
+  expect(await screen.findAllByRole("article")).toHaveLength(starterCatalog.length);
+  expect(screen.queryByText("No videos yet. Import the starter exercises to get going.")).not.toBeInTheDocument();
+});
+
+test("a library with videos shows no starter hint", async () => {
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findAllByRole("article");
+  expect(screen.queryByRole("button", { name: "Import starter exercises" })).not.toBeInTheDocument();
 });

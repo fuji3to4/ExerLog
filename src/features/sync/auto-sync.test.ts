@@ -1,5 +1,5 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
-import { scheduleSync, syncIfNeeded, SYNC_DEBOUNCE_MS } from "./auto-sync";
+import { scheduleSync, SYNC_DEBOUNCE_MS } from "./auto-sync";
 
 // Mock dependencies — use vi.hoisted so they're available when vi.mock factory runs
 const mockTrySilentRefresh = vi.hoisted(() => vi.fn());
@@ -99,37 +99,5 @@ describe("scheduleSync", () => {
       expect(mockTrySilentRefresh).toHaveBeenCalledTimes(1); // only once
     });
     expect(mockSyncAll).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("syncIfNeeded", () => {
-  test("cancels pending timer and syncs immediately", async () => {
-    mockTrySilentRefresh.mockResolvedValue({ accessToken: "tok" });
-    mockSyncAll.mockResolvedValue({ success: true, results: [] });
-
-    scheduleSync(); // start a pending timer
-    expect(await syncIfNeeded()).toBe("synced"); // should cancel it and sync now
-
-    expect(mockTrySilentRefresh).toHaveBeenCalledTimes(1);
-    expect(mockSyncAll).toHaveBeenCalledWith("tok", expect.any(Function));
-
-    // Advance past original timer to ensure no double call
-    vi.advanceTimersByTime(SYNC_DEBOUNCE_MS);
-    expect(mockSyncAll).toHaveBeenCalledTimes(1);
-  });
-
-  test("does nothing when no token", async () => {
-    mockTrySilentRefresh.mockResolvedValue(null);
-
-    expect(await syncIfNeeded()).toBe("not-connected");
-
-    expect(mockSyncAll).not.toHaveBeenCalled();
-  });
-
-  test("reports a failed sync", async () => {
-    mockTrySilentRefresh.mockResolvedValue({ accessToken: "tok" });
-    mockSyncAll.mockResolvedValue({ success: false, results: [] });
-
-    expect(await syncIfNeeded()).toBe("failed");
   });
 });

@@ -358,3 +358,19 @@ test("removing a video from the shown set makes its card disappear", async () =>
     expect(within(region).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(["Epsilon"]),
   );
 });
+
+test("an empty library shows a starter hint in place of recommendations, then recommends after importing", async () => {
+  await appDb.exercises.clear();
+  const user = userEvent.setup();
+
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  const region = await screen.findByRole("region", { name: /recommended/i });
+  expect(within(region).getByText("No videos yet. Import the starter exercises to get going.")).toBeInTheDocument();
+  expect(within(region).queryByRole("button", { name: "Show 3 others" })).not.toBeInTheDocument();
+
+  await user.click(within(region).getByRole("button", { name: "Import starter exercises" }));
+
+  await waitFor(() => expect(within(region).getAllByRole("heading", { level: 3 }).length).toBeGreaterThan(0));
+  expect(within(region).queryByText("No videos yet. Import the starter exercises to get going.")).not.toBeInTheDocument();
+});

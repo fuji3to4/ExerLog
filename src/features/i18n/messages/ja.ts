@@ -184,6 +184,10 @@
   // Data management
   settings_export_exercises: "エクササイズをエクスポート（CSV）",
   settings_import_exercises: "エクササイズをインポート（CSV）",
+  settings_import_starter: "初期データをインポート",
+  settings_import_starter_success: "初期データから{count}件のエクササイズを追加しました。",
+  settings_import_starter_none: "初期データはすべて登録済みです。",
+  starter_hint_text: "まだ動画がありません。初期データをインポートすると、すぐに始められます。",
   settings_import_confirm: "すべてのエクササイズが置き換えられます。続けますか？",
   settings_import_success: "{count}件のエクササイズをインポートしました。",
   settings_import_error: "インポートに失敗しました: {error}",
@@ -249,10 +253,6 @@
   action_delete: "削除",
 
   // Seed confirm dialog
-  seed_confirm_title: "初期データをインポートしますか？",
-  seed_confirm_message: "エクササイズが登録されていません。あらかじめ用意された初期データをインポートしますか？",
-  seed_confirm_yes: "インポートする",
-  seed_confirm_no: "しない",
 
   // Feedback
   feedback_saved: "✓ 保存しました",

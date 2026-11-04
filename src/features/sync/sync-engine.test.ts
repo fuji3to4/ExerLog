@@ -18,7 +18,7 @@ vi.mock("@/features/modules/data-registry", async (importOriginal) => {
 import type { ExerciseLog, MeasurementRecord, Tombstone } from "@/lib/types";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
-import { clearAllExercises, seedIfEmpty } from "@/features/storage/exercise-catalog.repository";
+import { clearAllExercises, importStarterExercises } from "@/features/storage/exercise-catalog.repository";
 import { CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
 import { sheetTabs, tableSyncConfigs } from "./sync-config";
 import { syncAll } from "./sync-engine";
@@ -328,10 +328,10 @@ describe("syncAll", () => {
     expect(await appDb.wellnessEntries.count()).toBe(1);
   });
 
-  test("exercises re-seeded after 'delete all' survive sync locally and on the sheet", async () => {
+  test("starter exercises re-imported after 'delete all' survive sync locally and on the sheet", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-20T09:00:00+09:00"));
-    await seedIfEmpty();
+    await importStarterExercises();
     await syncAll(TOKEN);
 
     vi.setSystemTime(new Date("2026-10-20T10:00:00+09:00"));
@@ -340,7 +340,7 @@ describe("syncAll", () => {
     expect(sheets.tabs.get("Exercises")).toHaveLength(1);
 
     vi.setSystemTime(new Date("2026-10-20T11:00:00+09:00"));
-    await seedIfEmpty();
+    await importStarterExercises();
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);

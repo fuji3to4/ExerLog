@@ -23,21 +23,3 @@ export function scheduleSync(): void {
     }
   }, SYNC_DEBOUNCE_MS);
 }
-
-export type SyncIfNeededOutcome = "not-connected" | "synced" | "failed";
-
-/**
- * Cancel any pending timer and sync immediately (no-op without a Google token).
- * Used before offering the starter exercise seed, so a fresh device first pulls
- * the remote library instead of overwriting it.
- */
-export async function syncIfNeeded(): Promise<SyncIfNeededOutcome> {
-  if (syncTimer) {
-    clearTimeout(syncTimer);
-    syncTimer = null;
-  }
-  const token = await trySilentRefresh();
-  if (!token) return "not-connected";
-  const result = await syncAll(token.accessToken, () => {});
-  return result.success ? "synced" : "failed";
-}

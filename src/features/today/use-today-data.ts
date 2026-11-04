@@ -61,12 +61,18 @@ export function useTodayData(date: Date | string) {
     dayKeyRef.current = dayKey;
   }, [dayKey]);
 
+  const reloadExercises = useCallback(
+    () =>
+      listAllExercises()
+        .then(setExercises)
+        .catch(console.error)
+        .finally(() => setIsCatalogLoaded(true)),
+    [],
+  );
+
   useEffect(() => {
-    listAllExercises()
-      .then(setExercises)
-      .catch(console.error)
-      .finally(() => setIsCatalogLoaded(true));
-  }, []);
+    void reloadExercises();
+  }, [reloadExercises]);
 
   useEffect(() => {
     let isActive = true;
@@ -186,6 +192,8 @@ export function useTodayData(date: Date | string) {
 
   return {
     isHydrated: hydratedDayKey === dayKey && isCatalogLoaded,
+    isLibraryEmpty: exercises.length === 0,
+    reloadExercises,
     recommendations,
     logCounts,
     logExercise,

@@ -184,6 +184,10 @@ export const en = {
   // Data management
   settings_export_exercises: "Export exercises (CSV)",
   settings_import_exercises: "Import exercises (CSV)",
+  settings_import_starter: "Import starter exercises",
+  settings_import_starter_success: "Added {count} starter exercises.",
+  settings_import_starter_none: "All starter exercises are already registered.",
+  starter_hint_text: "No videos yet. Import the starter exercises to get going.",
   settings_import_confirm: "This will replace all exercises. Continue?",
   settings_import_success: "Imported {count} exercise(s).",
   settings_import_error: "Import failed: {error}",
@@ -249,10 +253,6 @@ export const en = {
   action_delete: "Delete",
 
   // Seed confirm dialog
-  seed_confirm_title: "Import starter exercises?",
-  seed_confirm_message: "No exercises are registered. Would you like to import the starter exercise catalog?",
-  seed_confirm_yes: "Import",
-  seed_confirm_no: "Not now",
 
   // Feedback
   feedback_saved: "✓ Saved",
