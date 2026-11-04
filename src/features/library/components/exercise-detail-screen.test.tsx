@@ -159,11 +159,11 @@ test("adds the video to a new set from the + Set button", async () => {
 
   renderWithLanguage(<ExerciseDetailScreen exercise={strengthExercise} />, { initialLanguage: "en" });
 
-  await user.click(await screen.findByRole("button", { name: "Add Squat Basics to a set" }));
-  await user.click(await screen.findByRole("menuitem", { name: "+ New set" }));
+  await user.click(await screen.findByRole("button", { name: "Add Squat Basics to a list" }));
+  await user.click(await screen.findByRole("menuitem", { name: "+ New list" }));
 
   const dialog = await screen.findByRole("dialog");
-  await user.type(within(dialog).getByLabelText("Set name"), "Morning");
+  await user.type(within(dialog).getByLabelText("List name"), "Morning");
   await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
   await waitFor(async () => {

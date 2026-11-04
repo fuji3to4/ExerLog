@@ -212,11 +212,11 @@ test("adds a video to a new set from the card menu", async () => {
 
   await screen.findAllByRole("article");
 
-  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
-  await user.click(await screen.findByRole("menuitem", { name: "+ New set" }));
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a list" }));
+  await user.click(await screen.findByRole("menuitem", { name: "+ New list" }));
 
   const dialog = await screen.findByRole("dialog");
-  await user.type(within(dialog).getByLabelText("Set name"), "Morning");
+  await user.type(within(dialog).getByLabelText("List name"), "Morning");
   await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
   await waitFor(async () => {
@@ -234,7 +234,7 @@ test("toggles set membership with checkboxes and keeps the menu open", async () 
 
   await screen.findAllByRole("article");
 
-  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a list" }));
   await user.click(await screen.findByRole("menuitemcheckbox", { name: "Morning" }));
   expect(screen.getByRole("menuitemcheckbox", { name: "Evening" })).toBeInTheDocument();
   await user.click(screen.getByRole("menuitemcheckbox", { name: "Evening" }));
@@ -260,11 +260,11 @@ test("cannot save a set with a blank name", async () => {
 
   await screen.findAllByRole("article");
 
-  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
-  await user.click(await screen.findByRole("menuitem", { name: "+ New set" }));
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a list" }));
+  await user.click(await screen.findByRole("menuitem", { name: "+ New list" }));
 
   const dialog = await screen.findByRole("dialog");
-  await user.type(within(dialog).getByLabelText("Set name"), "   ");
+  await user.type(within(dialog).getByLabelText("List name"), "   ");
   expect(within(dialog).getByRole("button", { name: "Save" })).toBeDisabled();
 });
 
@@ -278,7 +278,7 @@ test("a failed toggle is logged and the checkbox still reflects the store", asyn
 
   await screen.findAllByRole("article");
 
-  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a list" }));
   await user.click(await screen.findByRole("menuitemcheckbox", { name: "Morning" }));
 
   await waitFor(() => expect(consoleError).toHaveBeenCalled());
@@ -296,11 +296,11 @@ test("the name dialog stays open and shows an error when creating a set fails", 
 
   await screen.findAllByRole("article");
 
-  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a set" }));
-  await user.click(await screen.findByRole("menuitem", { name: "+ New set" }));
+  await user.click(screen.getByRole("button", { name: "Add Shoulder Rolls to a list" }));
+  await user.click(await screen.findByRole("menuitem", { name: "+ New list" }));
 
   const dialog = await screen.findByRole("dialog");
-  await user.type(within(dialog).getByLabelText("Set name"), "Morning");
+  await user.type(within(dialog).getByLabelText("List name"), "Morning");
   await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
   expect(await within(dialog).findByRole("alert")).toHaveTextContent("Couldn't save. Please try again.");
@@ -318,12 +318,12 @@ test("set row stays with All and New set when there are no sets, and creating on
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
   await screen.findAllByRole("article");
 
-  const group = screen.getByRole("group", { name: "Sets" });
+  const group = screen.getByRole("group", { name: "My lists" });
   expect(within(group).getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
-  await user.click(within(group).getByRole("button", { name: "+ New set" }));
+  await user.click(within(group).getByRole("button", { name: "+ New list" }));
 
   const dialog = await screen.findByRole("dialog");
-  await user.type(within(dialog).getByLabelText("Set name"), "Morning");
+  await user.type(within(dialog).getByLabelText("List name"), "Morning");
   await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
   expect(await screen.findByRole("button", { name: "Morning" })).toHaveAttribute("aria-pressed", "true");
@@ -351,15 +351,15 @@ test("set actions live at the end of the set row", async () => {
 
   await screen.findAllByRole("article");
   expect(await screen.findByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.queryByRole("button", { name: "Set actions" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "List actions" })).toBeNull();
 
   await user.click(screen.getByRole("button", { name: "Morning" }));
-  const group = screen.getByRole("group", { name: "Sets" });
-  await user.click(within(group).getByRole("button", { name: "Set actions" }));
+  const group = screen.getByRole("group", { name: "My lists" });
+  await user.click(within(group).getByRole("button", { name: "List actions" }));
   await user.click(await screen.findByRole("menuitem", { name: "Rename" }));
 
   const dialog = await screen.findByRole("dialog");
-  const input = within(dialog).getByLabelText("Set name");
+  const input = within(dialog).getByLabelText("List name");
   expect(input).toHaveValue("Morning");
   await user.clear(input);
   await user.type(input, "Daily");
@@ -368,10 +368,10 @@ test("set actions live at the end of the set row", async () => {
   expect(await screen.findByRole("button", { name: "Daily" })).toHaveAttribute("aria-pressed", "true");
   expect((await listExerciseSets())[0].name).toBe("Daily");
 
-  await user.click(screen.getByRole("button", { name: "Set actions" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Delete this set" }));
+  await user.click(screen.getByRole("button", { name: "List actions" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Delete this list" }));
 
-  expect(confirm).toHaveBeenCalledWith('Delete the set "Daily"? The videos stay in the library.');
+  expect(confirm).toHaveBeenCalledWith('Delete the list "Daily"? The videos stay in the library.');
   await waitFor(() => expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true"));
   expect(screen.getAllByRole("article")).toHaveLength(6);
   expect(await appDb.exercises.count()).toBe(6);

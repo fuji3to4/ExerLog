@@ -291,7 +291,7 @@ test("an empty set shows a hint linking to the library", async () => {
 
   const region = await screen.findByRole("region", { name: "Empty" });
   expect(
-    within(region).getByText('This set has no videos yet. Add some from the "⋮" menu on a video card.'),
+    within(region).getByText('This list has no videos yet. Add some from the "⋮" menu on a video card.'),
   ).toBeInTheDocument();
   expect(within(region).getByRole("link", { name: "Library" })).toHaveAttribute("href", "/library");
 });
@@ -335,7 +335,7 @@ test("set menu on a Today card adds the video to a set", async () => {
   await createExerciseSet("Morning");
   renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
 
-  await user.click(await screen.findByRole("button", { name: "Add Delta to a set" }));
+  await user.click(await screen.findByRole("button", { name: "Add Delta to a list" }));
   await user.click(await screen.findByRole("menuitemcheckbox", { name: "Morning" }));
 
   await waitFor(async () => {
@@ -351,7 +351,7 @@ test("removing a video from the shown set makes its card disappear", async () =>
 
   await user.click(await screen.findByRole("button", { name: "Morning" }));
   const region = await screen.findByRole("region", { name: "Morning" });
-  await user.click(within(region).getByRole("button", { name: "Add Delta to a set" }));
+  await user.click(within(region).getByRole("button", { name: "Add Delta to a list" }));
   await user.click(await screen.findByRole("menuitemcheckbox", { name: "Morning" }));
 
   await waitFor(() =>
