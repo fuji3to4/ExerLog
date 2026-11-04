@@ -10,6 +10,7 @@ import { renderWithLanguage } from "@/test/render-with-language";
 import { ExerciseDetailLoader } from "./components/exercise-detail-loader";
 
 beforeEach(() => {
+  window.history.replaceState({}, "", "/exercises?exerciseId=missing");
   router.back.mockReset();
   router.push.mockReset();
 });
@@ -18,7 +19,7 @@ test("goes back to the previous page when there is one", async () => {
   const user = userEvent.setup();
   vi.spyOn(window.history, "length", "get").mockReturnValue(3);
 
-  renderWithLanguage(<ExerciseDetailLoader exerciseId="missing" />, { initialLanguage: "en" });
+  renderWithLanguage(<ExerciseDetailLoader />, { initialLanguage: "en" });
 
   await user.click(screen.getByRole("button", { name: /back/i }));
 
@@ -30,7 +31,7 @@ test("falls back to the library when the page was opened directly", async () => 
   const user = userEvent.setup();
   vi.spyOn(window.history, "length", "get").mockReturnValue(1);
 
-  renderWithLanguage(<ExerciseDetailLoader exerciseId="missing" />, { initialLanguage: "en" });
+  renderWithLanguage(<ExerciseDetailLoader />, { initialLanguage: "en" });
 
   await user.click(screen.getByRole("button", { name: /back/i }));
 

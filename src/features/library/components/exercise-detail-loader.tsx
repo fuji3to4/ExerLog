@@ -12,10 +12,6 @@ import type { ExerciseVideo } from "@/lib/types";
 
 import { ExerciseDetailScreen } from "./exercise-detail-screen";
 
-type ExerciseDetailLoaderProps = {
-  exerciseId?: string;
-};
-
 /** Returns to wherever the detail page was opened from; the library when opened directly. */
 function BackButton() {
   const router = useRouter();
@@ -36,7 +32,8 @@ function BackButton() {
   );
 }
 
-export function ExerciseDetailLoader({ exerciseId }: ExerciseDetailLoaderProps) {
+/** The exercise comes from ?exerciseId=<id>, so any id stored on this device can be opened. */
+export function ExerciseDetailLoader() {
   // Read after mount: the static export prerenders without a URL.
   const [logDate, setLogDate] = useState<string | null>(null);
   useEffect(() => setLogDate(parseLogDate(window.location.search)), []);
@@ -47,17 +44,16 @@ export function ExerciseDetailLoader({ exerciseId }: ExerciseDetailLoaderProps) 
         <BackButton />
       </div>
       <LogDateNotice logDate={logDate} />
-      <ExerciseDetailContent exerciseId={exerciseId} logDate={logDate} />
+      <ExerciseDetailContent logDate={logDate} />
     </div>
   );
 }
 
-function ExerciseDetailContent({ exerciseId, logDate }: ExerciseDetailLoaderProps & { logDate: string | null }) {
+function ExerciseDetailContent({ logDate }: { logDate: string | null }) {
   const [exercise, setExercise] = useState<ExerciseVideo | null | undefined>(undefined);
   const { t } = useTranslation();
   const resolvedExerciseId =
-    exerciseId ??
-    (typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("exerciseId") ?? "");
+    typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("exerciseId") ?? "";
 
   useEffect(() => {
     if (!resolvedExerciseId) {
