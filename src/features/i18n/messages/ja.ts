@@ -19,9 +19,6 @@
   today_source_aria: "表示するもの",
   today_set_empty: "このマイリストにはまだ動画がありません。動画カードの「⋮」から追加できます。",
   // Continuous play of a my-list
-  playlist_controls_aria: "連続再生",
-  playlist_start: "▶ 連続再生",
-  playlist_stop: "■ 停止",
   playlist_loop: "ループ",
   playlist_auto_check: "自動チェック",
   playlist_previous_aria: "前の動画",

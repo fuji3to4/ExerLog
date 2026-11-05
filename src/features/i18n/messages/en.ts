@@ -19,9 +19,6 @@ export const en = {
   today_source_aria: "Show",
   today_set_empty: 'This list has no videos yet. Add some from the "⋮" menu on a video card.',
   // Continuous play of a my-list
-  playlist_controls_aria: "Play all",
-  playlist_start: "▶ Play all",
-  playlist_stop: "■ Stop",
   playlist_loop: "Loop",
   playlist_auto_check: "Auto check",
   playlist_previous_aria: "Previous video",
