@@ -29,7 +29,7 @@ test("renders a derived thumbnail image when a YouTube exercise has no stored th
   };
 
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={exercise} todayCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/watch" onLog={vi.fn()} />,
+    <RecommendedExerciseCard exercise={exercise} todayCount={0} totalCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/watch" onLog={vi.fn()} />,
   );
 
   expect(screen.getByAltText("Blank Thumbnail Exercise")).toHaveAttribute(
@@ -40,7 +40,7 @@ test("renders a derived thumbnail image when a YouTube exercise has no stored th
 
 test("uses the watch destination provided by the container", () => {
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/custom-watch-path" onLog={vi.fn()} />,
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} totalCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/custom-watch-path" onLog={vi.fn()} />,
     { initialLanguage: "en" },
   );
 
@@ -49,7 +49,7 @@ test("uses the watch destination provided by the container", () => {
 
 test("translates metadata labels and actions while keeping exercise title raw", () => {
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/custom-watch-path" onLog={vi.fn()} />,
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} totalCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/custom-watch-path" onLog={vi.fn()} />,
   );
 
   expect(screen.getByRole("heading", { name: "Neck Mobility" })).toBeInTheDocument();
@@ -62,7 +62,7 @@ test("logs every press and shows today's count", async () => {
   const onLog = vi.fn();
 
   renderWithLanguage(
-    <RecommendedExerciseCard exercise={neckMobility} todayCount={2} sets={[]} onSetsChanged={vi.fn()} watchHref="/watch" onLog={onLog} />,
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={2} totalCount={5} sets={[]} onSetsChanged={vi.fn()} watchHref="/watch" onLog={onLog} />,
   );
 
   await user.click(screen.getByRole("button", { name: "できた" }));
@@ -71,5 +71,5 @@ test("logs every press and shows today's count", async () => {
   expect(onLog).toHaveBeenCalledTimes(2);
   expect(onLog).toHaveBeenNthCalledWith(1, "did");
   expect(onLog).toHaveBeenNthCalledWith(2, "did");
-  expect(screen.getByText("今日2回")).toBeInTheDocument();
+  expect(screen.getByText("今日2回／全5回")).toBeInTheDocument();
 });

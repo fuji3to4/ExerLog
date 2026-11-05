@@ -131,11 +131,11 @@ describe("today screen timeline", () => {
 
     expect(await screen.findByRole("button", { name: /Delta できた/ })).toBeInTheDocument();
     expect(await screen.findByText(/おつかれさま！ 5分 やりました/)).toBeInTheDocument();
-    await waitFor(() => expect(within(card).getByText("今日1回")).toBeInTheDocument());
+    await waitFor(() => expect(within(card).getByText("今日1回／全1回")).toBeInTheDocument());
 
     fireEvent.click(within(card).getByRole("button", { name: "できた" }));
 
-    await waitFor(() => expect(within(card).getByText("今日2回")).toBeInTheDocument());
+    await waitFor(() => expect(within(card).getByText("今日2回／全2回")).toBeInTheDocument());
     await waitFor(() => expect(screen.getAllByRole("button", { name: /Delta できた/ })).toHaveLength(2));
     const logs = await listExerciseLogsForDay(DATE);
     expect(logs).toHaveLength(2);

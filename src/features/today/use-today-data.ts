@@ -13,6 +13,7 @@ import { readSelectedSetId, writeSelectedSetId } from "@/features/exercise-sets/
 import { listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import {
   addExerciseLog,
+  countExerciseLogsByExercise,
   countExerciseLogsForDay,
   listExerciseLogsBefore,
 } from "@/features/storage/exercise-logs.repository";
@@ -48,6 +49,7 @@ export function useTodayData(date: Date | string) {
   const wellnessEnabled = !settings.disabled.includes("wellness");
   const [scores, setScores] = useState<LatestScores>(DEFAULT_SCORES);
   const [logCounts, setLogCounts] = useState<Record<string, number>>({});
+  const [totalLogCounts, setTotalLogCounts] = useState<Map<string, number>>(new Map());
   const [history, setHistory] = useState<RecommendationHistory>(EMPTY_HISTORY);
   const [reshuffle, setReshuffle] = useState(0);
   const [hydratedDayKey, setHydratedDayKey] = useState<string | null>(null);
@@ -78,9 +80,10 @@ export function useTodayData(date: Date | string) {
     let isActive = true;
 
     async function loadTodayData() {
-      const [latestScores, counts, watches, logs, loadedSets] = await Promise.all([
+      const [latestScores, counts, totals, watches, logs, loadedSets] = await Promise.all([
         loadLatestScores(dayKey, wellnessEnabled),
         countExerciseLogsForDay(dayKey),
+        countExerciseLogsByExercise(),
         listWatchEventsBefore(dayKey),
         listExerciseLogsBefore(dayKey),
         listExerciseSets(),
@@ -92,6 +95,7 @@ export function useTodayData(date: Date | string) {
 
       setScores(latestScores);
       setLogCounts(counts);
+      setTotalLogCounts(totals);
       setHistory({ watches, logs });
       setReshuffle(readReshuffle(dayKey));
       setSets(loadedSets);
@@ -149,15 +153,17 @@ export function useTodayData(date: Date | string) {
     setReshuffle(next);
   }, [dayKey, reshuffle]);
 
-  /** Reloads the latest wellness scores and today's log counts (after timeline edits or deletes). */
+  /** Reloads the latest wellness scores and the log counts (today's and all-time) (after timeline edits or deletes). */
   const refresh = useCallback(async () => {
     const requestedDayKey = dayKey;
     let latestScores: LatestScores;
     let counts: Record<string, number>;
+    let totals: Map<string, number>;
     try {
-      [latestScores, counts] = await Promise.all([
+      [latestScores, counts, totals] = await Promise.all([
         loadLatestScores(requestedDayKey, wellnessEnabled),
         countExerciseLogsForDay(requestedDayKey),
+        countExerciseLogsByExercise(),
       ]);
     } catch (err) {
       // Keep the current state; the next refresh or reload retries.
@@ -167,6 +173,7 @@ export function useTodayData(date: Date | string) {
     if (dayKeyRef.current === requestedDayKey) {
       setScores(latestScores);
       setLogCounts(counts);
+      setTotalLogCounts(totals);
     }
   }, [dayKey, wellnessEnabled]);
 
@@ -184,6 +191,7 @@ export function useTodayData(date: Date | string) {
       if (dayKeyRef.current === requestedDayKey) {
         setLogCounts((current) => ({ ...current, [exercise.id]: (current[exercise.id] ?? 0) + 1 }));
       }
+      setTotalLogCounts((current) => new Map(current).set(exercise.id, (current.get(exercise.id) ?? 0) + 1));
 
       return log;
     },
@@ -196,6 +204,7 @@ export function useTodayData(date: Date | string) {
     reloadExercises,
     recommendations,
     logCounts,
+    totalLogCounts,
     logExercise,
     refresh,
     reshuffleRecommendations,

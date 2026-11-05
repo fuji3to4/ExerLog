@@ -35,6 +35,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
     reloadExercises,
     recommendations,
     logCounts,
+    totalLogCounts,
     logExercise,
     refresh,
     reshuffleRecommendations,
@@ -133,6 +134,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                         exercise={exercise}
                         slot={slot}
                         todayCount={logCounts[exercise.id] ?? 0}
+                        totalCount={totalLogCounts.get(exercise.id) ?? 0}
                         sets={sets}
                         onSetsChanged={() => void reloadSets()}
                         watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}

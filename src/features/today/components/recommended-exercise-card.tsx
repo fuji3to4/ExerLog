@@ -9,6 +9,8 @@ type RecommendedExerciseCardProps = {
   exercise: ExerciseVideo;
   slot?: RecommendationSlot;
   todayCount: number;
+  /** All-time log count, shown next to today's. */
+  totalCount: number;
   watchHref: string;
   sets: ExerciseSet[];
   onSetsChanged: () => void;
@@ -19,6 +21,7 @@ export function RecommendedExerciseCard({
   exercise,
   slot = null,
   todayCount,
+  totalCount,
   watchHref,
   sets,
   onSetsChanged,
@@ -39,7 +42,7 @@ export function RecommendedExerciseCard({
       ]}
       menu={<ExerciseSetMenu exercise={exercise} sets={sets} onChanged={onSetsChanged} />}
     >
-      <ExerciseLogActions todayCount={todayCount} onLog={onLog} />
+      <ExerciseLogActions todayCount={todayCount} totalCount={totalCount} onLog={onLog} />
     </VideoCard>
   );
 }

@@ -145,7 +145,7 @@ test("keeps the day's recommendations after logging one of them", async () => {
   const before = await recommendedTitles();
   const region = screen.getByRole("region", { name: /recommended/i });
   fireEvent.click(within(region).getAllByRole("button", { name: "Did it" })[0]);
-  await waitFor(() => expect(within(region).getByText("1 times today")).toBeInTheDocument());
+  await waitFor(() => expect(within(region).getByText("1 today / 1 total")).toBeInTheDocument());
 
   expect(await recommendedTitles()).toEqual(before);
 });
@@ -183,12 +183,12 @@ test("hydrates today's log counts and resets them when the selected day changes"
   const { rerender } = renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
 
   const firstDayCard = await screen.findByRole("article", { name: "Delta" });
-  await waitFor(() => expect(within(firstDayCard).getByText("2 times today")).toBeInTheDocument());
+  await waitFor(() => expect(within(firstDayCard).getByText("2 today / 2 total")).toBeInTheDocument());
 
   rerender(<TodayScreen date="2026-10-21" />);
 
   const secondDayCard = await screen.findByRole("article", { name: "Delta" });
-  await waitFor(() => expect(within(secondDayCard).getByText("Not logged yet")).toBeInTheDocument());
+  await waitFor(() => expect(within(secondDayCard).getByText("0 today / 2 total")).toBeInTheDocument());
 });
 
 test("shows Japanese fixed UI by default while leaving exercise titles unchanged", async () => {
@@ -198,7 +198,7 @@ test("shows Japanese fixed UI by default while leaving exercise titles unchanged
   expect(screen.getByRole("button", { name: "＋ 記録する" })).toBeInTheDocument();
   const card = await screen.findByRole("article", { name: "Delta" });
   expect(within(card).getByRole("link", { name: /Delta.*を見る/ })).toBeInTheDocument();
-  expect(within(card).getByText("未記録")).toBeInTheDocument();
+  expect(within(card).getByText("今日0回／全0回")).toBeInTheDocument();
 });
 
 test("the log count follows a delete made through the timeline", async () => {
@@ -206,9 +206,9 @@ test("the log count follows a delete made through the timeline", async () => {
 
   const card = await screen.findByRole("article", { name: "Delta" });
   fireEvent.click(within(card).getByRole("button", { name: "できた" }));
-  await waitFor(() => expect(within(card).getByText("今日1回")).toBeInTheDocument());
+  await waitFor(() => expect(within(card).getByText("今日1回／全1回")).toBeInTheDocument());
   fireEvent.click(within(card).getByRole("button", { name: "できた" }));
-  await waitFor(() => expect(within(card).getByText("今日2回")).toBeInTheDocument());
+  await waitFor(() => expect(within(card).getByText("今日2回／全2回")).toBeInTheDocument());
   await waitFor(() => expect(screen.getAllByRole("button", { name: /Delta できた/ })).toHaveLength(2));
 
   fireEvent.click(screen.getAllByRole("button", { name: /Delta できた/ })[0]);
@@ -217,7 +217,7 @@ test("the log count follows a delete made through the timeline", async () => {
   fireEvent.click(within(dialog).getByRole("button", { name: "削除" }));
 
   await waitFor(() => expect(screen.getAllByRole("button", { name: /Delta できた/ })).toHaveLength(1));
-  await waitFor(() => expect(within(card).getByText("今日1回")).toBeInTheDocument());
+  await waitFor(() => expect(within(card).getByText("今日1回／全1回")).toBeInTheDocument());
 });
 
 test("shows an inline alert when a log cannot be saved", async () => {
@@ -230,12 +230,12 @@ test("shows an inline alert when a log cannot be saved", async () => {
   fireEvent.click(within(card).getByRole("button", { name: "できた" }));
 
   expect(await screen.findByRole("alert")).toHaveTextContent("記録できませんでした。もう一度お試しください。");
-  expect(within(card).getByText("未記録")).toBeInTheDocument();
+  expect(within(card).getByText("今日0回／全0回")).toBeInTheDocument();
 
   add.mockRestore();
   fireEvent.click(within(card).getByRole("button", { name: "できた" }));
 
-  await waitFor(() => expect(within(card).getByText("今日1回")).toBeInTheDocument());
+  await waitFor(() => expect(within(card).getByText("今日1回／全1回")).toBeInTheDocument());
   expect(screen.queryByRole("alert")).toBeNull();
 });
 
@@ -304,7 +304,7 @@ test("logging from a set card works like a recommendation", async () => {
   const region = await screen.findByRole("region", { name: "Morning" });
   fireEvent.click(within(region).getByRole("button", { name: "Did it" }));
 
-  await waitFor(() => expect(within(region).getByText("1 times today")).toBeInTheDocument());
+  await waitFor(() => expect(within(region).getByText("1 today / 1 total")).toBeInTheDocument());
   expect(await appDb.exerciseLogs.count()).toBe(1);
 });
 
