@@ -21,6 +21,7 @@ export type UsePlaylist = {
   current: (PlaylistItem & { playId: number }) | null;
   isPlaying: boolean;
   settings: PlaylistSettings;
+  setContinuous(on: boolean): void;
   setLoop(on: boolean): void;
   setAutoCheck(on: boolean): void;
   start(exerciseId?: string): void;
@@ -29,17 +30,20 @@ export type UsePlaylist = {
   stop(): void;
   /** Pass to PlaylistPlayer.onEnded; `playId` is the run the player had loaded when it ended. */
   handleEnded(playId: number): void;
+  /** The user logged the current play by hand: auto-check skips this playId. */
+  markManualLog(): void;
 };
 
 type UsePlaylistArgs = {
+  /** The queue in order (a snapshot of the list the player was opened from, or one video). */
   exercises: ExerciseVideo[];
-  /** The selected set's id; when it changes, playback stops. */
-  listKey: string | null;
-  /** Called once per finished video, only when auto-check is on at that moment. */
+  /** Auto-check: called once per video that played to its end in continuous mode. */
   onFinished: (exercise: ExerciseVideo) => void;
 };
 
-export function usePlaylist({ exercises, listKey, onFinished }: UsePlaylistArgs): UsePlaylist {
+const DEFAULT_SETTINGS: PlaylistSettings = { continuous: false, loop: false, autoCheck: false };
+
+export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlaylist {
   const items = useMemo(
     () =>
       exercises.flatMap((exercise) => {
@@ -50,13 +54,14 @@ export function usePlaylist({ exercises, listKey, onFinished }: UsePlaylistArgs)
   );
 
   const [state, setState] = useState<PlaylistState>(IDLE);
-  const [settings, setSettings] = useState<PlaylistSettings>({ loop: false, autoCheck: false });
+  const [settings, setSettings] = useState<PlaylistSettings>(DEFAULT_SETTINGS);
 
   // Read in callbacks so a toggle made mid-video applies when that video ends.
   const settingsRef = useRef(settings);
   const itemsRef = useRef(items);
   const stateRef = useRef(state);
   const onFinishedRef = useRef(onFinished);
+  const manuallyLoggedRef = useRef(new Set<number>());
   itemsRef.current = items;
   stateRef.current = state;
   onFinishedRef.current = onFinished;
@@ -109,20 +114,27 @@ export function usePlaylist({ exercises, listKey, onFinished }: UsePlaylistArgs)
     if (currentState.status !== "playing" || currentState.playId !== endedPlayId) return;
 
     const item = itemsRef.current[currentState.index];
-    if (item && settingsRef.current.autoCheck) {
+    const settingsNow = settingsRef.current;
+
+    if (!settingsNow.continuous) {
+      // Same as a single ▶ play: a start/end clip repeats its section, anything else just ends.
+      const bounded = item && (item.clip.startSeconds !== undefined || item.clip.endSeconds !== undefined);
+      if (bounded) dispatch({ type: "start", index: currentState.index });
+      return;
+    }
+
+    if (item && settingsNow.autoCheck && !manuallyLoggedRef.current.has(endedPlayId)) {
       onFinishedRef.current(item.exercise);
     }
     dispatch({ type: "ended" });
   }, [dispatch]);
 
-  // A list switch ends the run.
-  const listKeyRef = useRef(listKey);
-  useEffect(() => {
-    if (listKeyRef.current !== listKey) {
-      listKeyRef.current = listKey;
-      dispatch({ type: "stop" });
+  const markManualLog = useCallback(() => {
+    const currentState = stateRef.current;
+    if (currentState.status === "playing") {
+      manuallyLoggedRef.current.add(currentState.playId);
     }
-  }, [dispatch, listKey]);
+  }, []);
 
   // The playing video was removed from the list (edited elsewhere, synced).
   useEffect(() => {
@@ -148,6 +160,7 @@ export function usePlaylist({ exercises, listKey, onFinished }: UsePlaylistArgs)
     current,
     isPlaying: current !== null,
     settings,
+    setContinuous: useCallback((on: boolean) => updateSettings({ continuous: on }), [updateSettings]),
     setLoop: useCallback((on: boolean) => updateSettings({ loop: on }), [updateSettings]),
     setAutoCheck: useCallback((on: boolean) => updateSettings({ autoCheck: on }), [updateSettings]),
     start,
@@ -155,5 +168,6 @@ export function usePlaylist({ exercises, listKey, onFinished }: UsePlaylistArgs)
     previous: useCallback(() => dispatch({ type: "previous" }), [dispatch]),
     stop: useCallback(() => dispatch({ type: "stop" }), [dispatch]),
     handleEnded,
+    markManualLog,
   };
 }
