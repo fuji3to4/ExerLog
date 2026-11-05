@@ -77,7 +77,6 @@ export function CircumferenceHelpDialog({ open, onOpenChange, limb }: Circumfere
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t(`circumference_help_title_${limb}`)}</DialogTitle>
-          <DialogDescription>{t("circumference_help_common")}</DialogDescription>
         </DialogHeader>
         <LimbFigure limb={limb} label={t(`circumference_help_figure_${limb}`)} />
         <ol className="space-y-2 text-sm">

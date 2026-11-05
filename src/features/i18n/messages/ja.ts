@@ -329,7 +329,6 @@
   circumference_site_groin: "脚のつけ根",
   circumference_help_title_arm: "腕の測り方",
   circumference_help_title_leg: "脚の測り方",
-  circumference_help_common: "測る時刻は、起床後か就寝前など、なるべくそろえましょう。",
   circumference_help_figure_arm: "腕の測る位置 1〜5",
   circumference_help_figure_leg: "脚の測る位置 1〜5",
   circumference_help_palm: "こぶしを握ったときに4つ並ぶ骨の出っ張りを通る周り。",

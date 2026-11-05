@@ -329,7 +329,6 @@ export const en = {
   circumference_site_groin: "Groin",
   circumference_help_title_arm: "How to measure the arm",
   circumference_help_title_leg: "How to measure the leg",
-  circumference_help_common: "Measure at about the same time each day, for example after waking up or before bed.",
   circumference_help_figure_arm: "Arm measuring positions 1 to 5",
   circumference_help_figure_leg: "Leg measuring positions 1 to 5",
   circumference_help_palm: "Around the hand across the four knuckle bumps that line up when you make a fist.",
