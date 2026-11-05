@@ -1,0 +1,155 @@
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, expect, test, vi } from "vitest";
+
+const watch = vi.hoisted(() => ({ recordWatchEvent: vi.fn(() => Promise.resolve(null)) }));
+vi.mock("@/features/storage/watch-events.repository", () => watch);
+
+import type { ExerciseVideo } from "@/lib/types";
+
+import { PLAYLIST_SETTINGS_STORAGE_KEY } from "./playlist-settings-store";
+import { usePlaylist } from "./use-playlist";
+
+function video(id: string, videoUrl = `https://youtu.be/${id}`): ExerciseVideo {
+  return {
+    id,
+    title: id.toUpperCase(),
+    description: "",
+    videoUrl,
+    thumbnailUrl: "",
+    bodyArea: "full-body",
+    purpose: "mobility",
+    durationSeconds: 60,
+    intensity: "low",
+    updatedAt: "",
+  };
+}
+
+const abc = [video("a"), video("b"), video("c")];
+
+function setup(exercises = abc, listKey: string | null = "set-1") {
+  const onFinished = vi.fn();
+  const hook = renderHook((props: { exercises: ExerciseVideo[]; listKey: string | null }) =>
+    usePlaylist({ ...props, onFinished }),
+    { initialProps: { exercises, listKey } },
+  );
+  return { ...hook, onFinished };
+}
+
+beforeEach(() => {
+  window.localStorage.removeItem(PLAYLIST_SETTINGS_STORAGE_KEY);
+  watch.recordWatchEvent.mockClear();
+});
+
+test("only embeddable videos are queued", () => {
+  const { result } = setup([video("a"), video("x", "https://vimeo.com/1"), video("b")]);
+  expect(result.current.items.map((item) => item.exercise.id)).toEqual(["a", "b"]);
+});
+
+test("start plays the first video and records a watch per video", async () => {
+  const { result } = setup();
+
+  act(() => result.current.start());
+  expect(result.current.isPlaying).toBe(true);
+  expect(result.current.current?.exercise.id).toBe("a");
+  await waitFor(() => expect(watch.recordWatchEvent).toHaveBeenCalledWith({ exerciseId: "a" }));
+
+  act(() => result.current.next());
+  expect(result.current.current?.exercise.id).toBe("b");
+  await waitFor(() => expect(watch.recordWatchEvent).toHaveBeenCalledWith({ exerciseId: "b" }));
+  expect(watch.recordWatchEvent).toHaveBeenCalledTimes(2);
+});
+
+test("start with an id jumps to that video; an unknown id does nothing", () => {
+  const { result } = setup();
+
+  act(() => result.current.start("c"));
+  expect(result.current.current?.exercise.id).toBe("c");
+
+  act(() => result.current.start("nope"));
+  expect(result.current.current?.exercise.id).toBe("c");
+});
+
+test("with auto-check, an ended video is reported once and the next one plays", () => {
+  const { result, onFinished } = setup();
+  act(() => result.current.setAutoCheck(true));
+  act(() => result.current.start());
+
+  act(() => result.current.handleEnded());
+
+  expect(onFinished).toHaveBeenCalledTimes(1);
+  expect(onFinished).toHaveBeenCalledWith(abc[0]);
+  expect(result.current.current?.exercise.id).toBe("b");
+});
+
+test("a duplicate ENDED for the same video is reported once", () => {
+  const { result, onFinished } = setup([video("a")]);
+  act(() => result.current.setAutoCheck(true));
+  act(() => result.current.start());
+  const endedForA = result.current.handleEnded;
+
+  act(() => endedForA());
+  act(() => endedForA());
+
+  expect(onFinished).toHaveBeenCalledTimes(1);
+});
+
+test("ENDED after stop is not reported", () => {
+  const { result, onFinished } = setup();
+  act(() => result.current.setAutoCheck(true));
+  act(() => result.current.start());
+
+  act(() => result.current.stop());
+  act(() => result.current.handleEnded());
+
+  expect(onFinished).not.toHaveBeenCalled();
+  expect(result.current.isPlaying).toBe(false);
+});
+
+test("turning auto-check off mid-video means it is not reported", () => {
+  const { result, onFinished } = setup();
+  act(() => result.current.setAutoCheck(true));
+  act(() => result.current.start());
+
+  act(() => result.current.setAutoCheck(false));
+  act(() => result.current.handleEnded());
+
+  expect(onFinished).not.toHaveBeenCalled();
+  expect(result.current.current?.exercise.id).toBe("b");
+});
+
+test("skipping never reports", () => {
+  const { result, onFinished } = setup();
+  act(() => result.current.setAutoCheck(true));
+  act(() => result.current.start());
+
+  act(() => result.current.next());
+  act(() => result.current.start("a"));
+
+  expect(onFinished).not.toHaveBeenCalled();
+});
+
+test("playback stops when the playing video drops out of the list", () => {
+  const { result, rerender } = setup();
+  act(() => result.current.start("c"));
+
+  rerender({ exercises: [video("a"), video("b")], listKey: "set-1" });
+
+  expect(result.current.isPlaying).toBe(false);
+});
+
+test("switching lists stops playback", () => {
+  const { result, rerender } = setup();
+  act(() => result.current.start());
+
+  rerender({ exercises: abc, listKey: "set-2" });
+
+  expect(result.current.isPlaying).toBe(false);
+});
+
+test("loop setting persists", () => {
+  const { result } = setup();
+  act(() => result.current.setLoop(true));
+
+  expect(result.current.settings.loop).toBe(true);
+  expect(JSON.parse(window.localStorage.getItem(PLAYLIST_SETTINGS_STORAGE_KEY) ?? "{}")).toMatchObject({ loop: true });
+});
