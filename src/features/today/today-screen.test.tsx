@@ -1,10 +1,29 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/sync/auto-sync")>()),
   scheduleSync: vi.fn(),
+}));
+
+type FakePlayerOptions = { videoId: string; events?: { onStateChange?: (event: { data: number }) => void } };
+const fakeYouTube = vi.hoisted(() => ({
+  options: [] as FakePlayerOptions[],
+  players: [] as { loadVideoById: ReturnType<typeof vi.fn>; destroy: ReturnType<typeof vi.fn> }[],
+}));
+
+vi.mock("@/lib/video/youtube-iframe-api", () => ({
+  loadYouTubeIframeApi: () =>
+    Promise.resolve({
+      PlayerState: { ENDED: 0 },
+      Player: function Player(_el: HTMLElement, options: FakePlayerOptions) {
+        fakeYouTube.options.push(options);
+        const player = { loadVideoById: vi.fn(), destroy: vi.fn() };
+        fakeYouTube.players.push(player);
+        return player;
+      },
+    }),
 }));
 
 import { appDb } from "@/features/storage/app-db";
@@ -14,6 +33,7 @@ import { createExerciseSet, listExerciseSets } from "@/features/storage/exercise
 import { writeSelectedSetId } from "@/features/exercise-sets/selected-set-store";
 import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { RESHUFFLE_STORAGE_KEY } from "@/features/recommendations/reshuffle-store";
+import { PLAYLIST_SETTINGS_STORAGE_KEY } from "@/features/playlist/playlist-settings-store";
 import type { ExerciseDraft } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
 
@@ -69,6 +89,9 @@ beforeEach(async () => {
 afterEach(() => {
   window.localStorage.removeItem("lymly-record-modules");
   window.localStorage.removeItem(RESHUFFLE_STORAGE_KEY);
+  window.localStorage.removeItem(PLAYLIST_SETTINGS_STORAGE_KEY);
+  fakeYouTube.options.length = 0;
+  fakeYouTube.players.length = 0;
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -373,4 +396,100 @@ test("an empty library shows a starter hint in place of recommendations, then re
 
   await waitFor(() => expect(within(region).getAllByRole("heading", { level: 3 }).length).toBeGreaterThan(0));
   expect(within(region).queryByText("No videos yet. Import the starter exercises to get going.")).not.toBeInTheDocument();
+});
+
+describe("continuous play", () => {
+  const youTubeCatalog = [
+    { ...exercise("delta", "Delta", "low"), videoUrl: "https://youtu.be/vid-delta" },
+    { ...exercise("epsilon", "Epsilon", "low"), videoUrl: "https://youtu.be/vid-epsilon" },
+    { ...exercise("zeta", "Zeta", "low"), videoUrl: "https://youtu.be/vid-zeta" },
+  ];
+
+  async function openSet(name: string) {
+    renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+    fireEvent.click(await screen.findByRole("button", { name }));
+    return screen.findByRole("region", { name });
+  }
+
+  function card(region: HTMLElement, title: string) {
+    return within(region).getByRole("article", { name: title });
+  }
+
+  beforeEach(async () => {
+    await replaceAllExercises(youTubeCatalog);
+    await createExerciseSet("Morning", ["delta", "epsilon", "zeta"]);
+  });
+
+  test("offers Play all only for a my-list with YouTube videos", async () => {
+    await createExerciseSet("Offline", ["gone"]);
+    renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+    await screen.findByRole("region", { name: /recommended/i });
+    expect(screen.queryByRole("button", { name: "▶ Play all" })).toBeNull();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Morning" }));
+    expect(await screen.findByRole("button", { name: "▶ Play all" })).toBeInTheDocument();
+  });
+
+  test("hides Play all when no video in the list can be embedded", async () => {
+    await replaceAllExercises(catalog);
+    await openSet("Morning");
+    expect(screen.queryByRole("button", { name: "▶ Play all" })).toBeNull();
+  });
+
+  test("Play all plays the first video inline and turns into Stop", async () => {
+    const region = await openSet("Morning");
+    fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
+
+    expect(await within(card(region, "Delta")).findByRole("region", { name: "Delta" })).toBeInTheDocument();
+    await waitFor(() => expect(fakeYouTube.options[0]?.videoId).toBe("vid-delta"));
+    expect(screen.getByRole("button", { name: "■ Stop" })).toBeInTheDocument();
+  });
+
+  test("with auto check, a finished video is logged and the next one takes the player", async () => {
+    const region = await openSet("Morning");
+    fireEvent.click(screen.getByRole("button", { name: "Auto check" }));
+    fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+
+    act(() => fakeYouTube.options[0].events?.onStateChange?.({ data: 0 }));
+
+    expect(await within(card(region, "Delta")).findByText("1 today / 1 total")).toBeInTheDocument();
+    expect(await within(card(region, "Epsilon")).findByRole("region", { name: "Epsilon" })).toBeInTheDocument();
+  });
+
+  test("without auto check, a finished video is not logged", async () => {
+    const region = await openSet("Morning");
+    fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+
+    act(() => fakeYouTube.options[0].events?.onStateChange?.({ data: 0 }));
+
+    expect(await within(card(region, "Epsilon")).findByRole("region", { name: "Epsilon" })).toBeInTheDocument();
+    expect(await appDb.exerciseLogs.count()).toBe(0);
+  });
+
+  test("while playing a card tap jumps to it; while idle it links to the detail screen", async () => {
+    const region = await openSet("Morning");
+    const zetaLink = within(card(region, "Zeta")).getByRole("link", { name: /watch zeta/i });
+    expect(zetaLink).toHaveAttribute("href", "/exercises?exerciseId=zeta");
+
+    fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
+    await within(card(region, "Delta")).findByRole("region", { name: "Delta" });
+    fireEvent.click(within(card(region, "Zeta")).getByRole("link", { name: /watch zeta/i }));
+
+    expect(await within(card(region, "Zeta")).findByRole("region", { name: "Zeta" })).toBeInTheDocument();
+  });
+
+  test("Stop removes the player and logs nothing", async () => {
+    const region = await openSet("Morning");
+    fireEvent.click(screen.getByRole("button", { name: "Auto check" }));
+    fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
+    await within(card(region, "Delta")).findByRole("region", { name: "Delta" });
+
+    fireEvent.click(screen.getByRole("button", { name: "■ Stop" }));
+
+    expect(within(region).queryByRole("region", { name: "Delta" })).toBeNull();
+    expect(screen.getByRole("button", { name: "▶ Play all" })).toBeInTheDocument();
+    expect(await appDb.exerciseLogs.count()).toBe(0);
+  });
 });

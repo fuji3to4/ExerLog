@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RotateCw } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
+import { PlaylistControls } from "@/features/playlist/components/playlist-controls";
+import { PlaylistNowPlaying } from "@/features/playlist/components/playlist-now-playing";
+import { usePlaylist } from "@/features/playlist/use-playlist";
 import { useCelebrate } from "@/features/feedback/celebration";
 import { StarterImportHint } from "@/features/library/components/starter-import-hint";
 import { useModuleSettings } from "@/features/modules/use-module-settings";
@@ -19,6 +22,8 @@ import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
 
 import { RecommendedExerciseCard } from "./recommended-exercise-card";
 import { useTodayData } from "../use-today-data";
+
+const NO_EXERCISES: ExerciseVideo[] = [];
 
 type TodayScreenProps = {
   date?: string;
@@ -49,6 +54,30 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const timeline = useDayTimeline(date, enabledModules);
   const celebrate = useCelebrate();
   const [logErrorExerciseId, setLogErrorExerciseId] = useState<string | null>(null);
+
+  const handleFinished = useCallback(
+    (exercise: ExerciseVideo) => {
+      setLogErrorExerciseId(null);
+      // Auto-check stays quiet: no celebration over the video that is about to start.
+      logExercise(exercise, "did").catch((error: unknown) => {
+        console.error(error);
+        setLogErrorExerciseId(exercise.id);
+      });
+    },
+    [logExercise],
+  );
+  const playlist = usePlaylist({
+    exercises: selectedSet ? selectedSetExercises : NO_EXERCISES,
+    listKey: selectedSet?.id ?? null,
+    onFinished: handleFinished,
+  });
+  const playingId = playlist.current?.exercise.id ?? null;
+  const playingPlayId = playlist.current?.playId ?? null;
+
+  useEffect(() => {
+    if (playingPlayId === null) return;
+    document.querySelector(".today-screen__card--playing")?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [playingPlayId]);
 
   const cards = selectedSet
     ? selectedSetExercises.map((exercise) => ({ exercise, slot: undefined }))
@@ -113,6 +142,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                 selectedId={selectedSet?.id ?? null}
                 onSelect={selectSet}
               />
+              {selectedSet && playlist.items.length > 0 ? <PlaylistControls playlist={playlist} /> : null}
             </CardHeader>
             <CardContent>
               {isLibraryEmpty ? (
@@ -129,7 +159,10 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
               ) : (
                 <div className="today-screen__recommendations">
                   {cards.map(({ exercise, slot }) => (
-                    <div key={exercise.id} className="grid gap-2">
+                    <div
+                      key={exercise.id}
+                      className={cn("grid gap-2", playingId === exercise.id && "today-screen__card--playing")}
+                    >
                       <RecommendedExerciseCard
                         exercise={exercise}
                         slot={slot}
@@ -139,6 +172,8 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                         onSetsChanged={() => void reloadSets()}
                         watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
                         onLog={(result) => void handleLog(exercise, result)}
+                        media={playingId === exercise.id ? <PlaylistNowPlaying playlist={playlist} /> : undefined}
+                        onActivate={playlist.isPlaying ? () => playlist.start(exercise.id) : undefined}
                       />
                       {logErrorExerciseId === exercise.id ? (
                         <p role="alert" className="text-sm text-destructive">
