@@ -27,7 +27,7 @@ describe("playlistReducer", () => {
   });
 
   test("ended on the last video stops without loop", () => {
-    expect(playlistReducer(playing(2, 3), { type: "ended" }, three)).toEqual(IDLE);
+    expect(playlistReducer(playing(2, 3), { type: "ended" }, three)).toMatchObject({ status: "idle" });
   });
 
   test("a single looping video restarts with a new playId", () => {
@@ -43,17 +43,22 @@ describe("playlistReducer", () => {
   });
 
   test("start out of range or on an empty list stays idle", () => {
-    expect(playlistReducer(IDLE, { type: "start", index: 3 }, three)).toEqual(IDLE);
-    expect(playlistReducer(IDLE, { type: "start", index: -1 }, three)).toEqual(IDLE);
-    expect(playlistReducer(IDLE, { type: "start", index: 0 }, { length: 0, loop: true })).toEqual(IDLE);
+    expect(playlistReducer(IDLE, { type: "start", index: 3 }, three)).toMatchObject({ status: "idle" });
+    expect(playlistReducer(IDLE, { type: "start", index: -1 }, three)).toMatchObject({ status: "idle" });
+    expect(playlistReducer(IDLE, { type: "start", index: 0 }, { length: 0, loop: true })).toMatchObject({ status: "idle" });
   });
 
   test("non-start actions while idle stay idle", () => {
-    expect(playlistReducer(IDLE, { type: "next" }, three)).toEqual(IDLE);
-    expect(playlistReducer(IDLE, { type: "ended" }, threeLoop)).toEqual(IDLE);
+    expect(playlistReducer(IDLE, { type: "next" }, three)).toMatchObject({ status: "idle" });
+    expect(playlistReducer(IDLE, { type: "ended" }, threeLoop)).toMatchObject({ status: "idle" });
   });
 
   test("stop returns to idle", () => {
-    expect(playlistReducer(playing(1, 2), { type: "stop" }, three)).toEqual(IDLE);
+    expect(playlistReducer(playing(1, 2), { type: "stop" }, three)).toMatchObject({ status: "idle" });
+  });
+
+  test("a new run after stop keeps counting playIds up", () => {
+    const stopped = playlistReducer(playing(0, 7), { type: "stop" }, three);
+    expect(playlistReducer(stopped, { type: "start", index: 0 }, three)).toEqual(playing(0, 8));
   });
 });

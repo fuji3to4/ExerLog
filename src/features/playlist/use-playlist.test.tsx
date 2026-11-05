@@ -74,7 +74,7 @@ test("with auto-check, an ended video is reported once and the next one plays", 
   act(() => result.current.setAutoCheck(true));
   act(() => result.current.start());
 
-  act(() => result.current.handleEnded());
+  act(() => result.current.handleEnded(result.current.current?.playId ?? 1));
 
   expect(onFinished).toHaveBeenCalledTimes(1);
   expect(onFinished).toHaveBeenCalledWith(abc[0]);
@@ -85,10 +85,10 @@ test("a duplicate ENDED for the same video is reported once", () => {
   const { result, onFinished } = setup([video("a")]);
   act(() => result.current.setAutoCheck(true));
   act(() => result.current.start());
-  const endedForA = result.current.handleEnded;
+  const playId = result.current.current!.playId;
 
-  act(() => endedForA());
-  act(() => endedForA());
+  act(() => result.current.handleEnded(playId));
+  act(() => result.current.handleEnded(playId));
 
   expect(onFinished).toHaveBeenCalledTimes(1);
 });
@@ -99,7 +99,7 @@ test("ENDED after stop is not reported", () => {
   act(() => result.current.start());
 
   act(() => result.current.stop());
-  act(() => result.current.handleEnded());
+  act(() => result.current.handleEnded(result.current.current?.playId ?? 1));
 
   expect(onFinished).not.toHaveBeenCalled();
   expect(result.current.isPlaying).toBe(false);
@@ -111,7 +111,7 @@ test("turning auto-check off mid-video means it is not reported", () => {
   act(() => result.current.start());
 
   act(() => result.current.setAutoCheck(false));
-  act(() => result.current.handleEnded());
+  act(() => result.current.handleEnded(result.current.current?.playId ?? 1));
 
   expect(onFinished).not.toHaveBeenCalled();
   expect(result.current.current?.exercise.id).toBe("b");
@@ -161,4 +161,31 @@ test("a setting changed in one screen copy shows up in another mounted copy", ()
   act(() => first.result.current.setAutoCheck(true));
 
   expect(second.result.current.settings.autoCheck).toBe(true);
+});
+
+test("playing the list again after stop still reports and advances", () => {
+  const { result, onFinished } = setup();
+  act(() => result.current.setAutoCheck(true));
+  act(() => result.current.start());
+  act(() => result.current.handleEnded(result.current.current!.playId));
+  act(() => result.current.stop());
+
+  act(() => result.current.start());
+  act(() => result.current.handleEnded(result.current.current!.playId));
+
+  expect(onFinished).toHaveBeenCalledTimes(2);
+  expect(result.current.current?.exercise.id).toBe("b");
+});
+
+test("an ENDED for a playId that is no longer current is ignored", () => {
+  const { result, onFinished } = setup();
+  act(() => result.current.setAutoCheck(true));
+  act(() => result.current.start());
+  const firstPlayId = result.current.current!.playId;
+  act(() => result.current.handleEnded(firstPlayId));
+
+  act(() => result.current.handleEnded(firstPlayId));
+
+  expect(onFinished).toHaveBeenCalledTimes(1);
+  expect(result.current.current?.exercise.id).toBe("b");
 });

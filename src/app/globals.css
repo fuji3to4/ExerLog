@@ -182,6 +182,8 @@ a {
 }
 
 .today-screen__recommendations {
+  /* Positioned so the continuous-play stage can sit over the playing card. */
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem 1rem;
@@ -1559,8 +1561,21 @@ a {
   gap: 0.5rem;
 }
 
-.playlist-player {
+.playlist-slot {
   aspect-ratio: 16 / 9;
+  border-radius: 0.85rem;
+  background: var(--accent-soft);
+}
+
+/* Laid over the playing card's .playlist-slot by PlaylistStage (top/left/size set inline). */
+.playlist-stage {
+  position: absolute;
+  z-index: 1;
+}
+
+.playlist-player {
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   border-radius: 0.85rem;
   background: var(--accent-soft);

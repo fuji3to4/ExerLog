@@ -27,7 +27,8 @@ export type UsePlaylist = {
   next(): void;
   previous(): void;
   stop(): void;
-  handleEnded(): void;
+  /** Pass to PlaylistPlayer.onEnded; `playId` is the run the player had loaded when it ended. */
+  handleEnded(playId: number): void;
 };
 
 type UsePlaylistArgs = {
@@ -56,7 +57,6 @@ export function usePlaylist({ exercises, listKey, onFinished }: UsePlaylistArgs)
   const itemsRef = useRef(items);
   const stateRef = useRef(state);
   const onFinishedRef = useRef(onFinished);
-  const finishedPlayIdRef = useRef<number | null>(null);
   itemsRef.current = items;
   stateRef.current = state;
   onFinishedRef.current = onFinished;
@@ -103,18 +103,17 @@ export function usePlaylist({ exercises, listKey, onFinished }: UsePlaylistArgs)
 
   const playId = state.status === "playing" ? state.playId : null;
 
-  const handleEnded = useCallback(() => {
+  const handleEnded = useCallback((endedPlayId: number) => {
     const currentState = stateRef.current;
-    if (currentState.status !== "playing" || currentState.playId !== playId) return;
-    if (finishedPlayIdRef.current === playId) return;
-    finishedPlayIdRef.current = playId;
+    // Late or duplicate events for an earlier video (or an earlier run) don't count.
+    if (currentState.status !== "playing" || currentState.playId !== endedPlayId) return;
 
     const item = itemsRef.current[currentState.index];
     if (item && settingsRef.current.autoCheck) {
       onFinishedRef.current(item.exercise);
     }
     dispatch({ type: "ended" });
-  }, [dispatch, playId]);
+  }, [dispatch]);
 
   // A list switch ends the run.
   const listKeyRef = useRef(listKey);

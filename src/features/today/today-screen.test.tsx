@@ -415,13 +415,21 @@ describe("continuous play", () => {
     return within(region).getByRole("article", { name: title });
   }
 
+  function playingTitle(region: HTMLElement) {
+    return region.querySelector(".today-screen__card--playing h3")?.textContent ?? null;
+  }
+
+  function finishCurrentVideo() {
+    act(() => fakeYouTube.options[0].events?.onStateChange?.({ data: 1 }));
+    act(() => fakeYouTube.options[0].events?.onStateChange?.({ data: 0 }));
+  }
+
   beforeEach(async () => {
     await replaceAllExercises(youTubeCatalog);
     await createExerciseSet("Morning", ["delta", "epsilon", "zeta"]);
   });
 
   test("offers Play all only for a my-list with YouTube videos", async () => {
-    await createExerciseSet("Offline", ["gone"]);
     renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
     await screen.findByRole("region", { name: /recommended/i });
     expect(screen.queryByRole("button", { name: "▶ Play all" })).toBeNull();
@@ -436,25 +444,39 @@ describe("continuous play", () => {
     expect(screen.queryByRole("button", { name: "▶ Play all" })).toBeNull();
   });
 
-  test("Play all plays the first video inline and turns into Stop", async () => {
+  test("Play all plays the first video in its card and turns into Stop", async () => {
     const region = await openSet("Morning");
     fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
 
-    expect(await within(card(region, "Delta")).findByRole("region", { name: "Delta" })).toBeInTheDocument();
+    expect(playingTitle(region)).toBe("Delta");
+    expect(within(region).getByRole("region", { name: "Delta" })).toBeInTheDocument();
     await waitFor(() => expect(fakeYouTube.options[0]?.videoId).toBe("vid-delta"));
     expect(screen.getByRole("button", { name: "■ Stop" })).toBeInTheDocument();
   });
 
-  test("with auto check, a finished video is logged and the next one takes the player", async () => {
+  test("advancing swaps the video inside the one player instead of creating another", async () => {
+    const region = await openSet("Morning");
+    fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+
+    finishCurrentVideo();
+
+    await waitFor(() => expect(fakeYouTube.players[0].loadVideoById).toHaveBeenCalledWith({ videoId: "vid-epsilon" }));
+    expect(playingTitle(region)).toBe("Epsilon");
+    expect(fakeYouTube.options).toHaveLength(1);
+    expect(fakeYouTube.players[0].destroy).not.toHaveBeenCalled();
+  });
+
+  test("with auto check, a finished video is logged and the next one plays", async () => {
     const region = await openSet("Morning");
     fireEvent.click(screen.getByRole("button", { name: "Auto check" }));
     fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
     await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
 
-    act(() => fakeYouTube.options[0].events?.onStateChange?.({ data: 0 }));
+    finishCurrentVideo();
 
     expect(await within(card(region, "Delta")).findByText("1 today / 1 total")).toBeInTheDocument();
-    expect(await within(card(region, "Epsilon")).findByRole("region", { name: "Epsilon" })).toBeInTheDocument();
+    expect(playingTitle(region)).toBe("Epsilon");
   });
 
   test("without auto check, a finished video is not logged", async () => {
@@ -462,9 +484,9 @@ describe("continuous play", () => {
     fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
     await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
 
-    act(() => fakeYouTube.options[0].events?.onStateChange?.({ data: 0 }));
+    finishCurrentVideo();
 
-    expect(await within(card(region, "Epsilon")).findByRole("region", { name: "Epsilon" })).toBeInTheDocument();
+    await waitFor(() => expect(playingTitle(region)).toBe("Epsilon"));
     expect(await appDb.exerciseLogs.count()).toBe(0);
   });
 
@@ -474,22 +496,58 @@ describe("continuous play", () => {
     expect(zetaLink).toHaveAttribute("href", "/exercises?exerciseId=zeta");
 
     fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
-    await within(card(region, "Delta")).findByRole("region", { name: "Delta" });
     fireEvent.click(within(card(region, "Zeta")).getByRole("link", { name: /watch zeta/i }));
 
-    expect(await within(card(region, "Zeta")).findByRole("region", { name: "Zeta" })).toBeInTheDocument();
+    expect(playingTitle(region)).toBe("Zeta");
   });
 
   test("Stop removes the player and logs nothing", async () => {
     const region = await openSet("Morning");
     fireEvent.click(screen.getByRole("button", { name: "Auto check" }));
     fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
-    await within(card(region, "Delta")).findByRole("region", { name: "Delta" });
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
 
     fireEvent.click(screen.getByRole("button", { name: "■ Stop" }));
 
     expect(within(region).queryByRole("region", { name: "Delta" })).toBeNull();
+    expect(playingTitle(region)).toBeNull();
     expect(screen.getByRole("button", { name: "▶ Play all" })).toBeInTheDocument();
     expect(await appDb.exerciseLogs.count()).toBe(0);
+  });
+
+  test("playback stops when this copy of the screen gets hidden (layout switch)", async () => {
+    const observers: { callback: ResizeObserverCallback; targets: Element[] }[] = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        targets: Element[] = [];
+        constructor(callback: ResizeObserverCallback) {
+          observers.push({ callback, targets: this.targets });
+        }
+        observe(target: Element) {
+          this.targets.push(target);
+        }
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    try {
+      const region = await openSet("Morning");
+      fireEvent.click(screen.getByRole("button", { name: "▶ Play all" }));
+      expect(playingTitle(region)).toBe("Delta");
+
+      act(() => {
+        for (const observer of observers) {
+          const entries = observer.targets.map(
+            (target) => ({ target, contentRect: { width: 0, height: 0 } }) as unknown as ResizeObserverEntry,
+          );
+          observer.callback(entries, {} as ResizeObserver);
+        }
+      });
+
+      expect(playingTitle(region)).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RotateCw } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import { useTranslation } from "@/features/i18n/use-translation";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
 import { PlaylistControls } from "@/features/playlist/components/playlist-controls";
-import { PlaylistNowPlaying } from "@/features/playlist/components/playlist-now-playing";
+import { PlaylistSlot } from "@/features/playlist/components/playlist-slot";
+import { PlaylistStage } from "@/features/playlist/components/playlist-stage";
 import { usePlaylist } from "@/features/playlist/use-playlist";
 import { useCelebrate } from "@/features/feedback/celebration";
 import { StarterImportHint } from "@/features/library/components/starter-import-hint";
@@ -73,10 +74,13 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   });
   const playingId = playlist.current?.exercise.id ?? null;
   const playingPlayId = playlist.current?.playId ?? null;
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (playingPlayId === null) return;
-    document.querySelector(".today-screen__card--playing")?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    listRef.current
+      ?.querySelector(".today-screen__card--playing")
+      ?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
   }, [playingPlayId]);
 
   const cards = selectedSet
@@ -157,7 +161,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                   </div>
                 </div>
               ) : (
-                <div className="today-screen__recommendations">
+                <div ref={listRef} className="today-screen__recommendations">
                   {cards.map(({ exercise, slot }) => (
                     <div
                       key={exercise.id}
@@ -172,7 +176,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                         onSetsChanged={() => void reloadSets()}
                         watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
                         onLog={(result) => void handleLog(exercise, result)}
-                        media={playingId === exercise.id ? <PlaylistNowPlaying playlist={playlist} /> : undefined}
+                        media={playingId === exercise.id ? <PlaylistSlot playlist={playlist} /> : undefined}
                         onActivate={playlist.isPlaying ? () => playlist.start(exercise.id) : undefined}
                       />
                       {logErrorExerciseId === exercise.id ? (
@@ -182,6 +186,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                       ) : null}
                     </div>
                   ))}
+                  {playlist.isPlaying ? <PlaylistStage playlist={playlist} containerRef={listRef} /> : null}
                 </div>
               )}
             </CardContent>

@@ -6,25 +6,18 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 import type { UsePlaylist } from "../use-playlist";
-import { PlaylistPlayer } from "./playlist-player";
 
-/** The playing card's media: the inline player with ⏮ / ⏭ under it. */
-export function PlaylistNowPlaying({ playlist }: { playlist: UsePlaylist }) {
+/**
+ * The playing card's media: an empty 16:9 slot that PlaylistStage lays the player over,
+ * with ⏮ / ⏭ under it. The player itself never lives inside a card, so moving to the next
+ * card does not create a new iframe.
+ */
+export function PlaylistSlot({ playlist }: { playlist: UsePlaylist }) {
   const { t } = useTranslation();
-  const { current } = playlist;
-
-  if (!current) {
-    return null;
-  }
 
   return (
     <div className="playlist-now-playing">
-      <PlaylistPlayer
-        clip={current.clip}
-        playId={current.playId}
-        title={current.exercise.title}
-        onEnded={playlist.handleEnded}
-      />
+      <div className="playlist-slot" data-playlist-slot="" />
       <div className="playlist-now-playing__buttons">
         <Button size="icon" className="rounded-full" aria-label={t("playlist_previous_aria")} onClick={playlist.previous}>
           <SkipBack aria-hidden="true" size={18} />
