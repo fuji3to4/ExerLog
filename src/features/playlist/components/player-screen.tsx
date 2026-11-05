@@ -113,9 +113,12 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
 
   useWakeLock(settings.continuous && playlist.isPlaying);
 
+  const isQueueReady = queue !== undefined;
+
   function handleContinuousChange(on: boolean) {
     playlist.setContinuous(on);
-    if (on && !playlist.isPlaying) {
+    // Before the list is known, the autoplay effect starts the run once it arrives.
+    if (on && isQueueReady && !playlist.isPlaying) {
       playlist.start(displayed.id);
     }
   }
@@ -138,6 +141,7 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
         playId={current.playId}
         title={current.exercise.title}
         onEnded={playlist.handleEnded}
+        onError={playlist.handleError}
       />
     );
   } else if (isEmbeddable) {
@@ -145,6 +149,8 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
       <button
         type="button"
         className="exercise-detail__play-button"
+        // Wait for the list: starting earlier would play index 0 of a list that is about to change.
+        disabled={!isQueueReady}
         onClick={() => playlist.start(displayed.id)}
         aria-label={t("action_play_video_aria", { title: displayed.title })}
       >

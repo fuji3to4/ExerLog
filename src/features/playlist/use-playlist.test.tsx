@@ -211,8 +211,8 @@ test("turning continuous off mid-video: an unbounded video stops at its end", ()
   act(() => result.current.setContinuous(false));
   act(() => result.current.handleEnded(playId));
 
-  expect(result.current.current?.exercise.id).toBe("a");
-  expect(result.current.current?.playId).toBe(playId);
+  // Finished and stopped: nothing is playing any more (so the switch can start a new run).
+  expect(result.current.isPlaying).toBe(false);
   expect(onFinished).not.toHaveBeenCalled();
 });
 
@@ -249,4 +249,28 @@ test("setContinuous persists", () => {
 
   expect(result.current.settings.continuous).toBe(true);
   expect(JSON.parse(window.localStorage.getItem(PLAYLIST_SETTINGS_STORAGE_KEY) ?? "{}")).toMatchObject({ continuous: true });
+});
+
+test("a video that fails to load is skipped in continuous mode, without a log", () => {
+  const { result, onFinished } = setup();
+  act(() => result.current.setContinuous(true));
+  act(() => result.current.setAutoCheck(true));
+  act(() => result.current.start());
+
+  act(() => result.current.handleError(result.current.current!.playId));
+
+  expect(result.current.current?.exercise.id).toBe("b");
+  expect(onFinished).not.toHaveBeenCalled();
+});
+
+test("a load error for a playId that is no longer current is ignored", () => {
+  const { result } = setup();
+  act(() => result.current.setContinuous(true));
+  act(() => result.current.start());
+  const stale = result.current.current!.playId;
+  act(() => result.current.next());
+
+  act(() => result.current.handleError(stale));
+
+  expect(result.current.current?.exercise.id).toBe("b");
 });

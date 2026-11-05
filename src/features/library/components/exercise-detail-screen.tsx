@@ -115,6 +115,8 @@ export function ExerciseDetailScreen({
   const handleLog = useCallback(
     async (result: ExerciseLogResult) => {
       setLogError(false);
+      // Tell the player at the tap: a video ending while this saves must not be auto-logged too.
+      onLogged?.();
       try {
         const log = await addExerciseLog({
           date: targetDate,
@@ -124,7 +126,6 @@ export function ExerciseDetailScreen({
         });
         setTodayCount((count) => count + 1);
         setTotalCount((count) => count + 1);
-        onLogged?.();
         // Catching up on a past day is bookkeeping, not an achievement just now: no celebration.
         if (!isPastDay) celebrate({ result, durationSeconds: log.durationSeconds });
       } catch (error) {

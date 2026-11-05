@@ -4,7 +4,7 @@ import { beforeEach, expect, test, vi } from "vitest";
 type PlayerOptions = {
   videoId: string;
   playerVars?: Record<string, number | string>;
-  events?: { onStateChange?: (event: { data: number }) => void };
+  events?: { onStateChange?: (event: { data: number }) => void; onError?: (event: { data: number }) => void };
 };
 
 const fake = vi.hoisted(() => ({
@@ -89,4 +89,14 @@ test("unmount destroys the player", async () => {
 
   unmount();
   expect(fake.players[0].destroy).toHaveBeenCalled();
+});
+
+test("a player error reports the loaded playId", async () => {
+  const onError = vi.fn();
+  render(<PlaylistPlayer clip={{ videoId: "a" }} playId={4} title="A" onEnded={() => {}} onError={onError} />);
+  await waitFor(() => expect(fake.constructed).toHaveLength(1));
+
+  act(() => fake.constructed[0].events?.onError?.({ data: 150 }));
+
+  expect(onError).toHaveBeenCalledWith(4);
 });

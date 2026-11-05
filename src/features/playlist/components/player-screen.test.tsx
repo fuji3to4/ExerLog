@@ -99,6 +99,7 @@ test("mode off looks like today's player: ▶ and nothing continuous", async () 
   expect(screen.queryByText(/Morning ·/)).toBeNull();
   expect(fakeYouTube.options).toHaveLength(0);
 
+  await waitFor(() => expect(screen.getByRole("button", { name: "Play B" })).toBeEnabled());
   fireEvent.click(screen.getByRole("button", { name: "Play B" }));
   await waitFor(() => expect(fakeYouTube.options[0]?.videoId).toBe("vid-b"));
 });
@@ -207,4 +208,24 @@ test("auto logs go to the day the player was opened for", async () => {
 
   await waitFor(async () => expect(await logsFor("a")).toHaveLength(1));
   expect((await logsFor("a"))[0].date).toBe("2026-10-19");
+});
+
+test("after a single play ends, turning the switch on starts a run", async () => {
+  open("a");
+  await waitFor(() => expect(screen.getByRole("button", { name: "Play A" })).toBeEnabled());
+  fireEvent.click(screen.getByRole("button", { name: "Play A" }));
+  await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+  finishCurrentVideo();
+
+  fireEvent.click(screen.getByRole("switch", { name: "Continuous play" }));
+
+  await waitFor(() => expect(fakeYouTube.options).toHaveLength(2));
+  expect(fakeYouTube.options[1].videoId).toBe("vid-a");
+});
+
+test("▶ waits until the list is known", async () => {
+  open("b");
+
+  expect(screen.getByRole("button", { name: "Play B" })).toBeDisabled();
+  await waitFor(() => expect(screen.getByRole("button", { name: "Play B" })).toBeEnabled());
 });

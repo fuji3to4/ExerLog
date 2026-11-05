@@ -30,6 +30,8 @@ export type UsePlaylist = {
   stop(): void;
   /** Pass to PlaylistPlayer.onEnded; `playId` is the run the player had loaded when it ended. */
   handleEnded(playId: number): void;
+  /** Pass to PlaylistPlayer.onError: in continuous mode the broken video is skipped (no log). */
+  handleError(playId: number): void;
   /** The user logged the current play by hand: auto-check skips this playId. */
   markManualLog(): void;
 };
@@ -119,7 +121,8 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     if (!settingsNow.continuous) {
       // Same as a single ▶ play: a start/end clip repeats its section, anything else just ends.
       const bounded = item && (item.clip.startSeconds !== undefined || item.clip.endSeconds !== undefined);
-      if (bounded) dispatch({ type: "start", index: currentState.index });
+      // Anything else finishes and stops, so the switch can start a fresh run afterwards.
+      dispatch(bounded ? { type: "start", index: currentState.index } : { type: "stop" });
       return;
     }
 
@@ -128,6 +131,15 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     }
     dispatch({ type: "ended" });
   }, [dispatch]);
+
+  const handleError = useCallback(
+    (failedPlayId: number) => {
+      const currentState = stateRef.current;
+      if (currentState.status !== "playing" || currentState.playId !== failedPlayId) return;
+      if (settingsRef.current.continuous) dispatch({ type: "next" });
+    },
+    [dispatch],
+  );
 
   const markManualLog = useCallback(() => {
     const currentState = stateRef.current;
@@ -168,6 +180,7 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     previous: useCallback(() => dispatch({ type: "previous" }), [dispatch]),
     stop: useCallback(() => dispatch({ type: "stop" }), [dispatch]),
     handleEnded,
+    handleError,
     markManualLog,
   };
 }

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 
@@ -212,4 +212,13 @@ test("logging for a past day files the log under that day without celebrating", 
   expect(logs[0].date).toBe("2026-10-19");
   expect(logs[0].performedAt.startsWith("2026-10-19T")).toBe(true);
   expect(screen.queryByText(/Nice work!/)).not.toBeInTheDocument();
+});
+
+test("onLogged fires at the tap, before the save finishes, so a video ending meanwhile is not logged twice", async () => {
+  const onLogged = vi.fn();
+  renderWithLanguage(<ExerciseDetailScreen exercise={youtubeExercise} onLogged={onLogged} />, { initialLanguage: "en" });
+
+  fireEvent.click(await screen.findByRole("button", { name: "Did it" }));
+
+  expect(onLogged).toHaveBeenCalledTimes(1);
 });

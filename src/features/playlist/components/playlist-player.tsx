@@ -12,6 +12,8 @@ type PlaylistPlayerProps = {
   title: string;
   /** Called with the playId that was loaded when the video really ended. */
   onEnded: (playId: number) => void;
+  /** Called with the loaded playId when YouTube cannot play it (removed, private, embedding off). */
+  onError?: (playId: number) => void;
 };
 
 const PLAYING = 1;
@@ -27,15 +29,15 @@ function playerVarsFor(clip: YouTubeClip): Record<string, number> {
  * One YouTube player for the whole run. Later videos are swapped in with `loadVideoById`
  * instead of a new iframe, because mobile browsers may block autoplay in a fresh iframe.
  */
-export function PlaylistPlayer({ clip, playId, title, onEnded }: PlaylistPlayerProps) {
+export function PlaylistPlayer({ clip, playId, title, onEnded, onError }: PlaylistPlayerProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
   const loadedPlayIdRef = useRef(playId);
   // An ENDED counts only after the loaded video was seen playing, so duplicate or late
   // events (e.g. from the previous video right after a swap) are dropped.
   const sawPlayingRef = useRef(false);
-  const latest = useRef({ clip, playId, onEnded });
-  latest.current = { clip, playId, onEnded };
+  const latest = useRef({ clip, playId, onEnded, onError });
+  latest.current = { clip, playId, onEnded, onError };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -63,6 +65,9 @@ export function PlaylistPlayer({ clip, playId, title, onEnded }: PlaylistPlayerP
                 sawPlayingRef.current = false;
                 latest.current.onEnded(loadedPlayIdRef.current);
               }
+            },
+            onError: () => {
+              latest.current.onError?.(loadedPlayIdRef.current);
             },
           },
         });

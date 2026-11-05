@@ -10,7 +10,11 @@ export type YTNamespace = {
     options: {
       videoId: string;
       playerVars?: Record<string, number | string>;
-      events?: { onStateChange?: (event: { data: number }) => void };
+      events?: {
+        onStateChange?: (event: { data: number }) => void;
+        /** 2 invalid id, 5 HTML5 error, 100 removed/private, 101/150 embedding disabled. */
+        onError?: (event: { data: number }) => void;
+      };
     },
   ) => YTPlayer;
   PlayerState: { ENDED: number };
