@@ -18,7 +18,12 @@ export const en = {
   today_recommended_heading: "Recommended for today",
   today_source_aria: "Show",
   today_set_empty: 'This list has no videos yet. Add some from the "⋮" menu on a video card.',
-  // Continuous play of a my-list
+  // Continuous play (video player screen)
+  playlist_mode: "Continuous play",
+  playlist_position: "{name} · {index}/{total}",
+  playlist_up_next: "Up next",
+  playlist_up_next_more: "{count} more",
+  playlist_single_name: "This video",
   playlist_loop: "Loop",
   playlist_auto_check: "Auto check",
   playlist_previous_aria: "Previous video",

@@ -1,36 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getExerciseById } from "@/features/storage/exercise-catalog.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { LogDateNotice } from "@/features/logging/components/log-date-notice";
 import { parseLogDate } from "@/features/logging/log-date";
+import { PlayerScreen } from "@/features/playlist/components/player-screen";
 import type { ExerciseVideo } from "@/lib/types";
 
-import { ExerciseDetailScreen } from "./exercise-detail-screen";
-
-/** Returns to wherever the detail page was opened from; the library when opened directly. */
-function BackButton() {
-  const router = useRouter();
-  const { t } = useTranslation();
-
-  function handleBack() {
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/library");
-    }
-  }
-
-  return (
-    <button type="button" className="exercise-detail__back" onClick={handleBack}>
-      {t("action_back")}
-    </button>
-  );
-}
+import { BackButton } from "./back-button";
 
 /** The exercise comes from ?exerciseId=<id>, so any id stored on this device can be opened. */
 export function ExerciseDetailLoader() {
@@ -38,13 +18,17 @@ export function ExerciseDetailLoader() {
   const [logDate, setLogDate] = useState<string | null>(null);
   useEffect(() => setLogDate(parseLogDate(window.location.search)), []);
 
+  return <ExerciseDetailContent logDate={logDate} />;
+}
+
+function Placeholder({ logDate, children }: { logDate: string | null; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
         <BackButton />
       </div>
       <LogDateNotice logDate={logDate} />
-      <ExerciseDetailContent logDate={logDate} />
+      {children}
     </div>
   );
 }
@@ -52,8 +36,10 @@ export function ExerciseDetailLoader() {
 function ExerciseDetailContent({ logDate }: { logDate: string | null }) {
   const [exercise, setExercise] = useState<ExerciseVideo | null | undefined>(undefined);
   const { t } = useTranslation();
-  const resolvedExerciseId =
-    typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("exerciseId") ?? "";
+  // Read once: continuous play rewrites ?exerciseId= as it advances, which must not reload this screen.
+  const [resolvedExerciseId] = useState(() =>
+    typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("exerciseId") ?? "",
+  );
 
   useEffect(() => {
     if (!resolvedExerciseId) {
@@ -66,26 +52,30 @@ function ExerciseDetailContent({ logDate }: { logDate: string | null }) {
 
   if (exercise === undefined) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("detail_loading_heading")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>{t("detail_loading_text")}</p>
-        </CardContent>
-      </Card>
+      <Placeholder logDate={logDate}>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("detail_loading_heading")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>{t("detail_loading_text")}</p>
+          </CardContent>
+        </Card>
+      </Placeholder>
     );
   }
 
   if (exercise === null) {
     return (
-      <Card>
-        <CardContent>
-          <p>{t("exercise_not_found")}</p>
-        </CardContent>
-      </Card>
+      <Placeholder logDate={logDate}>
+        <Card>
+          <CardContent>
+            <p>{t("exercise_not_found")}</p>
+          </CardContent>
+        </Card>
+      </Placeholder>
     );
   }
 
-  return <ExerciseDetailScreen exercise={exercise} logDate={logDate} />;
+  return <PlayerScreen exercise={exercise} logDate={logDate} />;
 }

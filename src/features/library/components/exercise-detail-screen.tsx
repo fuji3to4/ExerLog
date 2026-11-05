@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { ExerciseSetMenu } from "@/features/exercise-sets/components/exercise-set-menu";
@@ -20,9 +20,24 @@ type ExerciseDetailScreenProps = {
   exercise: ExerciseVideo;
   /** Day to file logs under (from `?date=`); null means today. */
   logDate?: string | null;
+  /** Replaces the built-in thumbnail / ▶ / embed (the player screen supplies its own player). */
+  media?: ReactNode;
+  /** Shown right under `media` (⏮ ⏭ in continuous play). */
+  mediaFooter?: ReactNode;
+  /** Called after a manual log was saved. */
+  onLogged?: () => void;
+  /** Bump to re-read the counts after a log saved elsewhere (auto-check). */
+  logCountBump?: number;
 };
 
-export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetailScreenProps) {
+export function ExerciseDetailScreen({
+  exercise,
+  logDate = null,
+  media,
+  mediaFooter,
+  onLogged,
+  logCountBump = 0,
+}: ExerciseDetailScreenProps) {
   const [todayCount, setTodayCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -67,7 +82,7 @@ export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetai
     return () => {
       isActive = false;
     };
-  }, [exercise.id, targetDate]);
+  }, [exercise.id, targetDate, logCountBump]);
 
   const loadSets = useCallback(async () => {
     try {
@@ -109,6 +124,7 @@ export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetai
         });
         setTodayCount((count) => count + 1);
         setTotalCount((count) => count + 1);
+        onLogged?.();
         // Catching up on a past day is bookkeeping, not an achievement just now: no celebration.
         if (!isPastDay) celebrate({ result, durationSeconds: log.durationSeconds });
       } catch (error) {
@@ -116,12 +132,17 @@ export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetai
         setLogError(true);
       }
     },
-    [exercise.id, exercise.durationSeconds, celebrate, targetDate, isPastDay],
+    [exercise.id, exercise.durationSeconds, celebrate, targetDate, isPastDay, onLogged],
   );
 
   return (
     <Card className="exercise-detail">
-      {thumbnailUrl ? (
+      {media !== undefined ? (
+        <>
+          <div className="exercise-detail__thumbnail">{media}</div>
+          {mediaFooter}
+        </>
+      ) : thumbnailUrl ? (
         <div className="exercise-detail__thumbnail">
           {isPlaying && embedUrl ? (
             <iframe

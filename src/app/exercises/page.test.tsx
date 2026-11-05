@@ -57,7 +57,9 @@ test("exercise detail page shows video, metadata, and logging actions", async ()
 
   await user.click(await screen.findByRole("button", { name: /play neck mobility/i }));
 
-  expect(await screen.findByTitle("Neck Mobility")).toHaveAttribute("src", expect.stringContaining("youtube.com/embed/"));
+  // The ▶ swaps the thumbnail for the YouTube player (one player for the whole visit).
+  expect(await screen.findByRole("region", { name: "Neck Mobility" })).toHaveClass("playlist-player");
+  expect(screen.queryByRole("button", { name: /play neck mobility/i })).not.toBeInTheDocument();
 });
 
 test("exercise detail logging persists the selected result", async () => {

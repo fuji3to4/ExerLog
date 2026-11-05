@@ -18,7 +18,12 @@
   today_recommended_heading: "今日のおすすめ",
   today_source_aria: "表示するもの",
   today_set_empty: "このマイリストにはまだ動画がありません。動画カードの「⋮」から追加できます。",
-  // Continuous play of a my-list
+  // Continuous play (video player screen)
+  playlist_mode: "連続再生",
+  playlist_position: "{name} · {index}/{total}",
+  playlist_up_next: "次に流れる",
+  playlist_up_next_more: "ほか {count} 本",
+  playlist_single_name: "この動画",
   playlist_loop: "ループ",
   playlist_auto_check: "自動チェック",
   playlist_previous_aria: "前の動画",
