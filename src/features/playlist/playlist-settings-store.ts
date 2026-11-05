@@ -18,10 +18,14 @@ export function readPlaylistSettings(): PlaylistSettings {
   }
 }
 
+/** Fired on `window` after every write, so every mounted copy of the screen stays in step. */
+export const PLAYLIST_SETTINGS_CHANGED_EVENT = "exerlog-playlist-settings-changed";
+
 export function writePlaylistSettings(settings: PlaylistSettings): void {
   try {
     window.localStorage.setItem(PLAYLIST_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
   } catch {
     // Storage unavailable: the setting still applies until the page is reloaded.
   }
+  window.dispatchEvent(new CustomEvent<PlaylistSettings>(PLAYLIST_SETTINGS_CHANGED_EVENT, { detail: settings }));
 }

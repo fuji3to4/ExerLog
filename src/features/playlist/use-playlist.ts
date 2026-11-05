@@ -7,7 +7,12 @@ import type { ExerciseVideo } from "@/lib/types";
 import { getYouTubeClip, type YouTubeClip } from "@/lib/video/youtube";
 
 import { IDLE, playlistReducer, type PlaylistAction, type PlaylistState } from "./playlist-queue";
-import { readPlaylistSettings, writePlaylistSettings, type PlaylistSettings } from "./playlist-settings-store";
+import {
+  PLAYLIST_SETTINGS_CHANGED_EVENT,
+  readPlaylistSettings,
+  writePlaylistSettings,
+  type PlaylistSettings,
+} from "./playlist-settings-store";
 
 export type PlaylistItem = { exercise: ExerciseVideo; clip: YouTubeClip };
 
@@ -60,6 +65,15 @@ export function usePlaylist({ exercises, listKey, onFinished }: UsePlaylistArgs)
     const stored = readPlaylistSettings();
     settingsRef.current = stored;
     setSettings(stored);
+
+    // The page can mount more than one copy of the screen (desktop and phone layouts).
+    function handleChanged(event: Event) {
+      const next = (event as CustomEvent<PlaylistSettings>).detail;
+      settingsRef.current = next;
+      setSettings(next);
+    }
+    window.addEventListener(PLAYLIST_SETTINGS_CHANGED_EVENT, handleChanged);
+    return () => window.removeEventListener(PLAYLIST_SETTINGS_CHANGED_EVENT, handleChanged);
   }, []);
 
   const updateSettings = useCallback((patch: Partial<PlaylistSettings>) => {

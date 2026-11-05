@@ -153,3 +153,12 @@ test("loop setting persists", () => {
   expect(result.current.settings.loop).toBe(true);
   expect(JSON.parse(window.localStorage.getItem(PLAYLIST_SETTINGS_STORAGE_KEY) ?? "{}")).toMatchObject({ loop: true });
 });
+
+test("a setting changed in one screen copy shows up in another mounted copy", () => {
+  const first = setup();
+  const second = setup();
+
+  act(() => first.result.current.setAutoCheck(true));
+
+  expect(second.result.current.settings.autoCheck).toBe(true);
+});
