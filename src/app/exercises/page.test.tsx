@@ -81,7 +81,7 @@ test("exercise detail logging persists the selected result", async () => {
     );
   });
 
-  expect(await screen.findByText("1 times today")).toBeInTheDocument();
+  expect(await screen.findByText("1 today / 1 total")).toBeInTheDocument();
 });
 
 test("exercise detail hydrates an existing log state on first render", async () => {
@@ -91,7 +91,7 @@ test("exercise detail hydrates an existing log state on first render", async () 
     initialLanguage: "en",
   });
 
-  expect(await screen.findByText("1 times today")).toBeInTheDocument();
+  expect(await screen.findByText("1 today / 1 total")).toBeInTheDocument();
 });
 
 test("keeps imported content raw on the detail screen", async () => {

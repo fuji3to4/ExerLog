@@ -184,11 +184,11 @@ test("logging still works and the description box shows today's status", async (
 
   const box = (await screen.findByText("Slow squats for the legs.")).closest(".exercise-detail__description") as HTMLElement;
   // The description renders before the async today-count load finishes, so wait for the status.
-  expect(await within(box).findByText("Not logged yet")).toBeInTheDocument();
+  expect(await within(box).findByText("0 today / 0 total")).toBeInTheDocument();
 
   await user.click(await screen.findByRole("button", { name: "Did it" }));
 
-  expect(await within(box).findByText("1 times today")).toBeInTheDocument();
+  expect(await within(box).findByText("1 today / 1 total")).toBeInTheDocument();
 });
 
 test("logging for a past day files the log under that day without celebrating", async () => {
@@ -202,11 +202,11 @@ test("logging for a past day files the log under that day without celebrating", 
   );
 
   const box = (await screen.findByText("Slow squats for the legs.")).closest(".exercise-detail__description") as HTMLElement;
-  expect(await within(box).findByText("Not logged yet")).toBeInTheDocument();
+  expect(await within(box).findByText("0 on 10/19 / 0 total")).toBeInTheDocument();
 
   await user.click(await screen.findByRole("button", { name: "Did it" }));
 
-  expect(await within(box).findByText("1 times on 10/19")).toBeInTheDocument();
+  expect(await within(box).findByText("1 on 10/19 / 1 total")).toBeInTheDocument();
   const logs = await appDb.exerciseLogs.toArray();
   expect(logs).toHaveLength(1);
   expect(logs[0].date).toBe("2026-10-19");

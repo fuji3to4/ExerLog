@@ -7,7 +7,7 @@ import { ExerciseSetMenu } from "@/features/exercise-sets/components/exercise-se
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
 import { useCelebrate } from "@/features/feedback/celebration";
 import { shortDayLabel } from "@/features/logging/log-date";
-import { addExerciseLog, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
+import { addExerciseLog, countExerciseLogsByExercise, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
 import { listExerciseSets } from "@/features/storage/exercise-sets.repository";
 import { countWatchesByExercise, recordWatchEvent } from "@/features/storage/watch-events.repository";
 import { toDayKey } from "@/lib/date/day-key";
@@ -24,6 +24,7 @@ type ExerciseDetailScreenProps = {
 
 export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetailScreenProps) {
   const [todayCount, setTodayCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [logError, setLogError] = useState(false);
@@ -43,9 +44,11 @@ export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetai
 
     async function loadTodayCount() {
       let count = 0;
+      let total = 0;
       try {
-        const counts = await countExerciseLogsForDay(targetDate);
+        const [counts, totals] = await Promise.all([countExerciseLogsForDay(targetDate), countExerciseLogsByExercise()]);
         count = counts[exercise.id] ?? 0;
+        total = totals.get(exercise.id) ?? 0;
       } catch (error) {
         console.error(error);
       }
@@ -55,6 +58,7 @@ export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetai
       }
 
       setTodayCount(count);
+      setTotalCount(total);
       setIsHydrated(true);
     }
 
@@ -104,6 +108,7 @@ export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetai
           durationSeconds: exercise.durationSeconds,
         });
         setTodayCount((count) => count + 1);
+        setTotalCount((count) => count + 1);
         // Catching up on a past day is bookkeeping, not an achievement just now: no celebration.
         if (!isPastDay) celebrate({ result, durationSeconds: log.durationSeconds });
       } catch (error) {
@@ -182,11 +187,9 @@ export function ExerciseDetailScreen({ exercise, logDate = null }: ExerciseDetai
             </div>
           ) : (
             <p className="exercise-detail__status" aria-live="polite">
-              {todayCount === 0
-                ? t("result_not_logged")
-                : isPastDay
-                  ? t("log_count_on_day", { date: shortDayLabel(targetDate), count: todayCount })
-                  : t("log_count_today", { count: todayCount })}
+              {isPastDay
+                ? t("log_count_on_day_total", { date: shortDayLabel(targetDate), count: todayCount, total: totalCount })
+                : t("log_count_today_total", { count: todayCount, total: totalCount })}
             </p>
           )}
           {exercise.description ? <p>{exercise.description}</p> : null}
