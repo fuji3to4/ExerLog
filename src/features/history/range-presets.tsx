@@ -10,13 +10,16 @@ export type DayRange = { start: string; end: string };
 
 const PRESETS: readonly DateRangePreset[] = ["7d", "30d", "90d", "all"];
 
+/** Start of the 全期間 range: earlier than any record. */
+export const ALL_TIME_START = "1900-01-01";
+
 export function getDateRangeForPreset(preset: DateRangePreset, today: Date = new Date()): DayRange {
   const end = new Date(today);
   end.setHours(0, 0, 0, 0);
   const endKey = toDayKey(end);
 
   if (preset === "all") {
-    return { start: "1900-01-01", end: endKey };
+    return { start: ALL_TIME_START, end: endKey };
   }
 
   const days = preset === "7d" ? 7 : preset === "30d" ? 30 : 90;

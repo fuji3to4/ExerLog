@@ -1,6 +1,8 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useRef, useState, type ComponentType, type KeyboardEvent, type ReactNode } from "react";
+
+import type { Messages } from "@/features/i18n/messages";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import type { RecordModule } from "@/features/modules/types";
@@ -8,15 +10,24 @@ import { cn } from "@/lib/utils";
 
 const ALL = "all";
 
+/** A chip that is not a record module (e.g. 運動), shown between すべて and the modules. */
+export type HistoryTab = {
+  id: string;
+  labelKey: keyof Messages;
+  icon: RecordModule["icon"];
+  View: ComponentType;
+};
+
 type HistoryModuleTabsProps = {
   modules: readonly RecordModule[];
   /** Puts すべて first; `allContent` is shown while it is selected. */
   includeAll: boolean;
   allContent?: ReactNode;
+  leadingTabs?: readonly HistoryTab[];
 };
 
 /** Chips (すべて + one per module) over the selected chip's content. */
-export function HistoryModuleTabs({ modules, includeAll, allContent }: HistoryModuleTabsProps) {
+export function HistoryModuleTabs({ modules, includeAll, allContent, leadingTabs = [] }: HistoryModuleTabsProps) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<string>(ALL);
   const baseId = useId();
@@ -24,14 +35,19 @@ export function HistoryModuleTabs({ modules, includeAll, allContent }: HistoryMo
   const tabId = (id: string) => `${baseId}-tab-${id}`;
   const panelId = `${baseId}-panel`;
 
+  const views = [
+    ...leadingTabs.map((tab) => ({ id: tab.id, labelKey: tab.labelKey, icon: tab.icon, View: tab.View })),
+    ...modules.map((m) => ({ id: m.data.id, labelKey: m.labelKey, icon: m.icon, View: m.HistoryView })),
+  ];
+
   // A selection that is gone (module turned OFF) falls back without waiting for an effect.
-  const fallback = includeAll ? ALL : (modules[0]?.data.id ?? ALL);
-  const active = selected === ALL ? fallback : modules.some((m) => m.data.id === selected) ? selected : fallback;
-  const activeModule = active === ALL ? undefined : modules.find((m) => m.data.id === active);
+  const fallback = includeAll ? ALL : (views[0]?.id ?? ALL);
+  const active = selected === ALL ? fallback : views.some((view) => view.id === selected) ? selected : fallback;
+  const activeView = active === ALL ? undefined : views.find((view) => view.id === active);
 
   const chips = [
     ...(includeAll ? [{ id: ALL, label: t("history_chip_all"), icon: null as RecordModule["icon"] | null }] : []),
-    ...modules.map((m) => ({ id: m.data.id, label: t(m.labelKey), icon: m.icon as RecordModule["icon"] | null })),
+    ...views.map((view) => ({ id: view.id, label: t(view.labelKey), icon: view.icon as RecordModule["icon"] | null })),
   ];
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -84,7 +100,7 @@ export function HistoryModuleTabs({ modules, includeAll, allContent }: HistoryMo
         })}
       </div>
 
-      <div role="tabpanel" id={panelId} aria-labelledby={tabId(active)}>{activeModule ? <activeModule.HistoryView key={active} /> : allContent}</div>
+      <div role="tabpanel" id={panelId} aria-labelledby={tabId(active)}>{activeView ? <activeView.View key={active} /> : allContent}</div>
     </div>
   );
 }

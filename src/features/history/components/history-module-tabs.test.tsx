@@ -93,4 +93,18 @@ describe("HistoryModuleTabs", () => {
     expect(screen.getByRole("tab", { name: "体調" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("体調の見返し")).toBeInTheDocument();
   });
+
+  it("puts leading tabs between すべて and the modules, and starts on them without すべて", async () => {
+    const user = userEvent.setup();
+    const exerciseTab = { id: "exercise", labelKey: "history_chip_exercise" as const, icon: bodyModule.icon, View: () => <p>運動の見返し</p> };
+    renderWithLanguage(
+      <HistoryModuleTabs modules={[wellness]} includeAll={false} leadingTabs={[exerciseTab]} />,
+      { initialLanguage: "ja" },
+    );
+    const tabs = within(screen.getByRole("tablist", { name: "表示する記録" })).getAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual(["運動", "体調"]);
+    expect(screen.getByText("運動の見返し")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "体調" }));
+    expect(screen.getByText("体調の見返し")).toBeInTheDocument();
+  });
 });

@@ -8,6 +8,7 @@ import { PeriodSummaryButton } from "@/features/period-summary/components/period
 import { useHistoryState } from "../use-history-state";
 import { HistoryCalendar } from "./history-calendar";
 import { HistoryDayTimeline } from "./history-day-timeline";
+import { EXERCISE_HISTORY_TABS } from "./exercise-history-tab";
 import { HistoryModuleTabs } from "./history-module-tabs";
 
 type HistoryScreenProps = {
@@ -31,6 +32,7 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
       <HistoryModuleTabs
         modules={enabledModules}
         includeAll
+        leadingTabs={EXERCISE_HISTORY_TABS}
         allContent={
           <>
             <PeriodSummaryButton />

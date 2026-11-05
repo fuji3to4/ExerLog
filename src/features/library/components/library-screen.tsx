@@ -17,7 +17,7 @@ import { countWatchesByExercise } from "@/features/storage/watch-events.reposito
 import { useTranslation } from "@/features/i18n/use-translation";
 import { useCelebrate } from "@/features/feedback/celebration";
 import { ExerciseLogActions } from "@/features/logging/components/exercise-log-actions";
-import { addExerciseLog, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
+import { addExerciseLog, countExerciseLogsByExercise, countExerciseLogsForDay } from "@/features/storage/exercise-logs.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import { LogDateNotice } from "@/features/logging/components/log-date-notice";
 import { parseLogDate, shortDayLabel, withLogDate } from "@/features/logging/log-date";
@@ -56,6 +56,7 @@ export function LibraryScreen() {
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [watchCounts, setWatchCounts] = useState<Map<string, number>>(new Map());
+  const [totalLogCounts, setTotalLogCounts] = useState<Map<string, number>>(new Map());
   const [exerciseSets, setExerciseSets] = useState<ExerciseSet[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -105,6 +106,7 @@ export function LibraryScreen() {
         durationSeconds: exercise.durationSeconds,
       });
       setLogCounts((counts) => ({ ...counts, [exercise.id]: (counts?.[exercise.id] ?? 0) + 1 }));
+      setTotalLogCounts((counts) => new Map(counts).set(exercise.id, (counts.get(exercise.id) ?? 0) + 1));
       // Catching up on a past day is bookkeeping, not an achievement just now: no celebration.
       if (!isPastDay) celebrate({ result, durationSeconds: log.durationSeconds });
     } catch (error) {
@@ -114,10 +116,11 @@ export function LibraryScreen() {
   }
 
   const loadExercises = useCallback(async () => {
-    const [nextExercises, nextWatchCounts, nextSets] = await Promise.all([
+    const [nextExercises, nextWatchCounts, nextSets, nextTotalLogCounts] = await Promise.all([
       listAllExercises(),
       countWatchesByExercise(),
       listExerciseSets(),
+      countExerciseLogsByExercise(),
     ]);
     setExercises(nextExercises);
     setIsLoaded(true);
@@ -127,6 +130,7 @@ export function LibraryScreen() {
       current.set && !nextSets.some((set) => set.id === current.set) ? { ...current, set: "" } : current,
     );
     setWatchCounts(nextWatchCounts);
+    setTotalLogCounts(nextTotalLogCounts);
   }, []);
 
   useEffect(() => {
@@ -229,13 +233,14 @@ ${t("library_delete_confirm")}`
       );
     });
 
-    if (filters.sort !== "most-watched") {
+    const sortCounts = filters.sort === "most-watched" ? watchCounts : filters.sort === "most-done" ? totalLogCounts : null;
+    if (!sortCounts) {
       return matches;
     }
 
     // Array.prototype.sort is stable, so ties keep catalog order.
-    return matches.sort((a, b) => (watchCounts.get(b.id) ?? 0) - (watchCounts.get(a.id) ?? 0));
-  }, [baseExercises, filters, watchCounts]);
+    return matches.sort((a, b) => (sortCounts.get(b.id) ?? 0) - (sortCounts.get(a.id) ?? 0));
+  }, [baseExercises, filters, watchCounts, totalLogCounts]);
 
   // "Narrowed" means a search or one of the four filters is active; sorting does not count.
   const activeFilterCount = [filters.bodyArea, filters.purpose, filters.duration, filters.intensity].filter(Boolean).length;
@@ -348,6 +353,7 @@ ${t("library_delete_confirm")}`
           <select value={filters.sort} onChange={(event) => setFilters((current) => ({ ...current, sort: event.target.value }))}>
             <option value="">{t("library_sort_default")}</option>
             <option value="most-watched">{t("library_sort_most_watched")}</option>
+            <option value="most-done">{t("library_sort_most_done")}</option>
           </select>
         </label>
       </div>
@@ -397,6 +403,7 @@ ${t("library_delete_confirm")}`
                 <>
                   <ExerciseLogActions
                     todayCount={logCounts[exercise.id] ?? 0}
+                    totalCount={totalLogCounts.get(exercise.id) ?? 0}
                     onLog={(result) => void handleLog(exercise, result)}
                     dayLabel={isPastDay ? shortDayLabel(targetDate) : undefined}
                   />

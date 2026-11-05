@@ -205,6 +205,41 @@ test("sorts by most watched, keeping catalog order for ties", async () => {
   expect(titles.slice(2)).toEqual(defaultOrder.filter((title) => title !== "Neck Mobility" && title !== "Walk in Place"));
 });
 
+function pastLog(exerciseId: string, date: string) {
+  return {
+    id: crypto.randomUUID(),
+    exerciseId,
+    date,
+    result: "did" as const,
+    durationSeconds: 60,
+    performedAt: `${date}T09:00:00+09:00`,
+    updatedAt: `${date}T09:00:00+09:00`,
+  };
+}
+
+test("sorts by most done over all time, keeping catalog order for ties", async () => {
+  const user = userEvent.setup();
+  await appDb.exerciseLogs.bulkAdd([
+    pastLog("walk-in-place-10", "2026-09-01"),
+    pastLog("neck-mobility-5", "2026-09-01"),
+    pastLog("neck-mobility-5", "2026-10-01"),
+  ]);
+  // Watching is a different count and must not affect this order.
+  await appDb.watchEvents.bulkAdd(watch("walk-in-place-10", 5));
+
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+  await screen.findByText(/Watched 5 times/);
+  const cardTitles = () => screen.getAllByRole("article").map((card) => within(card).getByRole("heading").textContent);
+  const defaultOrder = cardTitles();
+
+  await user.selectOptions(screen.getByLabelText(/sort by/i), "most-done");
+
+  const titles = cardTitles();
+  expect(titles.slice(0, 2)).toEqual(["Neck Mobility", "Walk in Place"]);
+  expect(titles.slice(2)).toEqual(defaultOrder.filter((title) => title !== "Neck Mobility" && title !== "Walk in Place"));
+});
+
 test("adds a video to a new set from the card menu", async () => {
   const user = userEvent.setup();
 
@@ -444,6 +479,7 @@ test("opened without a day, shows no notice and plain video links", async () => 
 
 test("each card logs today from the list, like today's picks", async () => {
   const user = userEvent.setup();
+  await appDb.exerciseLogs.add(pastLog("shoulder-roll-4", "2026-10-01"));
   renderWithLanguage(
     <CelebrationProvider>
       <LibraryScreen />
@@ -452,14 +488,13 @@ test("each card logs today from the list, like today's picks", async () => {
   );
 
   const card = await screen.findByRole("article", { name: /shoulder rolls/i });
-  expect(await within(card).findByText("Not logged yet")).toBeInTheDocument();
+  expect(await within(card).findByText("0 today / 1 total")).toBeInTheDocument();
   await user.click(within(card).getByRole("button", { name: "Did it" }));
 
-  expect(await within(card).findByText("1 times today")).toBeInTheDocument();
+  expect(await within(card).findByText("1 today / 2 total")).toBeInTheDocument();
   expect(await screen.findByText(/Nice work!/)).toBeInTheDocument();
-  const logs = await appDb.exerciseLogs.toArray();
+  const logs = await appDb.exerciseLogs.where("date").equals(toDayKey(new Date())).toArray();
   expect(logs).toHaveLength(1);
-  expect(logs[0].date).toBe(toDayKey(new Date()));
   expect(logs[0].result).toBe("did");
 });
 
@@ -477,7 +512,7 @@ test("for a past day, card buttons log that day without celebrating", async () =
     const card = await screen.findByRole("article", { name: /shoulder rolls/i });
     await user.click(await within(card).findByRole("button", { name: "Partly" }));
 
-    expect(await within(card).findByText("1 times on 10/19")).toBeInTheDocument();
+    expect(await within(card).findByText("1 on 10/19 / 1 total")).toBeInTheDocument();
     const logs = await appDb.exerciseLogs.toArray();
     expect(logs).toHaveLength(1);
     expect(logs[0].date).toBe("2026-10-19");

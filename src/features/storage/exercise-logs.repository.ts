@@ -60,6 +60,21 @@ export async function countExerciseLogsForDay(date: string): Promise<Record<stri
   return counts;
 }
 
+/** Number of logs per exerciseId over all time. */
+export async function countExerciseLogsByExercise(): Promise<Map<string, number>> {
+  const ids = await appDb.exerciseLogs.orderBy("exerciseId").keys();
+  const counts = new Map<string, number>();
+  for (const id of ids) {
+    counts.set(String(id), (counts.get(String(id)) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/** Logs whose day falls within the inclusive day-key range, oldest first. */
+export function listExerciseLogsBetween(start: string, end: string): Promise<ExerciseLog[]> {
+  return appDb.exerciseLogs.where("date").between(start, end, true, true).sortBy("performedAt");
+}
+
 export async function clearAllExerciseLogs(): Promise<void> {
   await appDb.transaction("rw", appDb.exerciseLogs, appDb.tombstones, async () => {
     const ids = await appDb.exerciseLogs.toCollection().primaryKeys();

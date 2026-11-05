@@ -8,6 +8,7 @@ import { PeriodSummaryButton } from "@/features/period-summary/components/period
 import { useHistoryState } from "../use-history-state";
 import { HistoryCalendar } from "./history-calendar";
 import { HistoryDayTimeline } from "./history-day-timeline";
+import { EXERCISE_HISTORY_TABS } from "./exercise-history-tab";
 import { HistoryModuleTabs } from "./history-module-tabs";
 
 type HistoryDashboardProps = {
@@ -50,11 +51,7 @@ export function HistoryDashboard({ month: initialMonth }: HistoryDashboardProps 
         </div>
 
         <div>
-          {enabledModules.length > 0 ? (
-            <HistoryModuleTabs modules={enabledModules} includeAll={false} />
-          ) : (
-            <p className="history-screen__chart-empty">{t("history_no_modules")}</p>
-          )}
+          <HistoryModuleTabs modules={enabledModules} includeAll={false} leadingTabs={EXERCISE_HISTORY_TABS} />
         </div>
       </div>
     </div>

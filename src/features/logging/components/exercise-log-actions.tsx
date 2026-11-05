@@ -8,10 +8,12 @@ type ExerciseLogActionsProps = {
   showStatus?: boolean;
   /** Short label ("10/19") when counting a past day instead of today. */
   dayLabel?: string;
+  /** All-time count; when given, the status shows it next to the day's count, even when both are 0. */
+  totalCount?: number;
 };
 
 /** Every press adds one log; the status shows how many logs exist today. */
-export function ExerciseLogActions({ todayCount, onLog, showStatus = true, dayLabel }: ExerciseLogActionsProps) {
+export function ExerciseLogActions({ todayCount, onLog, showStatus = true, dayLabel, totalCount }: ExerciseLogActionsProps) {
   const { t } = useTranslation();
 
   const logActions: Array<{ label: string; value: ExerciseLogResult }> = [
@@ -35,7 +37,11 @@ export function ExerciseLogActions({ todayCount, onLog, showStatus = true, dayLa
       </div>
       {showStatus ? (
         <p className="exercise-log-actions__status" aria-live="polite">
-          {todayCount === 0
+          {totalCount !== undefined
+            ? dayLabel
+              ? t("log_count_on_day_total", { date: dayLabel, count: todayCount, total: totalCount })
+              : t("log_count_today_total", { count: todayCount, total: totalCount })
+            : todayCount === 0
             ? t("result_not_logged")
             : dayLabel
               ? t("log_count_on_day", { date: dayLabel, count: todayCount })

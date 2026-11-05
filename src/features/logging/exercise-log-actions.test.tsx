@@ -38,3 +38,13 @@ test("shows the Japanese count label", () => {
 
   expect(screen.getByText("今日3回")).toBeInTheDocument();
 });
+
+test("shows the all-time count next to the day's count when given, even at zero", () => {
+  renderWithLanguage(<ExerciseLogActions todayCount={0} totalCount={0} onLog={vi.fn()} />);
+  expect(screen.getByText("今日0回／全0回")).toBeInTheDocument();
+});
+
+test("shows the all-time count next to a past day's count", () => {
+  renderWithLanguage(<ExerciseLogActions todayCount={1} totalCount={12} onLog={vi.fn()} dayLabel="11/3" />);
+  expect(screen.getByText("11/3に1回／全12回")).toBeInTheDocument();
+});
