@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { useId, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 
 import { useTranslation } from "@/features/i18n/use-translation";
@@ -20,10 +20,14 @@ export type VideoCardProps = {
   menu?: ReactNode;
   /** Card footer (log buttons, edit buttons). */
   children?: ReactNode;
+  /** Shown in place of the thumbnail (e.g. an inline player). */
+  media?: ReactNode;
+  /** When set, taps on the thumbnail and title call this instead of following `href`. */
+  onActivate?: () => void;
 };
 
 /** YouTube-style video card: thumbnail with duration badge, bold 2-line title, gray meta line. */
-export function VideoCard({ exercise, href, headingLevel, meta, eyebrow, menu, children }: VideoCardProps) {
+export function VideoCard({ exercise, href, headingLevel, meta, eyebrow, menu, children, media, onActivate }: VideoCardProps) {
   const { t } = useTranslation();
   const Heading = headingLevel === 2 ? "h2" : "h3";
   const titleId = useId();
@@ -31,11 +35,19 @@ export function VideoCard({ exercise, href, headingLevel, meta, eyebrow, menu, c
   const duration = formatDuration(exercise.durationSeconds);
   // Without a thumbnail there is nowhere for the badge, so the duration leads the meta line.
   const metaParts = (thumbnailUrl ? meta : [duration, ...meta]).filter(Boolean);
+  const handleLinkClick = onActivate
+    ? (event: MouseEvent<HTMLAnchorElement>) => {
+        event.preventDefault();
+        onActivate();
+      }
+    : undefined;
 
   return (
     <article role="article" className="video-card" aria-labelledby={titleId}>
-      {thumbnailUrl ? (
-        <Link href={href} className="video-card__thumbnail" aria-hidden="true" tabIndex={-1}>
+      {media ? (
+        <div className="video-card__media">{media}</div>
+      ) : thumbnailUrl ? (
+        <Link href={href} className="video-card__thumbnail" aria-hidden="true" tabIndex={-1} onClick={handleLinkClick}>
           <img src={thumbnailUrl} alt={exercise.title} loading="lazy" />
           <span className="video-card__duration">{duration}</span>
         </Link>
@@ -46,6 +58,7 @@ export function VideoCard({ exercise, href, headingLevel, meta, eyebrow, menu, c
           <Heading aria-labelledby={titleId} className="video-card__title">
             <Link
               href={href}
+              onClick={handleLinkClick}
               className="line-clamp-2"
               aria-label={t("action_watch_aria", { title: exercise.title })}
             >

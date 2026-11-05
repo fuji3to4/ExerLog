@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 
@@ -72,4 +72,30 @@ test("logs every press and shows today's count", async () => {
   expect(onLog).toHaveBeenNthCalledWith(1, "did");
   expect(onLog).toHaveBeenNthCalledWith(2, "did");
   expect(screen.getByText("今日2回／全5回")).toBeInTheDocument();
+});
+
+test("onActivate takes over title taps instead of navigating", () => {
+  const onActivate = vi.fn();
+  renderWithLanguage(
+    <RecommendedExerciseCard exercise={neckMobility} todayCount={0} totalCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/watch" onLog={vi.fn()} onActivate={onActivate} />,
+    { initialLanguage: "en" },
+  );
+
+  const link = screen.getByRole("link", { name: /watch neck mobility/i });
+  const notPrevented = fireEvent.click(link);
+
+  expect(onActivate).toHaveBeenCalledTimes(1);
+  expect(notPrevented).toBe(false);
+  expect(link).toHaveAttribute("href", "/watch");
+});
+
+test("media replaces the thumbnail", () => {
+  const exercise = { ...neckMobility, videoUrl: "https://youtu.be/dQw4w9WgXcQ" };
+  renderWithLanguage(
+    <RecommendedExerciseCard exercise={exercise} todayCount={0} totalCount={0} sets={[]} onSetsChanged={vi.fn()} watchHref="/watch" onLog={vi.fn()} media={<div data-testid="player" />} />,
+    { initialLanguage: "en" },
+  );
+
+  expect(screen.getByTestId("player")).toBeInTheDocument();
+  expect(screen.queryByAltText("Neck Mobility")).not.toBeInTheDocument();
 });
