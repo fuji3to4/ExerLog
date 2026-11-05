@@ -26,6 +26,39 @@ export function getYouTubeVideoId(rawUrl: string): string | null {
   }
 }
 
+export type YouTubeClip = { videoId: string; startSeconds?: number; endSeconds?: number };
+
+function readSeconds(value: string | null): number | undefined {
+  if (value === null || value.trim() === "") {
+    return undefined;
+  }
+  const seconds = Number(value);
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : undefined;
+}
+
+/** The video id plus the optional start/end bounds a playlist player needs. */
+export function getYouTubeClip(rawUrl: string): YouTubeClip | null {
+  const videoId = getYouTubeVideoId(rawUrl);
+
+  if (!videoId) {
+    return null;
+  }
+
+  const params = new URL(rawUrl).searchParams;
+  const clip: YouTubeClip = { videoId };
+  const startSeconds = readSeconds(params.get("start"));
+  const endSeconds = readSeconds(params.get("end"));
+
+  if (startSeconds !== undefined) {
+    clip.startSeconds = startSeconds;
+  }
+  if (endSeconds !== undefined) {
+    clip.endSeconds = endSeconds;
+  }
+
+  return clip;
+}
+
 export function getYouTubeThumbnailUrl(rawUrl: string): string | null {
   const videoId = getYouTubeVideoId(rawUrl);
   return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;

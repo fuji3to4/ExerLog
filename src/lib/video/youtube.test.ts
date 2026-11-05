@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { getYouTubeEmbedUrl, getYouTubeThumbnailUrl, getYouTubeVideoId, resolveExerciseThumbnailUrl } from "./youtube";
+import { getYouTubeClip, getYouTubeEmbedUrl, getYouTubeThumbnailUrl, getYouTubeVideoId, resolveExerciseThumbnailUrl } from "./youtube";
 
 describe("getYouTubeVideoId", () => {
   test("reads a standard watch URL", () => {
@@ -68,5 +68,25 @@ describe("getYouTubeEmbedUrl", () => {
 
   test("returns null for a non-YouTube URL", () => {
     expect(getYouTubeEmbedUrl("https://example.com/video.mp4")).toBeNull();
+  });
+});
+
+describe("getYouTubeClip", () => {
+  test("reads id, start and end", () => {
+    expect(getYouTubeClip("https://www.youtube.com/watch?v=abc123&start=30&end=90")).toEqual({
+      videoId: "abc123",
+      startSeconds: 30,
+      endSeconds: 90,
+    });
+  });
+
+  test("omits missing or non-numeric bounds", () => {
+    expect(getYouTubeClip("https://youtu.be/abc123")).toEqual({ videoId: "abc123" });
+    expect(getYouTubeClip("https://youtu.be/abc123?start=x")).toEqual({ videoId: "abc123" });
+  });
+
+  test("returns null for non-YouTube or invalid URLs", () => {
+    expect(getYouTubeClip("https://vimeo.com/1")).toBeNull();
+    expect(getYouTubeClip("")).toBeNull();
   });
 });
