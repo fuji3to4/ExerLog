@@ -159,6 +159,8 @@ test("tapping an up-next item jumps to it", async () => {
   turnOn();
   open("a");
   const upNext = await screen.findByRole("region", { name: "Up next" });
+  // Tap once the player exists, so the jump is a swap inside it.
+  await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
 
   fireEvent.click(within(upNext).getByRole("button", { name: "C" }));
 
