@@ -186,6 +186,8 @@ export type UsePlaylist = {
   - `onFinished` logs `"did"` to `logDate ?? today` and bumps `logCountBump`. There is no `celebrate`. On error it shows `log_save_error` and keeps playing.
   - `useWakeLock(settings.continuous && playlist.isPlaying)`.
   - When `current` changes, it runs `history.replaceState` with the new `exerciseId`.
+  - Turning the switch ON while nothing plays calls `playlist.start(currentId)`. While something plays, it keeps playing; only what happens at the end changes.
+  - If the browser blocks autoplay, YouTube's own play button covers the spec's "show ▶" intent, so there is no custom detection.
 
 Strings (exact):
 
