@@ -36,12 +36,15 @@ function Placeholder({ logDate, children }: { logDate: string | null; children: 
 function ExerciseDetailContent({ logDate }: { logDate: string | null }) {
   const [exercise, setExercise] = useState<ExerciseVideo | null | undefined>(undefined);
   const { t } = useTranslation();
-  // Read once: continuous play rewrites ?exerciseId= as it advances, which must not reload this screen.
-  const [resolvedExerciseId] = useState(() =>
-    typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("exerciseId") ?? "",
-  );
+  // Read once, after mount: on in-app navigation Next updates the URL just after the first render,
+  // and continuous play later rewrites ?exerciseId= as it advances, which must not reload this screen.
+  const [resolvedExerciseId, setResolvedExerciseId] = useState<string | null>(null);
+  useEffect(() => {
+    setResolvedExerciseId(new URLSearchParams(window.location.search).get("exerciseId") ?? "");
+  }, []);
 
   useEffect(() => {
+    if (resolvedExerciseId === null) return;
     if (!resolvedExerciseId) {
       setExercise(null);
       return;
