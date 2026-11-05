@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { resolveSetExercises } from "@/features/exercise-sets/resolve-set-exercises";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
+import { usePublishPlayQueue } from "@/features/playlist/play-queue-store";
 import { ExerciseSetMenu } from "@/features/exercise-sets/components/exercise-set-menu";
 import { appDb } from "@/features/storage/app-db";
 import { deleteExercise, listAllExercises } from "@/features/storage/exercise-catalog.repository";
@@ -241,6 +242,13 @@ ${t("library_delete_confirm")}`
     // Array.prototype.sort is stable, so ties keep catalog order.
     return matches.sort((a, b) => (sortCounts.get(b.id) ?? 0) - (sortCounts.get(a.id) ?? 0));
   }, [baseExercises, filters, watchCounts, totalLogCounts]);
+
+  // The player screen plays this list, in this order, when a card is opened from here.
+  usePublishPlayQueue(
+    filteredExercises.length > 0
+      ? { name: selectedSet?.name ?? t("library_set_all"), exerciseIds: filteredExercises.map((exercise) => exercise.id) }
+      : null,
+  );
 
   // "Narrowed" means a search or one of the four filters is active; sorting does not count.
   const activeFilterCount = [filters.bodyArea, filters.purpose, filters.duration, filters.intensity].filter(Boolean).length;

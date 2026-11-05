@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
+import { usePublishPlayQueue } from "@/features/playlist/play-queue-store";
 import { useCelebrate } from "@/features/feedback/celebration";
 import { StarterImportHint } from "@/features/library/components/starter-import-hint";
 import { useModuleSettings } from "@/features/modules/use-module-settings";
@@ -53,6 +54,16 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const cards = selectedSet
     ? selectedSetExercises.map((exercise) => ({ exercise, slot: undefined }))
     : recommendations;
+
+  // The player screen plays what is shown here (a my-list, or today's three picks) in this order.
+  usePublishPlayQueue(
+    isHydrated && cards.length > 0
+      ? {
+          name: selectedSet?.name ?? t("today_recommended_heading"),
+          exerciseIds: cards.map(({ exercise }) => exercise.id),
+        }
+      : null,
+  );
 
   async function handleLog(exercise: ExerciseVideo, result: ExerciseLogResult) {
     setLogErrorExerciseId(null);

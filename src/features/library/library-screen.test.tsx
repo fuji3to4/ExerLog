@@ -1,11 +1,12 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { exerciseCatalog as starterCatalog } from "@/features/catalog/exercise-catalog";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
 import { CelebrationProvider } from "@/features/feedback/celebration";
 import { appDb } from "@/features/storage/app-db";
+import { PLAY_QUEUE_STORAGE_KEY, readPlayQueue } from "@/features/playlist/play-queue-store";
 import { createExerciseSet, listExerciseSets, setExerciseInSet } from "@/features/storage/exercise-sets.repository";
 import { toDayKey } from "@/lib/date/day-key";
 import { renderWithLanguage } from "@/test/render-with-language";
@@ -553,4 +554,57 @@ test("a library with videos shows no starter hint", async () => {
 
   await screen.findAllByRole("article");
   expect(screen.queryByRole("button", { name: "Import starter exercises" })).not.toBeInTheDocument();
+});
+
+describe("hands the visible list to the player", () => {
+  /** Ids of the video cards in the order they appear on screen. */
+  async function visibleIds() {
+    const headings = await screen.findAllByRole("heading", { level: 2 });
+    return headings
+      .map((heading) => exerciseCatalog.find((exercise) => exercise.title === heading.textContent)?.id)
+      .filter((id): id is string => Boolean(id));
+  }
+
+  beforeEach(() => {
+    window.sessionStorage.removeItem(PLAY_QUEUE_STORAGE_KEY);
+  });
+
+  test("All publishes every video in the shown order", async () => {
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    const shown = await visibleIds();
+
+    expect(shown).toHaveLength(exerciseCatalog.length);
+    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "All", exerciseIds: shown }));
+  });
+
+  test("a selected set publishes its name and videos", async () => {
+    const [first, second] = exerciseCatalog;
+    await createExerciseSet("Morning", [second.id, first.id]);
+    const user = userEvent.setup();
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+    await user.click(await screen.findByRole("button", { name: "Morning" }));
+
+    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "Morning", exerciseIds: [second.id, first.id] }));
+  });
+
+  test("sorting reorders the published list", async () => {
+    const target = exerciseCatalog[exerciseCatalog.length - 1];
+    await appDb.exerciseLogs.add({
+      id: "log-1",
+      date: toDayKey(new Date()),
+      exerciseId: target.id,
+      result: "did",
+      performedAt: new Date().toISOString(),
+      durationSeconds: 60,
+      updatedAt: new Date().toISOString(),
+    });
+    const user = userEvent.setup();
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    await visibleIds();
+
+    await user.selectOptions(screen.getByLabelText(/sort by/i), "most-done");
+
+    await waitFor(() => expect(readPlayQueue()?.exerciseIds[0]).toBe(target.id));
+  });
 });

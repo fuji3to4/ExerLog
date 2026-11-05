@@ -14,6 +14,7 @@ import { createExerciseSet, listExerciseSets } from "@/features/storage/exercise
 import { writeSelectedSetId } from "@/features/exercise-sets/selected-set-store";
 import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { RESHUFFLE_STORAGE_KEY } from "@/features/recommendations/reshuffle-store";
+import { PLAY_QUEUE_STORAGE_KEY, readPlayQueue } from "@/features/playlist/play-queue-store";
 import type { ExerciseDraft } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
 
@@ -373,4 +374,25 @@ test("an empty library shows a starter hint in place of recommendations, then re
 
   await waitFor(() => expect(within(region).getAllByRole("heading", { level: 3 }).length).toBeGreaterThan(0));
   expect(within(region).queryByText("No videos yet. Import the starter exercises to get going.")).not.toBeInTheDocument();
+});
+
+test("hands today's three recommendations to the player in display order", async () => {
+  window.sessionStorage.removeItem(PLAY_QUEUE_STORAGE_KEY);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+  const region = await screen.findByRole("region", { name: /recommended/i });
+  const shownTitles = within(region).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+
+  await waitFor(() => expect(readPlayQueue()?.name).toBe("Recommended for today"));
+  const titleById: Record<string, string> = { delta: "Delta", epsilon: "Epsilon", zeta: "Zeta" };
+  expect(readPlayQueue()?.exerciseIds.map((id) => titleById[id])).toEqual(shownTitles);
+});
+
+test("hands the selected my-list to the player", async () => {
+  window.sessionStorage.removeItem(PLAY_QUEUE_STORAGE_KEY);
+  await createExerciseSet("Morning", ["zeta", "delta"]);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  fireEvent.click(await screen.findByRole("button", { name: "Morning" }));
+
+  await waitFor(() => expect(readPlayQueue()).toEqual({ name: "Morning", exerciseIds: ["zeta", "delta"] }));
 });
