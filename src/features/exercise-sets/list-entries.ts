@@ -28,3 +28,9 @@ export function asEntries(exercises: readonly ExerciseVideo[]): ListEntry[] {
 }
 
 export const entryKeyOf = (entry: ListEntry): string => entry.entryKey;
+
+/** The player link for a card. `entry` is added only for a repeat, so ordinary links stay as they were. */
+export function playerHref(entry: ListEntry): string {
+  const base = `/exercises?exerciseId=${encodeURIComponent(entry.id)}`;
+  return entry.entryKey === entry.id ? base : `${base}&entry=${encodeURIComponent(entry.entryKey)}`;
+}

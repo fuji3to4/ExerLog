@@ -14,14 +14,14 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
-import type { ExerciseVideo } from "@/lib/types";
+import type { ListEntry } from "@/features/exercise-sets/list-entries";
 import { cn } from "@/lib/utils";
 import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
 type ReorderListProps = {
-  exercises: ExerciseVideo[];
-  /** Called after every drop with the whole list's new order (a draft; nothing is stored here). */
-  onReorder(ids: string[]): void;
+  exercises: ListEntry[];
+  /** Called after every drop with the whole list's new order as entry keys (a draft; nothing is stored here). */
+  onReorder(keys: string[]): void;
   onSave(): void;
   onCancel(): void;
 };
@@ -36,7 +36,8 @@ export function ReorderList({ exercises, onReorder, onSave, onCancel }: ReorderL
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-  const ids = exercises.map((exercise) => exercise.id);
+  // Entry keys: a repeated video is one row per copy.
+  const ids = exercises.map((exercise) => exercise.entryKey);
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (!over || active.id === over.id) return;
@@ -52,7 +53,7 @@ export function ReorderList({ exercises, onReorder, onSave, onCancel }: ReorderL
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
           <ol className="reorder-list__rows">
             {exercises.map((exercise) => (
-              <ReorderRow key={exercise.id} exercise={exercise} handleLabel={t("library_reorder_handle_aria", { title: exercise.title })} />
+              <ReorderRow key={exercise.entryKey} exercise={exercise} handleLabel={t("library_reorder_handle_aria", { title: exercise.title })} />
             ))}
           </ol>
         </SortableContext>
@@ -69,9 +70,9 @@ export function ReorderList({ exercises, onReorder, onSave, onCancel }: ReorderL
   );
 }
 
-function ReorderRow({ exercise, handleLabel }: { exercise: ExerciseVideo; handleLabel: string }) {
+function ReorderRow({ exercise, handleLabel }: { exercise: ListEntry; handleLabel: string }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
-    id: exercise.id,
+    id: exercise.entryKey,
   });
   const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
 

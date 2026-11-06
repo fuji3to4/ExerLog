@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { applyOrder, shuffleIds } from "@/features/exercise-sets/list-order";
+import { asEntries, entryKeyOf, playerHref, type ListEntry } from "@/features/exercise-sets/list-entries";
 import { resolveSetExercises } from "@/features/exercise-sets/resolve-set-exercises";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
 import { usePublishPlayQueue } from "@/features/playlist/play-queue-store";
@@ -68,12 +69,12 @@ const initialFilters: LibraryFilterState = {
 };
 
 /** Count sorts are stable, so ties keep the list's own order. */
-function sortByCounts(
-  items: ExerciseVideo[],
+function sortByCounts<T extends ExerciseVideo>(
+  items: T[],
   sort: UnshuffledSort,
   watchCounts: Map<string, number>,
   totalLogCounts: Map<string, number>,
-): ExerciseVideo[] {
+): T[] {
   const counts = sort === "most-watched" ? watchCounts : sort === "most-done" ? totalLogCounts : null;
   if (!counts) return items;
   return [...items].sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0));
@@ -252,8 +253,9 @@ ${t("library_delete_confirm")}`
 
   const selectedSet = exerciseSets.find((set) => set.id === filters.set);
   // The shown list in its saved order (the set's, or the library's for All), before any filter.
-  const baseExercises = useMemo(
-    () => (selectedSet ? resolveSetExercises(selectedSet, exercises) : applyOrder(exercises, libraryOrder)),
+  // Entries: a set may hold a video more than once, and each copy is its own card.
+  const baseExercises = useMemo<ListEntry[]>(
+    () => (selectedSet ? resolveSetExercises(selectedSet, exercises) : asEntries(applyOrder(exercises, libraryOrder))),
     [selectedSet, exercises, libraryOrder],
   );
 
@@ -262,7 +264,7 @@ ${t("library_delete_confirm")}`
     if (!isLoaded || filters.sort !== "shuffle" || shuffle?.listKey === filters.set) return;
     setShuffle({
       listKey: filters.set,
-      order: shuffleIds(baseExercises.map((exercise) => exercise.id)),
+      order: shuffleIds(baseExercises.map(entryKeyOf)),
       previousSort: shuffle?.previousSort ?? "",
     });
   }, [isLoaded, filters.sort, filters.set, shuffle, baseExercises]);
@@ -273,7 +275,7 @@ ${t("library_delete_confirm")}`
       // Picking シャッフル always mixes afresh; the order then stays put until picked again.
       setShuffle({
         listKey: filters.set,
-        order: shuffleIds(baseExercises.map((exercise) => exercise.id)),
+        order: shuffleIds(baseExercises.map(entryKeyOf)),
         previousSort: isUnshuffledSort(filters.sort) ? filters.sort : (shuffle?.previousSort ?? ""),
       });
     } else {
@@ -328,7 +330,7 @@ ${t("library_delete_confirm")}`
     [filteredExercises, filters.sort, shuffle, watchCounts, totalLogCounts],
   );
   const shownExercises = useMemo(
-    () => (isShuffled && shuffle ? applyOrder(filteredExercises, shuffle.order) : unshuffledExercises),
+    () => (isShuffled && shuffle ? applyOrder(filteredExercises, shuffle.order, entryKeyOf) : unshuffledExercises),
     [isShuffled, shuffle, filteredExercises, unshuffledExercises],
   );
 
@@ -337,11 +339,12 @@ ${t("library_delete_confirm")}`
     shownExercises.length > 0
       ? {
           name: selectedSet?.name ?? t("library_set_all"),
-          exerciseIds: shownExercises.map((exercise) => exercise.id),
+          // Entry keys, so a repeated video plays at each of its places.
+          exerciseIds: shownExercises.map(entryKeyOf),
           source: "library",
           shuffled: isShuffled,
-          listIds: baseExercises.map((exercise) => exercise.id),
-          ...(isShuffled ? { unshuffledIds: unshuffledExercises.map((exercise) => exercise.id) } : {}),
+          listIds: baseExercises.map(entryKeyOf),
+          ...(isShuffled ? { unshuffledIds: unshuffledExercises.map(entryKeyOf) } : {}),
         }
       : null,
   );
@@ -354,9 +357,9 @@ ${t("library_delete_confirm")}`
   const showReorder = isEditMode && isReordering && filters.sort === "" && !isNarrowed;
 
   // Drags change only this draft; the order is stored when the user chooses 保存.
-  const reorderExercises = reorderDraft ? applyOrder(shownExercises, reorderDraft) : shownExercises;
+  const reorderExercises = reorderDraft ? applyOrder(shownExercises, reorderDraft, entryKeyOf) : shownExercises;
   const isReorderDirty =
-    reorderDraft !== null && reorderExercises.some((exercise, index) => exercise.id !== shownExercises[index]?.id);
+    reorderDraft !== null && reorderExercises.some((exercise, index) => exercise.entryKey !== shownExercises[index]?.entryKey);
 
   function startReorder() {
     if (filters.sort !== "") handleSortChange("");
@@ -548,9 +551,9 @@ ${t("library_delete_confirm")}`
 
           return (
             <VideoCard
-              key={exercise.id}
+              key={exercise.entryKey}
               exercise={exercise}
-              href={withLogDate(`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`, logDate ?? null)}
+              href={withLogDate(playerHref(exercise), logDate ?? null)}
               headingLevel={2}
               meta={[
                 t("meta_intensity_value", { value: formatIntensity(exercise.intensity) }),
@@ -558,7 +561,15 @@ ${t("library_delete_confirm")}`
                 formatPurpose(exercise.purpose),
                 watchCount > 0 ? t("library_watch_count", { count: watchCount }) : "",
               ]}
-              menu={<ExerciseSetMenu exercise={exercise} sets={exerciseSets} onChanged={() => void loadExercises()} />}
+              menu={
+                <ExerciseSetMenu
+                  exercise={exercise}
+                  sets={exerciseSets}
+                  onChanged={() => void loadExercises()}
+                  // A my-list card can take itself out of the list (just this copy).
+                  entry={selectedSet ? { setId: selectedSet.id, entryKey: exercise.entryKey } : undefined}
+                />
+              }
             >
               {isEditMode ? (
                 <div className="library-screen__card-actions">
