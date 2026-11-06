@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { SkipBack, SkipForward } from "lucide-react";
+import { Repeat1, SkipBack, SkipForward } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { asEntries, entryKeyOf, exerciseIdOfEntry, type ListEntry } from "@/features/exercise-sets/list-entries";
 import { applyOrder, shuffleIds } from "@/features/exercise-sets/list-order";
 import { BackButton } from "@/features/library/components/back-button";
 import { ExerciseDetailScreen } from "@/features/library/components/exercise-detail-screen";
@@ -27,26 +28,37 @@ import { UpNext } from "./up-next";
 type PlayerScreenProps = {
   /** The exercise the screen was opened for (`?exerciseId=`). */
   exercise: ExerciseVideo;
+  /** Which place in the handed-over list was opened (`?entry=`; the exercise id for a video listed once). */
+  entryKey: string;
   /** Day to file logs under (from `?date=`); null means today. */
   logDate: string | null;
 };
 
-type Queue = Omit<PlayQueue, "exerciseIds"> & { exercises: ExerciseVideo[] };
+type Queue = Omit<PlayQueue, "exerciseIds"> & { exercises: ListEntry[] };
 
-async function loadQueue(exercise: ExerciseVideo): Promise<Queue | null> {
-  const stored = resolvePlayQueue(exercise.id);
+/** The handed-over list as entries (its ids are entry keys: a list may repeat a video). */
+async function loadQueue(exercise: ExerciseVideo, entryKey: string): Promise<Queue | null> {
+  const stored = resolvePlayQueue(entryKey);
   if (!stored) return null;
   const found = await Promise.all(
-    stored.exerciseIds.map((id) => (id === exercise.id ? Promise.resolve(exercise) : getExerciseById(id))),
+    stored.exerciseIds.map(async (key): Promise<ListEntry | null> => {
+      const id = exerciseIdOfEntry(key);
+      const video = id === exercise.id ? exercise : await getExerciseById(id);
+      return video ? { ...video, entryKey: key } : null;
+    }),
   );
   const { exerciseIds: _ids, ...rest } = stored;
-  return { ...rest, exercises: found.filter((item): item is ExerciseVideo => Boolean(item)) };
+  return { ...rest, exercises: found.filter((item): item is ListEntry => item !== null) };
 }
 
-function replaceExerciseIdInUrl(exerciseId: string) {
+/** Keeps the URL on the playing video (and, for a repeated one, which copy), so a reload resumes there. */
+function replaceEntryInUrl(exerciseId: string, entryKey: string) {
   const url = new URL(window.location.href);
-  if (url.searchParams.get("exerciseId") === exerciseId) return;
+  const entry = entryKey === exerciseId ? null : entryKey;
+  if (url.searchParams.get("exerciseId") === exerciseId && url.searchParams.get("entry") === entry) return;
   url.searchParams.set("exerciseId", exerciseId);
+  if (entry) url.searchParams.set("entry", entry);
+  else url.searchParams.delete("entry");
   window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
 }
 
@@ -54,10 +66,12 @@ function replaceExerciseIdInUrl(exerciseId: string) {
  * The video player screen. With 連続再生 on it plays the list it was opened from (handed over by
  * Library / Today) back-to-back in one YouTube player; the rest of the screen follows the video.
  */
-export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
+export function PlayerScreen({ exercise, entryKey, logDate }: PlayerScreenProps) {
   const { t } = useTranslation();
   const [queue, setQueue] = useState<Queue | null | undefined>(undefined);
   const [displayed, setDisplayed] = useState(exercise);
+  // The place in the list the screen shows; with no list, the video alone (keyed by its id).
+  const [displayedKey, setDisplayedKey] = useState(entryKey);
   const [logCountBump, setLogCountBump] = useState(0);
   const [autoLogError, setAutoLogError] = useState(false);
   // Shuffle belongs to this run's list (never a device setting); `order` overrides the queue's order.
@@ -67,10 +81,11 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
 
   useEffect(() => {
     let active = true;
-    loadQueue(exercise)
+    loadQueue(exercise, entryKey)
       .then((loaded) => {
         if (!active) return;
         setQueue(loaded);
+        setDisplayedKey(loaded ? entryKey : exercise.id);
         setShuffled(loaded?.shuffled === true);
         setOrder(null);
         setUnshuffledOrder(loaded?.unshuffledIds ?? null);
@@ -82,11 +97,11 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
     return () => {
       active = false;
     };
-  }, [exercise]);
+  }, [exercise, entryKey]);
 
   const queueExercises = useMemo(() => {
-    const listed = queue?.exercises ?? [exercise];
-    return order ? applyOrder(listed, order) : listed;
+    const listed = queue?.exercises ?? asEntries([exercise]);
+    return order ? applyOrder(listed, order, entryKeyOf) : listed;
   }, [queue, exercise, order]);
   const queueName = queue?.name ?? t("playlist_single_name");
 
@@ -114,23 +129,26 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
     if (queue === undefined || autoStartedRef.current) return;
     autoStartedRef.current = true;
     if (readPlaylistSettings().continuous) {
-      playlist.start(exercise.id);
+      playlist.start(queue ? entryKey : exercise.id);
     }
-  }, [queue, exercise.id, playlist]);
+  }, [queue, entryKey, exercise.id, playlist]);
 
   const currentExercise = current?.exercise ?? null;
+  const currentKey = current?.entryKey ?? null;
   useEffect(() => {
-    if (!currentExercise) return;
+    if (!currentExercise || currentKey === null) return;
     setDisplayed(currentExercise);
-    replaceExerciseIdInUrl(currentExercise.id);
-  }, [currentExercise]);
+    setDisplayedKey(currentKey);
+    replaceEntryInUrl(currentExercise.id, currentKey);
+  }, [currentExercise, currentKey]);
 
   useWakeLock(settings.continuous && playlist.isPlaying);
 
   const isQueueReady = queue !== undefined;
 
   function handleShuffleChange(on: boolean) {
-    const currentIds = queueExercises.map((item) => item.id);
+    // Entry keys throughout: a repeated video keeps each of its places.
+    const currentIds = queueExercises.map(entryKeyOf);
     const fromLibrary = queue?.source === "library";
     const handoff = (exerciseIds: string[], extra: Partial<PlayQueue>) => {
       if (!queue) return;
@@ -141,8 +159,8 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
     if (on) {
       // Shuffle the whole list the library shows (filtered-out videos included), playing video first;
       // the player plays its own part of it in that order.
-      const ids = shuffleIds(queue?.listIds ?? currentIds, { first: current?.exercise.id ?? displayed.id });
-      const queueIds = applyOrder(queueExercises, ids).map((item) => item.id);
+      const ids = shuffleIds(queue?.listIds ?? currentIds, { first: current?.entryKey ?? displayedKey });
+      const queueIds = applyOrder(queueExercises, ids, entryKeyOf).map(entryKeyOf);
       setUnshuffledOrder(currentIds);
       setOrder(ids);
       handoff(queueIds, { shuffled: true, unshuffledIds: currentIds });
@@ -154,7 +172,7 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
     } else {
       const ids = unshuffledOrder ?? currentIds;
       setOrder(ids);
-      handoff(applyOrder(queueExercises, ids).map((item) => item.id), { shuffled: false });
+      handoff(applyOrder(queueExercises, ids, entryKeyOf).map(entryKeyOf), { shuffled: false });
       if (fromLibrary) {
         const view = readLibraryView();
         writeLibraryView({ ...view, sort: view.shuffle?.previousSort ?? "", shuffle: null });
@@ -167,18 +185,20 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
     playlist.setContinuous(on);
     // Before the list is known, the autoplay effect starts the run once it arrives.
     if (on && isQueueReady && !playlist.isPlaying) {
-      playlist.start(displayed.id);
+      playlist.start(displayedKey);
     }
   }
 
-  const index = playlist.items.findIndex((item) => item.exercise.id === displayed.id);
+  const index = playlist.items.findIndex((item) => item.entryKey === displayedKey);
   const position =
     index >= 0
       ? t("playlist_position", { name: queueName, index: index + 1, total: playlist.items.length })
       : null;
-  const upcoming = index >= 0 ? playlist.items.slice(index + 1).map((item) => item.exercise) : [];
+  const upcoming: ListEntry[] =
+    index >= 0 ? playlist.items.slice(index + 1).map((item) => ({ ...item.exercise, entryKey: item.entryKey })) : [];
 
   const isEmbeddable = getYouTubeClip(displayed.videoUrl) !== null;
+  const showSkips = settings.continuous && playlist.items.length > 0;
   const thumbnailUrl = resolveExerciseThumbnailUrl(displayed);
 
   let media: ReactNode = undefined;
@@ -200,7 +220,7 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
         className="exercise-detail__play-button"
         // Wait for the list: starting earlier would play index 0 of a list that is about to change.
         disabled={!isQueueReady}
-        onClick={() => playlist.start(displayed.id)}
+        onClick={() => playlist.start(displayedKey)}
         aria-label={t("action_play_video_aria", { title: displayed.title })}
       >
         {thumbnailUrl ? <img src={thumbnailUrl} alt={displayed.title} /> : null}
@@ -225,13 +245,28 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
         onLogged={playlist.markManualLog}
         logCountBump={logCountBump}
         mediaFooter={
-          settings.continuous && playlist.items.length > 0 ? (
+          isEmbeddable ? (
             <div className="playlist-now-playing__buttons">
-              <Button size="icon" className="player-screen__skip" aria-label={t("playlist_previous_aria")} onClick={playlist.previous}>
-                <SkipBack aria-hidden="true" size={22} />
-              </Button>
-              <Button size="icon" className="player-screen__skip" aria-label={t("playlist_next_aria")} onClick={playlist.next}>
-                <SkipForward aria-hidden="true" size={22} />
+              {showSkips ? (
+                <Button size="icon" className="player-screen__skip" aria-label={t("playlist_previous_aria")} onClick={playlist.previous}>
+                  <SkipBack aria-hidden="true" size={22} />
+                </Button>
+              ) : null}
+              {showSkips ? (
+                <Button size="icon" className="player-screen__skip" aria-label={t("playlist_next_aria")} onClick={playlist.next}>
+                  <SkipForward aria-hidden="true" size={22} />
+                </Button>
+              ) : null}
+              {/* 🔂 also when watching one video with the mode off. Tonal when on, outlined when off. */}
+              <Button
+                size="icon"
+                variant={playlist.repeatOne ? "default" : "outline"}
+                className="player-screen__skip"
+                aria-label={t("playlist_repeat_one")}
+                aria-pressed={playlist.repeatOne}
+                onClick={() => playlist.setRepeatOne(!playlist.repeatOne)}
+              >
+                <Repeat1 aria-hidden="true" size={22} />
               </Button>
             </div>
           ) : null

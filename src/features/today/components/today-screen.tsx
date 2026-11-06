@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
+import { playerHref, type ListEntry } from "@/features/exercise-sets/list-entries";
 import { usePublishPlayQueue } from "@/features/playlist/play-queue-store";
 import { useCelebrate } from "@/features/feedback/celebration";
 import { StarterImportHint } from "@/features/library/components/starter-import-hint";
@@ -17,6 +18,8 @@ import { useDayTimeline } from "@/features/timeline/use-day-timeline";
 import { cn } from "@/lib/utils";
 import { toDayKey } from "@/lib/date/day-key";
 import type { ExerciseLogResult, ExerciseVideo } from "@/lib/types";
+
+import type { RecommendationSlot } from "@/features/recommendations/get-todays-recommendations";
 
 import { RecommendedExerciseCard } from "./recommended-exercise-card";
 import { useTodayData } from "../use-today-data";
@@ -51,16 +54,17 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   const celebrate = useCelebrate();
   const [logErrorExerciseId, setLogErrorExerciseId] = useState<string | null>(null);
 
-  const cards = selectedSet
+  // Entries: a my-list may hold a video more than once, and each copy is its own card.
+  const cards: { exercise: ListEntry; slot?: RecommendationSlot }[] = selectedSet
     ? selectedSetExercises.map((exercise) => ({ exercise, slot: undefined }))
-    : recommendations;
+    : recommendations.map(({ exercise, slot }) => ({ exercise: { ...exercise, entryKey: exercise.id }, slot }));
 
   // The player screen plays what is shown here (a my-list, or today's three picks) in this order.
   usePublishPlayQueue(
     isHydrated && cards.length > 0
       ? {
           name: selectedSet?.name ?? t("today_recommended_heading"),
-          exerciseIds: cards.map(({ exercise }) => exercise.id),
+          exerciseIds: cards.map(({ exercise }) => exercise.entryKey),
         }
       : null,
   );
@@ -140,7 +144,7 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
               ) : (
                 <div className="today-screen__recommendations">
                   {cards.map(({ exercise, slot }) => (
-                    <div key={exercise.id} className="grid gap-2">
+                    <div key={exercise.entryKey} className="grid gap-2">
                       <RecommendedExerciseCard
                         exercise={exercise}
                         slot={slot}
@@ -148,7 +152,8 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                         totalCount={totalLogCounts.get(exercise.id) ?? 0}
                         sets={sets}
                         onSetsChanged={() => void reloadSets()}
-                        watchHref={`/exercises?exerciseId=${encodeURIComponent(exercise.id)}`}
+                        watchHref={playerHref(exercise)}
+                        entry={selectedSet ? { setId: selectedSet.id, entryKey: exercise.entryKey } : undefined}
                         onLog={(result) => void handleLog(exercise, result)}
                       />
                       {logErrorExerciseId === exercise.id ? (

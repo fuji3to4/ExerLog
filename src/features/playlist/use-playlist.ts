@@ -14,17 +14,22 @@ import {
   type PlaylistSettings,
 } from "./playlist-settings-store";
 
-export type PlaylistItem = { exercise: ExerciseVideo; clip: YouTubeClip };
+/** `entryKey` names the item's place in the list (a list may repeat a video; see list-entries). */
+export type PlaylistItem = { entryKey: string; exercise: ExerciseVideo; clip: YouTubeClip };
 
 export type UsePlaylist = {
   items: PlaylistItem[];
   current: (PlaylistItem & { playId: number }) | null;
   isPlaying: boolean;
   settings: PlaylistSettings;
+  /** 🔂: the playing video starts again each time it ends. Not stored; off again once another entry plays. */
+  repeatOne: boolean;
+  setRepeatOne(on: boolean): void;
   setContinuous(on: boolean): void;
   setLoop(on: boolean): void;
   setAutoCheck(on: boolean): void;
-  start(exerciseId?: string): void;
+  /** Plays the item with this entry key (its exercise id for a video listed once); the first item without one. */
+  start(entryKey?: string): void;
   next(): void;
   previous(): void;
   stop(): void;
@@ -39,8 +44,9 @@ export type UsePlaylist = {
 };
 
 type UsePlaylistArgs = {
-  /** The queue in order (a snapshot of the list the player was opened from, or one video). */
-  exercises: ExerciseVideo[];
+  /** The queue in order (a snapshot of the list the player was opened from, or one video). Items without an
+   * `entryKey` are keyed by their id. */
+  exercises: (ExerciseVideo & { entryKey?: string })[];
   /** Auto-check: called once per video that played to its end in continuous mode. */
   onFinished: (exercise: ExerciseVideo) => void;
 };
@@ -52,22 +58,28 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     () =>
       exercises.flatMap((exercise) => {
         const clip = getYouTubeClip(exercise.videoUrl);
-        return clip ? [{ exercise, clip }] : [];
+        if (!clip) return [];
+        const { entryKey = exercise.id, ...video } = exercise;
+        return [{ entryKey, exercise: video, clip }];
       }),
     [exercises],
   );
 
   const [storedState, setState] = useState<PlaylistState>(IDLE);
   const [settings, setSettings] = useState<PlaylistSettings>(DEFAULT_SETTINGS);
-  // The exercise being played, so a reordered list (shuffle) keeps playing it.
-  const playingIdRef = useRef<string | null>(null);
+  // The entry being played, so a reordered list (shuffle) keeps playing it.
+  const playingKeyRef = useRef<string | null>(null);
+  const [repeatOne, setRepeatOneState] = useState(false);
+  const repeatOneRef = useRef(false);
+  // The last entry that played (kept across a stop), so 🔂 resets only when a different one starts.
+  const lastPlayedKeyRef = useRef<string | null>(null);
 
   // The list was reordered under the playing video: follow it to its new index, same playId
   // (no reload). Done during render so no frame shows the wrong video.
   let state = storedState;
-  if (state.status === "playing" && playingIdRef.current !== null && items[state.index]?.exercise.id !== playingIdRef.current) {
-    const playingId = playingIdRef.current;
-    const movedTo = items.findIndex((item) => item.exercise.id === playingId);
+  if (state.status === "playing" && playingKeyRef.current !== null && items[state.index]?.entryKey !== playingKeyRef.current) {
+    const playingKey = playingKeyRef.current;
+    const movedTo = items.findIndex((item) => item.entryKey === playingKey);
     if (movedTo >= 0) {
       state = playlistReducer(state, { type: "seek", index: movedTo }, { length: items.length, loop: false });
       setState(state);
@@ -106,23 +118,41 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     writePlaylistSettings(nextSettings);
   }, []);
 
+  const setRepeatOne = useCallback((on: boolean) => {
+    repeatOneRef.current = on;
+    setRepeatOneState(on);
+  }, []);
+
   const dispatch = useCallback((action: PlaylistAction) => {
     const nextState = playlistReducer(stateRef.current, action, {
       length: itemsRef.current.length,
       loop: settingsRef.current.loop,
     });
     stateRef.current = nextState;
-    playingIdRef.current = nextState.status === "playing" ? (itemsRef.current[nextState.index]?.exercise.id ?? null) : null;
+    playingKeyRef.current = nextState.status === "playing" ? (itemsRef.current[nextState.index]?.entryKey ?? null) : null;
+    if (playingKeyRef.current !== null) {
+      // 🔂 belongs to one video: moving to another entry turns it off.
+      if (lastPlayedKeyRef.current !== null && lastPlayedKeyRef.current !== playingKeyRef.current) {
+        setRepeatOne(false);
+      }
+      lastPlayedKeyRef.current = playingKeyRef.current;
+    }
     setState(nextState);
-  }, []);
+  }, [setRepeatOne]);
 
   const start = useCallback(
-    (exerciseId?: string) => {
-      const index = exerciseId === undefined ? 0 : itemsRef.current.findIndex((item) => item.exercise.id === exerciseId);
+    (entryKey?: string) => {
+      const index = entryKey === undefined ? 0 : itemsRef.current.findIndex((item) => item.entryKey === entryKey);
       if (index < 0) return;
       dispatch({ type: "start", index });
+      // A start/end clip played on its own repeats its section, as it always has: 🔂 starts on.
+      // Continuous play never turns it on by itself (the clip plays once and the list moves on).
+      const { clip } = itemsRef.current[index];
+      if (!settingsRef.current.continuous && (clip.startSeconds !== undefined || clip.endSeconds !== undefined)) {
+        setRepeatOne(true);
+      }
     },
-    [dispatch],
+    [dispatch, setRepeatOne],
   );
 
   const handleEnded = useCallback((endedPlayId: number) => {
@@ -133,11 +163,18 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     const item = itemsRef.current[currentState.index];
     const settingsNow = settingsRef.current;
 
+    if (repeatOneRef.current) {
+      // 🔂: the same entry again (a new playId, so a hand log only covers the pass it was made in).
+      if (item && settingsNow.continuous && settingsNow.autoCheck && !manuallyLoggedRef.current.has(endedPlayId)) {
+        onFinishedRef.current(item.exercise);
+      }
+      dispatch({ type: "start", index: currentState.index });
+      return;
+    }
+
     if (!settingsNow.continuous) {
-      // Same as a single ▶ play: a start/end clip repeats its section, anything else just ends.
-      const bounded = item && (item.clip.startSeconds !== undefined || item.clip.endSeconds !== undefined);
-      // Anything else finishes and stops, so the switch can start a fresh run afterwards.
-      dispatch(bounded ? { type: "start", index: currentState.index } : { type: "stop" });
+      // A single play finishes and stops, so the switch can start a fresh run afterwards.
+      dispatch({ type: "stop" });
       return;
     }
 
@@ -188,6 +225,8 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     current,
     isPlaying: current !== null,
     settings,
+    repeatOne,
+    setRepeatOne,
     setContinuous: useCallback((on: boolean) => updateSettings({ continuous: on }), [updateSettings]),
     setLoop: useCallback((on: boolean) => updateSettings({ loop: on }), [updateSettings]),
     setAutoCheck: useCallback((on: boolean) => updateSettings({ autoCheck: on }), [updateSettings]),

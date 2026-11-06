@@ -15,6 +15,8 @@ type RecommendedExerciseCardProps = {
   sets: ExerciseSet[];
   onSetsChanged: () => void;
   onLog: (result: ExerciseLogResult) => void;
+  /** Set when the card shows a position of a my-list: its menu can remove just this copy. */
+  entry?: { setId: string; entryKey: string };
 };
 
 export function RecommendedExerciseCard({
@@ -26,6 +28,7 @@ export function RecommendedExerciseCard({
   sets,
   onSetsChanged,
   onLog,
+  entry,
 }: RecommendedExerciseCardProps) {
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
 
@@ -40,7 +43,7 @@ export function RecommendedExerciseCard({
         formatBodyArea(exercise.bodyArea),
         formatPurpose(exercise.purpose),
       ]}
-      menu={<ExerciseSetMenu exercise={exercise} sets={sets} onChanged={onSetsChanged} />}
+      menu={<ExerciseSetMenu exercise={exercise} sets={sets} onChanged={onSetsChanged} entry={entry} />}
     >
       <ExerciseLogActions todayCount={todayCount} totalCount={totalCount} onLog={onLog} />
     </VideoCard>

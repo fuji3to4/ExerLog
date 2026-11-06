@@ -55,14 +55,21 @@ function asVideo(d: ExerciseDraft): ExerciseVideo {
   return { ...d, updatedAt: "" };
 }
 
-const drafts = [draft("a"), draft("b"), draft("c"), draft("z"), draft("web", "https://example.com/web.mp4")];
+const drafts = [
+  draft("a"),
+  draft("b"),
+  draft("c"),
+  draft("z"),
+  draft("web", "https://example.com/web.mp4"),
+  draft("k", "https://youtu.be/vid-k?start=10&end=20"),
+];
 
-function open(id: string, logDate: string | null = null) {
+function open(id: string, logDate: string | null = null, entryKey: string = id) {
   window.history.replaceState({}, "", `/exercises?exerciseId=${id}`);
   const exercise = asVideo(drafts.find((d) => d.id === id)!);
   return renderWithLanguage(
     <CelebrationProvider>
-      <PlayerScreen exercise={exercise} logDate={logDate} />
+      <PlayerScreen exercise={exercise} entryKey={entryKey} logDate={logDate} />
     </CelebrationProvider>,
     { initialLanguage: "en" },
   );
@@ -350,4 +357,148 @@ describe("shuffle chip keeps the whole list and the handoff in step", () => {
     fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
     expect(readPlayQueue()).toMatchObject({ exerciseIds: ["a", "b", "c"], shuffled: false });
   });
+});
+
+describe("a list that repeats a video", () => {
+  const upNextTitles = () =>
+    within(screen.getByRole("region", { name: "Up next" }))
+      .queryAllByRole("button")
+      .map((b) => b.textContent);
+
+  beforeEach(() => {
+    writePlayQueue({ name: "Morning", exerciseIds: ["a", "b", "a#2"] });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("opening the second copy starts there", async () => {
+    turnOn();
+    open("a", null, "a#2");
+
+    expect(await screen.findByText("Morning · 3/3")).toBeInTheDocument();
+    await waitFor(() => expect(fakeYouTube.options[0]?.videoId).toBe("vid-a"));
+  });
+
+  test("copies play in list order", async () => {
+    turnOn();
+    open("a");
+    await screen.findByText("Morning · 1/3");
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+
+    finishCurrentVideo();
+    await waitFor(() => expect(fakeYouTube.players[0].loadVideoById).toHaveBeenLastCalledWith({ videoId: "vid-b" }));
+    finishCurrentVideo();
+    await waitFor(() => expect(fakeYouTube.players[0].loadVideoById).toHaveBeenLastCalledWith({ videoId: "vid-a" }));
+    expect(await screen.findByText("Morning · 3/3")).toBeInTheDocument();
+  });
+
+  test("up next lists both copies", async () => {
+    turnOn();
+    open("a");
+    await screen.findByText("Morning · 1/3");
+    expect(upNextTitles()).toEqual(["B", "A"]);
+  });
+
+  test("advancing to the second copy names it in the URL, and going back to the first drops it", async () => {
+    turnOn({ loop: true });
+    open("b");
+    await screen.findByText("Morning · 2/3");
+
+    fireEvent.click(screen.getByRole("button", { name: "Next video" }));
+    await screen.findByText("Morning · 3/3");
+    expect(window.location.search).toContain("entry=a%232");
+
+    // Loop wraps to the first copy.
+    fireEvent.click(screen.getByRole("button", { name: "Next video" }));
+    await screen.findByText("Morning · 1/3");
+    expect(window.location.search).not.toContain("entry=");
+    expect(window.location.search).toContain("exerciseId=a");
+  });
+
+  test("shuffle on then off restores the repeated order", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    turnOn();
+    open("a");
+    await screen.findByText("Morning · 1/3");
+
+    fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
+    expect([...upNextTitles()].sort()).toEqual(["A", "B"]);
+    fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
+
+    expect(upNextTitles()).toEqual(["B", "A"]);
+    expect(screen.getByText("Morning · 1/3")).toBeInTheDocument();
+  });
+});
+
+describe("🔂 repeat this video", () => {
+  const repeatButton = () => screen.getByRole("button", { name: "Repeat this video" });
+
+  test("shows with the mode off, off at first", async () => {
+    open("b");
+    await screen.findByRole("button", { name: "Play B" });
+    expect(repeatButton()).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("a start/end clip played with the mode off starts with 🔂 on, and keeps repeating", async () => {
+    open("k");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Play K" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Play K" }));
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+    expect(repeatButton()).toHaveAttribute("aria-pressed", "true");
+    finishCurrentVideo();
+
+    await waitFor(() =>
+      expect(fakeYouTube.players[0].loadVideoById).toHaveBeenCalledWith({ videoId: "vid-k", startSeconds: 10, endSeconds: 20 }),
+    );
+  });
+
+  test("a clip in continuous play plays once and moves on", async () => {
+    writePlayQueue({ name: "Morning", exerciseIds: ["k", "a"] });
+    turnOn();
+    open("k");
+    await screen.findByText("Morning · 1/2");
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+    expect(repeatButton()).toHaveAttribute("aria-pressed", "false");
+
+    finishCurrentVideo();
+
+    await waitFor(() => expect(fakeYouTube.players[0].loadVideoById).toHaveBeenCalledWith({ videoId: "vid-a" }));
+  });
+
+  test("with auto check: each pass is logged once, a pass logged by hand is not doubled", async () => {
+    turnOn({ autoCheck: true });
+    open("a");
+    await screen.findByText("Morning · 1/3");
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+    fireEvent.click(repeatButton());
+    expect(repeatButton()).toHaveAttribute("aria-pressed", "true");
+
+    finishCurrentVideo();
+    await waitFor(async () => expect(await logsFor("a")).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole("button", { name: "Did it" }));
+    await waitFor(async () => expect(await logsFor("a")).toHaveLength(2));
+    finishCurrentVideo();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(await logsFor("a")).toHaveLength(2);
+
+    finishCurrentVideo();
+    await waitFor(async () => expect(await logsFor("a")).toHaveLength(3));
+    expect(screen.getByText("Morning · 1/3")).toBeInTheDocument();
+  });
+});
+
+test("a clip opened with the mode off, then the switch turned on, plays once and moves on", async () => {
+  writePlayQueue({ name: "Morning", exerciseIds: ["k", "a"] });
+  open("k");
+  await waitFor(() => expect(screen.getByRole("button", { name: "Play K" })).toBeEnabled());
+
+  fireEvent.click(screen.getByRole("switch", { name: "Continuous play" }));
+  await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+  expect(screen.getByRole("button", { name: "Repeat this video" })).toHaveAttribute("aria-pressed", "false");
+  finishCurrentVideo();
+
+  await waitFor(() => expect(fakeYouTube.players[0].loadVideoById).toHaveBeenCalledWith({ videoId: "vid-a" }));
 });

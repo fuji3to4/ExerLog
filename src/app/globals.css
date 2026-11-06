@@ -1218,6 +1218,58 @@ a {
   cursor: pointer;
 }
 
+.exercise-set-menu__row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ＋ next to a list that already holds the video: adds it once more. */
+.exercise-set-menu__add-again {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: var(--text-strong);
+  cursor: pointer;
+  outline: none;
+}
+
+.exercise-set-menu__add-again[data-highlighted] {
+  background: hsl(var(--secondary));
+}
+
+/* Just tapped: a ✓ pops in on a tonal fill, then turns back into ＋. */
+.exercise-set-menu__add-again[data-added="true"] {
+  background: var(--tonal-bg);
+  color: hsl(var(--primary));
+  animation: exercise-set-menu-pop 260ms ease-out;
+}
+
+@keyframes exercise-set-menu-pop {
+  0% { transform: scale(0.7); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercise-set-menu__add-again[data-added="true"] { animation: none; }
+}
+
+/* How many times the video sits in this list (×2, ×3 …). */
+.exercise-set-menu__count {
+  margin-left: auto;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: hsl(var(--secondary));
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+}
+
 /* ── Data management ─────────────────────────────────────────────── */
 
 .data-management {

@@ -39,8 +39,12 @@ function ExerciseDetailContent({ logDate }: { logDate: string | null }) {
   // Read once, after mount: on in-app navigation Next updates the URL just after the first render,
   // and continuous play later rewrites ?exerciseId= as it advances, which must not reload this screen.
   const [resolvedExerciseId, setResolvedExerciseId] = useState<string | null>(null);
+  // ?entry= names which copy of a repeated video in the list was opened (absent for a video listed once).
+  const [entryKey, setEntryKey] = useState<string | null>(null);
   useEffect(() => {
-    setResolvedExerciseId(new URLSearchParams(window.location.search).get("exerciseId") ?? "");
+    const params = new URLSearchParams(window.location.search);
+    setResolvedExerciseId(params.get("exerciseId") ?? "");
+    setEntryKey(params.get("entry"));
   }, []);
 
   useEffect(() => {
@@ -80,5 +84,5 @@ function ExerciseDetailContent({ logDate }: { logDate: string | null }) {
     );
   }
 
-  return <PlayerScreen exercise={exercise} logDate={logDate} />;
+  return <PlayerScreen exercise={exercise} entryKey={entryKey ?? exercise.id} logDate={logDate} />;
 }
