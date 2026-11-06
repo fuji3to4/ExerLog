@@ -180,14 +180,13 @@
 
   // Library edit mode
   library_add: "＋ エクササイズを追加",
-  library_reorder: "⇅ 並び替え",
-  library_reorder_confirm_title: "並び替えを保存しますか？",
   library_reorder_handle_aria: "{title}を移動",
   library_delete_confirm: "このエクササイズを削除しますか？",
   library_delete_has_logs: "このエクササイズには{count}件のログがあります。削除してもログは残りますが、履歴での表示名が変わる場合があります。",
   library_edit_mode_label: "編集",
   library_edit_aria: "{title}を編集",
   library_delete_aria: "{title}を削除",
+  library_remove_aria: "{title}をこのリストから外す",
   action_back: "← 戻る",
 
   // Exercise form modal
@@ -278,6 +277,7 @@
   // Common actions
   action_edit: "編集",
   action_delete: "削除",
+  action_remove: "外す",
 
   // Seed confirm dialog
 

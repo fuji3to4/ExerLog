@@ -83,18 +83,16 @@ test("the published queue lists entry keys", async () => {
   await waitFor(() => expect(readPlayQueue()?.exerciseIds).toEqual(["ex-a", "ex-b", "ex-a#2"]));
 });
 
-test("reorder moves one copy and saves ids", async () => {
+test("dragging in edit mode moves one copy and saves ids at once", async () => {
   layOutRows();
   const user = await openMorning();
   await user.click(screen.getByRole("switch", { name: /edit/i }));
-  await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
 
   const handle = screen.getAllByRole("button", { name: "Move Alpha Stretch" })[1];
   handle.focus();
   await user.keyboard("[Space]");
   await user.keyboard("{ArrowUp}");
   await user.keyboard("[Space]");
-  await user.click(screen.getByRole("button", { name: "Save" }));
 
   await waitFor(async () => expect((await listExerciseSets())[0].exerciseIds).toEqual(["ex-a", "ex-a", "ex-b"]));
 });

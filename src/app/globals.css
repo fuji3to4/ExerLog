@@ -1086,12 +1086,6 @@ a {
   outline-offset: 2px;
 }
 
-.library-screen__card-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
 /* ── Video card (YouTube-style) ──────────────────────────────────── */
 
 .video-card {
@@ -1763,13 +1757,49 @@ a {
   background: hsl(var(--muted));
 }
 
-.reorder-list__title {
+.reorder-list__body {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.reorder-list__title {
   min-width: 0;
   font-size: 0.9rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.reorder-list__actions {
+  display: flex;
+  gap: 0.375rem;
+}
+
+/* Small outlined text buttons under the title (edit mode's 編集 / 外す・削除). */
+.reorder-list__action {
+  height: 1.625rem;
+  padding: 0 0.625rem;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  background: transparent;
+  color: hsl(var(--foreground));
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.reorder-list__action:hover {
+  background: hsl(var(--secondary));
+}
+
+.reorder-list__action--danger {
+  color: var(--danger-text);
+}
+
+.reorder-list__action--danger:hover {
+  background: var(--danger-bg-hover);
 }
 
 .reorder-list__handle {
@@ -1789,9 +1819,3 @@ a {
   background: hsl(var(--secondary));
 }
 
-.reorder-list__footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}

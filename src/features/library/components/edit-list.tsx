@@ -18,20 +18,21 @@ import type { ListEntry } from "@/features/exercise-sets/list-entries";
 import { cn } from "@/lib/utils";
 import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
-type ReorderListProps = {
+type EditListProps = {
   exercises: ListEntry[];
-  /** Called after every drop with the whole list's new order as entry keys (a draft; nothing is stored here). */
+  /** "remove" takes the entry out of a my-list; "delete" deletes the video itself (すべて). */
+  removeKind: "remove" | "delete";
+  /** Called after every drop with the whole list's new order as entry keys; the caller saves it at once. */
   onReorder(keys: string[]): void;
-  onSave(): void;
-  onCancel(): void;
+  onEdit(exercise: ListEntry): void;
+  onRemove(exercise: ListEntry): void;
 };
 
 /**
- * The library's reorder mode: compact rows instead of big cards, so a long list fits on screen
- * and a video can be dragged far. Only the ≡ handle starts a drag; the rest of the row scrolls.
+ * The library's edit mode: compact rows instead of big cards, so a long list fits on screen and a
+ * video can be dragged far. Only the ≡ handle starts a drag; the rest of the row scrolls.
  */
-export function ReorderList({ exercises, onReorder, onSave, onCancel }: ReorderListProps) {
-  const { t } = useTranslation();
+export function EditList({ exercises, removeKind, onReorder, onEdit, onRemove }: EditListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -53,28 +54,35 @@ export function ReorderList({ exercises, onReorder, onSave, onCancel }: ReorderL
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
           <ol className="reorder-list__rows">
             {exercises.map((exercise) => (
-              <ReorderRow key={exercise.entryKey} exercise={exercise} handleLabel={t("library_reorder_handle_aria", { title: exercise.title })} />
+              <EditRow
+                key={exercise.entryKey}
+                exercise={exercise}
+                removeKind={removeKind}
+                onEdit={() => onEdit(exercise)}
+                onRemove={() => onRemove(exercise)}
+              />
             ))}
           </ol>
         </SortableContext>
       </DndContext>
-      <div className="reorder-list__footer">
-        <button type="button" className="settings-action-button settings-action-button--secondary" onClick={onCancel}>
-          {t("settings_form_cancel")}
-        </button>
-        <button type="button" className="settings-action-button" onClick={onSave}>
-          {t("settings_form_save")}
-        </button>
-      </div>
     </section>
   );
 }
 
-function ReorderRow({ exercise, handleLabel }: { exercise: ListEntry; handleLabel: string }) {
+type EditRowProps = {
+  exercise: ListEntry;
+  removeKind: "remove" | "delete";
+  onEdit(): void;
+  onRemove(): void;
+};
+
+function EditRow({ exercise, removeKind, onEdit, onRemove }: EditRowProps) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: exercise.entryKey,
   });
   const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
+  const title = exercise.title;
 
   return (
     <li
@@ -88,12 +96,27 @@ function ReorderRow({ exercise, handleLabel }: { exercise: ListEntry; handleLabe
       ) : (
         <span className="reorder-list__thumb" aria-hidden="true" />
       )}
-      <span className="reorder-list__title">{exercise.title}</span>
+      <div className="reorder-list__body">
+        <span className="reorder-list__title">{title}</span>
+        <div className="reorder-list__actions">
+          <button type="button" className="reorder-list__action" onClick={onEdit} aria-label={t("library_edit_aria", { title })}>
+            {t("action_edit")}
+          </button>
+          <button
+            type="button"
+            className="reorder-list__action reorder-list__action--danger"
+            onClick={onRemove}
+            aria-label={removeKind === "remove" ? t("library_remove_aria", { title }) : t("library_delete_aria", { title })}
+          >
+            {removeKind === "remove" ? t("action_remove") : t("action_delete")}
+          </button>
+        </div>
+      </div>
       <button
         type="button"
         ref={setActivatorNodeRef}
         className="reorder-list__handle"
-        aria-label={handleLabel}
+        aria-label={t("library_reorder_handle_aria", { title })}
         {...attributes}
         {...listeners}
       >
