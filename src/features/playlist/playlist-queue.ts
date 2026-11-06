@@ -12,7 +12,9 @@ export type PlaylistAction =
   | { type: "next" }
   | { type: "previous" }
   | { type: "ended" }
-  | { type: "stop" };
+  | { type: "stop" }
+  /** The list was reordered: point at the playing video's new index without reloading it. */
+  | { type: "seek"; index: number };
 
 export type PlaylistContext = { length: number; loop: boolean };
 
@@ -43,6 +45,11 @@ export function playlistReducer(state: PlaylistState, action: PlaylistAction, ct
 
   if (state.status === "idle") {
     return state;
+  }
+
+  if (action.type === "seek") {
+    const inRange = Number.isInteger(action.index) && action.index >= 0 && action.index < ctx.length;
+    return inRange ? { ...state, index: action.index } : state;
   }
 
   if (action.type === "previous") {

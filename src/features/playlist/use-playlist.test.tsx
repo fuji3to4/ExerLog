@@ -278,3 +278,16 @@ test("a load error for a playId that is no longer current is ignored", () => {
 
   expect(result.current.current?.exercise.id).toBe("b");
 });
+
+test("reordering the list keeps the playing video and its playId", () => {
+  const { result, rerender } = setup();
+  act(() => result.current.start("b"));
+  const playId = result.current.current?.playId;
+
+  rerender({ exercises: [abc[1], abc[2], abc[0]] });
+
+  expect(result.current.current?.exercise.id).toBe("b");
+  expect(result.current.current?.playId).toBe(playId);
+  act(() => result.current.next());
+  expect(result.current.current?.exercise.id).toBe("c");
+});

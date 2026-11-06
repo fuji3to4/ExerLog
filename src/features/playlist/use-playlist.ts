@@ -57,8 +57,22 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     [exercises],
   );
 
-  const [state, setState] = useState<PlaylistState>(IDLE);
+  const [storedState, setState] = useState<PlaylistState>(IDLE);
   const [settings, setSettings] = useState<PlaylistSettings>(DEFAULT_SETTINGS);
+  // The exercise being played, so a reordered list (shuffle) keeps playing it.
+  const playingIdRef = useRef<string | null>(null);
+
+  // The list was reordered under the playing video: follow it to its new index, same playId
+  // (no reload). Done during render so no frame shows the wrong video.
+  let state = storedState;
+  if (state.status === "playing" && playingIdRef.current !== null && items[state.index]?.exercise.id !== playingIdRef.current) {
+    const playingId = playingIdRef.current;
+    const movedTo = items.findIndex((item) => item.exercise.id === playingId);
+    if (movedTo >= 0) {
+      state = playlistReducer(state, { type: "seek", index: movedTo }, { length: items.length, loop: false });
+      setState(state);
+    }
+  }
 
   // Read in callbacks so a toggle made mid-video applies when that video ends.
   const settingsRef = useRef(settings);
@@ -98,6 +112,7 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
       loop: settingsRef.current.loop,
     });
     stateRef.current = nextState;
+    playingIdRef.current = nextState.status === "playing" ? (itemsRef.current[nextState.index]?.exercise.id ?? null) : null;
     setState(nextState);
   }, []);
 

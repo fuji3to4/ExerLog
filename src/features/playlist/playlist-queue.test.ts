@@ -62,3 +62,14 @@ describe("playlistReducer", () => {
     expect(playlistReducer(stopped, { type: "start", index: 0 }, three)).toEqual(playing(0, 8));
   });
 });
+
+describe("seek", () => {
+  test("moves the index without a new playId", () => {
+    expect(playlistReducer(playing(1, 7), { type: "seek", index: 2 }, three)).toEqual(playing(2, 7));
+  });
+
+  test("is ignored when idle or out of range", () => {
+    expect(playlistReducer(IDLE, { type: "seek", index: 1 }, three)).toEqual(IDLE);
+    expect(playlistReducer(playing(1, 7), { type: "seek", index: 5 }, three)).toEqual(playing(1, 7));
+  });
+});
