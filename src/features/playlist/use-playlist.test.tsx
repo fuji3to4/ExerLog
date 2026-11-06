@@ -192,10 +192,11 @@ test("an ENDED for a playId that is no longer current is ignored", () => {
   expect(result.current.current?.exercise.id).toBe("b");
 });
 
-test("mode off: a bounded clip restarts itself on end", () => {
+test("mode off: a bounded clip with repeat-one on restarts itself on end", () => {
   const { result, onFinished } = setup([video("a", "https://youtu.be/a?start=5&end=20"), video("b")]);
   act(() => result.current.setAutoCheck(true));
   act(() => result.current.start());
+  act(() => result.current.setRepeatOne(true));
   const firstPlayId = result.current.current!.playId;
 
   act(() => result.current.handleEnded(firstPlayId));
@@ -290,4 +291,88 @@ test("reordering the list keeps the playing video and its playId", () => {
   expect(result.current.current?.playId).toBe(playId);
   act(() => result.current.next());
   expect(result.current.current?.exercise.id).toBe("c");
+});
+
+test("repeat-one is off at first", () => {
+  const { result } = setup();
+  expect(result.current.repeatOne).toBe(false);
+});
+
+test("repeat-one replays the same entry with a new playId", () => {
+  const { result } = setup();
+  act(() => result.current.setContinuous(true));
+  act(() => result.current.start("b"));
+  act(() => result.current.setRepeatOne(true));
+  const firstPlayId = result.current.current!.playId;
+
+  act(() => result.current.handleEnded(firstPlayId));
+
+  expect(result.current.current?.entryKey).toBe("b");
+  expect(result.current.current?.playId).toBeGreaterThan(firstPlayId);
+  expect(result.current.repeatOne).toBe(true);
+});
+
+test("repeat-one turned off mid-video: in continuous play the video ends and the next one plays", () => {
+  const { result } = setup();
+  act(() => result.current.setContinuous(true));
+  act(() => result.current.start("a"));
+  act(() => result.current.setRepeatOne(true));
+  const playId = result.current.current!.playId;
+
+  act(() => result.current.setRepeatOne(false));
+  // Turning it off doesn't stop or skip the playing video.
+  expect(result.current.current?.playId).toBe(playId);
+  act(() => result.current.handleEnded(playId));
+
+  expect(result.current.current?.entryKey).toBe("b");
+});
+
+test("repeat-one turned off mid-video: with the mode off the video stops at its end", () => {
+  const { result } = setup();
+  act(() => result.current.start("a"));
+  act(() => result.current.setRepeatOne(true));
+  const playId = result.current.current!.playId;
+
+  act(() => result.current.setRepeatOne(false));
+  act(() => result.current.handleEnded(playId));
+
+  expect(result.current.isPlaying).toBe(false);
+});
+
+test("moving to another entry turns repeat-one off; restarting the same one keeps it", () => {
+  const { result } = setup();
+  act(() => result.current.setContinuous(true));
+  act(() => result.current.start("a"));
+  act(() => result.current.setRepeatOne(true));
+
+  act(() => result.current.start("a"));
+  expect(result.current.repeatOne).toBe(true);
+
+  act(() => result.current.next());
+  expect(result.current.current?.entryKey).toBe("b");
+  expect(result.current.repeatOne).toBe(false);
+});
+
+test("toggling continuous keeps repeat-one", () => {
+  const { result } = setup();
+  act(() => result.current.start("a"));
+  act(() => result.current.setRepeatOne(true));
+  act(() => result.current.setContinuous(true));
+  expect(result.current.repeatOne).toBe(true);
+});
+
+test("repeat-one with auto-check logs each full pass, but not a pass logged by hand", () => {
+  const { result, onFinished } = setup();
+  act(() => result.current.setContinuous(true));
+  act(() => result.current.setAutoCheck(true));
+  act(() => result.current.start("a"));
+  act(() => result.current.setRepeatOne(true));
+
+  act(() => result.current.handleEnded(result.current.current!.playId));
+  act(() => result.current.markManualLog());
+  act(() => result.current.handleEnded(result.current.current!.playId));
+  act(() => result.current.handleEnded(result.current.current!.playId));
+
+  expect(onFinished).toHaveBeenCalledTimes(2);
+  expect(result.current.current?.entryKey).toBe("a");
 });

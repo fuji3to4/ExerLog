@@ -55,7 +55,14 @@ function asVideo(d: ExerciseDraft): ExerciseVideo {
   return { ...d, updatedAt: "" };
 }
 
-const drafts = [draft("a"), draft("b"), draft("c"), draft("z"), draft("web", "https://example.com/web.mp4")];
+const drafts = [
+  draft("a"),
+  draft("b"),
+  draft("c"),
+  draft("z"),
+  draft("web", "https://example.com/web.mp4"),
+  draft("k", "https://youtu.be/vid-k?start=10&end=20"),
+];
 
 function open(id: string, logDate: string | null = null, entryKey: string = id) {
   window.history.replaceState({}, "", `/exercises?exerciseId=${id}`);
@@ -421,6 +428,65 @@ describe("a list that repeats a video", () => {
     fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
 
     expect(upNextTitles()).toEqual(["B", "A"]);
+    expect(screen.getByText("Morning · 1/3")).toBeInTheDocument();
+  });
+});
+
+describe("🔂 repeat this video", () => {
+  const repeatButton = () => screen.getByRole("button", { name: "Repeat this video" });
+
+  test("shows with the mode off, off at first", async () => {
+    open("b");
+    await screen.findByRole("button", { name: "Play B" });
+    expect(repeatButton()).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("a start/end clip opens with 🔂 on when the mode is off, and keeps repeating", async () => {
+    open("k");
+    await waitFor(() => expect(repeatButton()).toHaveAttribute("aria-pressed", "true"));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Play K" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Play K" }));
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+    finishCurrentVideo();
+
+    await waitFor(() =>
+      expect(fakeYouTube.players[0].loadVideoById).toHaveBeenCalledWith({ videoId: "vid-k", startSeconds: 10, endSeconds: 20 }),
+    );
+  });
+
+  test("a clip in continuous play plays once and moves on", async () => {
+    writePlayQueue({ name: "Morning", exerciseIds: ["k", "a"] });
+    turnOn();
+    open("k");
+    await screen.findByText("Morning · 1/2");
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+    expect(repeatButton()).toHaveAttribute("aria-pressed", "false");
+
+    finishCurrentVideo();
+
+    await waitFor(() => expect(fakeYouTube.players[0].loadVideoById).toHaveBeenCalledWith({ videoId: "vid-a" }));
+  });
+
+  test("with auto check: each pass is logged once, a pass logged by hand is not doubled", async () => {
+    turnOn({ autoCheck: true });
+    open("a");
+    await screen.findByText("Morning · 1/3");
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+    fireEvent.click(repeatButton());
+    expect(repeatButton()).toHaveAttribute("aria-pressed", "true");
+
+    finishCurrentVideo();
+    await waitFor(async () => expect(await logsFor("a")).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole("button", { name: "Did it" }));
+    await waitFor(async () => expect(await logsFor("a")).toHaveLength(2));
+    finishCurrentVideo();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(await logsFor("a")).toHaveLength(2);
+
+    finishCurrentVideo();
+    await waitFor(async () => expect(await logsFor("a")).toHaveLength(3));
     expect(screen.getByText("Morning · 1/3")).toBeInTheDocument();
   });
 });

@@ -29,6 +29,7 @@ export const en = {
   playlist_shuffle: "Shuffle",
   playlist_previous_aria: "Previous video",
   playlist_next_aria: "Next video",
+  playlist_repeat_one: "Repeat this video",
   today_recommended_reshuffle: "Show 3 others",
   recommendation_slot_usual: "Your usual",
   recommendation_slot_new: "Something new",

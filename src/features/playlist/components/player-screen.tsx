@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { SkipBack, SkipForward } from "lucide-react";
+import { Repeat1, SkipBack, SkipForward } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
@@ -123,6 +123,15 @@ export function PlayerScreen({ exercise, entryKey, logDate }: PlayerScreenProps)
   const playlist = usePlaylist({ exercises: queueExercises, onFinished: handleFinished });
   const { settings, current } = playlist;
 
+  // A start/end clip watched on its own repeats its section, as it always has: 🔂 starts on for it.
+  // Continuous play never turns 🔂 on by itself (the clip plays once and the list moves on).
+  const { setRepeatOne } = playlist;
+  useEffect(() => {
+    const clip = getYouTubeClip(exercise.videoUrl);
+    const bounded = clip !== null && (clip.startSeconds !== undefined || clip.endSeconds !== undefined);
+    if (bounded && !readPlaylistSettings().continuous) setRepeatOne(true);
+  }, [exercise, setRepeatOne]);
+
   // Autoplay once the list is known, if the mode was left on last time.
   const autoStartedRef = useRef(false);
   useEffect(() => {
@@ -198,6 +207,7 @@ export function PlayerScreen({ exercise, entryKey, logDate }: PlayerScreenProps)
     index >= 0 ? playlist.items.slice(index + 1).map((item) => ({ ...item.exercise, entryKey: item.entryKey })) : [];
 
   const isEmbeddable = getYouTubeClip(displayed.videoUrl) !== null;
+  const showSkips = settings.continuous && playlist.items.length > 0;
   const thumbnailUrl = resolveExerciseThumbnailUrl(displayed);
 
   let media: ReactNode = undefined;
@@ -244,13 +254,28 @@ export function PlayerScreen({ exercise, entryKey, logDate }: PlayerScreenProps)
         onLogged={playlist.markManualLog}
         logCountBump={logCountBump}
         mediaFooter={
-          settings.continuous && playlist.items.length > 0 ? (
+          isEmbeddable ? (
             <div className="playlist-now-playing__buttons">
-              <Button size="icon" className="player-screen__skip" aria-label={t("playlist_previous_aria")} onClick={playlist.previous}>
-                <SkipBack aria-hidden="true" size={22} />
-              </Button>
-              <Button size="icon" className="player-screen__skip" aria-label={t("playlist_next_aria")} onClick={playlist.next}>
-                <SkipForward aria-hidden="true" size={22} />
+              {showSkips ? (
+                <Button size="icon" className="player-screen__skip" aria-label={t("playlist_previous_aria")} onClick={playlist.previous}>
+                  <SkipBack aria-hidden="true" size={22} />
+                </Button>
+              ) : null}
+              {showSkips ? (
+                <Button size="icon" className="player-screen__skip" aria-label={t("playlist_next_aria")} onClick={playlist.next}>
+                  <SkipForward aria-hidden="true" size={22} />
+                </Button>
+              ) : null}
+              {/* 🔂 also when watching one video with the mode off. Tonal when on, outlined when off. */}
+              <Button
+                size="icon"
+                variant={playlist.repeatOne ? "default" : "outline"}
+                className="player-screen__skip"
+                aria-label={t("playlist_repeat_one")}
+                aria-pressed={playlist.repeatOne}
+                onClick={() => playlist.setRepeatOne(!playlist.repeatOne)}
+              >
+                <Repeat1 aria-hidden="true" size={22} />
               </Button>
             </div>
           ) : null

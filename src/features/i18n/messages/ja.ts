@@ -29,6 +29,7 @@
   playlist_shuffle: "シャッフル",
   playlist_previous_aria: "前の動画",
   playlist_next_aria: "次の動画",
+  playlist_repeat_one: "この動画をくり返す",
   today_recommended_reshuffle: "別の3本",
   recommendation_slot_usual: "いつもの",
   recommendation_slot_new: "はじめて",
