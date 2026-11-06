@@ -22,6 +22,27 @@ export function exerciseIdOfEntry(entryKey: string): string {
   return entryKey.replace(/#\d+$/, "");
 }
 
+function copyNumberOf(entryKey: string): number {
+  const match = /#(\d+)$/.exec(entryKey);
+  return match ? Number(match[1]) : 1;
+}
+
+/**
+ * `keys` after the entry `removed` left its list: later copies of the same video move up one
+ * number (a#3 → a#2, a#2 → a), so an order stored by key keeps pointing at the same cards.
+ */
+export function withoutEntry(keys: readonly string[], removed: string): string[] {
+  const removedId = exerciseIdOfEntry(removed);
+  const removedNumber = copyNumberOf(removed);
+  return keys
+    .filter((key) => key !== removed)
+    .map((key) => {
+      const number = copyNumberOf(key);
+      if (exerciseIdOfEntry(key) !== removedId || number <= removedNumber) return key;
+      return number - 1 === 1 ? removedId : `${removedId}#${number - 1}`;
+    });
+}
+
 /** A list where every video appears once (すべて, recommendations): each key is the id. */
 export function asEntries(exercises: readonly ExerciseVideo[]): ListEntry[] {
   return exercises.map((exercise) => ({ ...exercise, entryKey: exercise.id }));

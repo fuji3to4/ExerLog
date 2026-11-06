@@ -25,13 +25,15 @@ export type ExerciseSetMenuProps = {
   variant?: "icon" | "button";
   /** The card stands for this position of a shown my-list: offers 「このリストから外す」 for just that card. */
   entry?: { setId: string; entryKey: string };
+  /** Called after `entry` was removed, so a caller holding an order by entry key can renumber it. */
+  onEntryRemoved?(entryKey: string): void;
 };
 
 const ITEM_CLASS =
   "flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-secondary";
 
 /** "⋮" / "+ Set" menu on a video card (library, Today, detail) that drops down the sets this video can be added to. */
-export function ExerciseSetMenu({ exercise, sets, onChanged, variant = "icon", entry }: ExerciseSetMenuProps) {
+export function ExerciseSetMenu({ exercise, sets, onChanged, variant = "icon", entry, onEntryRemoved }: ExerciseSetMenuProps) {
   const { t } = useTranslation();
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
 
@@ -134,7 +136,12 @@ export function ExerciseSetMenu({ exercise, sets, onChanged, variant = "icon", e
                 <DropdownMenu.Separator className="my-1 h-px bg-border" />
                 <DropdownMenu.Item
                   className={ITEM_CLASS}
-                  onSelect={() => void runAndReload(() => removeSetEntry(entry.setId, entry.entryKey))}
+                  onSelect={() =>
+                    void runAndReload(async () => {
+                      await removeSetEntry(entry.setId, entry.entryKey);
+                      onEntryRemoved?.(entry.entryKey);
+                    })
+                  }
                 >
                   {t("set_entry_remove")}
                 </DropdownMenu.Item>

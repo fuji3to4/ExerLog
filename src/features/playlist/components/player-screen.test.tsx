@@ -441,13 +441,12 @@ describe("🔂 repeat this video", () => {
     expect(repeatButton()).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("a start/end clip opens with 🔂 on when the mode is off, and keeps repeating", async () => {
+  test("a start/end clip played with the mode off starts with 🔂 on, and keeps repeating", async () => {
     open("k");
-    await waitFor(() => expect(repeatButton()).toHaveAttribute("aria-pressed", "true"));
-
     await waitFor(() => expect(screen.getByRole("button", { name: "Play K" })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: "Play K" }));
     await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+    expect(repeatButton()).toHaveAttribute("aria-pressed", "true");
     finishCurrentVideo();
 
     await waitFor(() =>
@@ -489,4 +488,17 @@ describe("🔂 repeat this video", () => {
     await waitFor(async () => expect(await logsFor("a")).toHaveLength(3));
     expect(screen.getByText("Morning · 1/3")).toBeInTheDocument();
   });
+});
+
+test("a clip opened with the mode off, then the switch turned on, plays once and moves on", async () => {
+  writePlayQueue({ name: "Morning", exerciseIds: ["k", "a"] });
+  open("k");
+  await waitFor(() => expect(screen.getByRole("button", { name: "Play K" })).toBeEnabled());
+
+  fireEvent.click(screen.getByRole("switch", { name: "Continuous play" }));
+  await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
+  expect(screen.getByRole("button", { name: "Repeat this video" })).toHaveAttribute("aria-pressed", "false");
+  finishCurrentVideo();
+
+  await waitFor(() => expect(fakeYouTube.players[0].loadVideoById).toHaveBeenCalledWith({ videoId: "vid-a" }));
 });

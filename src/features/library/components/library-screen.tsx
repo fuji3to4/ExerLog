@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { applyOrder, shuffleIds } from "@/features/exercise-sets/list-order";
-import { asEntries, entryKeyOf, playerHref, type ListEntry } from "@/features/exercise-sets/list-entries";
+import { asEntries, entryKeyOf, playerHref, withoutEntry, type ListEntry } from "@/features/exercise-sets/list-entries";
 import { resolveSetExercises } from "@/features/exercise-sets/resolve-set-exercises";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
 import { usePublishPlayQueue } from "@/features/playlist/play-queue-store";
@@ -568,6 +568,14 @@ ${t("library_delete_confirm")}`
                   onChanged={() => void loadExercises()}
                   // A my-list card can take itself out of the list (just this copy).
                   entry={selectedSet ? { setId: selectedSet.id, entryKey: exercise.entryKey } : undefined}
+                  // The keys after the removed copy shift down; keep a shuffled order on the same cards.
+                  onEntryRemoved={(entryKey) =>
+                    setShuffle((current) =>
+                      current && current.listKey === selectedSet?.id
+                        ? { ...current, order: withoutEntry(current.order, entryKey) }
+                        : current,
+                    )
+                  }
                 />
               }
             >

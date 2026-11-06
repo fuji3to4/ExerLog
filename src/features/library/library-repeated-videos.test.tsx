@@ -11,6 +11,7 @@ import { renderWithLanguage } from "@/test/render-with-language";
 import type { ExerciseVideo } from "@/lib/types";
 
 import { LibraryScreen } from "./components/library-screen";
+import { writeLibraryView } from "./library-view-store";
 
 function makeExercise(id: string, title: string): ExerciseVideo {
   return {
@@ -127,4 +128,24 @@ test("All cards offer no remove item", async () => {
   await user.click(screen.getByRole("button", { name: "Add Alpha Stretch to a list" }));
   await screen.findByRole("menu");
   expect(screen.queryByRole("menuitem", { name: "Remove from this list" })).toBeNull();
+});
+
+test("removing a card while shuffled removes that card and leaves the others where they were", async () => {
+  await appDb.exerciseSets.clear();
+  const evening = await createExerciseSet("Evening", ["ex-a", "ex-b", "ex-a"]);
+  writeLibraryView({
+    set: evening.id,
+    sort: "shuffle",
+    shuffle: { listKey: evening.id, order: ["ex-a#2", "ex-b", "ex-a"], previousSort: "" },
+  });
+  const user = userEvent.setup();
+  renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+  await waitFor(async () => expect(await titles()).toEqual(["Alpha Stretch", "Beta Squat", "Alpha Stretch"]));
+
+  // The last card is the first copy (key ex-a).
+  await user.click(screen.getAllByRole("button", { name: "Add Alpha Stretch to a list" })[1]);
+  await user.click(await screen.findByRole("menuitem", { name: "Remove from this list" }));
+
+  await waitFor(async () => expect((await listExerciseSets())[0].exerciseIds).toEqual(["ex-b", "ex-a"]));
+  await waitFor(async () => expect(await titles()).toEqual(["Alpha Stretch", "Beta Squat"]));
 });

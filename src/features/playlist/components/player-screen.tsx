@@ -123,15 +123,6 @@ export function PlayerScreen({ exercise, entryKey, logDate }: PlayerScreenProps)
   const playlist = usePlaylist({ exercises: queueExercises, onFinished: handleFinished });
   const { settings, current } = playlist;
 
-  // A start/end clip watched on its own repeats its section, as it always has: 🔂 starts on for it.
-  // Continuous play never turns 🔂 on by itself (the clip plays once and the list moves on).
-  const { setRepeatOne } = playlist;
-  useEffect(() => {
-    const clip = getYouTubeClip(exercise.videoUrl);
-    const bounded = clip !== null && (clip.startSeconds !== undefined || clip.endSeconds !== undefined);
-    if (bounded && !readPlaylistSettings().continuous) setRepeatOne(true);
-  }, [exercise, setRepeatOne]);
-
   // Autoplay once the list is known, if the mode was left on last time.
   const autoStartedRef = useRef(false);
   useEffect(() => {

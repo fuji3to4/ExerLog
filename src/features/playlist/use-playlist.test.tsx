@@ -376,3 +376,15 @@ test("repeat-one with auto-check logs each full pass, but not a pass logged by h
   expect(onFinished).toHaveBeenCalledTimes(2);
   expect(result.current.current?.entryKey).toBe("a");
 });
+
+test("starting a start/end clip with the mode off turns 🔂 on; with the mode on it does not", () => {
+  const { result } = setup([video("k", "https://youtu.be/k?start=5&end=20"), video("b")]);
+  act(() => result.current.start("k"));
+  expect(result.current.repeatOne).toBe(true);
+
+  act(() => result.current.stop());
+  act(() => result.current.setRepeatOne(false));
+  act(() => result.current.setContinuous(true));
+  act(() => result.current.start("k"));
+  expect(result.current.repeatOne).toBe(false);
+});

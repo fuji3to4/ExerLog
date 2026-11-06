@@ -145,8 +145,14 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
       const index = entryKey === undefined ? 0 : itemsRef.current.findIndex((item) => item.entryKey === entryKey);
       if (index < 0) return;
       dispatch({ type: "start", index });
+      // A start/end clip played on its own repeats its section, as it always has: 🔂 starts on.
+      // Continuous play never turns it on by itself (the clip plays once and the list moves on).
+      const { clip } = itemsRef.current[index];
+      if (!settingsRef.current.continuous && (clip.startSeconds !== undefined || clip.endSeconds !== undefined)) {
+        setRepeatOne(true);
+      }
     },
-    [dispatch],
+    [dispatch, setRepeatOne],
   );
 
   const handleEnded = useCallback((endedPlayId: number) => {
