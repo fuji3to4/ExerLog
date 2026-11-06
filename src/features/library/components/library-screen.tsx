@@ -344,13 +344,13 @@ ${t("library_delete_confirm")}`
   // "Narrowed" means a search or one of the four filters is active; sorting does not count.
   const activeFilterCount = [filters.bodyArea, filters.purpose, filters.duration, filters.intensity].filter(Boolean).length;
   const isNarrowed = filters.search.trim() !== "" || activeFilterCount > 0;
-  // Only the whole list can be reordered: a searched/filtered view would hide where things go.
-  // A sort or shuffle is switched back to 標準 when reordering starts (the saved order is what moves).
-  const canReorder = !isNarrowed;
-  const showReorder = isEditMode && isReordering && canReorder && filters.sort === "";
+  // Reordering works on the plain list (the set or すべて in its saved order), so starting it clears
+  // the search, the filters and any sort/shuffle; they stay cleared afterwards.
+  const showReorder = isEditMode && isReordering && filters.sort === "" && !isNarrowed;
 
   function startReorder() {
     if (filters.sort !== "") handleSortChange("");
+    setFilters((current) => ({ ...current, search: "", bodyArea: "", purpose: "", duration: "", intensity: "", sort: "" }));
     setIsReordering(true);
   }
 
@@ -468,7 +468,6 @@ ${t("library_delete_confirm")}`
           <button
             type="button"
             className="settings-action-button settings-action-button--secondary"
-            disabled={!canReorder}
             onClick={startReorder}
           >
             {t("library_reorder")}

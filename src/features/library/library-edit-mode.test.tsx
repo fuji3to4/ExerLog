@@ -202,20 +202,24 @@ describe("reorder mode", () => {
     expect(screen.queryAllByRole("article")).toHaveLength(0);
   });
 
-  test("Reorder is unavailable while searched or filtered", async () => {
+  test("Reorder clears the search and filters and shows the whole list", async () => {
     const user = userEvent.setup();
     renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
     await screen.findByRole("heading", { name: "Alpha Stretch" });
     await user.click(screen.getByRole("switch", { name: /edit/i }));
-    const reorder = () => screen.getByRole("button", { name: "⇅ Reorder" });
-    expect(reorder()).toBeEnabled();
-
     await user.type(screen.getByRole("searchbox"), "Alpha");
-    expect(reorder()).toBeDisabled();
-    await user.clear(screen.getByRole("searchbox"));
-
     await user.click(screen.getByRole("button", { name: /^Filters/ }));
     await user.selectOptions(screen.getByLabelText(/body area/i), "upper-body");
-    expect(reorder()).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
+
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+    expect(screen.getByLabelText(/body area/i)).toHaveValue("");
+    expect(screen.getAllByRole("button", { name: /^Move / })).toHaveLength(3);
+
+    // Done leaves the cleared view as it is.
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    expect(await screen.findAllByRole("article")).toHaveLength(3);
+    expect(screen.getByRole("searchbox")).toHaveValue("");
   });
 });
