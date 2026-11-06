@@ -424,7 +424,7 @@ ${t("library_delete_confirm")}`
         </button>
       </div>
 
-      {isFiltersOpen ? <LibraryFilters value={filters} onChange={setFilters} /> : null}
+      {isFiltersOpen ? <LibraryFilters value={filters} onChange={(next) => setFilters((current) => ({ ...next, sort: current.sort }))} /> : null}
 
       {isEditMode ? (
         <div className="library-screen__edit-actions">
