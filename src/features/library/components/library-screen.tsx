@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Ellipsis, ListFilter } from "lucide-react";
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { applyOrder, shuffleIds } from "@/features/exercise-sets/list-order";
 import { asEntries, entryKeyOf, playerHref, withoutEntry, type ListEntry } from "@/features/exercise-sets/list-entries";
@@ -20,6 +19,7 @@ import {
   createExerciseSet,
   deleteExerciseSet,
   listExerciseSets,
+  removeSetEntry,
   renameExerciseSet,
   reorderExerciseSet,
 } from "@/features/storage/exercise-sets.repository";
@@ -44,7 +44,7 @@ import {
   type UnshuffledSort,
 } from "../library-view-store";
 import { LibraryFilters } from "./library-filters";
-import { ReorderList } from "./reorder-list";
+import { EditList } from "./edit-list";
 import { StarterImportHint } from "./starter-import-hint";
 import { VideoCard } from "./video-card";
 
@@ -96,11 +96,6 @@ export function LibraryScreen() {
   const [exerciseSets, setExerciseSets] = useState<ExerciseSet[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isReordering, setIsReordering] = useState(false);
-  const [reorderDraft, setReorderDraft] = useState<string[] | null>(null);
-  const [isReorderConfirmOpen, setIsReorderConfirmOpen] = useState(false);
-  // The edit switch was turned off with unsaved reorder changes: leave edit mode once answered.
-  const leaveEditAfterConfirmRef = useRef(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseVideo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [renamingSet, setRenamingSet] = useState<ExerciseSet | null>(null);
@@ -352,54 +347,33 @@ ${t("library_delete_confirm")}`
   // "Narrowed" means a search or one of the four filters is active; sorting does not count.
   const activeFilterCount = [filters.bodyArea, filters.purpose, filters.duration, filters.intensity].filter(Boolean).length;
   const isNarrowed = filters.search.trim() !== "" || activeFilterCount > 0;
-  // Reordering works on the plain list (the set or すべて in its saved order), so starting it clears
-  // the search, the filters and any sort/shuffle; they stay cleared afterwards.
-  const showReorder = isEditMode && isReordering && filters.sort === "" && !isNarrowed;
-
-  // Drags change only this draft; the order is stored when the user chooses 保存.
-  const reorderExercises = reorderDraft ? applyOrder(shownExercises, reorderDraft, entryKeyOf) : shownExercises;
-  const isReorderDirty =
-    reorderDraft !== null && reorderExercises.some((exercise, index) => exercise.entryKey !== shownExercises[index]?.entryKey);
-
-  function startReorder() {
-    if (filters.sort !== "") handleSortChange("");
-    setFilters((current) => ({ ...current, search: "", bodyArea: "", purpose: "", duration: "", intensity: "", sort: "" }));
-    setReorderDraft(null);
-    setIsReordering(true);
-  }
-
-  function leaveReorder() {
-    setReorderDraft(null);
-    setIsReordering(false);
-    if (leaveEditAfterConfirmRef.current) {
-      leaveEditAfterConfirmRef.current = false;
-      setIsEditMode(false);
-    }
-  }
-
-  function saveReorder() {
-    if (isReorderDirty) void persistOrder(reorderExercises.map((exercise) => exercise.id));
-    leaveReorder();
-  }
-
-  /** ⇅ toggles reorder mode; leaving with unsaved changes asks 保存 / キャンセル first. */
-  function handleReorderButton() {
-    if (!showReorder) {
-      startReorder();
-    } else if (isReorderDirty) {
-      setIsReorderConfirmOpen(true);
-    } else {
-      leaveReorder();
-    }
-  }
-
+  /**
+   * Edit mode shows the plain list (the set or すべて in its saved order) as rows that can be dragged,
+   * so turning it on clears the search, the filters and any sort/shuffle; they stay cleared afterwards.
+   */
   function handleEditModeChange(on: boolean) {
-    if (!on && showReorder && isReorderDirty) {
-      leaveEditAfterConfirmRef.current = true;
-      setIsReorderConfirmOpen(true);
-      return;
+    if (on) {
+      if (filters.sort !== "") handleSortChange("");
+      setFilters((current) => ({ ...current, search: "", bodyArea: "", purpose: "", duration: "", intensity: "", sort: "" }));
+      setIsFiltersOpen(false);
     }
     setIsEditMode(on);
+  }
+
+  /** Every drop is saved at once; there is no draft to keep or cancel. */
+  function handleReorder(keys: string[]) {
+    void persistOrder(applyOrder(baseExercises, keys, entryKeyOf).map((exercise) => exercise.id));
+  }
+
+  async function handleRemoveEntry(entry: ListEntry) {
+    if (!selectedSet) return;
+    try {
+      await removeSetEntry(selectedSet.id, entry.entryKey);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      await loadExercises();
+    }
   }
 
   async function persistOrder(ids: string[]) {
@@ -482,44 +456,40 @@ ${t("library_delete_confirm")}`
         }
       />
 
-      <div className="library-screen__search-row">
-        <div className="library-screen__search">
-          <label htmlFor="search-exercises" className="sr-only">
-            {t("library_search_label")}
-          </label>
-          <input
-            id="search-exercises"
-            type="search"
-            value={filters.search}
-            placeholder={t("library_search_placeholder")}
-            onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-          />
+      {isEditMode ? null : (
+        <div className="library-screen__search-row">
+          <div className="library-screen__search">
+            <label htmlFor="search-exercises" className="sr-only">
+              {t("library_search_label")}
+            </label>
+            <input
+              id="search-exercises"
+              type="search"
+              value={filters.search}
+              placeholder={t("library_search_placeholder")}
+              onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+            />
+          </div>
+          <button
+            type="button"
+            className="library-screen__filters-toggle"
+            aria-expanded={isFiltersOpen}
+            onClick={() => setIsFiltersOpen((open) => !open)}
+          >
+            <ListFilter aria-hidden className="h-4 w-4" />
+            {activeFilterCount > 0 ? t("library_filters_toggle_count", { count: activeFilterCount }) : t("library_filters_toggle")}
+          </button>
         </div>
-        <button
-          type="button"
-          className="library-screen__filters-toggle"
-          aria-expanded={isFiltersOpen}
-          onClick={() => setIsFiltersOpen((open) => !open)}
-        >
-          <ListFilter aria-hidden className="h-4 w-4" />
-          {activeFilterCount > 0 ? t("library_filters_toggle_count", { count: activeFilterCount }) : t("library_filters_toggle")}
-        </button>
-      </div>
+      )}
 
-      {isFiltersOpen ? <LibraryFilters value={filters} onChange={(next) => setFilters((current) => ({ ...next, sort: current.sort }))} /> : null}
+      {isFiltersOpen && !isEditMode ? (
+        <LibraryFilters value={filters} onChange={(next) => setFilters((current) => ({ ...next, sort: current.sort }))} />
+      ) : null}
 
       {isEditMode ? (
         <div className="library-screen__edit-actions">
           <button type="button" className="settings-action-button" onClick={() => setIsAdding(true)}>
             {t("library_add")}
-          </button>
-          <button
-            type="button"
-            className="settings-action-button settings-action-button--secondary"
-            aria-pressed={showReorder}
-            onClick={handleReorderButton}
-          >
-            {t("library_reorder")}
           </button>
         </div>
       ) : null}
@@ -528,21 +498,29 @@ ${t("library_delete_confirm")}`
         <p className="library-screen__count" aria-live="polite">
           {countText}
         </p>
-        <label className="library-screen__sort">
-          <span className="sr-only">{t("library_sort_label")}</span>
-          <select value={filters.sort} onChange={(event) => handleSortChange(event.target.value)}>
-            <option value="">{t("library_sort_default")}</option>
-            <option value="most-watched">{t("library_sort_most_watched")}</option>
-            <option value="most-done">{t("library_sort_most_done")}</option>
-            <option value="shuffle">{t("library_sort_shuffle")}</option>
-          </select>
-        </label>
+        {isEditMode ? null : (
+          <label className="library-screen__sort">
+            <span className="sr-only">{t("library_sort_label")}</span>
+            <select value={filters.sort} onChange={(event) => handleSortChange(event.target.value)}>
+              <option value="">{t("library_sort_default")}</option>
+              <option value="most-watched">{t("library_sort_most_watched")}</option>
+              <option value="most-done">{t("library_sort_most_done")}</option>
+              <option value="shuffle">{t("library_sort_shuffle")}</option>
+            </select>
+          </label>
+        )}
       </div>
 
       {isLoaded && exercises.length === 0 ? <StarterImportHint onImported={loadExercises} /> : null}
 
-      {showReorder ? (
-        <ReorderList exercises={reorderExercises} onReorder={setReorderDraft} onSave={saveReorder} onCancel={leaveReorder} />
+      {isEditMode ? (
+        <EditList
+          exercises={baseExercises}
+          removeKind={selectedSet ? "remove" : "delete"}
+          onReorder={handleReorder}
+          onEdit={setEditingExercise}
+          onRemove={(entry) => void (selectedSet ? handleRemoveEntry(entry) : handleDelete(entry))}
+        />
       ) : (
       /* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */
       <section className="library-screen__results grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
@@ -579,27 +557,7 @@ ${t("library_delete_confirm")}`
                 />
               }
             >
-              {isEditMode ? (
-                <div className="library-screen__card-actions">
-                  <button
-                    type="button"
-                    className="settings-action-button settings-action-button--secondary"
-                    onClick={() => setEditingExercise(exercise)}
-                    aria-label={t("library_edit_aria", { title: exercise.title })}
-                  >
-                    {t("action_edit")}
-                  </button>
-                  <button
-                    type="button"
-                    className="settings-action-button settings-action-button--danger"
-                    onClick={() => void handleDelete(exercise)}
-                    aria-label={t("library_delete_aria", { title: exercise.title })}
-                  >
-                    {t("action_delete")}
-                  </button>
-                </div>
-              ) : logCounts ? (
-                // Hidden in edit mode so tidying the library can't log by accident.
+              {logCounts ? (
                 <>
                   <ExerciseLogActions
                     todayCount={logCounts[exercise.id] ?? 0}
@@ -619,43 +577,6 @@ ${t("library_delete_confirm")}`
         })}
       </section>
       )}
-
-      <Dialog
-        open={isReorderConfirmOpen}
-        onOpenChange={(open) => {
-          // Dismissing without an answer keeps reordering.
-          if (!open) leaveEditAfterConfirmRef.current = false;
-          setIsReorderConfirmOpen(open);
-        }}
-      >
-        <DialogContent aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle>{t("library_reorder_confirm_title")}</DialogTitle>
-          </DialogHeader>
-          <DialogFooter>
-            <button
-              type="button"
-              className="settings-action-button settings-action-button--secondary"
-              onClick={() => {
-                setIsReorderConfirmOpen(false);
-                leaveReorder();
-              }}
-            >
-              {t("settings_form_cancel")}
-            </button>
-            <button
-              type="button"
-              className="settings-action-button"
-              onClick={() => {
-                setIsReorderConfirmOpen(false);
-                saveReorder();
-              }}
-            >
-              {t("settings_form_save")}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <SetNameDialog
         open={isCreatingSet}

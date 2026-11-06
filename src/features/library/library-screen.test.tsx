@@ -528,7 +528,7 @@ test("for a past day, card buttons log that day without celebrating", async () =
   }
 });
 
-test("edit mode swaps the log buttons for edit and delete", async () => {
+test("edit mode swaps the cards (and their log buttons) for rows with edit and delete", async () => {
   const user = userEvent.setup();
   renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
 
@@ -536,8 +536,9 @@ test("edit mode swaps the log buttons for edit and delete", async () => {
   expect(await within(card).findByRole("button", { name: "Did it" })).toBeInTheDocument();
   await user.click(screen.getByRole("switch"));
 
-  expect(within(card).queryByRole("button", { name: "Did it" })).not.toBeInTheDocument();
-  expect(within(card).getByRole("button", { name: /edit/i })).toBeInTheDocument();
+  expect(screen.queryAllByRole("article")).toHaveLength(0);
+  expect(screen.queryByRole("button", { name: "Did it" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^edit shoulder rolls/i })).toBeInTheDocument();
 });
 
 test("an empty library offers the starter exercises and shows them once imported", async () => {
