@@ -25,7 +25,7 @@
   playlist_up_next_more: "ほか {count} 本",
   playlist_single_name: "この動画",
   playlist_loop: "ループ",
-  playlist_auto_check: "自動チェック",
+  playlist_auto_check: "自動できた",
   playlist_previous_aria: "前の動画",
   playlist_next_aria: "次の動画",
   today_recommended_reshuffle: "別の3本",
