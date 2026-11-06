@@ -4,6 +4,7 @@ import { localIsoNow } from "@/lib/date/local-iso";
 import { scheduleSync } from "@/features/sync/auto-sync";
 import { appDb } from "./app-db";
 import { recordTombstones } from "./tombstones.repository";
+import { toEntryKeys } from "@/features/exercise-sets/list-entries";
 
 const TOMBSTONE_TABLE = "ExerciseSets";
 
@@ -48,6 +49,31 @@ export async function setExerciseInSet(setId: string, exerciseId: string, includ
     const exerciseIds = included
       ? [...set.exerciseIds, exerciseId]
       : set.exerciseIds.filter((id) => id !== exerciseId);
+    await appDb.exerciseSets.update(setId, { exerciseIds, updatedAt: localIsoNow() });
+    return true;
+  });
+  if (changed) scheduleSync();
+}
+
+/** Adds the video once more at the end (a my-list may repeat a video). Unknown set ids are a silent no-op. */
+export async function addExerciseToSet(setId: string, exerciseId: string): Promise<void> {
+  const changed = await appDb.transaction("rw", appDb.exerciseSets, async () => {
+    const set = await appDb.exerciseSets.get(setId);
+    if (!set) return false;
+    await appDb.exerciseSets.update(setId, { exerciseIds: [...set.exerciseIds, exerciseId], updatedAt: localIsoNow() });
+    return true;
+  });
+  if (changed) scheduleSync();
+}
+
+/** Removes the one occurrence named by `entryKey` (see list-entries). Unknown sets or keys are a silent no-op. */
+export async function removeSetEntry(setId: string, entryKey: string): Promise<void> {
+  const changed = await appDb.transaction("rw", appDb.exerciseSets, async () => {
+    const set = await appDb.exerciseSets.get(setId);
+    if (!set) return false;
+    const index = toEntryKeys(set.exerciseIds).indexOf(entryKey);
+    if (index < 0) return false;
+    const exerciseIds = set.exerciseIds.filter((_id, i) => i !== index);
     await appDb.exerciseSets.update(setId, { exerciseIds, updatedAt: localIsoNow() });
     return true;
   });

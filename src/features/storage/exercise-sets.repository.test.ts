@@ -9,9 +9,11 @@ import { scheduleSync } from "@/features/sync/auto-sync";
 
 import { appDb } from "./app-db";
 import {
+  addExerciseToSet,
   createExerciseSet,
   deleteExerciseSet,
   listExerciseSets,
+  removeSetEntry,
   renameExerciseSet,
   reorderExerciseSet,
   setExerciseInSet,
@@ -102,5 +104,33 @@ test("reorderExerciseSet replaces the order, stamps updatedAt and schedules sync
 
 test("reorderExerciseSet on an unknown set is a silent no-op", async () => {
   await expect(reorderExerciseSet("missing", ["a"])).resolves.toBeUndefined();
+  expect(scheduleSync).not.toHaveBeenCalled();
+});
+
+test("addExerciseToSet appends a repeat and schedules sync", async () => {
+  const set = await createExerciseSet("x", ["a", "b"]);
+  vi.mocked(scheduleSync).mockClear();
+  await addExerciseToSet(set.id, "a");
+  expect((await appDb.exerciseSets.get(set.id))?.exerciseIds).toEqual(["a", "b", "a"]);
+  expect(scheduleSync).toHaveBeenCalled();
+});
+
+test("removeSetEntry removes only that occurrence, counting missing ids too", async () => {
+  const set = await createExerciseSet("x", ["gone", "a", "b", "a"]);
+  await removeSetEntry(set.id, "a#2");
+  expect((await appDb.exerciseSets.get(set.id))?.exerciseIds).toEqual(["gone", "a", "b"]);
+  await removeSetEntry(set.id, "a");
+  expect((await appDb.exerciseSets.get(set.id))?.exerciseIds).toEqual(["gone", "b"]);
+});
+
+test("unchecking removes every copy", async () => {
+  const set = await createExerciseSet("x", ["a", "b", "a"]);
+  await setExerciseInSet(set.id, "a", false);
+  expect((await appDb.exerciseSets.get(set.id))?.exerciseIds).toEqual(["b"]);
+});
+
+test("add and remove on an unknown set are no-ops", async () => {
+  await addExerciseToSet("nope", "a");
+  await removeSetEntry("nope", "a");
   expect(scheduleSync).not.toHaveBeenCalled();
 });
