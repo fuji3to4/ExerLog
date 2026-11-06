@@ -27,3 +27,8 @@ test("shuffleIds is a permutation and honours first", () => {
 test("shuffleIds ignores a first id that is not in the list", () => {
   expect([...shuffleIds(["a", "b"], { first: "z" })].sort()).toEqual(["a", "b"]);
 });
+
+test("applyOrder can order by another key", () => {
+  const items = [{ id: "a", key: "a" }, { id: "b", key: "b" }, { id: "a", key: "a#2" }];
+  expect(applyOrder(items, ["a#2", "a", "b"], (item) => item.key).map((i) => i.key)).toEqual(["a#2", "a", "b"]);
+});

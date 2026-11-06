@@ -1,20 +1,25 @@
 /**
- * Orders `items` by `orderIds`: listed ids first, in that order (repeats keep the first
- * position, unknown ids are skipped); items missing from the order follow in input order,
- * so a newly added video shows up at the end instead of disappearing.
+ * Orders `items` by `orderKeys`: listed keys first, in that order (repeats keep the first
+ * position, unknown keys are skipped); items missing from the order follow in input order,
+ * so a newly added video shows up at the end instead of disappearing. `keyOf` names an item
+ * (its id by default; a list entry's key for lists that can repeat a video).
  */
-export function applyOrder<T extends { id: string }>(items: readonly T[], orderIds: readonly string[]): T[] {
-  const byId = new Map(items.map((item) => [item.id, item]));
+export function applyOrder<T extends { id: string }>(
+  items: readonly T[],
+  orderKeys: readonly string[],
+  keyOf: (item: T) => string = (item) => item.id,
+): T[] {
+  const byKey = new Map(items.map((item) => [keyOf(item), item]));
   const ordered: T[] = [];
   const placed = new Set<string>();
-  for (const id of orderIds) {
-    const item = byId.get(id);
-    if (item && !placed.has(id)) {
+  for (const key of orderKeys) {
+    const item = byKey.get(key);
+    if (item && !placed.has(key)) {
       ordered.push(item);
-      placed.add(id);
+      placed.add(key);
     }
   }
-  return [...ordered, ...items.filter((item) => !placed.has(item.id))];
+  return [...ordered, ...items.filter((item) => !placed.has(keyOf(item)))];
 }
 
 /** A random permutation of `ids` (Fisher–Yates). `first`, when present, is put at the front. */
