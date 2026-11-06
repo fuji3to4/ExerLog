@@ -26,6 +26,7 @@ export const en = {
   playlist_single_name: "This video",
   playlist_loop: "Loop",
   playlist_auto_check: "Auto check",
+  playlist_shuffle: "Shuffle",
   playlist_previous_aria: "Previous video",
   playlist_next_aria: "Next video",
   today_recommended_reshuffle: "Show 3 others",
@@ -269,6 +270,7 @@ export const en = {
   sync_tab_SelfCare: "Self-care",
   sync_tab_Exercises: "Video library",
   sync_tab_ExerciseSets: "My lists",
+  sync_tab_ListOrders: "List order",
   sync_tab_Tombstones: "Deletion records",
   sync_tab_spreadsheet: "Spreadsheet",
 

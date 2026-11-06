@@ -5,8 +5,10 @@ import { SkipBack, SkipForward } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { applyOrder, shuffleIds } from "@/features/exercise-sets/list-order";
 import { BackButton } from "@/features/library/components/back-button";
 import { ExerciseDetailScreen } from "@/features/library/components/exercise-detail-screen";
+import { readLibraryView, writeLibraryView } from "@/features/library/library-view-store";
 import { LogDateNotice } from "@/features/logging/components/log-date-notice";
 import { getExerciseById } from "@/features/storage/exercise-catalog.repository";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
@@ -15,7 +17,7 @@ import type { ExerciseVideo } from "@/lib/types";
 import { useWakeLock } from "@/lib/wake-lock/use-wake-lock";
 import { getYouTubeClip, resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
-import { resolvePlayQueue } from "../play-queue-store";
+import { resolvePlayQueue, type PlayQueue } from "../play-queue-store";
 import { readPlaylistSettings } from "../playlist-settings-store";
 import { usePlaylist } from "../use-playlist";
 import { ContinuousStatus, ContinuousSwitch } from "./continuous-bar";
@@ -29,7 +31,7 @@ type PlayerScreenProps = {
   logDate: string | null;
 };
 
-type Queue = { name: string; exercises: ExerciseVideo[] };
+type Queue = Omit<PlayQueue, "exerciseIds"> & { exercises: ExerciseVideo[] };
 
 async function loadQueue(exercise: ExerciseVideo): Promise<Queue | null> {
   const stored = resolvePlayQueue(exercise.id);
@@ -37,7 +39,8 @@ async function loadQueue(exercise: ExerciseVideo): Promise<Queue | null> {
   const found = await Promise.all(
     stored.exerciseIds.map((id) => (id === exercise.id ? Promise.resolve(exercise) : getExerciseById(id))),
   );
-  return { name: stored.name, exercises: found.filter((item): item is ExerciseVideo => Boolean(item)) };
+  const { exerciseIds: _ids, ...rest } = stored;
+  return { ...rest, exercises: found.filter((item): item is ExerciseVideo => Boolean(item)) };
 }
 
 function replaceExerciseIdInUrl(exerciseId: string) {
@@ -57,12 +60,20 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
   const [displayed, setDisplayed] = useState(exercise);
   const [logCountBump, setLogCountBump] = useState(0);
   const [autoLogError, setAutoLogError] = useState(false);
+  // Shuffle belongs to this run's list (never a device setting); `order` overrides the queue's order.
+  const [shuffled, setShuffled] = useState(false);
+  const [order, setOrder] = useState<string[] | null>(null);
+  const [unshuffledOrder, setUnshuffledOrder] = useState<string[] | null>(null);
 
   useEffect(() => {
     let active = true;
     loadQueue(exercise)
       .then((loaded) => {
-        if (active) setQueue(loaded);
+        if (!active) return;
+        setQueue(loaded);
+        setShuffled(loaded?.shuffled === true);
+        setOrder(null);
+        setUnshuffledOrder(loaded?.unshuffledIds ?? null);
       })
       .catch((error: unknown) => {
         console.error(error);
@@ -73,7 +84,10 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
     };
   }, [exercise]);
 
-  const queueExercises = useMemo(() => queue?.exercises ?? [exercise], [queue, exercise]);
+  const queueExercises = useMemo(() => {
+    const listed = queue?.exercises ?? [exercise];
+    return order ? applyOrder(listed, order) : listed;
+  }, [queue, exercise, order]);
   const queueName = queue?.name ?? t("playlist_single_name");
 
   const targetDate = logDate ?? toDayKey(new Date());
@@ -114,6 +128,29 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
   useWakeLock(settings.continuous && playlist.isPlaying);
 
   const isQueueReady = queue !== undefined;
+
+  function handleShuffleChange(on: boolean) {
+    const currentIds = queueExercises.map((item) => item.id);
+    const fromLibrary = queue?.source === "library";
+    if (on) {
+      // The playing video stays and goes first; everything else (played or not) is mixed after it.
+      const ids = shuffleIds(currentIds, { first: current?.exercise.id ?? displayed.id });
+      setUnshuffledOrder(currentIds);
+      setOrder(ids);
+      if (fromLibrary) {
+        const view = readLibraryView();
+        const previousSort = view.sort === "shuffle" ? (view.shuffle?.previousSort ?? "") : view.sort;
+        writeLibraryView({ ...view, sort: "shuffle", shuffle: { listKey: view.set, order: ids, previousSort } });
+      }
+    } else {
+      setOrder(unshuffledOrder ?? currentIds);
+      if (fromLibrary) {
+        const view = readLibraryView();
+        writeLibraryView({ ...view, sort: view.shuffle?.previousSort ?? "", shuffle: null });
+      }
+    }
+    setShuffled(on);
+  }
 
   function handleContinuousChange(on: boolean) {
     playlist.setContinuous(on);
@@ -168,7 +205,7 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
         <ContinuousSwitch checked={settings.continuous} onChange={handleContinuousChange} />
       </div>
       <LogDateNotice logDate={logDate} />
-      {settings.continuous ? <ContinuousStatus playlist={playlist} position={position} /> : null}
+      {settings.continuous ? <ContinuousStatus playlist={playlist} position={position} shuffled={shuffled} onShuffleChange={handleShuffleChange} /> : null}
 
       <ExerciseDetailScreen
         exercise={displayed}

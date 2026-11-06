@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/sync/auto-sync")>()),
@@ -30,6 +30,8 @@ import { appDb } from "@/features/storage/app-db";
 import { replaceAllExercises } from "@/features/storage/exercise-catalog.repository";
 import type { ExerciseDraft, ExerciseVideo } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
+
+import { LIBRARY_VIEW_STORAGE_KEY, readLibraryView, writeLibraryView } from "@/features/library/library-view-store";
 
 import { PLAY_QUEUE_STORAGE_KEY, writePlayQueue } from "../play-queue-store";
 import { PLAYLIST_SETTINGS_STORAGE_KEY, writePlaylistSettings } from "../playlist-settings-store";
@@ -228,4 +230,86 @@ test("▶ waits until the list is known", async () => {
 
   expect(screen.getByRole("button", { name: "Play B" })).toBeDisabled();
   await waitFor(() => expect(screen.getByRole("button", { name: "Play B" })).toBeEnabled());
+});
+
+describe("shuffle chip", () => {
+  const upNextTitles = () =>
+    within(screen.getByRole("region", { name: "Up next" }))
+      .queryAllByRole("button")
+      .map((b) => b.textContent);
+  const chip = () => screen.getByRole("button", { name: "Shuffle" });
+
+  beforeEach(() => {
+    window.sessionStorage.removeItem(LIBRARY_VIEW_STORAGE_KEY);
+    vi.spyOn(Math, "random").mockReturnValue(0);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("from the library: shuffles the rest after the playing video and switches the library to Shuffle", async () => {
+    writePlayQueue({ name: "All", exerciseIds: ["a", "b", "c", "z"], source: "library", shuffled: false });
+    writeLibraryView({ set: "", sort: "most-done", shuffle: null });
+    turnOn();
+    open("b");
+    await screen.findByText("All · 2/4");
+    expect(chip()).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(chip());
+
+    expect(chip()).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("heading", { name: "B" })).toBeInTheDocument();
+    expect(upNextTitles()).toEqual(["C", "Z", "A"]);
+    expect(readLibraryView()).toEqual({
+      set: "",
+      sort: "shuffle",
+      shuffle: { listKey: "", order: ["b", "c", "z", "a"], previousSort: "most-done" },
+    });
+
+    fireEvent.click(chip());
+
+    expect(chip()).toHaveAttribute("aria-pressed", "false");
+    expect(upNextTitles()).toEqual(["C", "Z"]);
+    expect(readLibraryView()).toEqual({ set: "", sort: "most-done", shuffle: null });
+    expect(fakeYouTube.options).toHaveLength(1);
+    expect(fakeYouTube.players[0].loadVideoById).not.toHaveBeenCalled();
+  });
+
+  test("a queue that arrives shuffled starts with the chip on and un-shuffles to its saved order", async () => {
+    writePlayQueue({ name: "All", exerciseIds: ["c", "a", "b"], source: "library", shuffled: true, unshuffledIds: ["a", "b", "c"] });
+    turnOn();
+    open("a");
+    await screen.findByText("All · 2/3");
+    expect(chip()).toHaveAttribute("aria-pressed", "true");
+    expect(upNextTitles()).toEqual(["B"]);
+
+    fireEvent.click(chip());
+
+    expect(upNextTitles()).toEqual(["B", "C"]);
+    expect(screen.getByText("All · 1/3")).toBeInTheDocument();
+  });
+
+  test("from Today: shuffles only the player and leaves the library alone", async () => {
+    turnOn();
+    open("a");
+    await screen.findByText("Morning · 1/3");
+
+    fireEvent.click(chip());
+
+    expect(chip()).toHaveAttribute("aria-pressed", "true");
+    expect(window.sessionStorage.getItem(LIBRARY_VIEW_STORAGE_KEY)).toBeNull();
+  });
+
+  test("works on a one-video queue before anything plays", async () => {
+    writePlayQueue({ name: "One", exerciseIds: ["a"] });
+    turnOn();
+    open("a");
+    await screen.findByText("One · 1/1");
+
+    fireEvent.click(chip());
+
+    expect(chip()).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("heading", { name: "A" })).toBeInTheDocument();
+  });
 });

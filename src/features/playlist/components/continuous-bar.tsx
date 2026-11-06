@@ -18,8 +18,15 @@ export function ContinuousSwitch({ checked, onChange }: { checked: boolean; onCh
   );
 }
 
-/** One small line while the mode is on: "{list} · n/total" plus the loop and auto-check chips. */
-export function ContinuousStatus({ playlist, position }: { playlist: UsePlaylist; position: string | null }) {
+type ContinuousStatusProps = {
+  playlist: UsePlaylist;
+  position: string | null;
+  shuffled: boolean;
+  onShuffleChange(on: boolean): void;
+};
+
+/** One small line while the mode is on: "{list} · n/total" plus the loop, auto-check and shuffle chips. */
+export function ContinuousStatus({ playlist, position, shuffled, onShuffleChange }: ContinuousStatusProps) {
   const { t } = useTranslation();
   const { settings } = playlist;
 
@@ -43,6 +50,15 @@ export function ContinuousStatus({ playlist, position }: { playlist: UsePlaylist
       >
         <span aria-hidden="true">✓ </span>
         {t("playlist_auto_check")}
+      </button>
+      <button
+        type="button"
+        className={cn("continuous-status__chip", shuffled && "is-on")}
+        aria-pressed={shuffled}
+        onClick={() => onShuffleChange(!shuffled)}
+      >
+        <span aria-hidden="true">🔀 </span>
+        {t("playlist_shuffle")}
       </button>
     </div>
   );

@@ -51,6 +51,7 @@ describe("recordModuleData", () => {
       "WatchEvents",
       "Exercises",
       "ExerciseSets",
+      "ListOrders",
       "Tombstones",
     ]);
     expect(tableSyncConfigs().map((c) => c.tabName)).toEqual(sheetTabs());

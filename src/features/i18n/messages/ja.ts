@@ -26,6 +26,7 @@
   playlist_single_name: "この動画",
   playlist_loop: "ループ",
   playlist_auto_check: "自動できた",
+  playlist_shuffle: "シャッフル",
   playlist_previous_aria: "前の動画",
   playlist_next_aria: "次の動画",
   today_recommended_reshuffle: "別の3本",
@@ -269,6 +270,7 @@
   sync_tab_SelfCare: "セルフケア",
   sync_tab_Exercises: "動画ライブラリ",
   sync_tab_ExerciseSets: "マイリスト",
+  sync_tab_ListOrders: "並び順",
   sync_tab_Tombstones: "削除記録",
   sync_tab_spreadsheet: "スプレッドシート",
 
