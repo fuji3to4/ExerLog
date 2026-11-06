@@ -480,20 +480,23 @@ a {
 
 .library-filters__field {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.35rem;
   font-weight: 600;
 }
 
+/* Same size as the sort select (.library-screen__sort select). */
 .library-filters__field input,
 .library-filters__field select {
   width: 100%;
-  min-height: 48px;
-  padding: 0.85rem 1rem;
+  min-height: 2.25rem;
+  padding: 0 0.6rem;
   border: 1px solid var(--border-soft);
-  border-radius: 0.9rem;
+  border-radius: 0.7rem;
   background: var(--surface-elevated);
   color: inherit;
   font: inherit;
+  font-size: 0.9rem;
+  font-weight: 400;
 }
 
 .library-filters__stepper {
@@ -511,10 +514,10 @@ a {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  min-height: 48px;
+  width: 2.25rem;
+  min-height: 2.25rem;
   border: 1px solid hsl(var(--border));
-  border-radius: 0.9rem;
+  border-radius: 0.7rem;
   background: transparent;
   color: var(--text-strong);
 }
