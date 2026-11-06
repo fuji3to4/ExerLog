@@ -142,6 +142,7 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
         title={current.exercise.title}
         onEnded={playlist.handleEnded}
         onError={playlist.handleError}
+        onWatched={playlist.handleWatched}
       />
     );
   } else if (isEmbeddable) {

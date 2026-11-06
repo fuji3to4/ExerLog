@@ -44,18 +44,22 @@ test("only embeddable videos are queued", () => {
   expect(result.current.items.map((item) => item.exercise.id)).toEqual(["a", "b"]);
 });
 
-test("start plays the first video and records a watch per video", async () => {
+test("a watch is recorded only when the player reports the video as watched", async () => {
   const { result } = setup();
 
   act(() => result.current.start());
   expect(result.current.isPlaying).toBe(true);
   expect(result.current.current?.exercise.id).toBe("a");
-  await waitFor(() => expect(watch.recordWatchEvent).toHaveBeenCalledWith({ exerciseId: "a" }));
+  const skippedPlayId = result.current.current?.playId ?? 0;
 
+  // Skipped before the player said "watched": no watch for a.
   act(() => result.current.next());
   expect(result.current.current?.exercise.id).toBe("b");
+  act(() => result.current.handleWatched(skippedPlayId)); // late report for a: ignored
+  act(() => result.current.handleWatched(result.current.current?.playId ?? 0));
+
   await waitFor(() => expect(watch.recordWatchEvent).toHaveBeenCalledWith({ exerciseId: "b" }));
-  expect(watch.recordWatchEvent).toHaveBeenCalledTimes(2);
+  expect(watch.recordWatchEvent).toHaveBeenCalledTimes(1);
 });
 
 test("start with an id jumps to that video; an unknown id does nothing", () => {

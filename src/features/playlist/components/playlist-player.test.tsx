@@ -1,5 +1,5 @@
 import { act, render, waitFor } from "@testing-library/react";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 type PlayerOptions = {
   videoId: string;
@@ -30,6 +30,10 @@ import { PlaylistPlayer } from "./playlist-player";
 beforeEach(() => {
   fake.constructed.length = 0;
   fake.players.length = 0;
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 test("creates one autoplaying player for the first clip", async () => {
@@ -99,4 +103,76 @@ test("a player error reports the loaded playId", async () => {
   act(() => fake.constructed[0].events?.onError?.({ data: 150 }));
 
   expect(onError).toHaveBeenCalledWith(4);
+});
+
+async function mountForWatch(onWatched: (playId: number) => void, playId = 7) {
+  const utils = render(
+    <PlaylistPlayer clip={{ videoId: "a" }} playId={playId} title="A" onEnded={() => {}} onWatched={onWatched} />,
+  );
+  await waitFor(() => expect(fake.constructed).toHaveLength(1));
+  vi.useFakeTimers();
+  const fire = (data: number) => act(() => fake.constructed[0].events?.onStateChange?.({ data }));
+  return { ...utils, fire };
+}
+
+test("a video counts as watched after 15 seconds of playing, once", async () => {
+  const onWatched = vi.fn();
+  const { fire } = await mountForWatch(onWatched);
+
+  fire(1);
+  act(() => vi.advanceTimersByTime(14_000));
+  expect(onWatched).not.toHaveBeenCalled();
+
+  act(() => vi.advanceTimersByTime(1_000));
+  expect(onWatched).toHaveBeenCalledTimes(1);
+  expect(onWatched).toHaveBeenCalledWith(7);
+
+  act(() => vi.advanceTimersByTime(60_000));
+  fire(0);
+  expect(onWatched).toHaveBeenCalledTimes(1);
+
+});
+
+test("paused time does not count toward the 15 seconds", async () => {
+  const onWatched = vi.fn();
+  const { fire } = await mountForWatch(onWatched);
+
+  fire(1);
+  act(() => vi.advanceTimersByTime(10_000));
+  fire(2); // paused
+  act(() => vi.advanceTimersByTime(60_000));
+  expect(onWatched).not.toHaveBeenCalled();
+
+  fire(1);
+  act(() => vi.advanceTimersByTime(5_000));
+  expect(onWatched).toHaveBeenCalledTimes(1);
+
+});
+
+test("a video skipped before 15 seconds is not watched, and the next one starts from zero", async () => {
+  const onWatched = vi.fn();
+  const { fire, rerender } = await mountForWatch(onWatched, 1);
+
+  fire(1);
+  act(() => vi.advanceTimersByTime(10_000));
+  rerender(<PlaylistPlayer clip={{ videoId: "b" }} playId={2} title="B" onEnded={() => {}} onWatched={onWatched} />);
+  fire(1);
+  act(() => vi.advanceTimersByTime(10_000));
+  expect(onWatched).not.toHaveBeenCalled();
+
+  act(() => vi.advanceTimersByTime(5_000));
+  expect(onWatched).toHaveBeenCalledTimes(1);
+  expect(onWatched).toHaveBeenCalledWith(2);
+
+});
+
+test("a clip shorter than 15 seconds that plays to its end counts as watched", async () => {
+  const onWatched = vi.fn();
+  const { fire } = await mountForWatch(onWatched);
+
+  fire(1);
+  act(() => vi.advanceTimersByTime(8_000));
+  fire(0);
+  expect(onWatched).toHaveBeenCalledWith(7);
+
 });

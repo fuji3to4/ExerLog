@@ -295,6 +295,8 @@
   circumference_summary_leg: "脚の周径 {count}か所",
   timeline_exercise_row: "✅ {title} {result}",
   timeline_watched: "▶ {title}を視聴",
+  timeline_watches_show: "▶ 視聴 {count}件を表示",
+  timeline_watches_hide: "▶ 視聴を隠す",
   timeline_edit_time: "時刻",
   timeline_physical: "からだ",
   timeline_mental: "こころ",

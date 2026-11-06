@@ -256,6 +256,7 @@ describe("TimelineSection", () => {
     });
     renderWithLanguage(<Harness />, { initialLanguage: "ja" });
 
+    fireEvent.click(await screen.findByRole("button", { name: "▶ 視聴 1件を表示" }));
     fireEvent.click(await screen.findByRole("button", { name: "▶ 肩まわしストレッチを視聴" }));
     const editDialog = await screen.findByRole("dialog");
     fireEvent.change(within(editDialog).getByLabelText("時刻"), { target: { value: "09:30" } });
@@ -276,6 +277,36 @@ describe("TimelineSection", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: /を視聴/ })).toBeNull());
     expect(await listWatchEventsForDay(DATE)).toEqual([]);
     expect((await listTombstones()).map((t) => t.table)).toEqual(["WatchEvents"]);
+  });
+
+  it("hides watches behind a quiet toggle at the end; logs stay visible", async () => {
+    for (const minute of [5, 20]) {
+      await recordWatchEvent({
+        exerciseId: "shoulder-roll",
+        date: DATE,
+        watchedAt: localIsoAt(DATE, new Date(2026, 9, 20, 11, minute, 0)),
+      });
+    }
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    expect(await screen.findByText(/肩まわしストレッチ できた/)).toBeTruthy();
+    expect(rows()).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /を視聴/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "▶ 視聴 2件を表示" }));
+    expect(rows()).toHaveLength(3);
+    expect(rows()[0].textContent).toContain("11:05");
+    expect(rows()[0].textContent).toContain("▶ 肩まわしストレッチを視聴");
+
+    fireEvent.click(screen.getByRole("button", { name: "▶ 視聴を隠す" }));
+    expect(rows()).toHaveLength(1);
+  });
+
+  it("shows no watch toggle on a day without watches", async () => {
+    renderWithLanguage(<Harness />, { initialLanguage: "ja" });
+
+    expect(await screen.findByText(/肩まわしストレッチ できた/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /視聴/ })).toBeNull();
   });
 
   it("shows an alert and keeps the dialog open when delete fails", async () => {

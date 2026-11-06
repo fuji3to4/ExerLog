@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import { getRecordModule } from "@/features/modules/registry";
@@ -35,29 +35,48 @@ function itemKey(item: TimelineItem): string {
 
 export function DayTimeline({ items, highlightId, onSelect }: DayTimelineProps) {
   const { t } = useTranslation();
+  // Continuous play can leave many watches; they stay folded unless asked for (not remembered).
+  const [showWatches, setShowWatches] = useState(false);
+  const watchCount = items.filter((item) => item.kind === "watch").length;
+  const visible = showWatches ? items : items.filter((item) => item.kind !== "watch");
 
-  if (items.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">{t("timeline_empty")}</p>;
+  const toggle =
+    watchCount > 0 ? (
+      <button type="button" className="day-timeline__watch-toggle" onClick={() => setShowWatches((on) => !on)}>
+        {showWatches ? t("timeline_watches_hide") : t("timeline_watches_show", { count: watchCount })}
+      </button>
+    ) : null;
+
+  if (visible.length === 0) {
+    return (
+      <>
+        <p className="py-6 text-center text-sm text-muted-foreground">{t("timeline_empty")}</p>
+        {toggle}
+      </>
+    );
   }
 
   return (
-    <ol className="day-timeline">
-      {items.map((item) => (
-        <li key={itemKey(item)} className="day-timeline__row">
-          <time className="day-timeline__time" dateTime={item.at}>
-            {timeOfIso(item.at)}
-          </time>
-          <button
-            type="button"
-            className={cn("timeline-item", item.id === highlightId && "timeline-item--new")}
-            style={{ "--c": pointColor(item) } as CSSProperties}
-            onClick={() => onSelect(item)}
-          >
-            <ItemBody item={item} />
-          </button>
-        </li>
-      ))}
-    </ol>
+    <>
+      <ol className="day-timeline">
+        {visible.map((item) => (
+          <li key={itemKey(item)} className="day-timeline__row">
+            <time className="day-timeline__time" dateTime={item.at}>
+              {timeOfIso(item.at)}
+            </time>
+            <button
+              type="button"
+              className={cn("timeline-item", item.id === highlightId && "timeline-item--new")}
+              style={{ "--c": pointColor(item) } as CSSProperties}
+              onClick={() => onSelect(item)}
+            >
+              <ItemBody item={item} />
+            </button>
+          </li>
+        ))}
+      </ol>
+      {toggle}
+    </>
   );
 }
 
@@ -80,9 +99,7 @@ function ItemBody({ item }: { item: TimelineItem }) {
               result: t(item.log.result === "did" ? "result_did" : "result_partial"),
             })}
           </span>
-          <span className="block tabular-nums text-muted-foreground">
-            {formatDuration(item.log.durationSeconds)}
-          </span>
+          <span className="block tabular-nums text-muted-foreground">{formatDuration(item.log.durationSeconds)}</span>
         </>
       );
   }

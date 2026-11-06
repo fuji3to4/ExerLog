@@ -295,6 +295,8 @@ export const en = {
   circumference_summary_leg: "Leg circumference ({count})",
   timeline_exercise_row: "✅ {title}: {result}",
   timeline_watched: "▶ Watched {title}",
+  timeline_watches_show: "▶ Show {count} watched",
+  timeline_watches_hide: "▶ Hide watched",
   timeline_edit_time: "Time",
   timeline_physical: "Body",
   timeline_mental: "Mind",

@@ -32,6 +32,8 @@ export type UsePlaylist = {
   handleEnded(playId: number): void;
   /** Pass to PlaylistPlayer.onError: in continuous mode the broken video is skipped (no log). */
   handleError(playId: number): void;
+  /** Pass to PlaylistPlayer.onWatched: records the watch (a skipped video leaves none). */
+  handleWatched(playId: number): void;
   /** The user logged the current play by hand: auto-check skips this playId. */
   markManualLog(): void;
 };
@@ -108,8 +110,6 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     [dispatch],
   );
 
-  const playId = state.status === "playing" ? state.playId : null;
-
   const handleEnded = useCallback((endedPlayId: number) => {
     const currentState = stateRef.current;
     // Late or duplicate events for an earlier video (or an earlier run) don't count.
@@ -156,16 +156,17 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     }
   }, [dispatch, items]);
 
+  const handleWatched = useCallback((watchedPlayId: number) => {
+    const currentState = stateRef.current;
+    // A late report for a video that was already skipped away from doesn't count.
+    if (currentState.status !== "playing" || currentState.playId !== watchedPlayId) return;
+    const item = itemsRef.current[currentState.index];
+    if (!item) return;
+    void recordWatchEvent({ exerciseId: item.exercise.id }).catch(console.error);
+  }, []);
+
   const currentItem = state.status === "playing" ? items[state.index] : undefined;
   const current = state.status === "playing" && currentItem ? { ...currentItem, playId: state.playId } : null;
-  const currentExerciseId = current?.exercise.id;
-
-  useEffect(() => {
-    if (playId === null || currentExerciseId === undefined) return;
-    void recordWatchEvent({ exerciseId: currentExerciseId }).catch(console.error);
-    // Once per started video, keyed by playId.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playId]);
 
   return {
     items,
@@ -181,6 +182,7 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     stop: useCallback(() => dispatch({ type: "stop" }), [dispatch]),
     handleEnded,
     handleError,
+    handleWatched,
     markManualLog,
   };
 }
