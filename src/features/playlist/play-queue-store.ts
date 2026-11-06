@@ -16,6 +16,8 @@ export type PlayQueue = {
   source?: "library";
   shuffled?: boolean;
   unshuffledIds?: string[];
+  /** The whole list (set or すべて) before search/filters, so the player can shuffle all of it for the library. */
+  listIds?: string[];
 };
 
 function isStringArray(value: unknown): value is string[] {
@@ -36,7 +38,7 @@ export function readPlayQueue(): PlayQueue | null {
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed !== "object" || parsed === null) return null;
-    const { name, exerciseIds, source, shuffled, unshuffledIds } = parsed as Record<string, unknown>;
+    const { name, exerciseIds, source, shuffled, unshuffledIds, listIds } = parsed as Record<string, unknown>;
     if (typeof name !== "string" || !isStringArray(exerciseIds)) {
       return null;
     }
@@ -44,6 +46,7 @@ export function readPlayQueue(): PlayQueue | null {
     if (source === "library") queue.source = "library";
     if (typeof shuffled === "boolean") queue.shuffled = shuffled;
     if (isStringArray(unshuffledIds)) queue.unshuffledIds = unshuffledIds;
+    if (isStringArray(listIds)) queue.listIds = listIds;
     return queue;
   } catch {
     return null;

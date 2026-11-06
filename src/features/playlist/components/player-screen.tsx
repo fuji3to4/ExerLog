@@ -17,7 +17,7 @@ import type { ExerciseVideo } from "@/lib/types";
 import { useWakeLock } from "@/lib/wake-lock/use-wake-lock";
 import { getYouTubeClip, resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
-import { resolvePlayQueue, type PlayQueue } from "../play-queue-store";
+import { resolvePlayQueue, writePlayQueue, type PlayQueue } from "../play-queue-store";
 import { readPlaylistSettings } from "../playlist-settings-store";
 import { usePlaylist } from "../use-playlist";
 import { ContinuousStatus, ContinuousSwitch } from "./continuous-bar";
@@ -132,18 +132,29 @@ export function PlayerScreen({ exercise, logDate }: PlayerScreenProps) {
   function handleShuffleChange(on: boolean) {
     const currentIds = queueExercises.map((item) => item.id);
     const fromLibrary = queue?.source === "library";
+    const handoff = (exerciseIds: string[], extra: Partial<PlayQueue>) => {
+      if (!queue) return;
+      const { exercises: _exercises, shuffled: _shuffled, unshuffledIds: _unshuffledIds, ...rest } = queue;
+      // Keep the handed-over queue in step, so a reload plays (and the library shows) this order.
+      writePlayQueue({ ...rest, exerciseIds, ...extra });
+    };
     if (on) {
-      // The playing video stays and goes first; everything else (played or not) is mixed after it.
-      const ids = shuffleIds(currentIds, { first: current?.exercise.id ?? displayed.id });
+      // Shuffle the whole list the library shows (filtered-out videos included), playing video first;
+      // the player plays its own part of it in that order.
+      const ids = shuffleIds(queue?.listIds ?? currentIds, { first: current?.exercise.id ?? displayed.id });
+      const queueIds = applyOrder(queueExercises, ids).map((item) => item.id);
       setUnshuffledOrder(currentIds);
       setOrder(ids);
+      handoff(queueIds, { shuffled: true, unshuffledIds: currentIds });
       if (fromLibrary) {
         const view = readLibraryView();
         const previousSort = view.sort === "shuffle" ? (view.shuffle?.previousSort ?? "") : view.sort;
         writeLibraryView({ ...view, sort: "shuffle", shuffle: { listKey: view.set, order: ids, previousSort } });
       }
     } else {
-      setOrder(unshuffledOrder ?? currentIds);
+      const ids = unshuffledOrder ?? currentIds;
+      setOrder(ids);
+      handoff(applyOrder(queueExercises, ids).map((item) => item.id), { shuffled: false });
       if (fromLibrary) {
         const view = readLibraryView();
         writeLibraryView({ ...view, sort: view.shuffle?.previousSort ?? "", shuffle: null });

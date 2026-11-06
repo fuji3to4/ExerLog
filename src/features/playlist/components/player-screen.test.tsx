@@ -33,7 +33,7 @@ import { renderWithLanguage } from "@/test/render-with-language";
 
 import { LIBRARY_VIEW_STORAGE_KEY, readLibraryView, writeLibraryView } from "@/features/library/library-view-store";
 
-import { PLAY_QUEUE_STORAGE_KEY, writePlayQueue } from "../play-queue-store";
+import { PLAY_QUEUE_STORAGE_KEY, readPlayQueue, writePlayQueue } from "../play-queue-store";
 import { PLAYLIST_SETTINGS_STORAGE_KEY, writePlaylistSettings } from "../playlist-settings-store";
 import { PlayerScreen } from "./player-screen";
 
@@ -254,6 +254,7 @@ describe("shuffle chip", () => {
     turnOn();
     open("b");
     await screen.findByText("All · 2/4");
+    await waitFor(() => expect(fakeYouTube.options).toHaveLength(1));
     expect(chip()).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(chip());
@@ -311,5 +312,42 @@ describe("shuffle chip", () => {
 
     expect(chip()).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("heading", { name: "A" })).toBeInTheDocument();
+  });
+});
+
+describe("shuffle chip keeps the whole list and the handoff in step", () => {
+  beforeEach(() => {
+    window.sessionStorage.removeItem(LIBRARY_VIEW_STORAGE_KEY);
+    vi.spyOn(Math, "random").mockReturnValue(0);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("a filtered library queue shuffles the whole list for the library, the shown part for the player", async () => {
+    writePlayQueue({ name: "All", exerciseIds: ["a", "b"], source: "library", shuffled: false, listIds: ["a", "b", "c", "z"] });
+    turnOn();
+    open("b");
+    await screen.findByText("All · 2/2");
+
+    fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
+
+    expect(readLibraryView().shuffle?.order).toEqual(["b", "c", "z", "a"]);
+    const upNext = within(screen.getByRole("region", { name: "Up next" })).queryAllByRole("button");
+    expect(upNext.map((b) => b.textContent)).toEqual(["A"]);
+  });
+
+  test("toggling rewrites the handed-over queue so a reload plays the same order", async () => {
+    writePlayQueue({ name: "All", exerciseIds: ["a", "b", "c"], source: "library", shuffled: false, listIds: ["a", "b", "c"] });
+    turnOn();
+    open("b");
+    await screen.findByText("All · 2/3");
+
+    fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
+    expect(readPlayQueue()).toMatchObject({ exerciseIds: ["b", "c", "a"], shuffled: true, unshuffledIds: ["a", "b", "c"] });
+
+    fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
+    expect(readPlayQueue()).toMatchObject({ exerciseIds: ["a", "b", "c"], shuffled: false });
   });
 });

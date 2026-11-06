@@ -578,7 +578,7 @@ describe("hands the visible list to the player", () => {
     const shown = await visibleIds();
 
     expect(shown).toHaveLength(exerciseCatalog.length);
-    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "All", exerciseIds: shown, source: "library", shuffled: false }));
+    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "All", exerciseIds: shown, source: "library", shuffled: false, listIds: shown }));
   });
 
   test("a selected set publishes its name and videos", async () => {
@@ -589,7 +589,7 @@ describe("hands the visible list to the player", () => {
 
     await user.click(await screen.findByRole("button", { name: "Morning" }));
 
-    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "Morning", exerciseIds: [second.id, first.id], source: "library", shuffled: false }));
+    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "Morning", exerciseIds: [second.id, first.id], source: "library", shuffled: false, listIds: [second.id, first.id] }));
   });
 
   test("sorting reorders the published list", async () => {
@@ -658,7 +658,7 @@ describe("saved order and shuffle", () => {
     expect(shown).not.toEqual(base);
     expect([...shown].sort()).toEqual([...base].sort());
     await waitFor(() =>
-      expect(readPlayQueue()).toEqual({ name: "All", exerciseIds: shown, source: "library", shuffled: true, unshuffledIds: base }),
+      expect(readPlayQueue()).toEqual({ name: "All", exerciseIds: shown, source: "library", shuffled: true, unshuffledIds: base, listIds: base }),
     );
     expect(await getLibraryOrder()).toEqual([]);
   });

@@ -335,6 +335,7 @@ ${t("library_delete_confirm")}`
           exerciseIds: shownExercises.map((exercise) => exercise.id),
           source: "library",
           shuffled: isShuffled,
+          listIds: baseExercises.map((exercise) => exercise.id),
           ...(isShuffled ? { unshuffledIds: unshuffledExercises.map((exercise) => exercise.id) } : {}),
         }
       : null,
