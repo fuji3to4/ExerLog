@@ -188,17 +188,27 @@ describe("reorder mode", () => {
     expect(await getLibraryOrder()).toEqual([]);
   });
 
-  test("Reorder is unavailable while sorted, searched or filtered", async () => {
+  test.each(["most-watched", "shuffle"])("Reorder from the %s sort switches to Default and opens the rows", async (sort) => {
+    const user = userEvent.setup();
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    await screen.findByRole("heading", { name: "Alpha Stretch" });
+    await user.click(screen.getByRole("switch", { name: /edit/i }));
+    await user.selectOptions(screen.getByLabelText(/sort by/i), sort);
+
+    await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
+
+    expect(screen.getByLabelText(/sort by/i)).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Move Alpha Stretch" })).toBeInTheDocument();
+    expect(screen.queryAllByRole("article")).toHaveLength(0);
+  });
+
+  test("Reorder is unavailable while searched or filtered", async () => {
     const user = userEvent.setup();
     renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
     await screen.findByRole("heading", { name: "Alpha Stretch" });
     await user.click(screen.getByRole("switch", { name: /edit/i }));
     const reorder = () => screen.getByRole("button", { name: "⇅ Reorder" });
     expect(reorder()).toBeEnabled();
-
-    await user.selectOptions(screen.getByLabelText(/sort by/i), "most-watched");
-    expect(reorder()).toBeDisabled();
-    await user.selectOptions(screen.getByLabelText(/sort by/i), "");
 
     await user.type(screen.getByRole("searchbox"), "Alpha");
     expect(reorder()).toBeDisabled();
