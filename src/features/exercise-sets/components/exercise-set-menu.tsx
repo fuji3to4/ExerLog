@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Check, EllipsisVertical, Plus } from "lucide-react";
 
@@ -36,6 +36,21 @@ const ITEM_CLASS =
 export function ExerciseSetMenu({ exercise, sets, onChanged, variant = "icon", entry, onEntryRemoved }: ExerciseSetMenuProps) {
   const { t } = useTranslation();
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
+  // The list whose ＋ was just tapped: its ＋ shows a ✓ for a moment and the addition is announced.
+  const [justAdded, setJustAdded] = useState<ExerciseSet | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+  }, []);
+
+  function handleAddAgain(set: ExerciseSet) {
+    void runAndReload(async () => {
+      await addExerciseToSet(set.id, exercise.id);
+      setJustAdded(set);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = setTimeout(() => setJustAdded(null), 1200);
+    });
+  }
 
   async function handleToggle(set: ExerciseSet, included: boolean) {
     try {
@@ -98,7 +113,9 @@ export function ExerciseSetMenu({ exercise, sets, onChanged, variant = "icon", e
               {t("set_menu_title")}
             </DropdownMenu.Label>
             {sets.map((set) => {
-              const isIncluded = set.exerciseIds.includes(exercise.id);
+              const count = set.exerciseIds.filter((id) => id === exercise.id).length;
+              const isIncluded = count > 0;
+              const isJustAdded = justAdded?.id === set.id;
               return (
                 <div key={set.id} className="exercise-set-menu__row">
                   <DropdownMenu.CheckboxItem
@@ -114,23 +131,28 @@ export function ExerciseSetMenu({ exercise, sets, onChanged, variant = "icon", e
                       </DropdownMenu.ItemIndicator>
                     </span>
                     {set.name}
+                    {count > 1 ? <span className="exercise-set-menu__count">×{count}</span> : null}
                   </DropdownMenu.CheckboxItem>
                   {isIncluded ? (
                     // The video can sit in a list more than once (spaced apart after reordering).
                     <DropdownMenu.Item
                       className="exercise-set-menu__add-again"
                       aria-label={t("set_menu_add_again_aria", { name: set.name })}
+                      data-added={isJustAdded ? "true" : undefined}
                       onSelect={(event) => {
                         event.preventDefault();
-                        void runAndReload(() => addExerciseToSet(set.id, exercise.id));
+                        handleAddAgain(set);
                       }}
                     >
-                      <Plus aria-hidden className="h-4 w-4" />
+                      {isJustAdded ? <Check aria-hidden className="h-4 w-4" /> : <Plus aria-hidden className="h-4 w-4" />}
                     </DropdownMenu.Item>
                   ) : null}
                 </div>
               );
             })}
+            <span role="status" className="sr-only">
+              {justAdded ? t("set_menu_added_again", { name: justAdded.name }) : ""}
+            </span>
             {entry ? (
               <>
                 <DropdownMenu.Separator className="my-1 h-px bg-border" />

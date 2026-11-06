@@ -500,6 +500,7 @@
   set_menu_title: "マイリストに入れる",
   set_menu_new: "＋ 新しいマイリストを作る",
   set_menu_add_again_aria: "{name} にもう1つ追加",
+  set_menu_added_again: "{name} にもう1つ追加しました",
   set_entry_remove: "このリストから外す",
   set_name_new_title: "新しいマイリスト",
   set_name_label: "マイリストの名前",

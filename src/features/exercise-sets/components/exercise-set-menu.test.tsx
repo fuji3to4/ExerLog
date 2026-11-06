@@ -78,3 +78,23 @@ test("no remove item without an entry", async () => {
   await screen.findByRole("menu");
   expect(screen.queryByRole("menuitem", { name: "Remove from this list" })).toBeNull();
 });
+
+test("a list holding the video more than once shows how many times", async () => {
+  const morning = await createExerciseSet("Morning", ["a", "b", "a"]);
+  const night = await createExerciseSet("Night", ["a"]);
+  await openMenu([morning, night]);
+
+  expect(await screen.findByRole("menuitemcheckbox", { name: /Morning/ })).toHaveTextContent("×2");
+  expect(screen.getByRole("menuitemcheckbox", { name: /Night/ })).not.toHaveTextContent("×");
+});
+
+test("＋ answers the tap: a check flashes and the addition is announced", async () => {
+  const morning = await createExerciseSet("Morning", ["a"]);
+  const { user } = await openMenu([morning]);
+
+  const addAgain = await screen.findByRole("menuitem", { name: "Add once more to Morning" });
+  await user.click(addAgain);
+
+  await waitFor(() => expect(addAgain).toHaveAttribute("data-added", "true"));
+  expect(screen.getByRole("status")).toHaveTextContent("Added once more to Morning");
+});

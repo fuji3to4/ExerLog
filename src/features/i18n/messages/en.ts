@@ -500,6 +500,7 @@ export const en = {
   set_menu_title: "Add to list",
   set_menu_new: "+ New list",
   set_menu_add_again_aria: "Add once more to {name}",
+  set_menu_added_again: "Added once more to {name}",
   set_entry_remove: "Remove from this list",
   set_name_new_title: "New list",
   set_name_label: "List name",

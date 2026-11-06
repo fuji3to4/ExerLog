@@ -1242,6 +1242,34 @@ a {
   background: hsl(var(--secondary));
 }
 
+/* Just tapped: a ✓ pops in on a tonal fill, then turns back into ＋. */
+.exercise-set-menu__add-again[data-added="true"] {
+  background: var(--tonal-bg);
+  color: hsl(var(--primary));
+  animation: exercise-set-menu-pop 260ms ease-out;
+}
+
+@keyframes exercise-set-menu-pop {
+  0% { transform: scale(0.7); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercise-set-menu__add-again[data-added="true"] { animation: none; }
+}
+
+/* How many times the video sits in this list (×2, ×3 …). */
+.exercise-set-menu__count {
+  margin-left: auto;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: hsl(var(--secondary));
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+}
+
 /* ── Data management ─────────────────────────────────────────────── */
 
 .data-management {
