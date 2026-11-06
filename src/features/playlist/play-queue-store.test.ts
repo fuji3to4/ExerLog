@@ -44,3 +44,25 @@ test("usePublishPlayQueue writes on mount and when the ids change; null writes n
   rerender({ name: "All", exerciseIds: ["b", "a"] });
   expect(readPlayQueue()?.exerciseIds).toEqual(["b", "a"]);
 });
+
+test("round-trips the source and shuffle fields", () => {
+  const queue: PlayQueue = { name: "x", exerciseIds: ["b", "a"], source: "library", shuffled: true, unshuffledIds: ["a", "b"] };
+  writePlayQueue(queue);
+  expect(readPlayQueue()).toEqual(queue);
+});
+
+test("drops malformed shuffle fields but keeps the queue", () => {
+  window.sessionStorage.setItem(
+    PLAY_QUEUE_STORAGE_KEY,
+    JSON.stringify({ name: "x", exerciseIds: ["a"], source: "elsewhere", shuffled: "yes", unshuffledIds: [1] }),
+  );
+  expect(readPlayQueue()).toEqual({ name: "x", exerciseIds: ["a"] });
+});
+
+test("republishes when only the shuffle state changes", () => {
+  const { rerender } = renderHook((queue: PlayQueue) => usePublishPlayQueue(queue), {
+    initialProps: { name: "x", exerciseIds: ["a", "b"], source: "library" as const, shuffled: false },
+  });
+  rerender({ name: "x", exerciseIds: ["a", "b"], source: "library", shuffled: true, unshuffledIds: ["b", "a"] });
+  expect(readPlayQueue()).toEqual({ name: "x", exerciseIds: ["a", "b"], source: "library", shuffled: true, unshuffledIds: ["b", "a"] });
+});
