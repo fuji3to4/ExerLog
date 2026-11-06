@@ -396,3 +396,55 @@ test("hands the selected my-list to the player", async () => {
 
   await waitFor(() => expect(readPlayQueue()).toEqual({ name: "Morning", exerciseIds: ["zeta", "delta"] }));
 });
+
+test("a my-list's repeated video shows as separate cards that share the day's count", async () => {
+  await createExerciseSet("Morning", ["delta", "epsilon", "delta"]);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  fireEvent.click(await screen.findByRole("button", { name: "Morning" }));
+  const region = await screen.findByRole("region", { name: "Morning" });
+  expect(within(region).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(["Delta", "Epsilon", "Delta"]);
+
+  const deltaCards = within(region).getAllByRole("article", { name: /delta/i });
+  fireEvent.click(within(deltaCards[1]).getByRole("button", { name: "Did it" }));
+
+  await waitFor(() => expect(within(region).getAllByText("1 today / 1 total")).toHaveLength(2));
+});
+
+test("the second copy's link names its place and the player gets entry keys", async () => {
+  window.sessionStorage.removeItem(PLAY_QUEUE_STORAGE_KEY);
+  await createExerciseSet("Morning", ["delta", "epsilon", "delta"]);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  fireEvent.click(await screen.findByRole("button", { name: "Morning" }));
+  const region = await screen.findByRole("region", { name: "Morning" });
+  const links = within(region).getAllByRole("link", { name: /delta/i });
+  expect(links.some((link) => link.getAttribute("href")?.includes("entry=delta%232"))).toBe(true);
+  await waitFor(() => expect(readPlayQueue()?.exerciseIds).toEqual(["delta", "epsilon", "delta#2"]));
+});
+
+test("remove from this list on a Today my-list card removes only that copy", async () => {
+  const user = userEvent.setup();
+  await createExerciseSet("Morning", ["delta", "epsilon", "delta"]);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  await user.click(await screen.findByRole("button", { name: "Morning" }));
+  const region = await screen.findByRole("region", { name: "Morning" });
+  await user.click(within(region).getAllByRole("button", { name: "Add Delta to a list" })[1]);
+  await user.click(await screen.findByRole("menuitem", { name: "Remove from this list" }));
+
+  await waitFor(async () => expect((await listExerciseSets())[0].exerciseIds).toEqual(["delta", "epsilon"]));
+  await waitFor(() =>
+    expect(within(region).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(["Delta", "Epsilon"]),
+  );
+});
+
+test("recommendation cards offer no remove item", async () => {
+  const user = userEvent.setup();
+  await createExerciseSet("Morning", ["delta"]);
+  renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
+
+  await user.click(await screen.findByRole("button", { name: "Add Delta to a list" }));
+  await screen.findByRole("menu");
+  expect(screen.queryByRole("menuitem", { name: "Remove from this list" })).toBeNull();
+});
