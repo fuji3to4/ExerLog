@@ -1218,6 +1218,30 @@ a {
   cursor: pointer;
 }
 
+.exercise-set-menu__row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ＋ next to a list that already holds the video: adds it once more. */
+.exercise-set-menu__add-again {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: var(--text-strong);
+  cursor: pointer;
+  outline: none;
+}
+
+.exercise-set-menu__add-again[data-highlighted] {
+  background: hsl(var(--secondary));
+}
+
 /* ── Data management ─────────────────────────────────────────────── */
 
 .data-management {
