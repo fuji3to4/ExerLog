@@ -6,6 +6,7 @@ import { Ellipsis, ListFilter } from "lucide-react";
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { applyOrder, shuffleIds } from "@/features/exercise-sets/list-order";
 import { resolveSetExercises } from "@/features/exercise-sets/resolve-set-exercises";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
 import { usePublishPlayQueue } from "@/features/playlist/play-queue-store";
@@ -14,6 +15,7 @@ import { appDb } from "@/features/storage/app-db";
 import { deleteExercise, listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { SetNameDialog } from "@/features/exercise-sets/components/set-name-dialog";
 import { createExerciseSet, deleteExerciseSet, listExerciseSets, renameExerciseSet } from "@/features/storage/exercise-sets.repository";
+import { getLibraryOrder } from "@/features/storage/list-orders.repository";
 import { countWatchesByExercise } from "@/features/storage/watch-events.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { useCelebrate } from "@/features/feedback/celebration";
@@ -25,6 +27,14 @@ import { parseLogDate, shortDayLabel, withLogDate } from "@/features/logging/log
 import type { ExerciseLogResult, ExerciseSet, ExerciseVideo } from "@/lib/types";
 
 import { ExerciseFormModal } from "./exercise-form-modal";
+import {
+  isUnshuffledSort,
+  readLibraryView,
+  writeLibraryView,
+  type LibraryShuffle,
+  type LibrarySort,
+  type UnshuffledSort,
+} from "../library-view-store";
 import { LibraryFilters } from "./library-filters";
 import { StarterImportHint } from "./starter-import-hint";
 import { VideoCard } from "./video-card";
@@ -36,7 +46,7 @@ type LibraryFilterState = {
   purpose: string;
   duration: string;
   intensity: string;
-  sort: string;
+  sort: LibrarySort;
 };
 
 const initialFilters: LibraryFilterState = {
@@ -49,12 +59,28 @@ const initialFilters: LibraryFilterState = {
   sort: "",
 };
 
+/** Count sorts are stable, so ties keep the list's own order. */
+function sortByCounts(
+  items: ExerciseVideo[],
+  sort: UnshuffledSort,
+  watchCounts: Map<string, number>,
+  totalLogCounts: Map<string, number>,
+): ExerciseVideo[] {
+  const counts = sort === "most-watched" ? watchCounts : sort === "most-done" ? totalLogCounts : null;
+  if (!counts) return items;
+  return [...items].sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0));
+}
+
 const MENU_ITEM_CLASS =
   "flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-secondary";
 
 export function LibraryScreen() {
   const [filters, setFilters] = useState<LibraryFilterState>(initialFilters);
   const [exercises, setExercises] = useState<ExerciseVideo[]>([]);
+  const [libraryOrder, setLibraryOrder] = useState<string[]>([]);
+  const [shuffle, setShuffle] = useState<LibraryShuffle | null>(null);
+  // The remembered view is read after mount (sessionStorage); nothing is written before that.
+  const [isViewRestored, setIsViewRestored] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [watchCounts, setWatchCounts] = useState<Map<string, number>>(new Map());
   const [totalLogCounts, setTotalLogCounts] = useState<Map<string, number>>(new Map());
@@ -71,6 +97,18 @@ export function LibraryScreen() {
   const [logErrorExerciseId, setLogErrorExerciseId] = useState<string | null>(null);
   const { t, formatIntensity, formatBodyArea, formatPurpose } = useTranslation();
   const celebrate = useCelebrate();
+
+  useEffect(() => {
+    const view = readLibraryView();
+    setFilters((current) => ({ ...current, set: view.set, sort: view.sort }));
+    setShuffle(view.shuffle);
+    setIsViewRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isViewRestored) return;
+    writeLibraryView({ set: filters.set, sort: filters.sort, shuffle: filters.sort === "shuffle" ? shuffle : null });
+  }, [isViewRestored, filters.set, filters.sort, shuffle]);
 
   useEffect(() => {
     // Opened from a day's timeline: carry that day through to the detail page.
@@ -117,13 +155,15 @@ export function LibraryScreen() {
   }
 
   const loadExercises = useCallback(async () => {
-    const [nextExercises, nextWatchCounts, nextSets, nextTotalLogCounts] = await Promise.all([
+    const [nextExercises, nextWatchCounts, nextSets, nextTotalLogCounts, nextLibraryOrder] = await Promise.all([
       listAllExercises(),
       countWatchesByExercise(),
       listExerciseSets(),
       countExerciseLogsByExercise(),
+      getLibraryOrder(),
     ]);
     setExercises(nextExercises);
+    setLibraryOrder(nextLibraryOrder);
     setIsLoaded(true);
     setExerciseSets(nextSets);
     // A selected set that no longer exists (deleted here or arrived through sync) falls back to "All".
@@ -198,11 +238,36 @@ ${t("library_delete_confirm")}`
   }
 
   const selectedSet = exerciseSets.find((set) => set.id === filters.set);
-  // Videos of the selected set, in the set's order, before any other filter.
+  // The shown list in its saved order (the set's, or the library's for All), before any filter.
   const baseExercises = useMemo(
-    () => (selectedSet ? resolveSetExercises(selectedSet, exercises) : exercises),
-    [selectedSet, exercises],
+    () => (selectedSet ? resolveSetExercises(selectedSet, exercises) : applyOrder(exercises, libraryOrder)),
+    [selectedSet, exercises, libraryOrder],
   );
+
+  // A shuffle belongs to one list: switching set (or a remembered set that is gone) shuffles anew.
+  useEffect(() => {
+    if (!isLoaded || filters.sort !== "shuffle" || shuffle?.listKey === filters.set) return;
+    setShuffle({
+      listKey: filters.set,
+      order: shuffleIds(baseExercises.map((exercise) => exercise.id)),
+      previousSort: shuffle?.previousSort ?? "",
+    });
+  }, [isLoaded, filters.sort, filters.set, shuffle, baseExercises]);
+
+  function handleSortChange(value: string) {
+    const sort: LibrarySort = value === "shuffle" || isUnshuffledSort(value) ? value : "";
+    if (sort === "shuffle") {
+      // Picking シャッフル always mixes afresh; the order then stays put until picked again.
+      setShuffle({
+        listKey: filters.set,
+        order: shuffleIds(baseExercises.map((exercise) => exercise.id)),
+        previousSort: isUnshuffledSort(filters.sort) ? filters.sort : (shuffle?.previousSort ?? ""),
+      });
+    } else {
+      setShuffle(null);
+    }
+    setFilters((current) => ({ ...current, sort }));
+  }
 
   const filteredExercises = useMemo(() => {
     const searchTerm = filters.search.trim().toLowerCase();
@@ -234,19 +299,36 @@ ${t("library_delete_confirm")}`
       );
     });
 
-    const sortCounts = filters.sort === "most-watched" ? watchCounts : filters.sort === "most-done" ? totalLogCounts : null;
-    if (!sortCounts) {
-      return matches;
-    }
+    return matches;
+  }, [baseExercises, filters]);
 
-    // Array.prototype.sort is stable, so ties keep catalog order.
-    return matches.sort((a, b) => (sortCounts.get(b.id) ?? 0) - (sortCounts.get(a.id) ?? 0));
-  }, [baseExercises, filters, watchCounts, totalLogCounts]);
+  const isShuffled = filters.sort === "shuffle" && shuffle !== null;
+  // The list without shuffle: under the sort chosen before シャッフル (what the player un-shuffles to).
+  const unshuffledExercises = useMemo(
+    () =>
+      sortByCounts(
+        filteredExercises,
+        filters.sort === "shuffle" ? (shuffle?.previousSort ?? "") : filters.sort,
+        watchCounts,
+        totalLogCounts,
+      ),
+    [filteredExercises, filters.sort, shuffle, watchCounts, totalLogCounts],
+  );
+  const shownExercises = useMemo(
+    () => (isShuffled && shuffle ? applyOrder(filteredExercises, shuffle.order) : unshuffledExercises),
+    [isShuffled, shuffle, filteredExercises, unshuffledExercises],
+  );
 
   // The player screen plays this list, in this order, when a card is opened from here.
   usePublishPlayQueue(
-    filteredExercises.length > 0
-      ? { name: selectedSet?.name ?? t("library_set_all"), exerciseIds: filteredExercises.map((exercise) => exercise.id) }
+    shownExercises.length > 0
+      ? {
+          name: selectedSet?.name ?? t("library_set_all"),
+          exerciseIds: shownExercises.map((exercise) => exercise.id),
+          source: "library",
+          shuffled: isShuffled,
+          ...(isShuffled ? { unshuffledIds: unshuffledExercises.map((exercise) => exercise.id) } : {}),
+        }
       : null,
   );
 
@@ -358,10 +440,11 @@ ${t("library_delete_confirm")}`
         </p>
         <label className="library-screen__sort">
           <span className="sr-only">{t("library_sort_label")}</span>
-          <select value={filters.sort} onChange={(event) => setFilters((current) => ({ ...current, sort: event.target.value }))}>
+          <select value={filters.sort} onChange={(event) => handleSortChange(event.target.value)}>
             <option value="">{t("library_sort_default")}</option>
             <option value="most-watched">{t("library_sort_most_watched")}</option>
             <option value="most-done">{t("library_sort_most_done")}</option>
+            <option value="shuffle">{t("library_sort_shuffle")}</option>
           </select>
         </label>
       </div>
@@ -370,7 +453,7 @@ ${t("library_delete_confirm")}`
 
       {/* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */}
       <section className="library-screen__results grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
-        {filteredExercises.map((exercise) => {
+        {shownExercises.map((exercise) => {
           const watchCount = watchCounts.get(exercise.id) ?? 0;
 
           return (

@@ -51,9 +51,10 @@ export const en = {
   library_search_label: "Search exercises",
   library_search_placeholder: "Search by title or description",
   library_sort_label: "Sort by",
-  library_sort_default: "Catalog order",
+  library_sort_default: "Default",
   library_sort_most_watched: "Most watched",
   library_sort_most_done: "Most done",
+  library_sort_shuffle: "Shuffle",
   library_watch_count: "Watched {count} times",
 
   // History screen

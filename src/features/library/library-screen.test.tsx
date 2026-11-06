@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { exerciseCatalog as starterCatalog } from "@/features/catalog/exercise-catalog";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
@@ -8,6 +8,8 @@ import { CelebrationProvider } from "@/features/feedback/celebration";
 import { appDb } from "@/features/storage/app-db";
 import { PLAY_QUEUE_STORAGE_KEY, readPlayQueue } from "@/features/playlist/play-queue-store";
 import { createExerciseSet, listExerciseSets, setExerciseInSet } from "@/features/storage/exercise-sets.repository";
+import { getLibraryOrder, saveLibraryOrder } from "@/features/storage/list-orders.repository";
+import { LIBRARY_VIEW_STORAGE_KEY, writeLibraryView } from "./library-view-store";
 import { toDayKey } from "@/lib/date/day-key";
 import { renderWithLanguage } from "@/test/render-with-language";
 
@@ -32,6 +34,8 @@ beforeEach(async () => {
   await appDb.exerciseLogs.clear();
   await appDb.exercises.clear();
   await appDb.exerciseSets.clear();
+  await appDb.listOrders.clear();
+  window.sessionStorage.removeItem(LIBRARY_VIEW_STORAGE_KEY);
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
 });
 
@@ -574,7 +578,7 @@ describe("hands the visible list to the player", () => {
     const shown = await visibleIds();
 
     expect(shown).toHaveLength(exerciseCatalog.length);
-    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "All", exerciseIds: shown }));
+    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "All", exerciseIds: shown, source: "library", shuffled: false }));
   });
 
   test("a selected set publishes its name and videos", async () => {
@@ -585,7 +589,7 @@ describe("hands the visible list to the player", () => {
 
     await user.click(await screen.findByRole("button", { name: "Morning" }));
 
-    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "Morning", exerciseIds: [second.id, first.id] }));
+    await waitFor(() => expect(readPlayQueue()).toEqual({ name: "Morning", exerciseIds: [second.id, first.id], source: "library", shuffled: false }));
   });
 
   test("sorting reorders the published list", async () => {
@@ -606,5 +610,104 @@ describe("hands the visible list to the player", () => {
     await user.selectOptions(screen.getByLabelText(/sort by/i), "most-done");
 
     await waitFor(() => expect(readPlayQueue()?.exerciseIds[0]).toBe(target.id));
+  });
+});
+
+describe("saved order and shuffle", () => {
+  async function visibleIds() {
+    const headings = await screen.findAllByRole("heading", { level: 2 });
+    return headings
+      .map((heading) => exerciseCatalog.find((exercise) => exercise.title === heading.textContent)?.id)
+      .filter((id): id is string => Boolean(id));
+  }
+
+  async function standardOrder() {
+    const { unmount } = renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    const ids = await visibleIds();
+    unmount();
+    return ids;
+  }
+
+  beforeEach(() => {
+    window.sessionStorage.removeItem(PLAY_QUEUE_STORAGE_KEY);
+    vi.spyOn(Math, "random").mockReturnValue(0.1);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("All follows the saved order, with unlisted videos after it", async () => {
+    const base = await standardOrder();
+    const [first, , , last] = base;
+    await saveLibraryOrder([last, first, "gone"]);
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+    await waitFor(async () => expect(await visibleIds()).toEqual([last, first, ...base.filter((id) => id !== last && id !== first)]));
+  });
+
+  test("Shuffle mixes the shown list, hands it over shuffled, and leaves the saved order alone", async () => {
+    const base = await standardOrder();
+    const user = userEvent.setup();
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    await visibleIds();
+
+    await user.selectOptions(screen.getByLabelText(/sort by/i), "shuffle");
+
+    const shown = await visibleIds();
+    expect(shown).not.toEqual(base);
+    expect([...shown].sort()).toEqual([...base].sort());
+    await waitFor(() =>
+      expect(readPlayQueue()).toEqual({ name: "All", exerciseIds: shown, source: "library", shuffled: true, unshuffledIds: base }),
+    );
+    expect(await getLibraryOrder()).toEqual([]);
+  });
+
+  test("the shuffle and the sort choice survive leaving and coming back", async () => {
+    const user = userEvent.setup();
+    const first = renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    await visibleIds();
+    await user.selectOptions(screen.getByLabelText(/sort by/i), "shuffle");
+    const shuffled = await visibleIds();
+    first.unmount();
+
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+    await waitFor(async () => expect(await visibleIds()).toEqual(shuffled));
+    expect(screen.getByLabelText(/sort by/i)).toHaveValue("shuffle");
+  });
+
+  test("switching set while shuffled shows that set, shuffled", async () => {
+    const [a, b, c] = exerciseCatalog;
+    await createExerciseSet("Morning", [a.id, b.id, c.id]);
+    const user = userEvent.setup();
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    await visibleIds();
+    await user.selectOptions(screen.getByLabelText(/sort by/i), "shuffle");
+
+    await user.click(screen.getByRole("button", { name: "Morning" }));
+
+    await waitFor(async () => expect([...(await visibleIds())].sort()).toEqual([a.id, b.id, c.id].sort()));
+    await waitFor(() => expect(readPlayQueue()).toMatchObject({ name: "Morning", shuffled: true, unshuffledIds: [a.id, b.id, c.id] }));
+  });
+
+  test("going back to Default restores the saved order", async () => {
+    const base = await standardOrder();
+    const user = userEvent.setup();
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    await visibleIds();
+    await user.selectOptions(screen.getByLabelText(/sort by/i), "shuffle");
+
+    await user.selectOptions(screen.getByLabelText(/sort by/i), "");
+
+    expect(await visibleIds()).toEqual(base);
+    await waitFor(() => expect(readPlayQueue()).toMatchObject({ shuffled: false }));
+  });
+
+  test("a remembered set that no longer exists falls back to All", async () => {
+    writeLibraryView({ set: "deleted-set", sort: "", shuffle: null });
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+
+    await waitFor(async () => expect(await visibleIds()).toHaveLength(exerciseCatalog.length));
   });
 });

@@ -51,9 +51,10 @@
   library_search_label: "エクササイズを検索",
   library_search_placeholder: "タイトルまたは説明で検索",
   library_sort_label: "並び順",
-  library_sort_default: "登録順",
+  library_sort_default: "標準",
   library_sort_most_watched: "よく見る順",
   library_sort_most_done: "よくやる順",
+  library_sort_shuffle: "シャッフル",
   library_watch_count: "視聴 {count}回",
 
   // History screen
