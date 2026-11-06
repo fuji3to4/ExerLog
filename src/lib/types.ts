@@ -27,6 +27,14 @@ export type ExerciseDraft = Omit<ExerciseVideo, "updatedAt">;
  * A user-made list of exercises ("my list"). `exerciseIds` holds the order; ids no longer
  * in the library are skipped at read time, never rewritten when a video is deleted.
  */
+/** A saved order of videos for a list that is not a set (`id: "all"` is the whole library). */
+export type ListOrder = {
+  id: string;
+  exerciseIds: string[];
+  /** Local ISO time of the last write; used by sync (last-writer-wins). */
+  updatedAt: string;
+};
+
 export type ExerciseSet = {
   id: string;
   name: string;

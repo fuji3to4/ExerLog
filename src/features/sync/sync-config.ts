@@ -6,6 +6,7 @@ import type {
   ExerciseLogResult,
   ExerciseSet,
   ExerciseVideo,
+  ListOrder,
   Tombstone,
   WatchEvent,
 } from "@/lib/types";
@@ -58,6 +59,7 @@ export function syncedDbTables(): Table<any, any>[] {
     appDb.watchEvents,
     appDb.exercises,
     appDb.exerciseSets,
+    appDb.listOrders,
     appDb.tombstones,
   ];
 }
@@ -180,6 +182,22 @@ const exerciseSetsConfig: TableSyncConfig = {
   replaceDb: (records) => replaceTable(appDb.exerciseSets, records as ExerciseSet[]),
 };
 
+const listOrdersConfig: TableSyncConfig = {
+  tabName: "ListOrders",
+  keyColumn: "id",
+  updatedAtKey: "updatedAt",
+  deletable: false,
+  headers: ["id", "exerciseIds", "updatedAt"],
+  toRow: (r: ListOrder) => [r.id, JSON.stringify(r.exerciseIds), r.updatedAt],
+  fromRow: (row, headers): ListOrder => ({
+    id: cell(row, headers, "id"),
+    exerciseIds: parseExerciseIds(cell(row, headers, "exerciseIds")),
+    updatedAt: cell(row, headers, "updatedAt"),
+  }),
+  readFromDb: () => appDb.listOrders.toArray(),
+  replaceDb: (records) => replaceTable(appDb.listOrders, records as ListOrder[]),
+};
+
 const tombstonesConfig: TableSyncConfig = {
   tabName: "Tombstones",
   keyColumn: "id",
@@ -209,6 +227,7 @@ export function tableSyncConfigs(): TableSyncConfig[] {
     watchEventsConfig,
     exercisesConfig,
     exerciseSetsConfig,
+    listOrdersConfig,
     tombstonesConfig,
   ];
 }

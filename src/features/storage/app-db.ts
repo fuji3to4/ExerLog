@@ -4,6 +4,7 @@ import type {
   CompressionRecord,
   ExerciseLog,
   ExerciseSet,
+  ListOrder,
   ExerciseVideo,
   MeasurementRecord,
   PhotoBlob,
@@ -31,6 +32,7 @@ export class AppDb extends Dexie {
   tombstones!: EntityTable<Tombstone, "id">;
   exercises!: EntityTable<ExerciseVideo, "id">;
   exerciseSets!: Table<ExerciseSet, string>;
+  listOrders!: Table<ListOrder, string>;
   selfCareRecords!: EntityTable<SelfCareRecord, "id">;
   compressionRecords!: EntityTable<CompressionRecord, "id">;
   symptomRecords!: EntityTable<SymptomRecord, "id">;
@@ -278,6 +280,28 @@ export class AppDb extends Dexie {
       compressionRecords: "id, date, recordedAt, kind",
       symptomRecords: "id, date, recordedAt",
       exerciseSets: "id, createdAt",
+    });
+
+    // v16: saved list orders (the whole library's order).
+    this.version(16).stores({
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: "id, date, recordedAt",
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      bodyRecords: "id, date, recordedAt",
+      girthRecords: "id, date, recordedAt",
+      circumferenceRecords: "id, date, recordedAt",
+      photoRecords: "id, date, recordedAt",
+      photoBlobs: "id, recordId",
+      photoFiles: "id, recordId",
+      photoTrash: "driveFileId",
+      selfCareRecords: "id, date, recordedAt",
+      compressionRecords: "id, date, recordedAt, kind",
+      symptomRecords: "id, date, recordedAt",
+      exerciseSets: "id, createdAt",
+      listOrders: "id",
     });
   }
 }

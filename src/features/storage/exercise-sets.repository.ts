@@ -54,6 +54,12 @@ export async function setExerciseInSet(setId: string, exerciseId: string, includ
   if (changed) scheduleSync();
 }
 
+/** Replaces the set's order (the reorder UI is the only writer). Unknown set ids are a silent no-op. */
+export async function reorderExerciseSet(setId: string, exerciseIds: string[]): Promise<void> {
+  const updated = await appDb.exerciseSets.update(setId, { exerciseIds: [...exerciseIds], updatedAt: localIsoNow() });
+  if (updated) scheduleSync();
+}
+
 export async function deleteExerciseSet(id: string): Promise<void> {
   await appDb.transaction("rw", appDb.exerciseSets, appDb.tombstones, async () => {
     await appDb.exerciseSets.delete(id);

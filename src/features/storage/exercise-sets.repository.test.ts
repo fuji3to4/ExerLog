@@ -13,6 +13,7 @@ import {
   deleteExerciseSet,
   listExerciseSets,
   renameExerciseSet,
+  reorderExerciseSet,
   setExerciseInSet,
 } from "./exercise-sets.repository";
 
@@ -80,4 +81,26 @@ test("deleteExerciseSet removes the row and records a tombstone", async () => {
   await deleteExerciseSet(set.id);
   expect(await appDb.exerciseSets.get(set.id)).toBeUndefined();
   expect(await appDb.tombstones.where("table").equals("ExerciseSets").count()).toBe(1);
+});
+
+test("reorderExerciseSet replaces the order, stamps updatedAt and schedules sync", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    vi.setSystemTime(new Date(2026, 10, 6, 9, 0, 0));
+    const set = await createExerciseSet("朝", ["a", "b"]);
+    vi.mocked(scheduleSync).mockClear();
+    vi.setSystemTime(new Date(2026, 10, 6, 9, 5, 0));
+    await reorderExerciseSet(set.id, ["b", "a"]);
+    const [saved] = await listExerciseSets();
+    expect(saved.exerciseIds).toEqual(["b", "a"]);
+    expect(saved.updatedAt > set.updatedAt).toBe(true);
+    expect(scheduleSync).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("reorderExerciseSet on an unknown set is a silent no-op", async () => {
+  await expect(reorderExerciseSet("missing", ["a"])).resolves.toBeUndefined();
+  expect(scheduleSync).not.toHaveBeenCalled();
 });
