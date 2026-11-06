@@ -156,7 +156,7 @@ describe("reorder mode", () => {
     await appDb.exercises.add(makeExercise("ex-c", "Gamma Lunge"));
   });
 
-  test("drags All into a new saved order and shows it after Done", async () => {
+  test("drags All into a new order and saves it with Save", async () => {
     layOutRows();
     const user = userEvent.setup();
     renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
@@ -166,9 +166,12 @@ describe("reorder mode", () => {
     await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
     expect(screen.queryAllByRole("article")).toHaveLength(0);
     await moveFirstRowDown(user);
+    await waitFor(() => expect(screen.getAllByRole("button", { name: /^Move / })[0]).toHaveAccessibleName("Move Beta Squat"));
+    // Nothing is saved until Save.
+    expect(await getLibraryOrder()).toEqual([]);
 
+    await user.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(async () => expect(await getLibraryOrder()).toEqual(["ex-b", "ex-a", "ex-c"]));
-    await user.click(screen.getByRole("button", { name: "Done" }));
     const titles = (await screen.findAllByRole("heading", { level: 2 })).map((heading) => heading.textContent);
     expect(titles).toEqual(["Beta Squat", "Alpha Stretch", "Gamma Lunge"]);
   });
@@ -183,6 +186,7 @@ describe("reorder mode", () => {
 
     await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
     await moveFirstRowDown(user);
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(async () => expect((await listExerciseSets())[0].exerciseIds).toEqual(["ex-b", "ex-a"]));
     expect(await getLibraryOrder()).toEqual([]);
@@ -217,9 +221,83 @@ describe("reorder mode", () => {
     expect(screen.getByLabelText(/body area/i)).toHaveValue("");
     expect(screen.getAllByRole("button", { name: /^Move / })).toHaveLength(3);
 
-    // Done leaves the cleared view as it is.
-    await user.click(screen.getByRole("button", { name: "Done" }));
+    // Leaving keeps the cleared view as it is.
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findAllByRole("article")).toHaveLength(3);
     expect(screen.getByRole("searchbox")).toHaveValue("");
+  });
+
+  async function openReorderAndMove(user: ReturnType<typeof userEvent.setup>) {
+    layOutRows();
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    await screen.findByRole("heading", { name: "Alpha Stretch" });
+    await user.click(screen.getByRole("switch", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
+    await moveFirstRowDown(user);
+    await waitFor(() => expect(screen.getAllByRole("button", { name: /^Move / })[0]).toHaveAccessibleName("Move Beta Squat"));
+  }
+
+  test("pressing Reorder again after a change asks; Save keeps the new order", async () => {
+    const user = userEvent.setup();
+    await openReorderAndMove(user);
+
+    await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
+    const dialog = await screen.findByRole("dialog", { name: "Save the new order?" });
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(async () => expect(await getLibraryOrder()).toEqual(["ex-b", "ex-a", "ex-c"]));
+    const titles = (await screen.findAllByRole("heading", { level: 2 })).map((heading) => heading.textContent);
+    expect(titles).toEqual(["Beta Squat", "Alpha Stretch", "Gamma Lunge"]);
+  });
+
+  test("Cancel in that dialog drops the change and leaves reorder mode", async () => {
+    const user = userEvent.setup();
+    await openReorderAndMove(user);
+
+    await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
+    const dialog = await screen.findByRole("dialog", { name: "Save the new order?" });
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    const titles = (await screen.findAllByRole("heading", { level: 2 })).map((heading) => heading.textContent);
+    expect(titles).toEqual(["Alpha Stretch", "Beta Squat", "Gamma Lunge"]);
+    expect(await getLibraryOrder()).toEqual([]);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  test("pressing Reorder again without a change just leaves reorder mode", async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(<LibraryScreen />, { initialLanguage: "en" });
+    await screen.findByRole("heading", { name: "Alpha Stretch" });
+    await user.click(screen.getByRole("switch", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
+
+    await user.click(screen.getByRole("button", { name: "⇅ Reorder" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(await screen.findAllByRole("article")).toHaveLength(3);
+  });
+
+  test("the Cancel button under the rows drops the change and leaves reorder mode", async () => {
+    const user = userEvent.setup();
+    await openReorderAndMove(user);
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    const titles = (await screen.findAllByRole("heading", { level: 2 })).map((heading) => heading.textContent);
+    expect(titles).toEqual(["Alpha Stretch", "Beta Squat", "Gamma Lunge"]);
+    expect(await getLibraryOrder()).toEqual([]);
+  });
+
+  test("turning edit mode off with unsaved changes asks first, then leaves edit mode", async () => {
+    const user = userEvent.setup();
+    await openReorderAndMove(user);
+
+    await user.click(screen.getByRole("switch", { name: /edit/i }));
+    const dialog = await screen.findByRole("dialog", { name: "Save the new order?" });
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(async () => expect(await getLibraryOrder()).toEqual(["ex-b", "ex-a", "ex-c"]));
+    expect(screen.getByRole("switch", { name: /edit/i })).toHaveAttribute("aria-checked", "false");
+    expect(await screen.findAllByRole("article")).toHaveLength(3);
   });
 });

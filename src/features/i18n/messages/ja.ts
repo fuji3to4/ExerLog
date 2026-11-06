@@ -180,7 +180,7 @@
   // Library edit mode
   library_add: "＋ エクササイズを追加",
   library_reorder: "⇅ 並び替え",
-  library_reorder_done: "完了",
+  library_reorder_confirm_title: "並び替えを保存しますか？",
   library_reorder_handle_aria: "{title}を移動",
   library_delete_confirm: "このエクササイズを削除しますか？",
   library_delete_has_logs: "このエクササイズには{count}件のログがあります。削除してもログは残りますが、履歴での表示名が変わる場合があります。",

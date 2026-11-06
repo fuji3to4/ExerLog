@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Ellipsis, ListFilter } from "lucide-react";
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { applyOrder, shuffleIds } from "@/features/exercise-sets/list-order";
 import { resolveSetExercises } from "@/features/exercise-sets/resolve-set-exercises";
@@ -95,6 +96,10 @@ export function LibraryScreen() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
+  const [reorderDraft, setReorderDraft] = useState<string[] | null>(null);
+  const [isReorderConfirmOpen, setIsReorderConfirmOpen] = useState(false);
+  // The edit switch was turned off with unsaved reorder changes: leave edit mode once answered.
+  const leaveEditAfterConfirmRef = useRef(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseVideo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [renamingSet, setRenamingSet] = useState<ExerciseSet | null>(null);
@@ -348,13 +353,53 @@ ${t("library_delete_confirm")}`
   // the search, the filters and any sort/shuffle; they stay cleared afterwards.
   const showReorder = isEditMode && isReordering && filters.sort === "" && !isNarrowed;
 
+  // Drags change only this draft; the order is stored when the user chooses 保存.
+  const reorderExercises = reorderDraft ? applyOrder(shownExercises, reorderDraft) : shownExercises;
+  const isReorderDirty =
+    reorderDraft !== null && reorderExercises.some((exercise, index) => exercise.id !== shownExercises[index]?.id);
+
   function startReorder() {
     if (filters.sort !== "") handleSortChange("");
     setFilters((current) => ({ ...current, search: "", bodyArea: "", purpose: "", duration: "", intensity: "", sort: "" }));
+    setReorderDraft(null);
     setIsReordering(true);
   }
 
-  async function handleReorder(ids: string[]) {
+  function leaveReorder() {
+    setReorderDraft(null);
+    setIsReordering(false);
+    if (leaveEditAfterConfirmRef.current) {
+      leaveEditAfterConfirmRef.current = false;
+      setIsEditMode(false);
+    }
+  }
+
+  function saveReorder() {
+    if (isReorderDirty) void persistOrder(reorderExercises.map((exercise) => exercise.id));
+    leaveReorder();
+  }
+
+  /** ⇅ toggles reorder mode; leaving with unsaved changes asks 保存 / キャンセル first. */
+  function handleReorderButton() {
+    if (!showReorder) {
+      startReorder();
+    } else if (isReorderDirty) {
+      setIsReorderConfirmOpen(true);
+    } else {
+      leaveReorder();
+    }
+  }
+
+  function handleEditModeChange(on: boolean) {
+    if (!on && showReorder && isReorderDirty) {
+      leaveEditAfterConfirmRef.current = true;
+      setIsReorderConfirmOpen(true);
+      return;
+    }
+    setIsEditMode(on);
+  }
+
+  async function persistOrder(ids: string[]) {
     // Shown at once; the store write follows (a failure reloads what was really saved).
     try {
       if (selectedSet) {
@@ -387,7 +432,7 @@ ${t("library_delete_confirm")}`
             <CardTitle>{t("library_heading")}</CardTitle>
             <label className="library-screen__edit-toggle">
               <span>{t("library_edit_mode_label")}</span>
-              <Switch checked={isEditMode} onCheckedChange={setIsEditMode} />
+              <Switch checked={isEditMode} onCheckedChange={handleEditModeChange} />
             </label>
           </div>
         </CardHeader>
@@ -468,7 +513,8 @@ ${t("library_delete_confirm")}`
           <button
             type="button"
             className="settings-action-button settings-action-button--secondary"
-            onClick={startReorder}
+            aria-pressed={showReorder}
+            onClick={handleReorderButton}
           >
             {t("library_reorder")}
           </button>
@@ -493,7 +539,7 @@ ${t("library_delete_confirm")}`
       {isLoaded && exercises.length === 0 ? <StarterImportHint onImported={loadExercises} /> : null}
 
       {showReorder ? (
-        <ReorderList exercises={shownExercises} onReorder={(ids) => void handleReorder(ids)} onDone={() => setIsReordering(false)} />
+        <ReorderList exercises={reorderExercises} onReorder={setReorderDraft} onSave={saveReorder} onCancel={leaveReorder} />
       ) : (
       /* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */
       <section className="library-screen__results grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
@@ -554,6 +600,43 @@ ${t("library_delete_confirm")}`
         })}
       </section>
       )}
+
+      <Dialog
+        open={isReorderConfirmOpen}
+        onOpenChange={(open) => {
+          // Dismissing without an answer keeps reordering.
+          if (!open) leaveEditAfterConfirmRef.current = false;
+          setIsReorderConfirmOpen(open);
+        }}
+      >
+        <DialogContent aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>{t("library_reorder_confirm_title")}</DialogTitle>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              className="settings-action-button settings-action-button--secondary"
+              onClick={() => {
+                setIsReorderConfirmOpen(false);
+                leaveReorder();
+              }}
+            >
+              {t("settings_form_cancel")}
+            </button>
+            <button
+              type="button"
+              className="settings-action-button"
+              onClick={() => {
+                setIsReorderConfirmOpen(false);
+                saveReorder();
+              }}
+            >
+              {t("settings_form_save")}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <SetNameDialog
         open={isCreatingSet}

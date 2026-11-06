@@ -20,16 +20,17 @@ import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
 type ReorderListProps = {
   exercises: ExerciseVideo[];
-  /** Called after every drop with the whole list's new order. */
+  /** Called after every drop with the whole list's new order (a draft; nothing is stored here). */
   onReorder(ids: string[]): void;
-  onDone(): void;
+  onSave(): void;
+  onCancel(): void;
 };
 
 /**
  * The library's reorder mode: compact rows instead of big cards, so a long list fits on screen
  * and a video can be dragged far. Only the ≡ handle starts a drag; the rest of the row scrolls.
  */
-export function ReorderList({ exercises, onReorder, onDone }: ReorderListProps) {
+export function ReorderList({ exercises, onReorder, onSave, onCancel }: ReorderListProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -57,8 +58,11 @@ export function ReorderList({ exercises, onReorder, onDone }: ReorderListProps) 
         </SortableContext>
       </DndContext>
       <div className="reorder-list__footer">
-        <button type="button" className="settings-action-button" onClick={onDone}>
-          {t("library_reorder_done")}
+        <button type="button" className="settings-action-button settings-action-button--secondary" onClick={onCancel}>
+          {t("settings_form_cancel")}
+        </button>
+        <button type="button" className="settings-action-button" onClick={onSave}>
+          {t("settings_form_save")}
         </button>
       </div>
     </section>
