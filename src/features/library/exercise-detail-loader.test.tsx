@@ -42,3 +42,13 @@ test("finds the exercise when the URL is updated just after the first render (in
 
   expect(await screen.findByRole("heading", { name: "Ankle Circles" })).toBeInTheDocument();
 });
+
+test("?entry= reaches the player, so a repeated video's second copy keeps its place", async () => {
+  window.localStorage.setItem("exerlog-playlist-settings", JSON.stringify({ continuous: true, loop: false, autoCheck: false }));
+  window.sessionStorage.setItem("exerlog-play-queue", JSON.stringify({ name: "Morning", exerciseIds: ["ankle", "ankle#2"] }));
+  renderWithLanguage(<NavigateThenRender to="/exercises?exerciseId=ankle&entry=ankle%232" />, { initialLanguage: "en" });
+
+  expect(await screen.findByText("Morning · 2/2")).toBeInTheDocument();
+  window.localStorage.removeItem("exerlog-playlist-settings");
+  window.sessionStorage.removeItem("exerlog-play-queue");
+});

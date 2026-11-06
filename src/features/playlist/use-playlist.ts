@@ -14,7 +14,8 @@ import {
   type PlaylistSettings,
 } from "./playlist-settings-store";
 
-export type PlaylistItem = { exercise: ExerciseVideo; clip: YouTubeClip };
+/** `entryKey` names the item's place in the list (a list may repeat a video; see list-entries). */
+export type PlaylistItem = { entryKey: string; exercise: ExerciseVideo; clip: YouTubeClip };
 
 export type UsePlaylist = {
   items: PlaylistItem[];
@@ -24,7 +25,8 @@ export type UsePlaylist = {
   setContinuous(on: boolean): void;
   setLoop(on: boolean): void;
   setAutoCheck(on: boolean): void;
-  start(exerciseId?: string): void;
+  /** Plays the item with this entry key (its exercise id for a video listed once); the first item without one. */
+  start(entryKey?: string): void;
   next(): void;
   previous(): void;
   stop(): void;
@@ -39,8 +41,9 @@ export type UsePlaylist = {
 };
 
 type UsePlaylistArgs = {
-  /** The queue in order (a snapshot of the list the player was opened from, or one video). */
-  exercises: ExerciseVideo[];
+  /** The queue in order (a snapshot of the list the player was opened from, or one video). Items without an
+   * `entryKey` are keyed by their id. */
+  exercises: (ExerciseVideo & { entryKey?: string })[];
   /** Auto-check: called once per video that played to its end in continuous mode. */
   onFinished: (exercise: ExerciseVideo) => void;
 };
@@ -52,22 +55,24 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
     () =>
       exercises.flatMap((exercise) => {
         const clip = getYouTubeClip(exercise.videoUrl);
-        return clip ? [{ exercise, clip }] : [];
+        if (!clip) return [];
+        const { entryKey = exercise.id, ...video } = exercise;
+        return [{ entryKey, exercise: video, clip }];
       }),
     [exercises],
   );
 
   const [storedState, setState] = useState<PlaylistState>(IDLE);
   const [settings, setSettings] = useState<PlaylistSettings>(DEFAULT_SETTINGS);
-  // The exercise being played, so a reordered list (shuffle) keeps playing it.
-  const playingIdRef = useRef<string | null>(null);
+  // The entry being played, so a reordered list (shuffle) keeps playing it.
+  const playingKeyRef = useRef<string | null>(null);
 
   // The list was reordered under the playing video: follow it to its new index, same playId
   // (no reload). Done during render so no frame shows the wrong video.
   let state = storedState;
-  if (state.status === "playing" && playingIdRef.current !== null && items[state.index]?.exercise.id !== playingIdRef.current) {
-    const playingId = playingIdRef.current;
-    const movedTo = items.findIndex((item) => item.exercise.id === playingId);
+  if (state.status === "playing" && playingKeyRef.current !== null && items[state.index]?.entryKey !== playingKeyRef.current) {
+    const playingKey = playingKeyRef.current;
+    const movedTo = items.findIndex((item) => item.entryKey === playingKey);
     if (movedTo >= 0) {
       state = playlistReducer(state, { type: "seek", index: movedTo }, { length: items.length, loop: false });
       setState(state);
@@ -112,13 +117,13 @@ export function usePlaylist({ exercises, onFinished }: UsePlaylistArgs): UsePlay
       loop: settingsRef.current.loop,
     });
     stateRef.current = nextState;
-    playingIdRef.current = nextState.status === "playing" ? (itemsRef.current[nextState.index]?.exercise.id ?? null) : null;
+    playingKeyRef.current = nextState.status === "playing" ? (itemsRef.current[nextState.index]?.entryKey ?? null) : null;
     setState(nextState);
   }, []);
 
   const start = useCallback(
-    (exerciseId?: string) => {
-      const index = exerciseId === undefined ? 0 : itemsRef.current.findIndex((item) => item.exercise.id === exerciseId);
+    (entryKey?: string) => {
+      const index = entryKey === undefined ? 0 : itemsRef.current.findIndex((item) => item.entryKey === entryKey);
       if (index < 0) return;
       dispatch({ type: "start", index });
     },

@@ -3,13 +3,13 @@
 import { useId } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
-import type { ExerciseVideo } from "@/lib/types";
+import type { ListEntry } from "@/features/exercise-sets/list-entries";
 import { resolveExerciseThumbnailUrl } from "@/lib/video/youtube";
 
 const SHOWN = 5;
 
 /** "次に流れる": the next few videos of the run; tapping one jumps there. */
-export function UpNext({ upcoming, onSelect }: { upcoming: ExerciseVideo[]; onSelect: (exerciseId: string) => void }) {
+export function UpNext({ upcoming, onSelect }: { upcoming: ListEntry[]; onSelect: (entryKey: string) => void }) {
   const { t } = useTranslation();
   const headingId = useId();
 
@@ -29,8 +29,8 @@ export function UpNext({ upcoming, onSelect }: { upcoming: ExerciseVideo[]; onSe
         {shown.map((exercise) => {
           const thumbnailUrl = resolveExerciseThumbnailUrl(exercise);
           return (
-            <li key={exercise.id}>
-              <button type="button" className="up-next__item" onClick={() => onSelect(exercise.id)}>
+            <li key={exercise.entryKey}>
+              <button type="button" className="up-next__item" onClick={() => onSelect(exercise.entryKey)}>
                 {thumbnailUrl ? <img src={thumbnailUrl} alt="" loading="lazy" /> : <span className="up-next__no-thumb" />}
                 <span>{exercise.title}</span>
               </button>
