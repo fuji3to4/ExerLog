@@ -178,6 +178,9 @@ export const en = {
 
   // Library edit mode
   library_add: "+ Add exercise",
+  library_reorder: "⇅ Reorder",
+  library_reorder_done: "Done",
+  library_reorder_handle_aria: "Move {title}",
   library_delete_confirm: "Delete this exercise?",
   library_delete_has_logs: "This exercise has {count} log(s). Deleting it won't remove the logs, but the exercise name may not display correctly in history.",
   library_edit_mode_label: "Edit",

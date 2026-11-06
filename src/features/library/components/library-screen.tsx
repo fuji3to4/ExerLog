@@ -14,8 +14,14 @@ import { ExerciseSetMenu } from "@/features/exercise-sets/components/exercise-se
 import { appDb } from "@/features/storage/app-db";
 import { deleteExercise, listAllExercises } from "@/features/storage/exercise-catalog.repository";
 import { SetNameDialog } from "@/features/exercise-sets/components/set-name-dialog";
-import { createExerciseSet, deleteExerciseSet, listExerciseSets, renameExerciseSet } from "@/features/storage/exercise-sets.repository";
-import { getLibraryOrder } from "@/features/storage/list-orders.repository";
+import {
+  createExerciseSet,
+  deleteExerciseSet,
+  listExerciseSets,
+  renameExerciseSet,
+  reorderExerciseSet,
+} from "@/features/storage/exercise-sets.repository";
+import { getLibraryOrder, saveLibraryOrder } from "@/features/storage/list-orders.repository";
 import { countWatchesByExercise } from "@/features/storage/watch-events.repository";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { useCelebrate } from "@/features/feedback/celebration";
@@ -36,6 +42,7 @@ import {
   type UnshuffledSort,
 } from "../library-view-store";
 import { LibraryFilters } from "./library-filters";
+import { ReorderList } from "./reorder-list";
 import { StarterImportHint } from "./starter-import-hint";
 import { VideoCard } from "./video-card";
 
@@ -87,6 +94,7 @@ export function LibraryScreen() {
   const [exerciseSets, setExerciseSets] = useState<ExerciseSet[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseVideo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [renamingSet, setRenamingSet] = useState<ExerciseSet | null>(null);
@@ -335,6 +343,25 @@ ${t("library_delete_confirm")}`
   // "Narrowed" means a search or one of the four filters is active; sorting does not count.
   const activeFilterCount = [filters.bodyArea, filters.purpose, filters.duration, filters.intensity].filter(Boolean).length;
   const isNarrowed = filters.search.trim() !== "" || activeFilterCount > 0;
+  // Only the whole list in its saved order can be reordered: a partial view would hide where things go.
+  const canReorder = filters.sort === "" && !isNarrowed;
+  const showReorder = isEditMode && isReordering && canReorder;
+
+  async function handleReorder(ids: string[]) {
+    // Shown at once; the store write follows (a failure reloads what was really saved).
+    try {
+      if (selectedSet) {
+        setExerciseSets((sets) => sets.map((set) => (set.id === selectedSet.id ? { ...set, exerciseIds: ids } : set)));
+        await reorderExerciseSet(selectedSet.id, ids);
+      } else {
+        setLibraryOrder(ids);
+        await saveLibraryOrder(ids);
+      }
+    } catch (error) {
+      console.error(error);
+      await loadExercises();
+    }
+  }
   const countParams = { shown: filteredExercises.length, total: exercises.length };
   let countText: string;
   if (selectedSet) {
@@ -431,6 +458,14 @@ ${t("library_delete_confirm")}`
           <button type="button" className="settings-action-button" onClick={() => setIsAdding(true)}>
             {t("library_add")}
           </button>
+          <button
+            type="button"
+            className="settings-action-button settings-action-button--secondary"
+            disabled={!canReorder}
+            onClick={() => setIsReordering(true)}
+          >
+            {t("library_reorder")}
+          </button>
         </div>
       ) : null}
 
@@ -451,7 +486,10 @@ ${t("library_delete_confirm")}`
 
       {isLoaded && exercises.length === 0 ? <StarterImportHint onImported={loadExercises} /> : null}
 
-      {/* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */}
+      {showReorder ? (
+        <ReorderList exercises={shownExercises} onReorder={(ids) => void handleReorder(ids)} onDone={() => setIsReordering(false)} />
+      ) : (
+      /* Columns of at least 20rem that fill the row, so the grid lines up with the cards above. */
       <section className="library-screen__results grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
         {shownExercises.map((exercise) => {
           const watchCount = watchCounts.get(exercise.id) ?? 0;
@@ -509,6 +547,7 @@ ${t("library_delete_confirm")}`
           );
         })}
       </section>
+      )}
 
       <SetNameDialog
         open={isCreatingSet}
