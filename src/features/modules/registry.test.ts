@@ -3,17 +3,17 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { recordModuleData } from "./data-registry";
-import { getRecordModule, RECORD_MODULES } from "./registry";
+import { getRecordModule, recordModules } from "./registry";
 
-describe("RECORD_MODULES", () => {
+describe("recordModules", () => {
   it("uses the same data objects in the same order as recordModuleData()", () => {
     const data = recordModuleData();
-    expect(RECORD_MODULES).toHaveLength(data.length);
-    RECORD_MODULES.forEach((module, index) => expect(module.data).toBe(data[index]));
+    expect(recordModules()).toHaveLength(data.length);
+    recordModules().forEach((module, index) => expect(module.data).toBe(data[index]));
   });
 
   it("tags the lymphedema-only modules", () => {
-    const tagged = RECORD_MODULES.filter((m) => m.tags?.includes("lymphedema")).map((m) => m.data.id);
+    const tagged = recordModules().filter((m) => m.tags?.includes("lymphedema")).map((m) => m.data.id);
     expect(tagged).toEqual(["selfcare", "compression", "symptoms"]);
   });
 

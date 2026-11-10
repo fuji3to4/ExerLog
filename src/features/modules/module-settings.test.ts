@@ -34,6 +34,26 @@ describe("module settings", () => {
     ).toEqual({ order: ["body", "wellness", "circumference"], disabled: ["body"] });
   });
 
+  it("keeps custom ids that are not loaded yet", () => {
+    expect(
+      resolveModuleSettings(
+        { order: ["wellness", "custom:protein", "ghost", "body"], disabled: ["custom:protein", "ghost"] },
+        ["wellness", "body"],
+      ),
+    ).toEqual({ order: ["wellness", "custom:protein", "body"], disabled: ["custom:protein"] });
+    expect(
+      resolveModuleSettings({ order: ["wellness", "custom:protein", "body"], disabled: ["custom:protein"] }, IDS),
+    ).toEqual({ order: ["wellness", "custom:protein", "body", "circumference"], disabled: ["custom:protein"] });
+  });
+
+  it("does not rewrite storage on every read when it holds unloaded custom ids", () => {
+    const raw = JSON.stringify({ order: ["custom:protein", ...IDS], disabled: [] });
+    window.localStorage.setItem(MODULE_SETTINGS_STORAGE_KEY, raw);
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    expect(readModuleSettings(IDS).order).toEqual(["custom:protein", ...IDS]);
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
   it("moveModule clamps the index and setModuleEnabled toggles", () => {
     const s = { order: IDS, disabled: [] };
     expect(moveModule(s, "circumference", 0).order).toEqual(["circumference", "wellness", "body"]);

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { AddRecordMenu } from "@/features/modules/components/add-record-menu";
-import { RECORD_MODULES } from "@/features/modules/registry";
+import { recordModules } from "@/features/modules/registry";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { appDb } from "@/features/storage/app-db";
 import { toDayKey } from "@/lib/date/day-key";
@@ -20,8 +20,8 @@ function makeRecord(id: string, date: string, symptoms: SymptomEntry[], note = "
 
 describe("symptoms module registration", () => {
   it("the add menu lists 症状 8th", () => {
-    const chosen: { current?: (typeof RECORD_MODULES)[number] } = {};
-    renderWithLanguage(<AddRecordMenu modules={RECORD_MODULES} onChoose={(m) => (chosen.current = m)} />, {
+    const chosen: { current?: ReturnType<typeof recordModules>[number] } = {};
+    renderWithLanguage(<AddRecordMenu modules={recordModules()} onChoose={(m) => (chosen.current = m)} />, {
       initialLanguage: "ja",
     });
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });

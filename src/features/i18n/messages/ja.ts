@@ -258,6 +258,7 @@
   sync_status_starting: "同期を開始しています…",
   sync_status_table: "{table} を同期しました（{count}件）",
   sync_tab_ExerciseLogs: "運動記録",
+  sync_tab_RecordTypes: "記録の種類",
   sync_tab_WellnessEntries: "体調記録",
   sync_tab_WatchEvents: "視聴記録",
   sync_tab_BodyMeasurements: "身体",

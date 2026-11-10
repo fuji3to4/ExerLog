@@ -9,7 +9,7 @@ import type { CustomRecord, CustomRecordType } from "@/lib/types";
 import { RangeSummaryView } from "../components/range-summary-view";
 import { SummaryCardFrame, SummaryEmpty, usePeriodSummary } from "../components/summary-card";
 import type { Period } from "../period";
-import type { RecordFormProps, RecordModule, TimeLabel } from "../types";
+import type { RecordFormProps, RecordModule, RecordModuleData, TimeLabel } from "../types";
 import { CustomRecordForm } from "./custom-form";
 import { createCustomModuleData, listCustomInRange } from "./data";
 import { resolveText, type CustomRecordDefinition } from "./definition";
@@ -97,10 +97,15 @@ function SummaryBody({ definition, summary }: { definition: CustomRecordDefiniti
 const NO_RECORDS: CustomRecord[] = [];
 const NO_SUMMARY = { summary: null as CustomSummary | null };
 
-/** Builds the screens of one imported record type. */
-export function createCustomModule(type: CustomRecordType): RecordModule<CustomRecord> {
+/**
+ * Builds the screens of one imported record type. `data` defaults to a new data object;
+ * the registry passes the one it already lists in `recordModuleData()`.
+ */
+export function createCustomModule(
+  type: CustomRecordType,
+  data: RecordModuleData<CustomRecord> = createCustomModuleData(type),
+): RecordModule<CustomRecord> {
   const definition = type.definition;
-  const data = createCustomModuleData(type);
 
   const loadSummary = async (period: Period) => ({
     summary: summarizeCustomRecords(definition, await data.listInPeriod(period)),

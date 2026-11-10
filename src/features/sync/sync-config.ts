@@ -11,6 +11,7 @@ import type {
   WatchEvent,
 } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
+import { recordTypesSyncConfig } from "@/features/modules/custom/data";
 import { recordModuleData } from "@/features/modules/data-registry";
 import { cell, replaceTable } from "./sync-helpers";
 
@@ -53,14 +54,18 @@ export interface TableSyncConfig {
 
 /** Every Dexie table touched by sync; the merge transaction is opened over these. */
 export function syncedDbTables(): Table<any, any>[] {
+  // Every custom record type shares one table, so the list is deduped.
   return [
-    appDb.exerciseLogs,
-    ...recordModuleData().flatMap((m) => m.tables()),
-    appDb.watchEvents,
-    appDb.exercises,
-    appDb.exerciseSets,
-    appDb.listOrders,
-    appDb.tombstones,
+    ...new Set([
+      appDb.exerciseLogs,
+      appDb.customRecordTypes,
+      ...recordModuleData().flatMap((m) => m.tables()),
+      appDb.watchEvents,
+      appDb.exercises,
+      appDb.exerciseSets,
+      appDb.listOrders,
+      appDb.tombstones,
+    ]),
   ];
 }
 
@@ -216,13 +221,15 @@ const tombstonesConfig: TableSyncConfig = {
 };
 
 /**
- * One entry per sheet tab (Tombstones last). A function, not a constant, so
+ * One entry per sheet tab (RecordTypes before the module tabs, Tombstones last). A function, not a constant, so
  * the array is built at call time and import cycles never see it half-built
  * (module data files import the sync scheduler).
  */
 export function tableSyncConfigs(): TableSyncConfig[] {
   return [
     exerciseLogsConfig,
+    // Definitions before the records of every module, custom ones included.
+    recordTypesSyncConfig,
     ...recordModuleData().flatMap((m) => m.syncConfigs),
     watchEventsConfig,
     exercisesConfig,

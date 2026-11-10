@@ -258,6 +258,7 @@ export const en = {
   sync_status_starting: "Starting sync…",
   sync_status_table: "Synced {table} ({count} rows)",
   sync_tab_ExerciseLogs: "Exercise records",
+  sync_tab_RecordTypes: "Record types",
   sync_tab_WellnessEntries: "Condition records",
   sync_tab_WatchEvents: "Watch records",
   sync_tab_BodyMeasurements: "Body",
