@@ -31,13 +31,20 @@ export function decodeCell(field: CustomField | undefined, raw: string): CustomV
   }
 }
 
-function normalizeOne(field: CustomField, value: unknown): CustomValue | undefined {
+/**
+ * A stored value read as its field's type, or undefined when it does not fit.
+ * Strings for non-string types (raw sheet cells of a field that was removed and
+ * later restored, or typed form input) are decoded like a sheet cell.
+ */
+export function coerceValue(field: CustomField, value: CustomValue | undefined): CustomValue | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === "string" && field.type !== "text" && field.type !== "choice") {
+    return decodeCell(field, value.trim());
+  }
   switch (field.type) {
     case "number":
-    case "scale": {
-      const n = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
-      return typeof n === "number" && Number.isFinite(n) ? n : undefined;
-    }
+    case "scale":
+      return typeof value === "number" && Number.isFinite(value) ? value : undefined;
     case "choice":
     case "text":
       return typeof value === "string" && value !== "" ? value : undefined;
@@ -64,7 +71,7 @@ export function normalizeValues(
       if (value !== undefined) out[id] = value as CustomValue;
       continue;
     }
-    const normalized = normalizeOne(field, value);
+    const normalized = coerceValue(field, value as CustomValue | undefined);
     if (normalized !== undefined) out[id] = normalized;
   }
   return out;
@@ -79,7 +86,7 @@ export function formatRecordLine(
 ): string {
   const parts: string[] = [];
   for (const field of definition.fields) {
-    const value = record.values[field.id];
+    const value = coerceValue(field, record.values[field.id]);
     if (value === undefined) continue;
     const label = resolveText(field.label, language);
     switch (field.type) {

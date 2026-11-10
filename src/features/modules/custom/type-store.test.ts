@@ -4,6 +4,7 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { appDb } from "@/features/storage/app-db";
 import { scheduleSync } from "@/features/sync/auto-sync";
+import type { CustomRecord } from "@/lib/types";
 import { parseDefinition, type CustomRecordDefinition } from "./definition";
 import {
   getCustomTypes,
@@ -18,6 +19,10 @@ function def(fields: unknown[] = [{ id: "amount", label: "Amount", type: "number
   const r = parseDefinition({ exerlogRecordType: 1, id: "protein", name: "Protein", fields });
   if (!r.ok) throw new Error("bad fixture");
   return r.definition;
+}
+
+function record(id: string, values: CustomRecord["values"]): CustomRecord {
+  return { id, typeId: "protein", date: "2026-10-20", recordedAt: "2026-10-20T08:00:00+09:00", values, note: "", updatedAt: "" };
 }
 
 beforeEach(async () => {
@@ -49,6 +54,62 @@ describe("custom type store", () => {
     await markTypeDeleted("protein", true);
     expect(await planImport(d)).toMatchObject({ ok: true, plan: { kind: "restore" } });
     expect((await planImport(changed)).ok).toBe(false);
+  });
+
+  it("rejects re-adding a removed field id with a type its stored values do not fit", async () => {
+    await saveImportedDefinition(def());
+    await appDb.customRecords.bulkAdd([
+      record("a", { amount: 30, legacy: ["x"] }),
+      record("b", { amount: 40 }),
+    ]);
+    const removed = def([{ id: "brand", label: "Brand", type: "text" }]);
+    expect(await planImport(removed)).toMatchObject({ ok: true, plan: { kind: "update" } });
+    await saveImportedDefinition(removed);
+
+    for (const type of ["text", "multiChoice", "boolean"]) {
+      const options = type === "multiChoice" ? { options: [{ id: "o", label: "o" }] } : {};
+      expect(
+        await planImport(def([{ id: "brand", label: "Brand", type: "text" }, { id: "amount", label: "A", type, ...options }])),
+      ).toEqual({ ok: false, errors: [{ code: "type_changed", path: "fields.amount" }] });
+    }
+    // The same type, or a type every stored value fits, is fine.
+    expect(
+      await planImport(def([{ id: "amount", label: "A", type: "scale" }])),
+    ).toMatchObject({ ok: true, plan: { kind: "update", diff: { added: ["amount"] } } });
+    expect(
+      await planImport(def([{ id: "legacy", label: "L", type: "multiChoice", options: [{ id: "x", label: "x" }] }])),
+    ).toMatchObject({ ok: true });
+    expect(await planImport(def([{ id: "legacy", label: "L", type: "text" }]))).toEqual({
+      ok: false,
+      errors: [{ code: "type_changed", path: "fields.legacy" }],
+    });
+  });
+
+  it("checks raw sheet strings the same way", async () => {
+    await saveImportedDefinition(def([{ id: "brand", label: "Brand", type: "text" }]));
+    await appDb.customRecords.bulkAdd([record("a", { amount: "30", flag: "1" })]);
+    expect(await planImport(def([{ id: "amount", label: "A", type: "number" }]))).toMatchObject({ ok: true });
+    expect(await planImport(def([{ id: "flag", label: "F", type: "boolean" }]))).toMatchObject({ ok: true });
+    await appDb.customRecords.put(record("b", { amount: "abc" }));
+    expect((await planImport(def([{ id: "amount", label: "A", type: "number" }]))).ok).toBe(false);
+  });
+
+  it("checks every field of a new or restored type against stored records", async () => {
+    // Records may arrive before (or outlive) their definition.
+    await appDb.customRecords.bulkAdd([record("a", { amount: "abc" }), { ...record("o", { amount: 1 }), typeId: "other" }]);
+    expect(await planImport(def())).toEqual({ ok: false, errors: [{ code: "type_changed", path: "fields.amount" }] });
+    expect(await planImport(def([{ id: "amount", label: "A", type: "text" }]))).toMatchObject({
+      ok: true,
+      plan: { kind: "new" },
+    });
+
+    await saveImportedDefinition(def([{ id: "amount", label: "A", type: "text" }]));
+    await markTypeDeleted("protein", true);
+    await appDb.customRecords.put(record("b", { other: 5 }));
+    expect(await planImport(def([{ id: "amount", label: "A", type: "text" }, { id: "other", label: "O", type: "text" }]))).toEqual({
+      ok: false,
+      errors: [{ code: "type_changed", path: "fields.other" }],
+    });
   });
 
   it("saves, notifies once and schedules sync", async () => {

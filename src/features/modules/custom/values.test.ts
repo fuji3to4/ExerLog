@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { CustomRecord } from "@/lib/types";
 import { parseDefinition, type CustomRecordDefinition } from "./definition";
-import { decodeCell, encodeCell, formatRecordLine, normalizeValues } from "./values";
+import { coerceValue, decodeCell, encodeCell, formatRecordLine, normalizeValues } from "./values";
 
 const parsed = parseDefinition({
   exerlogRecordType: 1,
@@ -44,11 +44,49 @@ describe("cells", () => {
   });
 });
 
+describe("coerceValue", () => {
+  it("decodes sheet strings for non-string types", () => {
+    expect(coerceValue(field("amount")!, "30")).toBe(30);
+    expect(coerceValue(field("amount")!, " 30 ")).toBe(30);
+    expect(coerceValue(field("taste")!, "3")).toBe(3);
+    expect(coerceValue(field("timing")!, "wake|post")).toEqual(["wake", "post"]);
+    expect(coerceValue(field("fasted")!, "1")).toBe(true);
+    expect(coerceValue(field("fasted")!, "0")).toBe(false);
+  });
+
+  it("passes through values that already fit", () => {
+    expect(coerceValue(field("amount")!, 30)).toBe(30);
+    expect(coerceValue(field("timing")!, ["post"])).toEqual(["post"]);
+    expect(coerceValue(field("fasted")!, false)).toBe(false);
+    expect(coerceValue(field("kind")!, "whey")).toBe("whey");
+    expect(coerceValue(field("brand")!, "X")).toBe("X");
+  });
+
+  it("returns undefined for values that do not fit", () => {
+    expect(coerceValue(field("amount")!, undefined)).toBeUndefined();
+    expect(coerceValue(field("amount")!, "abc")).toBeUndefined();
+    expect(coerceValue(field("amount")!, "  ")).toBeUndefined();
+    expect(coerceValue(field("amount")!, true)).toBeUndefined();
+    expect(coerceValue(field("amount")!, ["1"])).toBeUndefined();
+    expect(coerceValue(field("fasted")!, "x")).toBeUndefined();
+    expect(coerceValue(field("fasted")!, 1)).toBeUndefined();
+    expect(coerceValue(field("brand")!, 30)).toBeUndefined();
+    expect(coerceValue(field("brand")!, ["a"])).toBeUndefined();
+    expect(coerceValue(field("kind")!, ["whey"])).toBeUndefined();
+    expect(coerceValue(field("timing")!, [])).toBeUndefined();
+    expect(coerceValue(field("timing")!, 3)).toBeUndefined();
+  });
+});
+
 describe("normalizeValues", () => {
   it("coerces numbers, drops empties, keeps unknown ids", () => {
     expect(
       normalizeValues(def, { amount: "30", kind: "", timing: [], taste: NaN, brand: "", old: "x", fasted: false }),
     ).toEqual({ amount: 30, old: "x", fasted: false });
+  });
+
+  it("decodes sheet strings for restored multiChoice and boolean fields", () => {
+    expect(normalizeValues(def, { timing: "wake|post", fasted: "1" })).toEqual({ timing: ["wake", "post"], fasted: true });
   });
 });
 
@@ -72,5 +110,10 @@ describe("formatRecordLine", () => {
     const r = record({ kind: "casein", fasted: true, taste: 3, timing: ["wake", "post"], gone: "z" });
     expect(formatRecordLine(def, r, "ja", "・")).toBe("casein・起床時、トレ後・空腹時・おいしさ 3/5");
     expect(formatRecordLine(def, r, "en", " · ")).toContain("起床時, トレ後");
+  });
+
+  it("decodes raw sheet strings of restored fields and skips values that do not fit", () => {
+    const r = record({ amount: "30", timing: "wake|post", fasted: "1", taste: "x" });
+    expect(formatRecordLine(def, r, "ja", "・")).toBe("30 g・起床時、トレ後・空腹時");
   });
 });

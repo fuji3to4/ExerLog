@@ -86,6 +86,7 @@ const JA = `あなたは、記録アプリ「ExerLog」に記録の種類を足�
 
 ## あとから定義を変えるとき
 - 項目の種類は変えられません（\`choice\` と \`multiChoice\` の入れ替えも変更です）。種類を変えたいときは、別の項目 ID にしてください。
+- 消した項目の ID を、前と違う種類でもう一度使うこともできません（その項目の記録が残っているため）。
 - 項目や選択肢を減らすのはかまいません。消した項目の記録は残ります。
 - 同じ \`id\` の定義を読み込むと、その定義が置き換わります。
 
@@ -150,6 +151,7 @@ Field types and their settings:
 
 ## When changing a definition later
 - You cannot change the type of an existing field (swapping \`choice\` and \`multiChoice\` also counts as a change). To change a type, use a new field id.
+- You also cannot re-use the id of a removed field with a different type (its saved records still hold the old values).
 - Removing fields or options is fine. Records already saved for a removed field are kept.
 - Loading a definition with the same \`id\` replaces that definition.
 

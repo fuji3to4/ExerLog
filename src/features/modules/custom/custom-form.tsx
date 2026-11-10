@@ -16,6 +16,7 @@ import type { RecordFormProps } from "../types";
 import { WellnessScoreInput } from "../wellness/wellness-score-input";
 import { addCustomRecord, deleteCustomRecord, updateCustomRecord } from "./data";
 import { resolveText, type CustomField, type CustomRecordDefinition } from "./definition";
+import { coerceValue } from "./values";
 
 type FieldError = "required" | "range";
 
@@ -34,7 +35,7 @@ type Draft = Record<string, CustomValue>;
 function initialDraft(definition: CustomRecordDefinition, record?: CustomRecord): Draft {
   const draft: Draft = {};
   for (const field of definition.fields) {
-    const value = record?.values[field.id];
+    const value = coerceValue(field, record?.values[field.id]);
     if (value === undefined) continue;
     draft[field.id] = field.type === "number" ? String(value) : value;
   }

@@ -126,4 +126,30 @@ describe("CustomRecordForm", () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
     expect((await appDb.customRecords.get("r2"))?.values.fasted).toBe(false);
   });
+
+  it("shows and keeps raw sheet strings of restored fields", async () => {
+    const record: CustomRecord = {
+      id: "r3",
+      typeId: "protein",
+      date: DATE,
+      recordedAt: `${DATE}T08:00:00+09:00`,
+      values: { amount: "30", timing: "wake|post", fasted: "1", taste: "4" },
+      note: "",
+      updatedAt: "",
+    };
+    await appDb.customRecords.add(record);
+    const { onSaved } = renderForm(record);
+    expect(screen.getByRole("spinbutton")).toHaveValue(30);
+    expect(screen.getByRole("checkbox", { name: "起床時" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("checkbox", { name: "トレ後" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch")).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    expect((await appDb.customRecords.get("r3"))?.values).toEqual({
+      amount: 30,
+      timing: ["wake", "post"],
+      fasted: true,
+      taste: 4,
+    });
+  });
 });

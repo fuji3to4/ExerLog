@@ -14,7 +14,7 @@ import { CustomRecordForm } from "./custom-form";
 import { createCustomModuleData, listCustomInRange } from "./data";
 import { resolveText, type CustomRecordDefinition } from "./definition";
 import { summarizeCustomRecords, type CustomSummary } from "./summary";
-import { formatRecordLine } from "./values";
+import { coerceValue, formatRecordLine } from "./values";
 
 /** Decimal places implied by a step such as 0.1; 1 when there is none. */
 function decimalsOf(step: number | undefined): number {
@@ -24,7 +24,7 @@ function decimalsOf(step: number | undefined): number {
   return dot < 0 ? 0 : text.length - dot - 1;
 }
 
-function graphMetrics(definition: CustomRecordDefinition, language: string): GraphMetric[] {
+export function graphMetrics(definition: CustomRecordDefinition, language: string): GraphMetric[] {
   const metrics: GraphMetric[] = [];
   for (const field of definition.fields) {
     if (field.type !== "number" && field.type !== "scale") continue;
@@ -34,7 +34,7 @@ function graphMetrics(definition: CustomRecordDefinition, language: string): Gra
       async load(range) {
         const records = await listCustomInRange(definition.id, range.start, range.end);
         const points = records.flatMap((r) => {
-          const value = r.values[field.id];
+          const value = coerceValue(field, r.values[field.id]);
           return typeof value === "number" ? [{ at: r.recordedAt, value }] : [];
         });
         return {

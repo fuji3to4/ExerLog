@@ -9,6 +9,7 @@ import {
   type DefinitionDiff,
   type DefinitionError,
 } from "./definition";
+import { coerceValue } from "./values";
 
 export type ImportPlan = {
   kind: "new" | "update" | "restore";
@@ -23,23 +24,48 @@ function signature(list: readonly CustomRecordType[]): string {
   return list.map((t) => `${t.id}|${t.updatedAt}|${t.deleted ? 1 : 0}`).join("\n");
 }
 
+/**
+ * Field ids among `ids` for which some stored record of this type holds a value
+ * that does not fit the field's (new) type. Catches a removed field coming back
+ * with a different type, which a diff against the current definition misses.
+ */
+async function fieldsWithUnfitValues(definition: CustomRecordDefinition, ids: readonly string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const fields = definition.fields.filter((f) => ids.includes(f.id));
+  const records = await appDb.customRecords.where("typeId").equals(definition.id).toArray();
+  return fields
+    .filter((field) =>
+      records.some((r) => {
+        const value = r.values[field.id];
+        return value !== undefined && coerceValue(field, value) === undefined;
+      }),
+    )
+    .map((f) => f.id);
+}
+
+function typeChangedErrors(ids: readonly string[]): { ok: false; errors: DefinitionError[] } {
+  return { ok: false, errors: ids.map((id) => ({ code: "type_changed" as const, path: `fields.${id}` })) };
+}
+
 export async function planImport(
   definition: CustomRecordDefinition,
 ): Promise<{ ok: true; plan: ImportPlan } | { ok: false; errors: DefinitionError[] }> {
   const stored = await appDb.customRecordTypes.get(definition.id);
-  if (!stored) return { ok: true, plan: { kind: "new", definition, diff: null } };
-  const parsed = parseDefinition(stored.definition);
-  // An unreadable stored definition cannot conflict; treat it as a fresh start.
-  if (!parsed.ok) {
-    return { ok: true, plan: { kind: stored.deleted ? "restore" : "update", definition, diff: null } };
+  const parsed = stored ? parseDefinition(stored.definition) : null;
+  // No stored definition, or one that cannot be read, cannot conflict by diff;
+  // only the values already stored for this type can.
+  if (!stored || !parsed?.ok) {
+    const kind = !stored ? "new" : stored.deleted ? "restore" : "update";
+    const unfit = await fieldsWithUnfitValues(definition, definition.fields.map((f) => f.id));
+    if (unfit.length > 0) return typeChangedErrors(unfit);
+    return { ok: true, plan: { kind, definition, diff: null } };
   }
   const diff = diffDefinitions(parsed.definition, definition);
-  if (diff.typeChanged.length > 0) {
-    return {
-      ok: false,
-      errors: diff.typeChanged.map((id) => ({ code: "type_changed" as const, path: `fields.${id}` })),
-    };
-  }
+  if (diff.typeChanged.length > 0) return typeChangedErrors(diff.typeChanged);
+  // A restore also re-checks fields removed before the type was deleted.
+  const checked = stored.deleted ? definition.fields.map((f) => f.id) : diff.added;
+  const unfit = await fieldsWithUnfitValues(definition, checked);
+  if (unfit.length > 0) return typeChangedErrors(unfit);
   return { ok: true, plan: { kind: stored.deleted ? "restore" : "update", definition, diff } };
 }
 

@@ -88,16 +88,36 @@ describe("custom record data", () => {
   });
 
   it("round-trips removed-field columns", async () => {
-    const rec = await addCustomRecord(protein, input({ amount: 30, kind: "whey", timing: ["post"], fasted: true, zzOld: "v" }));
+    const rec = await addCustomRecord(protein, input({ amount: 30, kind: "whey", timing: ["post"], fasted: true }));
     const config = createCustomModuleData(typeOf(protein)).syncConfigs[0];
     const stored = await config.readFromDb();
     const headers = config.buildHeaders!(stored);
     expect(headers).toEqual([
       "id", "date", "recordedAt", "note", "updatedAt",
-      "amount", "kind", "timing", "fasted", "brand", "taste", "zzOld",
+      "amount", "kind", "timing", "fasted", "brand", "taste",
     ]);
-    const back = config.fromRow(config.toRow(stored[0], headers), headers);
-    expect(back).toEqual(rec);
+    expect(config.fromRow(config.toRow(stored[0], headers), headers)).toEqual(rec);
+  });
+
+  it("restores typed values of removed fields that came back through the sheet", async () => {
+    const rec = await addCustomRecord(protein, input({ amount: 30, timing: ["post"], fasted: false }));
+    const slimParsed = parseDefinition({ id: "protein", name: "protein", fields: [{ id: "brand", label: "b", type: "text" }] });
+    if (!slimParsed.ok) throw new Error("fixture");
+    // While the fields are removed, the sheet round trip leaves raw strings.
+    const slim = createCustomModuleData(typeOf(slimParsed.definition)).syncConfigs[0];
+    const headers = slim.buildHeaders!([rec]);
+    expect(headers).toEqual(["id", "date", "recordedAt", "note", "updatedAt", "brand", "amount", "fasted", "timing"]);
+    const back = slim.fromRow(slim.toRow(rec, headers), headers) as typeof rec;
+    expect(back.values).toEqual({ amount: "30", timing: "post", fasted: "0" });
+    await appDb.customRecords.put(back);
+    // After the fields are restored, saving keeps the values with their types.
+    await updateCustomRecord(protein, { ...back, values: { ...back.values, brand: "X" } });
+    expect((await appDb.customRecords.get(rec.id))?.values).toEqual({
+      amount: 30,
+      timing: ["post"],
+      fasted: false,
+      brand: "X",
+    });
   });
 
   it("clearAll records tombstones only for its tab", async () => {

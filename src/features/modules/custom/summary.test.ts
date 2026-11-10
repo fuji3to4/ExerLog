@@ -10,6 +10,7 @@ const parsed = parseDefinition({
   fields: [
     { id: "amount", label: "a", type: "number" },
     { id: "taste", label: "t", type: "scale", levels: 5 },
+    { id: "timing", label: "m", type: "multiChoice", options: [{ id: "wake", label: "w" }, { id: "post", label: "p" }] },
     {
       id: "kind",
       label: "k",
@@ -60,5 +61,37 @@ describe("summarizeCustomRecords", () => {
     ]);
     const tie = summarizeCustomRecords(definition, [rec({ kind: "whey" }), rec({ kind: "soy" })]);
     expect(tie?.choices[0].counts.map((c) => c.optionId)).toEqual(["soy", "whey"]);
+  });
+
+  it("decodes raw sheet strings of restored fields", () => {
+    const s = summarizeCustomRecords(definition, [rec({ amount: "20", timing: "wake|post" }), rec({ amount: 40, timing: ["wake"] })]);
+    expect(s?.numeric).toEqual([{ fieldId: "amount", avg: 30, min: 20, max: 40 }]);
+    expect(s?.choices).toEqual([
+      { fieldId: "timing", counts: [{ optionId: "wake", count: 2 }, { optionId: "post", count: 1 }] },
+    ]);
+  });
+
+  it("counts removed options after the defined ones", () => {
+    const s = summarizeCustomRecords(definition, [
+      rec({ kind: "casein" }),
+      rec({ kind: "casein" }),
+      rec({ kind: "casein" }),
+      rec({ kind: "pea" }),
+      rec({ kind: "egg" }),
+      rec({ kind: "soy" }),
+      rec({ timing: ["post", "gone"] }),
+    ]);
+    expect(s?.choices).toEqual([
+      { fieldId: "timing", counts: [{ optionId: "post", count: 1 }, { optionId: "gone", count: 1 }] },
+      {
+        fieldId: "kind",
+        counts: [
+          { optionId: "soy", count: 1 },
+          { optionId: "casein", count: 3 },
+          { optionId: "egg", count: 1 },
+          { optionId: "pea", count: 1 },
+        ],
+      },
+    ]);
   });
 });

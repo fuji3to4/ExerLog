@@ -1,12 +1,13 @@
 import { screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
+import { appDb } from "@/features/storage/app-db";
 import type { CustomRecord, CustomRecordType } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { parseDefinition } from "./definition";
-import { createCustomModule } from "./module";
+import { createCustomModule, graphMetrics } from "./module";
 
 const parsed = parseDefinition({
   id: "protein",
@@ -58,5 +59,22 @@ describe("createCustomModule", () => {
     const { HistoryView } = createCustomModule(type);
     renderWithLanguage(<HistoryView />, { initialLanguage: "ja" });
     expect(screen.getByRole("option", { name: "量" })).toBeInTheDocument();
+  });
+
+  describe("graph metrics", () => {
+    beforeEach(async () => {
+      await appDb.customRecords.clear();
+    });
+
+    it("plots raw sheet strings of restored number fields", async () => {
+      await appDb.customRecords.bulkAdd([
+        record,
+        { ...record, id: "r2", recordedAt: "2026-10-20T09:00:00+09:00", values: { amount: "40" } },
+        { ...record, id: "r3", recordedAt: "2026-10-20T10:00:00+09:00", values: { amount: "x" } },
+      ]);
+      const [metric] = graphMetrics(type.definition, "ja");
+      const result = await metric.load({ start: "2026-10-01", end: "2026-10-31" });
+      expect(result.points.map((p) => p.value)).toEqual([30, 40]);
+    });
   });
 });
