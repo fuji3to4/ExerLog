@@ -96,4 +96,37 @@ describe("custom type store", () => {
     expect(getCustomTypes()).toHaveLength(0);
     expect(await appDb.customRecordTypes.count()).toBe(1);
   });
+
+  it("an older load that finishes last does not overwrite a newer one", async () => {
+    const realToArray = appDb.customRecordTypes.toArray.bind(appDb.customRecordTypes);
+    let releaseStale!: () => void;
+    const spy = vi
+      .spyOn(appDb.customRecordTypes, "toArray")
+      // The first (older) read snapshots the empty table but resolves only when released.
+      // Dexie types toArray as PromiseExtended; a plain promise is enough for the store.
+      .mockImplementationOnce((async () => {
+        const snapshot = await realToArray();
+        await new Promise<void>((resolve) => {
+          releaseStale = resolve;
+        });
+        return snapshot;
+      }) as unknown as typeof realToArray);
+
+    const stale = loadCustomTypes();
+    await vi.waitFor(() => expect(releaseStale).toBeDefined());
+    await appDb.customRecordTypes.put({
+      id: "protein",
+      definition: def(),
+      deleted: false,
+      updatedAt: "2026-01-01T00:00:00+09:00",
+    });
+    await loadCustomTypes();
+    expect(getCustomTypes().map((t) => t.id)).toEqual(["protein"]);
+
+    releaseStale();
+    await stale;
+    spy.mockRestore();
+
+    expect(getCustomTypes().map((t) => t.id)).toEqual(["protein"]);
+  });
 });

@@ -1,5 +1,7 @@
 import type { Tombstone } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
+import { recordTypesSyncConfig } from "@/features/modules/custom/data";
+import { loadCustomTypes } from "@/features/modules/custom/type-store";
 import { recordModuleData } from "@/features/modules/data-registry";
 import {
   createSpreadsheet,
@@ -27,6 +29,7 @@ export interface SyncAllResult {
 }
 
 const TOMBSTONES_TAB = "Tombstones";
+const ENSURE_TABS_ERROR = "Failed to ensure required sheet tabs";
 
 let activeSyncPromise: Promise<unknown> = Promise.resolve();
 
@@ -48,27 +51,33 @@ async function doSyncAll(
   accessToken: string,
   onProgress: SyncProgressCallback,
 ): Promise<SyncAllResult> {
-  const spreadsheetId = await prepareSpreadsheet(accessToken);
+  // Read at call time: custom/data is part of an import cycle with this module.
+  const recordTypesTab = recordTypesSyncConfig.tabName;
+  const preparedTabs = sheetTabs();
+  const spreadsheetId = await prepareSpreadsheet(accessToken, preparedTabs);
   if (typeof spreadsheetId !== "string") {
     return { success: false, results: [spreadsheetId] };
   }
 
   const results: SyncTableResult[] = [];
-  const run = async (config: TableSyncConfig, deletedIds: Map<string, string>) => {
-    const result = await syncTable(accessToken, spreadsheetId, config, deletedIds);
+  const report = (result: SyncTableResult) => {
     results.push(result);
     onProgress(result);
   };
+  const run = async (config: TableSyncConfig, deletedIds: Map<string, string>) => {
+    report(await syncTable(accessToken, spreadsheetId, config, deletedIds));
+  };
 
-  const configs = tableSyncConfigs();
-  const tombstonesConfig = configs.find((c) => c.tabName === TOMBSTONES_TAB)!;
+  // 1. Tombstones.
+  const initialConfigs = tableSyncConfigs();
+  const tombstonesConfig = initialConfigs.find((c) => c.tabName === TOMBSTONES_TAB)!;
   await run(tombstonesConfig, new Map());
   if (results[0].error) {
     // Without the merged tombstones, other tabs could pull deleted records back.
     return { success: false, results, spreadsheetId };
   }
 
-  // File sync (e.g. photos on Drive) sees the merged tombstones, before the other tabs.
+  // 2. File sync (e.g. photos on Drive) sees the merged tombstones, before the other tabs.
   for (const moduleData of recordModuleData()) {
     if (!moduleData.syncFiles) continue;
     let result: SyncTableResult;
@@ -81,17 +90,46 @@ async function doSyncAll(
         error: err instanceof Error ? err.message : String(err),
       };
     }
-    results.push(result);
-    onProgress(result);
+    report(result);
   }
 
   const deletedIdsByTab = groupDeletedIds(await appDb.tombstones.toArray());
-  for (const config of configs) {
-    if (config === tombstonesConfig) continue;
-    const deletedIds = config.deletable
+  const deletedIdsFor = (config: TableSyncConfig) =>
+    config.deletable
       ? (deletedIdsByTab.get(config.tabName) ?? new Map<string, string>())
       : new Map<string, string>();
-    await run(config, deletedIds);
+
+  // 3. Record-type definitions, so the types pulled here sync their records in this same run.
+  const recordTypesConfig = initialConfigs.find((c) => c.tabName === recordTypesTab)!;
+  await run(recordTypesConfig, deletedIdsFor(recordTypesConfig));
+
+  // 4. Rebuild the custom types (and with them the module registry and tab list).
+  try {
+    await loadCustomTypes();
+  } catch (err) {
+    report({
+      tableName: recordTypesTab,
+      rowCount: 0,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  // 5. Add the tabs of newly known types; on failure skip only those tabs.
+  const tabs = sheetTabs();
+  const addedTabs = new Set(tabs.filter((tab) => !preparedTabs.includes(tab)));
+  if (addedTabs.size > 0) {
+    if (await ensureSheetTabs(accessToken, spreadsheetId, tabs)) {
+      addedTabs.clear();
+    } else {
+      report({ tableName: "spreadsheet", rowCount: 0, error: ENSURE_TABS_ERROR });
+    }
+  }
+
+  // 6. Everything else, from the configs rebuilt after the reload.
+  for (const config of tableSyncConfigs()) {
+    if (config.tabName === TOMBSTONES_TAB || config.tabName === recordTypesTab) continue;
+    if (addedTabs.has(config.tabName)) continue;
+    await run(config, deletedIdsFor(config));
   }
 
   return {
@@ -102,16 +140,19 @@ async function doSyncAll(
 }
 
 /** Returns the spreadsheet id, or a failed result describing what went wrong. */
-async function prepareSpreadsheet(accessToken: string): Promise<string | SyncTableResult> {
+async function prepareSpreadsheet(
+  accessToken: string,
+  tabs: readonly string[],
+): Promise<string | SyncTableResult> {
   const existing = await findSpreadsheet(accessToken);
   if (existing) {
-    const ok = await ensureSheetTabs(accessToken, existing.spreadsheetId, sheetTabs());
+    const ok = await ensureSheetTabs(accessToken, existing.spreadsheetId, tabs);
     return ok
       ? existing.spreadsheetId
-      : { tableName: "spreadsheet", rowCount: 0, error: "Failed to ensure required sheet tabs" };
+      : { tableName: "spreadsheet", rowCount: 0, error: ENSURE_TABS_ERROR };
   }
 
-  const created = await createSpreadsheet(accessToken, sheetTabs());
+  const created = await createSpreadsheet(accessToken, tabs);
   if (!created) {
     console.error("[sync] syncAll: could not find or create spreadsheet");
     return { tableName: "spreadsheet", rowCount: 0, error: "Failed to create spreadsheet" };

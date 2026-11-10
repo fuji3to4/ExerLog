@@ -62,8 +62,28 @@ export async function markTypeDeleted(id: string, deleted: boolean): Promise<voi
   scheduleSync();
 }
 
-export async function loadCustomTypes(): Promise<void> {
-  const rows = await appDb.customRecordTypes.toArray();
+// Bumped by every load; only the load holding the latest generation applies its read.
+let loadGeneration = 0;
+let latestLoad: Promise<void> = Promise.resolve();
+
+/**
+ * Reload the types from Dexie. Safe to call concurrently (sync vs. UI import or
+ * delete): only the most recently started load applies its result, so an older
+ * read never overwrites a newer one. A superseded call resolves once the newest
+ * load has applied, so every caller sees a store at least as new as its call.
+ */
+export function loadCustomTypes(): Promise<void> {
+  const generation = ++loadGeneration;
+  const load = (async () => {
+    const rows = await appDb.customRecordTypes.toArray();
+    if (generation !== loadGeneration) return latestLoad;
+    applyRows(rows);
+  })();
+  latestLoad = load;
+  return load;
+}
+
+function applyRows(rows: readonly CustomRecordType[]): void {
   const next: CustomRecordType[] = [];
   for (const row of rows) {
     const parsed = parseDefinition(row.definition);

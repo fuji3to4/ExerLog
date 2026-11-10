@@ -15,11 +15,20 @@ vi.mock("@/features/modules/data-registry", async (importOriginal) => {
   };
 });
 
-import type { ExerciseLog, MeasurementRecord, Tombstone } from "@/lib/types";
+/** ensureSheetTabs wrapped in a spy; it still runs against the fake Sheets API. */
+vi.mock("./google-sheets", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./google-sheets")>();
+  return { ...actual, ensureSheetTabs: vi.fn(actual.ensureSheetTabs) };
+});
+
+import type { CustomRecord, ExerciseLog, MeasurementRecord, Tombstone } from "@/lib/types";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, importStarterExercises } from "@/features/storage/exercise-catalog.repository";
 import { CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
+import { parseDefinition } from "@/features/modules/custom/definition";
+import { loadCustomTypes } from "@/features/modules/custom/type-store";
+import { ensureSheetTabs } from "./google-sheets";
 import { sheetTabs, tableSyncConfigs } from "./sync-config";
 import { syncAll } from "./sync-engine";
 
@@ -191,6 +200,9 @@ let sheets: FakeSheets;
 
 beforeEach(async () => {
   await Promise.all(appDb.tables.map((table) => table.clear()));
+  // The custom type store is module state; reset it so tabs from an earlier test do not leak.
+  await loadCustomTypes();
+  vi.mocked(ensureSheetTabs).mockClear();
   sheets = new FakeSheets();
   vi.stubGlobal("fetch", vi.fn(sheets.handle));
   // Failure-path tests log expected errors; keep the output clean.
@@ -770,5 +782,151 @@ describe("syncAll: BodyMeasurements and Circumference tabs", () => {
     expect(result.success).toBe(true);
     expect(await appDb[table].toArray()).toEqual([]);
     expect(sheets.tabs.get(tab)).toEqual([headers]);
+  });
+});
+
+const RECORD_TYPES_HEADERS = ["id", "definition", "deleted", "updatedAt"];
+const PROTEIN_HEADERS = ["id", "date", "recordedAt", "note", "updatedAt", "amount"];
+
+function proteinDefinition() {
+  const parsed = parseDefinition({
+    exerlogRecordType: 1,
+    id: "protein",
+    name: { ja: "プロテイン", en: "Protein" },
+    fields: [{ id: "amount", label: "Amount", type: "number", unit: "g" }],
+  });
+  if (!parsed.ok) throw new Error("bad fixture");
+  return parsed.definition;
+}
+
+function makeProteinRecord(overrides: Partial<CustomRecord> = {}): CustomRecord {
+  return {
+    id: "p-1",
+    typeId: "protein",
+    date: "2026-11-01",
+    recordedAt: "2026-11-01T08:00:00+09:00",
+    values: { amount: 20 },
+    note: "",
+    updatedAt: "2026-11-01T08:00:00+09:00",
+    ...overrides,
+  };
+}
+
+function proteinRow(record: CustomRecord): string[] {
+  return [record.id, record.date, record.recordedAt, record.note, record.updatedAt, String(record.values.amount)];
+}
+
+describe("syncAll: custom record types", () => {
+  test("pulls a remote definition and its records in one run", async () => {
+    const definition = proteinDefinition();
+    const record = makeProteinRecord();
+    sheets.tabs.set("RecordTypes", [
+      RECORD_TYPES_HEADERS,
+      ["protein", JSON.stringify(definition), "", "2026-11-01T07:00:00+09:00"],
+    ]);
+    sheets.tabs.set("Custom_protein", [PROTEIN_HEADERS, proteinRow(record)]);
+    const progress: string[] = [];
+
+    const result = await syncAll(TOKEN, (r) => progress.push(r.tableName));
+
+    expect(result.success).toBe(true);
+    expect(await appDb.customRecordTypes.toArray()).toEqual([
+      { id: "protein", definition, deleted: false, updatedAt: "2026-11-01T07:00:00+09:00" },
+    ]);
+    expect(await appDb.customRecords.toArray()).toEqual([record]);
+    expect(sheets.tabs.get("Custom_protein")).toEqual([PROTEIN_HEADERS, proteinRow(record)]);
+    expect(vi.mocked(ensureSheetTabs).mock.calls.some(([, , tabs]) => tabs.includes("Custom_protein"))).toBe(
+      true,
+    );
+    // Tombstones, then file sync, then the definitions, then everything else.
+    expect(progress.slice(0, 3)).toEqual(["Tombstones", "PhotoDrive", "RecordTypes"]);
+    expect(progress.filter((name) => name === "RecordTypes")).toHaveLength(1);
+    expect(progress.filter((name) => name === "Tombstones")).toHaveLength(1);
+    expect(progress).toContain("Custom_protein");
+  });
+
+  test("creates the records tab of a newly pulled type that the sheet does not have yet", async () => {
+    const definition = proteinDefinition();
+    sheets.tabs.set("RecordTypes", [
+      RECORD_TYPES_HEADERS,
+      ["protein", JSON.stringify(definition), "", "2026-11-01T07:00:00+09:00"],
+    ]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(sheets.tabs.get("Custom_protein")).toEqual([PROTEIN_HEADERS]);
+  });
+
+  test("a failure to add new tabs is reported and the other tabs still sync", async () => {
+    const definition = proteinDefinition();
+    sheets.tabs.set("RecordTypes", [
+      RECORD_TYPES_HEADERS,
+      ["protein", JSON.stringify(definition), "", "2026-11-01T07:00:00+09:00"],
+    ]);
+    await appDb.exerciseLogs.put(makeLog());
+    // The first call (at prepare time) succeeds; the one after the reload fails.
+    vi.mocked(ensureSheetTabs).mockImplementationOnce(async (...args) => {
+      const actual = await vi.importActual<typeof import("./google-sheets")>("./google-sheets");
+      return actual.ensureSheetTabs(...args);
+    });
+    vi.mocked(ensureSheetTabs).mockImplementationOnce(async () => false);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(false);
+    expect(result.results).toContainEqual({
+      tableName: "spreadsheet",
+      rowCount: 0,
+      error: "Failed to ensure required sheet tabs",
+    });
+    expect(result.results.find((r) => r.tableName === "ExerciseLogs")).toEqual({
+      tableName: "ExerciseLogs",
+      rowCount: 1,
+    });
+    expect(sheets.tabs.get("ExerciseLogs")).toHaveLength(2);
+    // The tab that could not be added is skipped, not reported as a failed read.
+    expect(result.results.map((r) => r.tableName)).not.toContain("Custom_protein");
+    expect(await appDb.customRecordTypes.count()).toBe(1);
+  });
+
+  test("does not ensure tabs again when no new tab appeared", async () => {
+    await syncAll(TOKEN);
+
+    expect(ensureSheetTabs).toHaveBeenCalledTimes(1);
+  });
+
+  test("skips a records tab whose definition is unknown", async () => {
+    const mealRows = [PROTEIN_HEADERS, ["m-1", "2026-11-01", "2026-11-01T08:00:00+09:00", "", "2026-11-01T08:00:00+09:00", "1"]];
+    sheets.tabs.set("Custom_meal", mealRows);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(sheets.tabs.get("Custom_meal")).toEqual(mealRows);
+    expect(sheets.calls.some((c) => decodeURIComponent(c.url).includes("Custom_meal"))).toBe(false);
+    expect(result.results.map((r) => r.tableName)).not.toContain("Custom_meal");
+    expect(await appDb.customRecords.count()).toBe(0);
+  });
+
+  test("keeps syncing a deleted type", async () => {
+    const definition = proteinDefinition();
+    const record = makeProteinRecord();
+    await appDb.customRecordTypes.put({
+      id: "protein",
+      definition,
+      deleted: true,
+      updatedAt: "2026-11-02T07:00:00+09:00",
+    });
+    await appDb.customRecords.put(record);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(sheets.tabs.get("Custom_protein")).toEqual([PROTEIN_HEADERS, proteinRow(record)]);
+    expect(sheets.tabs.get("RecordTypes")).toEqual([
+      RECORD_TYPES_HEADERS,
+      ["protein", JSON.stringify(definition), "1", "2026-11-02T07:00:00+09:00"],
+    ]);
   });
 });
