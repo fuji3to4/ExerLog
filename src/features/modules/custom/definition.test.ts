@@ -68,6 +68,13 @@ describe("parseDefinitionText", () => {
     expect(parseDefinitionText(text).ok).toBe(true);
   });
 
+  it("prefers a fenced block when the prose around it has braces", () => {
+    const text = `Here it is {as requested}:\n\`\`\`json\n${JSON.stringify(SAMPLE, null, 2)}\n\`\`\`\nUse {id} to refer to it.`;
+    expect(parseDefinitionText(text).ok).toBe(true);
+    const bare = `Sure {ok}:\n\`\`\`\n${JSON.stringify(SAMPLE)}\n\`\`\``;
+    expect(parseDefinitionText(bare).ok).toBe(true);
+  });
+
   it("returns not_json and not_object", () => {
     expect(parseDefinitionText("hello")).toEqual({ ok: false, errors: [{ code: "not_json", path: "" }] });
     expect(parseDefinitionText("[1]")).toEqual({ ok: false, errors: [{ code: "not_object", path: "" }] });

@@ -542,6 +542,7 @@
   custom_import_field_removed: "非表示（データは残ります）",
   custom_import_fields_heading: "項目",
   custom_import_read_failed: "ファイルを読めませんでした。",
+  custom_save_failed: "保存できませんでした。もう一度お試しください",
   custom_def_value_none: "（なし）",
   custom_menu_aria: "「{name}」の操作",
   custom_export: "定義を書き出す",

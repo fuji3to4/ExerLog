@@ -90,6 +90,16 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
     useSortable({ id: module.data.id });
   const label = moduleLabel(module, t, language);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
+
+  async function deleteType() {
+    setDeleteFailed(false);
+    try {
+      await markTypeDeleted(module.data.id.slice("custom:".length), true);
+    } catch {
+      setDeleteFailed(true);
+    }
+  }
   const iconButton =
     "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent";
 
@@ -161,13 +171,15 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
             <Button variant="secondary" onClick={() => setConfirmingDelete(false)}>
               {t("settings_delete_cancel_btn")}
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => void markTypeDeleted(module.data.id.slice("custom:".length), true)}
-            >
+            <Button variant="destructive" onClick={() => void deleteType()}>
               {t("settings_delete_confirm_btn")}
             </Button>
           </div>
+          {deleteFailed ? (
+            <p role="alert" className="text-sm text-[var(--danger-text)]">
+              {t("custom_save_failed")}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </li>

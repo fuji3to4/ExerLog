@@ -69,20 +69,34 @@ export function resolveText(text: LocalizedText | undefined, language: string): 
   return Object.values(text).find((v) => typeof v === "string" && v !== "") ?? "";
 }
 
+/** Candidate JSON texts inside an AI reply: a fenced block first, then the outermost brace span. */
+function embeddedJsonCandidates(text: string): string[] {
+  const candidates: string[] = [];
+  const fence = /```(?:json)?[^\S\n]*\n([\s\S]*?)```/i.exec(text);
+  if (fence) candidates.push(fence[1]);
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start >= 0 && end > start) candidates.push(text.slice(start, end + 1));
+  return candidates;
+}
+
 export function parseDefinitionText(text: string): ParseResult {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
     // AI replies often wrap the JSON in prose or a code fence.
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start < 0 || end <= start) return { ok: false, errors: [{ code: "not_json", path: "" }] };
-    try {
-      parsed = JSON.parse(text.slice(start, end + 1));
-    } catch {
-      return { ok: false, errors: [{ code: "not_json", path: "" }] };
+    let found = false;
+    for (const candidate of embeddedJsonCandidates(text)) {
+      try {
+        parsed = JSON.parse(candidate);
+        found = true;
+        break;
+      } catch {
+        // Try the next candidate.
+      }
     }
+    if (!found) return { ok: false, errors: [{ code: "not_json", path: "" }] };
   }
   return parseDefinition(parsed);
 }

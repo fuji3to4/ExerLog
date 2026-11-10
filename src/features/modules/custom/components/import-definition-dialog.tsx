@@ -38,12 +38,23 @@ function ImportBody({ onDone }: { onDone(): void }) {
       setChecked({ errors: parsed.errors });
       return;
     }
-    const planned = await planImport(parsed.definition);
-    setChecked(planned.ok ? { plan: planned.plan } : { errors: planned.errors });
+    setMessage(null);
+    try {
+      const planned = await planImport(parsed.definition);
+      setChecked(planned.ok ? { plan: planned.plan } : { errors: planned.errors });
+    } catch {
+      setMessage(t("custom_save_failed"));
+    }
   }
 
   async function save(plan: ImportPlan) {
-    await saveImportedDefinition(plan.definition);
+    setMessage(null);
+    try {
+      await saveImportedDefinition(plan.definition);
+    } catch {
+      setMessage(t("custom_save_failed"));
+      return;
+    }
     onDone();
   }
 
@@ -78,7 +89,12 @@ function ImportBody({ onDone }: { onDone(): void }) {
             type="file"
             accept="application/json,.json"
             className="mt-1 block w-full text-sm"
-            onChange={(event) => void chooseFile(event.target.files?.[0])}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              // Reset so picking the same file again (after fixing it) fires onChange.
+              event.target.value = "";
+              void chooseFile(file);
+            }}
           />
         </label>
         <Textarea

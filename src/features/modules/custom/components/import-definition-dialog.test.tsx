@@ -65,4 +65,38 @@ describe("ImportDefinitionDialog", () => {
     expect(await screen.findByText(ja.custom_def_error_type_changed.replace("{path}", "fields.amount"))).toBeTruthy();
     expect(screen.queryByRole("button", { name: "読み込む" })).toBeNull();
   });
+
+  it("clears the file input so the same file can be picked again", async () => {
+    renderWithLanguage(<ImportDefinitionDialog open onOpenChange={() => {}} />, { initialLanguage: "ja" });
+    const input = screen.getByLabelText("ファイルを選ぶ") as HTMLInputElement;
+    // jsdom cannot set a file input's value; track what the handler writes instead.
+    let current = "protein.json";
+    const setValue = vi.fn((next: string) => {
+      current = next;
+    });
+    Object.defineProperty(input, "value", { configurable: true, get: () => current, set: setValue });
+    const json = JSON.stringify(SAMPLE_DEFINITION);
+    const file = new File([json], "protein.json", { type: "application/json" });
+    // jsdom's File has no text().
+    Object.assign(file, { text: () => Promise.resolve(json) });
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toContain("protein"));
+    expect(setValue).toHaveBeenCalledWith("");
+  });
+
+  it("shows a message when saving fails", async () => {
+    openAndPaste(JSON.stringify(SAMPLE_DEFINITION));
+    expect(await screen.findByText("新規")).toBeTruthy();
+    const put = vi.spyOn(appDb.customRecordTypes, "put").mockRejectedValueOnce(new Error("quota"));
+    fireEvent.click(screen.getByRole("button", { name: "読み込む" }));
+    expect(await screen.findByText(ja.custom_save_failed)).toBeTruthy();
+    put.mockRestore();
+  });
+
+  it("shows a message when checking fails", async () => {
+    const get = vi.spyOn(appDb.customRecordTypes, "get").mockRejectedValueOnce(new Error("closed"));
+    openAndPaste(JSON.stringify(SAMPLE_DEFINITION));
+    expect(await screen.findByText(ja.custom_save_failed)).toBeTruthy();
+    get.mockRestore();
+  });
 });

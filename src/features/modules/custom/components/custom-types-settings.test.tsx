@@ -53,4 +53,17 @@ describe("CustomTypesSettings", () => {
     renderWithLanguage(<CustomTypesSettings />, { initialLanguage: "ja" });
     expect(screen.queryByText("削除した定義（記録あり）")).toBeNull();
   });
+
+  it("shows a message when restoring fails", async () => {
+    await saveImportedDefinition(SAMPLE_DEFINITION);
+    await markTypeDeleted("protein", true);
+    renderWithLanguage(<CustomTypesSettings />, { initialLanguage: "ja" });
+
+    fireEvent.click(await screen.findByText("削除した定義（記録あり）"));
+    const put = vi.spyOn(appDb.customRecordTypes, "put").mockRejectedValueOnce(new Error("quota"));
+    fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
+
+    expect(await screen.findByText("保存できませんでした。もう一度お試しください")).toBeTruthy();
+    put.mockRestore();
+  });
 });

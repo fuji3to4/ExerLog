@@ -542,6 +542,7 @@ export const en = {
   custom_import_field_removed: "Hidden (data is kept)",
   custom_import_fields_heading: "Fields",
   custom_import_read_failed: "Could not read the file.",
+  custom_save_failed: "Couldn't save. Please try again.",
   custom_def_value_none: "(none)",
   custom_menu_aria: "Actions for {name}",
   custom_export: "Export definition",

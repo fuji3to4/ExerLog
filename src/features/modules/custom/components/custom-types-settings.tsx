@@ -21,6 +21,7 @@ export function CustomTypesSettings() {
   const [importing, setImporting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [fallbackGuide, setFallbackGuide] = useState<string | null>(null);
+  const [saveFailed, setSaveFailed] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,6 +43,15 @@ export function CustomTypesSettings() {
     setCopied(true);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setCopied(false), COPIED_MS);
+  }
+
+  async function restore(id: string) {
+    setSaveFailed(false);
+    try {
+      await markTypeDeleted(id, false);
+    } catch {
+      setSaveFailed(true);
+    }
   }
 
   return (
@@ -76,12 +86,17 @@ export function CustomTypesSettings() {
                 <span className="min-w-0 flex-1 text-sm">
                   {type.definition.icon} {resolveText(type.definition.name, language)}
                 </span>
-                <Button variant="secondary" onClick={() => void markTypeDeleted(type.id, false)}>
+                <Button variant="secondary" onClick={() => void restore(type.id)}>
                   {t("custom_restore")}
                 </Button>
               </li>
             ))}
           </ul>
+          {saveFailed ? (
+            <p role="alert" className="mt-2 text-sm text-[var(--danger-text)]">
+              {t("custom_save_failed")}
+            </p>
+          ) : null}
         </details>
       ) : null}
 
