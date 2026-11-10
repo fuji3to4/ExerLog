@@ -72,7 +72,7 @@ export function resolveText(text: LocalizedText | undefined, language: string): 
 /** Candidate JSON texts inside an AI reply: a fenced block first, then the outermost brace span. */
 function embeddedJsonCandidates(text: string): string[] {
   const candidates: string[] = [];
-  const fence = /```(?:json)?[^\S\n]*\n([\s\S]*?)```/i.exec(text);
+  const fence = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
   if (fence) candidates.push(fence[1]);
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");

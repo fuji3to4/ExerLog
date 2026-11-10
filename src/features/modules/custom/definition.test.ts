@@ -75,6 +75,11 @@ describe("parseDefinitionText", () => {
     expect(parseDefinitionText(bare).ok).toBe(true);
   });
 
+  it("reads a fenced definition written on one line despite stray braces after it", () => {
+    const text = `はい \`\`\`json ${JSON.stringify(SAMPLE)} \`\`\` 使って {笑}`;
+    expect(parseDefinitionText(text).ok).toBe(true);
+  });
+
   it("returns not_json and not_object", () => {
     expect(parseDefinitionText("hello")).toEqual({ ok: false, errors: [{ code: "not_json", path: "" }] });
     expect(parseDefinitionText("[1]")).toEqual({ ok: false, errors: [{ code: "not_object", path: "" }] });
