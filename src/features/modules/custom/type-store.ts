@@ -2,6 +2,7 @@ import { appDb } from "@/features/storage/app-db";
 import { scheduleSync } from "@/features/sync/auto-sync";
 import { localIsoNow } from "@/lib/date/local-iso";
 import type { CustomRecordType } from "@/lib/types";
+import { customTabName, recordTypesSyncConfig } from "./data";
 import {
   diffDefinitions,
   parseDefinition,
@@ -86,6 +87,53 @@ export async function markTypeDeleted(id: string, deleted: boolean): Promise<voi
   await appDb.customRecordTypes.put({ ...row, deleted, updatedAt: localIsoNow() });
   await loadCustomTypes();
   scheduleSync();
+}
+
+export function countRecordsOfType(id: string): Promise<number> {
+  return appDb.customRecords.where("typeId").equals(id).count();
+}
+
+/**
+ * Permanently delete a soft-deleted type and its records, with tombstones so
+ * the deletion reaches the sheet and other devices. A type that is missing or
+ * not deleted is left alone.
+ */
+export async function purgeType(id: string): Promise<void> {
+  const purged = await appDb.transaction(
+    "rw",
+    appDb.customRecords,
+    appDb.customRecordTypes,
+    appDb.tombstones,
+    async () => {
+      const row = await appDb.customRecordTypes.get(id);
+      if (!row?.deleted) return false;
+      const own = appDb.customRecords.where("typeId").equals(id);
+      const recordIds = await own.primaryKeys();
+      await own.delete();
+      await appDb.customRecordTypes.delete(id);
+      const deletedAt = localIsoNow();
+      const tombstone = (table: string, recordId: string) => ({ id: `${table}:${recordId}`, table, recordId, deletedAt });
+      await appDb.tombstones.bulkPut([
+        ...recordIds.map((recordId) => tombstone(customTabName(id), recordId)),
+        tombstone(recordTypesSyncConfig.tabName, id),
+      ]);
+      return true;
+    },
+  );
+  if (!purged) return;
+  await loadCustomTypes();
+  scheduleSync();
+}
+
+/**
+ * Delete local records whose type has no row at all (purged on another device).
+ * No tombstones: the device that purged the type recorded them. Returns the count.
+ */
+export function deleteOrphanRecords(): Promise<number> {
+  return appDb.transaction("rw", appDb.customRecords, appDb.customRecordTypes, async () => {
+    const known = new Set(await appDb.customRecordTypes.toCollection().primaryKeys());
+    return appDb.customRecords.filter((r) => !known.has(r.typeId)).delete();
+  });
 }
 
 // Bumped by every load; only the load holding the latest generation applies its read.

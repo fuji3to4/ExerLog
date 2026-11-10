@@ -1,7 +1,7 @@
 import type { Tombstone } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
-import { recordTypesSyncConfig } from "@/features/modules/custom/data";
-import { loadCustomTypes } from "@/features/modules/custom/type-store";
+import { customTabName, recordTypesSyncConfig } from "@/features/modules/custom/data";
+import { deleteOrphanRecords, loadCustomTypes } from "@/features/modules/custom/type-store";
 import { recordModuleData } from "@/features/modules/data-registry";
 import {
   createSpreadsheet,
@@ -103,9 +103,11 @@ async function doSyncAll(
   const recordTypesConfig = initialConfigs.find((c) => c.tabName === recordTypesTab)!;
   await run(recordTypesConfig, deletedIdsFor(recordTypesConfig));
 
-  // 4. Rebuild the custom types (and with them the module registry and tab list).
+  // 4. Rebuild the custom types (and with them the module registry and tab list),
+  // then drop the local records of types purged on another device.
   try {
     await loadCustomTypes();
+    await deleteOrphanRecords();
   } catch (err) {
     report({
       tableName: recordTypesTab,
@@ -132,11 +134,46 @@ async function doSyncAll(
     await run(config, deletedIdsFor(config));
   }
 
+  // 7. Tabs of purged types: the tab stays, but its tombstoned rows go.
+  const configured = new Set(tableSyncConfigs().map((c) => c.tabName));
+  const purgedTabs = groupDeletedIds(await appDb.tombstones.toArray());
+  for (const [tabName, deletedIds] of purgedTabs) {
+    if (!tabName.startsWith(customTabName("")) || configured.has(tabName)) continue;
+    const result = await removeTombstonedRows(accessToken, spreadsheetId, tabName, deletedIds);
+    if (result) report(result);
+  }
+
   return {
     success: !results.some((r) => r.error),
     results,
     spreadsheetId,
   };
+}
+
+/**
+ * Rewrite a tab that no longer has a sync config without its tombstoned rows.
+ * Local data is not touched. A tab that cannot be read (e.g. it does not
+ * exist) is skipped; only a failed write is returned as a result.
+ */
+async function removeTombstonedRows(
+  accessToken: string,
+  spreadsheetId: string,
+  tabName: string,
+  deletedIds: Map<string, string>,
+): Promise<SyncTableResult | null> {
+  let rows: string[][];
+  try {
+    rows = await readAllRows(accessToken, spreadsheetId, tabName);
+  } catch {
+    return null;
+  }
+  if (rows.length === 0) return null;
+  const idIndex = rows[0].indexOf("id");
+  if (idIndex < 0) return null;
+  const kept = rows.slice(1).filter((row) => !deletedIds.has(row[idIndex] ?? ""));
+  if (kept.length === rows.length - 1) return null;
+  const ok = await replaceAllRows(accessToken, spreadsheetId, tabName, [rows[0], ...kept]);
+  return ok ? null : { tableName: tabName, rowCount: 0, error: `Failed to write ${tabName}` };
 }
 
 /** Returns the spreadsheet id, or a failed result describing what went wrong. */

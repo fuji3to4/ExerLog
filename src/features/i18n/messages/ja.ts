@@ -550,6 +550,8 @@
   custom_delete_confirm: "記録は消えません。同じ定義を読み込むと元に戻ります",
   custom_deleted_heading: "削除した定義（記録あり）",
   custom_restore: "元に戻す",
+  custom_purge: "完全に削除",
+  custom_purge_confirm: "{name}の定義と記録{count}件を完全に削除します。元に戻せません",
   custom_copy_guide: "AI に渡す説明をコピー",
   custom_copied: "コピーしました",
   custom_copy_guide_fallback: "コピーできませんでした。下の説明を選択して、手でコピーしてください。",

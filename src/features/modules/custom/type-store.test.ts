@@ -7,10 +7,13 @@ import { scheduleSync } from "@/features/sync/auto-sync";
 import type { CustomRecord } from "@/lib/types";
 import { parseDefinition, type CustomRecordDefinition } from "./definition";
 import {
+  countRecordsOfType,
+  deleteOrphanRecords,
   getCustomTypes,
   loadCustomTypes,
   markTypeDeleted,
   planImport,
+  purgeType,
   saveImportedDefinition,
   subscribeCustomTypes,
 } from "./type-store";
@@ -189,5 +192,60 @@ describe("custom type store", () => {
     spy.mockRestore();
 
     expect(getCustomTypes().map((t) => t.id)).toEqual(["protein"]);
+  });
+
+  it("purges a deleted type with its records, recording tombstones for both", async () => {
+    await saveImportedDefinition(def());
+    await appDb.customRecords.bulkAdd([
+      record("a", { amount: 1 }),
+      record("b", { amount: 2 }),
+      { ...record("o", { amount: 3 }), typeId: "other" },
+    ]);
+    await markTypeDeleted("protein", true);
+    expect(await countRecordsOfType("protein")).toBe(2);
+    vi.mocked(scheduleSync).mockClear();
+
+    await purgeType("protein");
+
+    expect(await appDb.customRecordTypes.get("protein")).toBeUndefined();
+    expect((await appDb.customRecords.toArray()).map((r) => r.id)).toEqual(["o"]);
+    expect((await appDb.tombstones.toArray()).map((t) => t.id).sort()).toEqual([
+      "Custom_protein:a",
+      "Custom_protein:b",
+      "RecordTypes:protein",
+    ]);
+    expect(getCustomTypes()).toHaveLength(0);
+    expect(scheduleSync).toHaveBeenCalled();
+    expect(await countRecordsOfType("protein")).toBe(0);
+  });
+
+  it("does not purge a type that is not deleted", async () => {
+    await saveImportedDefinition(def());
+    await appDb.customRecords.put(record("a", { amount: 1 }));
+
+    await purgeType("protein");
+    await purgeType("missing");
+
+    expect(await appDb.customRecordTypes.get("protein")).toBeDefined();
+    expect(await appDb.customRecords.count()).toBe(1);
+    expect(await appDb.tombstones.count()).toBe(0);
+  });
+
+  it("deletes records whose type has no row, keeping those of an invalid row", async () => {
+    await appDb.customRecordTypes.put({
+      id: "broken",
+      definition: { nope: true } as unknown as CustomRecordDefinition,
+      deleted: false,
+      updatedAt: "2026-01-01T00:00:00+09:00",
+    });
+    await appDb.customRecords.bulkAdd([
+      record("a", { amount: 1 }),
+      { ...record("k", { amount: 2 }), typeId: "broken" },
+    ]);
+
+    expect(await deleteOrphanRecords()).toBe(1);
+
+    expect((await appDb.customRecords.toArray()).map((r) => r.id)).toEqual(["k"]);
+    expect(await appDb.tombstones.count()).toBe(0);
   });
 });

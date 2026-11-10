@@ -9,12 +9,12 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { useDeletedCustomTypes } from "../../use-module-settings";
 import { buildAiGuide } from "../ai-guide";
 import { resolveText } from "../definition";
-import { markTypeDeleted } from "../type-store";
+import { countRecordsOfType, markTypeDeleted, purgeType } from "../type-store";
 import { ImportDefinitionDialog } from "./import-definition-dialog";
 
 const COPIED_MS = 2000;
 
-/** Settings block under the module list: import definitions, restore deleted ones, copy the AI guide. */
+/** Settings block under the module list: import definitions, restore or permanently delete deleted ones, copy the AI guide. */
 export function CustomTypesSettings() {
   const { t, language } = useTranslation();
   const deleted = useDeletedCustomTypes();
@@ -22,6 +22,8 @@ export function CustomTypesSettings() {
   const [copied, setCopied] = useState(false);
   const [fallbackGuide, setFallbackGuide] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
+  // The row whose permanent delete is being confirmed, with its record count.
+  const [purging, setPurging] = useState<{ id: string; count: number } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -54,6 +56,25 @@ export function CustomTypesSettings() {
     }
   }
 
+  async function askPurge(id: string) {
+    setSaveFailed(false);
+    try {
+      setPurging({ id, count: await countRecordsOfType(id) });
+    } catch {
+      setSaveFailed(true);
+    }
+  }
+
+  async function purge(id: string) {
+    setSaveFailed(false);
+    try {
+      await purgeType(id);
+      setPurging(null);
+    } catch {
+      setSaveFailed(true);
+    }
+  }
+
   return (
     <div className="mt-4 space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -81,16 +102,37 @@ export function CustomTypesSettings() {
             {t("custom_deleted_heading")}
           </summary>
           <ul className="mt-2 space-y-2">
-            {deleted.map((type) => (
-              <li key={type.id} className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 text-sm">
-                  {type.definition.icon} {resolveText(type.definition.name, language)}
-                </span>
-                <Button variant="secondary" onClick={() => void restore(type.id)}>
-                  {t("custom_restore")}
-                </Button>
-              </li>
-            ))}
+            {deleted.map((type) => {
+              const name = resolveText(type.definition.name, language);
+              return (
+                <li key={type.id} className="flex flex-wrap items-center gap-2">
+                  <span className="min-w-0 flex-1 text-sm">
+                    {type.definition.icon} {name}
+                  </span>
+                  <Button variant="secondary" onClick={() => void restore(type.id)}>
+                    {t("custom_restore")}
+                  </Button>
+                  <Button variant="destructive" onClick={() => void askPurge(type.id)}>
+                    {t("custom_purge")}
+                  </Button>
+                  {purging?.id === type.id ? (
+                    <div className="bulk-delete-confirm w-full">
+                      <p className="bulk-delete-confirm__message">
+                        {t("custom_purge_confirm", { name, count: purging.count })}
+                      </p>
+                      <div className="bulk-delete-confirm__actions">
+                        <Button variant="secondary" onClick={() => setPurging(null)}>
+                          {t("settings_delete_cancel_btn")}
+                        </Button>
+                        <Button variant="destructive" onClick={() => void purge(type.id)}>
+                          {t("settings_delete_confirm_btn")}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
           {saveFailed ? (
             <p role="alert" className="mt-2 text-sm text-[var(--danger-text)]">

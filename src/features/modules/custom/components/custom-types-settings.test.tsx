@@ -6,12 +6,13 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 import { appDb } from "@/features/storage/app-db";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { buildAiGuide, SAMPLE_DEFINITION } from "../ai-guide";
+import { resolveText } from "../definition";
 import { loadCustomTypes, markTypeDeleted, saveImportedDefinition } from "../type-store";
 import { CustomTypesSettings } from "./custom-types-settings";
 
 describe("CustomTypesSettings", () => {
   beforeEach(async () => {
-    await appDb.customRecordTypes.clear();
+    await Promise.all([appDb.customRecordTypes.clear(), appDb.customRecords.clear(), appDb.tombstones.clear()]);
     await loadCustomTypes();
     vi.unstubAllGlobals();
   });
@@ -65,5 +66,53 @@ describe("CustomTypesSettings", () => {
 
     expect(await screen.findByText("保存できませんでした。もう一度お試しください")).toBeTruthy();
     put.mockRestore();
+  });
+
+  async function deletedProteinWithRecords() {
+    await saveImportedDefinition(SAMPLE_DEFINITION);
+    await appDb.customRecords.bulkAdd(
+      ["a", "b"].map((id) => ({
+        id,
+        typeId: "protein",
+        date: "2026-11-01",
+        recordedAt: "2026-11-01T08:00:00+09:00",
+        values: {},
+        note: "",
+        updatedAt: "2026-11-01T08:00:00+09:00",
+      })),
+    );
+    await markTypeDeleted("protein", true);
+  }
+
+  it("permanently deletes a deleted definition and its records after confirming", async () => {
+    await deletedProteinWithRecords();
+    renderWithLanguage(<CustomTypesSettings />, { initialLanguage: "ja" });
+
+    fireEvent.click(await screen.findByText("削除した定義（記録あり）"));
+    fireEvent.click(screen.getByRole("button", { name: "完全に削除" }));
+
+    expect(
+      await screen.findByText(`${resolveText(SAMPLE_DEFINITION.name, "ja")}の定義と記録2件を完全に削除します。元に戻せません`),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "削除する" }));
+
+    await waitFor(() => expect(screen.queryByText("削除した定義（記録あり）")).toBeNull());
+    expect(await appDb.customRecordTypes.get("protein")).toBeUndefined();
+    expect(await appDb.customRecords.count()).toBe(0);
+  });
+
+  it("keeps everything when the permanent delete is cancelled", async () => {
+    await deletedProteinWithRecords();
+    renderWithLanguage(<CustomTypesSettings />, { initialLanguage: "ja" });
+
+    fireEvent.click(await screen.findByText("削除した定義（記録あり）"));
+    fireEvent.click(screen.getByRole("button", { name: "完全に削除" }));
+    await screen.findByText(/完全に削除します/);
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+
+    expect(screen.queryByText(/完全に削除します/)).toBeNull();
+    expect(screen.getByRole("button", { name: "元に戻す" })).toBeTruthy();
+    expect(await appDb.customRecordTypes.get("protein")).toBeDefined();
+    expect(await appDb.customRecords.count()).toBe(2);
   });
 });

@@ -550,6 +550,8 @@ export const en = {
   custom_delete_confirm: "Records are not deleted. Importing the same definition brings it back",
   custom_deleted_heading: "Deleted definitions (records kept)",
   custom_restore: "Restore",
+  custom_purge: "Delete permanently",
+  custom_purge_confirm: "Permanently delete the {name} definition and its {count} records. This cannot be undone.",
   custom_copy_guide: "Copy guide for AI",
   custom_copied: "Copied",
   custom_copy_guide_fallback: "Could not copy. Select the guide below and copy it by hand.",

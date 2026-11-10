@@ -75,7 +75,11 @@ class FakeSheets {
       const range = decodeURIComponent(isClear ? rawRange.slice(0, -":clear".length) : rawRange);
       const tab = range.split("!")[0];
       if (method === "GET") {
-        const rows = this.tabs.get(tab) ?? [];
+        // The real API rejects a range on a tab that does not exist.
+        if (!this.tabs.has(tab)) {
+          return { ok: false, status: 400, json: async () => ({}), text: async () => "Unable to parse range" };
+        }
+        const rows = this.tabs.get(tab)!;
         return json(rows.length ? { values: rows } : {});
       }
       if (this.failWritesFor.has(tab)) {
@@ -928,5 +932,65 @@ describe("syncAll: custom record types", () => {
       RECORD_TYPES_HEADERS,
       ["protein", JSON.stringify(definition), "1", "2026-11-02T07:00:00+09:00"],
     ]);
+  });
+
+  test("removes a purged type's tombstoned rows from its tab and keeps the tab", async () => {
+    const definition = proteinDefinition();
+    const gone = makeProteinRecord();
+    const other = makeProteinRecord({ id: "p-2" });
+    sheets.tabs.set("RecordTypes", [
+      RECORD_TYPES_HEADERS,
+      ["protein", JSON.stringify(definition), "1", "2026-11-02T07:00:00+09:00"],
+    ]);
+    sheets.tabs.set("Custom_protein", [PROTEIN_HEADERS, proteinRow(gone), proteinRow(other)]);
+    await appDb.tombstones.bulkPut([
+      { id: "RecordTypes:protein", table: "RecordTypes", recordId: "protein", deletedAt: "2026-11-03T07:00:00+09:00" },
+      { id: "Custom_protein:p-1", table: "Custom_protein", recordId: "p-1", deletedAt: "2026-11-03T07:00:00+09:00" },
+    ]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(sheets.tabs.get("RecordTypes")).toEqual([RECORD_TYPES_HEADERS]);
+    expect(sheets.tabs.get("Custom_protein")).toEqual([PROTEIN_HEADERS, proteinRow(other)]);
+    expect(await appDb.customRecords.count()).toBe(0);
+  });
+
+  test("a missing tab of a purged type is not an error", async () => {
+    await appDb.tombstones.put({
+      id: "Custom_protein:p-1",
+      table: "Custom_protein",
+      recordId: "p-1",
+      deletedAt: "2026-11-03T07:00:00+09:00",
+    });
+    expect(sheets.tabs.has("Custom_protein")).toBe(false);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(result.results.map((r) => r.tableName)).not.toContain("Custom_protein");
+    expect(sheets.tabs.has("Custom_protein")).toBe(false);
+  });
+
+  test("a remote tombstone for a type removes its local definition and records in one run", async () => {
+    const definition = proteinDefinition();
+    await appDb.customRecordTypes.put({
+      id: "protein",
+      definition,
+      deleted: true,
+      updatedAt: "2026-11-02T07:00:00+09:00",
+    });
+    await appDb.customRecords.bulkPut([makeProteinRecord(), makeProteinRecord({ id: "p-2" })]);
+    await loadCustomTypes();
+    sheets.tabs.set("Tombstones", [
+      ["id", "table", "recordId", "deletedAt"],
+      ["RecordTypes:protein", "RecordTypes", "protein", "2026-11-03T07:00:00+09:00"],
+    ]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(await appDb.customRecordTypes.count()).toBe(0);
+    expect(await appDb.customRecords.count()).toBe(0);
   });
 });
