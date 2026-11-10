@@ -10,6 +10,7 @@ import { useDeletedCustomTypes } from "../../use-module-settings";
 import { buildAiGuide } from "../ai-guide";
 import { resolveText } from "../definition";
 import { countRecordsOfType, markTypeDeleted, purgeType } from "../type-store";
+import { CustomTypesHelpDialog } from "./custom-types-help-dialog";
 import { ImportDefinitionDialog } from "./import-definition-dialog";
 
 const COPIED_MS = 2000;
@@ -19,6 +20,7 @@ export function CustomTypesSettings() {
   const { t, language } = useTranslation();
   const deleted = useDeletedCustomTypes();
   const [importing, setImporting] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [fallbackGuide, setFallbackGuide] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
@@ -82,6 +84,14 @@ export function CustomTypesSettings() {
         <Button variant="secondary" onClick={() => void copyGuide()}>
           {t("custom_copy_guide")}
         </Button>
+        <button
+          type="button"
+          aria-label={t("custom_help_open")}
+          className="flex size-8 items-center justify-center rounded-full border border-input text-sm font-medium text-muted-foreground hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={() => setHelpOpen(true)}
+        >
+          ?
+        </button>
         {copied ? (
           <span role="status" className="text-sm text-muted-foreground">
             {t("custom_copied")}
@@ -143,6 +153,7 @@ export function CustomTypesSettings() {
       ) : null}
 
       <ImportDefinitionDialog open={importing} onOpenChange={setImporting} />
+      <CustomTypesHelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }
