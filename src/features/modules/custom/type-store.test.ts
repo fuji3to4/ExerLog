@@ -231,21 +231,54 @@ describe("custom type store", () => {
     expect(await appDb.tombstones.count()).toBe(0);
   });
 
-  it("deletes records whose type has no row, keeping those of an invalid row", async () => {
+  it("deletes orphan records not newer than their type's tombstone, keeping the rest", async () => {
     await appDb.customRecordTypes.put({
       id: "broken",
       definition: { nope: true } as unknown as CustomRecordDefinition,
       deleted: false,
       updatedAt: "2026-01-01T00:00:00+09:00",
     });
+    await appDb.tombstones.bulkPut(
+      ["protein", "broken"].map((id) => ({
+        id: `RecordTypes:${id}`,
+        table: "RecordTypes",
+        recordId: id,
+        deletedAt: "2026-10-21T00:00:00+09:00",
+      })),
+    );
+    const at = (updatedAt: string) => ({ updatedAt });
     await appDb.customRecords.bulkAdd([
-      record("a", { amount: 1 }),
-      { ...record("k", { amount: 2 }), typeId: "broken" },
+      { ...record("old", { amount: 1 }), ...at("2026-10-20T08:00:00+09:00") },
+      { ...record("same", { amount: 1 }), ...at("2026-10-21T00:00:00+09:00") },
+      { ...record("new", { amount: 1 }), ...at("2026-10-22T08:00:00+09:00") },
+      { ...record("k", { amount: 2 }), typeId: "broken", ...at("2026-10-20T08:00:00+09:00") },
+      { ...record("u", { amount: 2 }), typeId: "untombstoned", ...at("2026-10-20T08:00:00+09:00") },
     ]);
 
-    expect(await deleteOrphanRecords()).toBe(1);
+    expect(await deleteOrphanRecords()).toBe(2);
 
-    expect((await appDb.customRecords.toArray()).map((r) => r.id)).toEqual(["k"]);
-    expect(await appDb.tombstones.count()).toBe(0);
+    expect((await appDb.customRecords.toArray()).map((r) => r.id).sort()).toEqual(["k", "new", "u"]);
+    expect(await appDb.tombstones.count()).toBe(2);
+  });
+
+  it("dates a re-import or restore after a known type tombstone even when the clock is behind", async () => {
+    await appDb.tombstones.put({
+      id: "RecordTypes:protein",
+      table: "RecordTypes",
+      recordId: "protein",
+      deletedAt: "2099-01-01T00:00:00+09:00",
+    });
+    const format = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/;
+
+    await saveImportedDefinition(def());
+    const saved = (await appDb.customRecordTypes.get("protein"))!.updatedAt;
+    expect(saved).toMatch(format);
+    expect(Date.parse(saved)).toBeGreaterThan(Date.parse("2099-01-01T00:00:00+09:00"));
+
+    await markTypeDeleted("protein", true);
+    await markTypeDeleted("protein", false);
+    const restored = (await appDb.customRecordTypes.get("protein"))!.updatedAt;
+    expect(restored).toMatch(format);
+    expect(Date.parse(restored)).toBeGreaterThan(Date.parse("2099-01-01T00:00:00+09:00"));
   });
 });

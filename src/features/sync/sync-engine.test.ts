@@ -27,7 +27,13 @@ import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, importStarterExercises } from "@/features/storage/exercise-catalog.repository";
 import { CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
 import { parseDefinition } from "@/features/modules/custom/definition";
-import { loadCustomTypes } from "@/features/modules/custom/type-store";
+import { addCustomRecord } from "@/features/modules/custom/data";
+import {
+  loadCustomTypes,
+  markTypeDeleted,
+  purgeType,
+  saveImportedDefinition,
+} from "@/features/modules/custom/type-store";
 import { ensureSheetTabs } from "./google-sheets";
 import { sheetTabs, tableSyncConfigs } from "./sync-config";
 import { syncAll } from "./sync-engine";
@@ -992,5 +998,48 @@ describe("syncAll: custom record types", () => {
     expect(result.success).toBe(true);
     expect(await appDb.customRecordTypes.count()).toBe(0);
     expect(await appDb.customRecords.count()).toBe(0);
+  });
+
+  test("a row of a purged type's tab updated after its tombstone stays on the sheet", async () => {
+    const updated = makeProteinRecord({ id: "p-3", updatedAt: "2026-11-04T07:00:00+09:00" });
+    sheets.tabs.set("Custom_protein", [PROTEIN_HEADERS, proteinRow(updated)]);
+    await appDb.tombstones.put({
+      id: "Custom_protein:p-3",
+      table: "Custom_protein",
+      recordId: "p-3",
+      deletedAt: "2026-11-03T07:00:00+09:00",
+    });
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect(sheets.tabs.get("Custom_protein")).toEqual([PROTEIN_HEADERS, proteinRow(updated)]);
+  });
+
+  test("a re-import after a purge on this device keeps the definition and its new records", async () => {
+    const definition = proteinDefinition();
+    const old = makeProteinRecord();
+    sheets.tabs.set("RecordTypes", [
+      RECORD_TYPES_HEADERS,
+      ["protein", JSON.stringify(definition), "", "2026-11-01T07:00:00+09:00"],
+    ]);
+    sheets.tabs.set("Custom_protein", [PROTEIN_HEADERS, proteinRow(old)]);
+    await syncAll(TOKEN);
+    await markTypeDeleted("protein", true);
+    await purgeType("protein");
+
+    await saveImportedDefinition(definition);
+    const fresh = await addCustomRecord(definition, {
+      date: "2026-11-05",
+      recordedAt: "2026-11-05T08:00:00+09:00",
+      values: { amount: 30 },
+      note: "",
+    });
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect((await appDb.customRecordTypes.get("protein"))?.deleted).toBe(false);
+    expect(await appDb.customRecords.toArray()).toEqual([fresh]);
+    expect(sheets.tabs.get("Custom_protein")).toEqual([PROTEIN_HEADERS, proteinRow(fresh)]);
   });
 });

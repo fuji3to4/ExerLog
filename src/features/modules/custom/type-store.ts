@@ -1,6 +1,6 @@
 import { appDb } from "@/features/storage/app-db";
 import { scheduleSync } from "@/features/sync/auto-sync";
-import { localIsoNow } from "@/lib/date/local-iso";
+import { formatLocalIso, localIsoNow } from "@/lib/date/local-iso";
 import type { CustomRecordType } from "@/lib/types";
 import { customTabName, recordTypesSyncConfig } from "./data";
 import {
@@ -70,12 +70,30 @@ export async function planImport(
   return { ok: true, plan: { kind: stored.deleted ? "restore" : "update", definition, diff } };
 }
 
+function typeTombstoneId(id: string): string {
+  return `${recordTypesSyncConfig.tabName}:${id}`;
+}
+
+/**
+ * Now, but at least one second after a known tombstone of this type, so a
+ * re-import or restore wins the merge even when this clock runs behind the
+ * one that purged it.
+ */
+async function liveTypeUpdatedAt(id: string): Promise<string> {
+  const now = localIsoNow();
+  const tombstone = await appDb.tombstones.get(typeTombstoneId(id));
+  const deletedAt = tombstone ? Date.parse(tombstone.deletedAt) : NaN;
+  if (Number.isNaN(deletedAt) || Date.parse(now) > deletedAt) return now;
+  // Whole seconds (the format drops milliseconds), still strictly after deletedAt.
+  return formatLocalIso(new Date(Math.floor(deletedAt / 1000) * 1000 + 1000));
+}
+
 export async function saveImportedDefinition(definition: CustomRecordDefinition): Promise<void> {
   await appDb.customRecordTypes.put({
     id: definition.id,
     definition,
     deleted: false,
-    updatedAt: localIsoNow(),
+    updatedAt: await liveTypeUpdatedAt(definition.id),
   });
   await loadCustomTypes();
   scheduleSync();
@@ -84,7 +102,8 @@ export async function saveImportedDefinition(definition: CustomRecordDefinition)
 export async function markTypeDeleted(id: string, deleted: boolean): Promise<void> {
   const row = await appDb.customRecordTypes.get(id);
   if (!row) return;
-  await appDb.customRecordTypes.put({ ...row, deleted, updatedAt: localIsoNow() });
+  const updatedAt = deleted ? localIsoNow() : await liveTypeUpdatedAt(id);
+  await appDb.customRecordTypes.put({ ...row, deleted, updatedAt });
   await loadCustomTypes();
   scheduleSync();
 }
@@ -126,13 +145,26 @@ export async function purgeType(id: string): Promise<void> {
 }
 
 /**
- * Delete local records whose type has no row at all (purged on another device).
- * No tombstones: the device that purged the type recorded them. Returns the count.
+ * Delete local records of types purged on another device: the type has no row
+ * and a type tombstone exists that the record is not newer than (last writer
+ * wins, as in the merge; a record without a usable time loses). Other orphans
+ * stay, unseen, until their type is imported again. No tombstones: the device
+ * that purged the type recorded them. Returns the count.
  */
 export function deleteOrphanRecords(): Promise<number> {
-  return appDb.transaction("rw", appDb.customRecords, appDb.customRecordTypes, async () => {
+  return appDb.transaction("rw", appDb.customRecords, appDb.customRecordTypes, appDb.tombstones, async () => {
     const known = new Set(await appDb.customRecordTypes.toCollection().primaryKeys());
-    return appDb.customRecords.filter((r) => !known.has(r.typeId)).delete();
+    const tombstones = await appDb.tombstones.where("table").equals(recordTypesSyncConfig.tabName).toArray();
+    const deletedAt = new Map(tombstones.map((t) => [t.recordId, Date.parse(t.deletedAt)]));
+    return appDb.customRecords
+      .filter((r) => {
+        if (known.has(r.typeId)) return false;
+        const purgedAt = deletedAt.get(r.typeId);
+        if (purgedAt === undefined) return false;
+        const updatedAt = Date.parse(r.updatedAt);
+        return Number.isNaN(updatedAt) || updatedAt <= purgedAt;
+      })
+      .delete();
   });
 }
 

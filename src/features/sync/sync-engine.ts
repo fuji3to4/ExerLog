@@ -134,7 +134,8 @@ async function doSyncAll(
     await run(config, deletedIdsFor(config));
   }
 
-  // 7. Tabs of purged types: the tab stays, but its tombstoned rows go.
+  // 7. Custom_ tabs without a sync config (purged types, or types whose definition
+  // is unreadable on this device): the tab stays, but its tombstoned rows go.
   const configured = new Set(tableSyncConfigs().map((c) => c.tabName));
   const purgedTabs = groupDeletedIds(await appDb.tombstones.toArray());
   for (const [tabName, deletedIds] of purgedTabs) {
@@ -151,7 +152,8 @@ async function doSyncAll(
 }
 
 /**
- * Rewrite a tab that no longer has a sync config without its tombstoned rows.
+ * Rewrite a tab that has no sync config without its tombstoned rows (a row
+ * updated after its tombstone is kept, as in the merge).
  * Local data is not touched. A tab that cannot be read (e.g. it does not
  * exist) is skipped; only a failed write is returned as a result.
  */
@@ -170,7 +172,15 @@ async function removeTombstonedRows(
   if (rows.length === 0) return null;
   const idIndex = rows[0].indexOf("id");
   if (idIndex < 0) return null;
-  const kept = rows.slice(1).filter((row) => !deletedIds.has(row[idIndex] ?? ""));
+  const updatedAtIndex = rows[0].indexOf("updatedAt");
+  // As in mergeRecords: a row updated after its deletion stays.
+  const kept = rows.slice(1).filter((row) => {
+    const deletedAt = deletedIds.get(row[idIndex] ?? "");
+    if (deletedAt === undefined) return true;
+    if (updatedAtIndex < 0) return false;
+    const updatedAt = Date.parse(row[updatedAtIndex] ?? "");
+    return !Number.isNaN(updatedAt) && updatedAt > Date.parse(deletedAt);
+  });
   if (kept.length === rows.length - 1) return null;
   const ok = await replaceAllRows(accessToken, spreadsheetId, tabName, [rows[0], ...kept]);
   return ok ? null : { tableName: tabName, rowCount: 0, error: `Failed to write ${tabName}` };
