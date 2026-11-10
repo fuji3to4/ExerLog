@@ -210,7 +210,7 @@ describe("v14 upgrade", () => {
     const upgraded = new AppDb();
     try {
       await upgraded.open();
-      expect(upgraded.verno).toBe(16);
+      expect(upgraded.verno).toBe(17);
       const names = upgraded.tables.map((table) => table.name);
       expect(names).toEqual(expect.arrayContaining(["selfCareRecords", "compressionRecords", "symptomRecords", "girthRecords", "listOrders"]));
       expect(names).not.toContain("dailySelfCareLogs");

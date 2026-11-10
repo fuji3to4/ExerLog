@@ -1,3 +1,5 @@
+import type { CustomRecordDefinition } from "@/features/modules/custom/definition";
+
 export type ConditionLevel = "good" | "okay" | "tired";
 
 export type ExerciseLogResult = "did" | "partial";
@@ -174,4 +176,23 @@ export type PhotoFile = {
 export type PhotoTrashItem = {
   driveFileId: string;
   queuedAt: string;
+};
+
+export type CustomValue = number | string | string[] | boolean;
+
+export type CustomRecord = {
+  id: string;
+  date: string;
+  recordedAt: string;
+  typeId: string;
+  values: Record<string, CustomValue>;
+  note: string;
+  updatedAt: string;
+};
+
+export type CustomRecordType = {
+  id: string;
+  definition: CustomRecordDefinition;
+  deleted: boolean;
+  updatedAt: string;
 };
