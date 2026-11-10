@@ -520,4 +520,8 @@
   library_count_all: "{total}件",
   library_count_filtered: "{shown}件 / {total}件",
   library_set_count_filtered: "{name}：{shown}本 / {total}本",
+  custom_required: "必須です",
+  custom_out_of_range: "{min}〜{max} で入れてください",
+  custom_summary_count: "{count}件",
+  custom_summary_numeric: "平均 {avg}・最小 {min}・最大 {max}",
 } as const;
