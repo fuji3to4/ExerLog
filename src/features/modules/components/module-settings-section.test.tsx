@@ -2,6 +2,8 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
+const downloadMock = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/download", () => ({ downloadTextFile: downloadMock }));
 
 import { appDb } from "@/features/storage/app-db";
 import { renderWithLanguage } from "@/test/render-with-language";
@@ -127,6 +129,28 @@ describe("ModuleSettingsSection", () => {
       fireEvent.click(screen.getByRole("button", { name: "削除する" }));
 
       await waitFor(() => expect(rowNames()).not.toContain("プロテイン"));
+    });
+  });
+
+  describe("built-in templates", () => {
+    it("exports wellness as a definition, without a delete item", () => {
+      downloadMock.mockClear();
+      renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
+
+      fireEvent.keyDown(within(row("体調")).getByRole("button", { name: "「体調」の操作" }), { key: "Enter" });
+      expect(screen.queryByRole("menuitem", { name: "定義を削除" })).toBeNull();
+      fireEvent.click(screen.getByRole("menuitem", { name: "定義を書き出す" }));
+
+      expect(downloadMock).toHaveBeenCalledTimes(1);
+      const [fileName, content, mime] = downloadMock.mock.calls[0];
+      expect(fileName).toBe("exerlog-wellness.json");
+      expect(mime).toBe("application/json");
+      expect(JSON.parse(content).fields.map((f: { id: string }) => f.id)).toEqual(["physical", "mental"]);
+    });
+
+    it("gives modules without a template no menu", () => {
+      renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
+      expect(within(row("身体")).queryByRole("button", { name: "「身体」の操作" })).toBeNull();
     });
   });
 });

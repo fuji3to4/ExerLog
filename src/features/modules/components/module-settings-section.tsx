@@ -28,6 +28,8 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { downloadTextFile } from "@/lib/download";
 import { cn } from "@/lib/utils";
 import { customModuleId } from "../custom/data";
+import type { CustomRecordDefinition } from "../custom/definition";
+import { builtInTemplate } from "../custom/templates";
 import { getCustomTypes, markTypeDeleted } from "../custom/type-store";
 import { ModuleIcon, moduleDescription, moduleLabel } from "../module-text";
 import type { RecordModule } from "../types";
@@ -36,14 +38,23 @@ import { useModuleSettings } from "../use-module-settings";
 const MENU_ITEM_CLASS =
   "flex cursor-pointer select-none items-center rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-secondary";
 
-/** The "⋯" drop-down of a custom row: export the definition as JSON, or start deleting it. */
-function CustomRowMenu({ module, label, onDelete }: { module: RecordModule; label: string; onDelete(): void }) {
+/** The definition a row can export: a custom type's own, or a code module's built-in template. */
+function exportableDefinition(module: RecordModule): CustomRecordDefinition | undefined {
+  if (!module.isCustom) return builtInTemplate(module.data.id);
+  return getCustomTypes().find((candidate) => customModuleId(candidate.id) === module.data.id)?.definition;
+}
+
+/**
+ * The "⋯" drop-down of a row: export the definition as JSON, and for custom rows start deleting it.
+ * Code modules with a built-in template only export, so the template can be copied and customized.
+ */
+function RowMenu({ module, label, onDelete }: { module: RecordModule; label: string; onDelete?(): void }) {
   const { t } = useTranslation();
 
   function exportDefinition() {
-    const type = getCustomTypes().find((candidate) => customModuleId(candidate.id) === module.data.id);
-    if (!type) return;
-    downloadTextFile(`exerlog-${type.id}.json`, JSON.stringify(type.definition, null, 2), "application/json");
+    const definition = exportableDefinition(module);
+    if (!definition) return;
+    downloadTextFile(`exerlog-${definition.id}.json`, JSON.stringify(definition, null, 2), "application/json");
   }
 
   return (
@@ -66,9 +77,11 @@ function CustomRowMenu({ module, label, onDelete }: { module: RecordModule; labe
           <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={exportDefinition}>
             {t("custom_export")}
           </DropdownMenu.Item>
-          <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={onDelete}>
-            {t("custom_delete")}
-          </DropdownMenu.Item>
+          {onDelete ? (
+            <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={onDelete}>
+              {t("custom_delete")}
+            </DropdownMenu.Item>
+          ) : null}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
@@ -161,7 +174,9 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
         <ChevronDown aria-hidden className="h-4 w-4" />
       </button>
       {module.isCustom ? (
-        <CustomRowMenu module={module} label={label} onDelete={() => setConfirmingDelete(true)} />
+        <RowMenu module={module} label={label} onDelete={() => setConfirmingDelete(true)} />
+      ) : builtInTemplate(module.data.id) ? (
+        <RowMenu module={module} label={label} />
       ) : null}
       <Switch checked={enabled} onCheckedChange={onToggle} aria-label={label} />
       {confirmingDelete ? (
