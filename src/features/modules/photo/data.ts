@@ -54,7 +54,7 @@ export const photoData: RecordModuleData<PhotoRecord> = {
   count: () => appDb.photoRecords.count(),
   csv: {
     fileName: "photos.csv",
-    exportLabelKey: "settings_export_photos",
+    exportLabel: { key: "settings_export_photos" },
     generate: async () => generatePhotosCsv(await listAllPhotoRecords()),
   },
   syncFiles: syncPhotoFiles,

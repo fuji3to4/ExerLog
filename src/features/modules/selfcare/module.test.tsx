@@ -5,7 +5,7 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { AddRecordMenu } from "@/features/modules/components/add-record-menu";
 import { ModuleRecordDialog } from "@/features/modules/components/module-record-dialog";
-import { RECORD_MODULES } from "@/features/modules/registry";
+import { recordModules } from "@/features/modules/registry";
 import { appDb } from "@/features/storage/app-db";
 import { localIsoNow } from "@/lib/date/local-iso";
 import { toDayKey } from "@/lib/date/day-key";
@@ -16,8 +16,8 @@ const base = { id: "a", date: "2026-10-20", recordedAt: "2026-10-20T08:00:00+09:
 
 describe("selfcare module registration", () => {
   it("the add menu lists セルフケア 6th and opens セルフケアを記録", () => {
-    const chosen: { current?: (typeof RECORD_MODULES)[number] } = {};
-    renderWithLanguage(<AddRecordMenu modules={RECORD_MODULES} onChoose={(m) => (chosen.current = m)} />, {
+    const chosen: { current?: ReturnType<typeof recordModules>[number] } = {};
+    renderWithLanguage(<AddRecordMenu modules={recordModules()} onChoose={(m) => (chosen.current = m)} />, {
       initialLanguage: "ja",
     });
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });

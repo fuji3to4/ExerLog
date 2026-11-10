@@ -1,4 +1,3 @@
-import type { Messages } from "@/features/i18n/messages";
 import type { MeasurementItem } from "@/features/measurements/measurement-items";
 import type { MeasurementRepository } from "@/features/measurements/measurement-repository";
 import { createMeasurementSyncConfig } from "@/features/measurements/measurement-sync";
@@ -18,7 +17,7 @@ export function createMeasurementModuleData({
   id: string;
   repository: MeasurementRepository;
   items: readonly MeasurementItem[];
-  csv: { fileName: string; exportLabelKey: keyof Messages };
+  csv: { fileName: string; exportLabel: RecordModuleData["csv"]["exportLabel"] };
 }): RecordModuleData<MeasurementRecord> {
   const { table, tombstoneTable } = repository;
   return {

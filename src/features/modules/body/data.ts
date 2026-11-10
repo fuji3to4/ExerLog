@@ -10,5 +10,5 @@ export const bodyData = createMeasurementModuleData({
   id: "body",
   repository: bodyRepository,
   items: BODY_ITEMS,
-  csv: { fileName: "body.csv", exportLabelKey: "settings_export_body" },
+  csv: { fileName: "body.csv", exportLabel: { key: "settings_export_body" } },
 });

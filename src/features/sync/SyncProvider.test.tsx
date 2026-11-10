@@ -15,6 +15,26 @@ vi.mock("./sync-engine", () => ({
   syncAll: vi.fn(),
 }));
 
+vi.mock("@/features/modules/custom/type-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/modules/custom/type-store")>();
+  return {
+    ...actual,
+    getCustomTypes: () => [
+      {
+        id: "protein",
+        definition: {
+          exerlogRecordType: 1,
+          id: "protein",
+          name: { en: "Protein", ja: "プロテイン" },
+          fields: [],
+        },
+        deleted: false,
+        updatedAt: "2026-11-01T00:00:00+09:00",
+      },
+    ],
+  };
+});
+
 import { trySilentRefresh, requestSignIn, signOut, onRefreshSignedOut } from "./google-auth";
 import { syncAll } from "./sync-engine";
 import type { GoogleToken } from "./google-auth";
@@ -225,6 +245,10 @@ describe("SyncProvider", () => {
   test.each([
     ["Unknown", "Unknown"],
     ["WellnessEntries", "体調記録"],
+    // A custom type's tab shows its name in the display language.
+    ["Custom_protein", "プロテイン"],
+    // A tab of an unknown custom type falls back to the raw tab name.
+    ["Custom_meal", "Custom_meal"],
   ])("labels table %s as %s in the progress message", async (tableName, label) => {
     vi.mocked(trySilentRefresh).mockResolvedValue(FAKE_TOKEN);
     vi.mocked(syncAll).mockImplementation(

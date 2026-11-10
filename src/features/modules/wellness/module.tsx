@@ -31,10 +31,13 @@ function WellnessHistoryView() {
 
 export const wellnessModule: RecordModule<WellnessEntry> = {
   data: wellnessData,
-  labelKey: "module_wellness_label",
-  descriptionKey: "module_wellness_description",
-  editTitleKey: "timeline_wellness_edit_title",
-  icon: Smile,
+  naming: {
+    kind: "keys",
+    labelKey: "module_wellness_label",
+    descriptionKey: "module_wellness_description",
+    editTitleKey: "timeline_wellness_edit_title",
+    icon: Smile,
+  },
   color: "#e48a3a",
   Form: WellnessForm,
   TimelineCard: WellnessTimelineCard,

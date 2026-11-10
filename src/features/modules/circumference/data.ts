@@ -10,5 +10,5 @@ export const circumferenceData = createMeasurementModuleData({
   id: "circumference",
   repository: circumferenceRepository,
   items: CIRCUMFERENCE_ITEMS,
-  csv: { fileName: "circumference.csv", exportLabelKey: "settings_export_circumference" },
+  csv: { fileName: "circumference.csv", exportLabel: { key: "settings_export_circumference" } },
 });

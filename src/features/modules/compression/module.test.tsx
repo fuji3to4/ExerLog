@@ -5,7 +5,7 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 import { AddRecordMenu } from "@/features/modules/components/add-record-menu";
 import { ModuleRecordDialog } from "@/features/modules/components/module-record-dialog";
-import { RECORD_MODULES } from "@/features/modules/registry";
+import { recordModules } from "@/features/modules/registry";
 import { appDb } from "@/features/storage/app-db";
 import { toDayKey } from "@/lib/date/day-key";
 import { localIsoAt } from "@/lib/date/local-iso";
@@ -24,8 +24,8 @@ const base = {
 
 describe("compression module registration", () => {
   it("the add menu lists 着用 7th and opens the form", () => {
-    const chosen: { current?: (typeof RECORD_MODULES)[number] } = {};
-    renderWithLanguage(<AddRecordMenu modules={RECORD_MODULES} onChoose={(m) => (chosen.current = m)} />, {
+    const chosen: { current?: ReturnType<typeof recordModules>[number] } = {};
+    renderWithLanguage(<AddRecordMenu modules={recordModules()} onChoose={(m) => (chosen.current = m)} />, {
       initialLanguage: "ja",
     });
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });

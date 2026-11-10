@@ -85,10 +85,13 @@ function SymptomsHistoryView() {
 
 export const symptomsModule: RecordModule<SymptomRecord> = {
   data: symptomsData,
-  labelKey: "module_symptoms_label",
-  descriptionKey: "module_symptoms_description",
-  editTitleKey: "symptoms_edit_title",
-  icon: Activity,
+  naming: {
+    kind: "keys",
+    labelKey: "module_symptoms_label",
+    descriptionKey: "module_symptoms_description",
+    editTitleKey: "symptoms_edit_title",
+    icon: Activity,
+  },
   tags: ["lymphedema"],
   color: "#c2577a",
   Form: SymptomsForm,

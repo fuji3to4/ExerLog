@@ -13,6 +13,9 @@ import type { ReactNode } from "react";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { onRefreshSignedOut, trySilentRefresh, requestSignIn, signOut } from "./google-auth";
 import { isMessageKey } from "@/features/i18n/messages";
+import { customTabName } from "@/features/modules/custom/data";
+import { resolveText } from "@/features/modules/custom/definition";
+import { getCustomTypes } from "@/features/modules/custom/type-store";
 import { syncAll } from "./sync-engine";
 import type { SyncAllResult, SyncTableResult } from "./sync-engine";
 
@@ -42,8 +45,17 @@ export function useSync(): SyncContextValue {
 
 export { SyncContext };
 
-/** Translated label for a sync result's table name (falls back to the raw name). */
-function tabLabel(tableName: string, t: ReturnType<typeof useTranslation>["t"]): string {
+/**
+ * Translated label for a sync result's table name: a custom type's tab shows the
+ * type's name in the display language; anything unknown falls back to the raw name.
+ */
+function tabLabel(
+  tableName: string,
+  t: ReturnType<typeof useTranslation>["t"],
+  language: string,
+): string {
+  const customType = getCustomTypes().find((type) => customTabName(type.id) === tableName);
+  if (customType) return resolveText(customType.definition.name, language) || tableName;
   const key = `sync_tab_${tableName}`;
   return isMessageKey(key) ? t(key) : tableName;
 }
@@ -52,10 +64,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SyncStatus>({ type: "disconnected" });
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const mountedRef = useRef(true);
-  const { t } = useTranslation();
-  // Kept in a ref so a language switch does not recreate syncNow (and re-run the mount sync).
+  const { t, language } = useTranslation();
+  // Kept in refs so a language switch does not recreate syncNow (and re-run the mount sync).
   const tRef = useRef(t);
   tRef.current = t;
+  const languageRef = useRef(language);
+  languageRef.current = language;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -72,7 +86,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setStatus({
         type: "syncing",
         message: tRef.current("sync_status_table", {
-          table: tabLabel(result.tableName, tRef.current),
+          table: tabLabel(result.tableName, tRef.current, languageRef.current),
           count: result.rowCount,
         }),
       });
@@ -93,7 +107,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     if (hasError) {
       const errorMessages = result.results
         .filter((r) => r.error)
-        .map((r) => `${tabLabel(r.tableName, tRef.current)}: ${r.error}`)
+        .map((r) => `${tabLabel(r.tableName, tRef.current, languageRef.current)}: ${r.error}`)
         .join("; ");
       setStatus({
         type: "error",

@@ -22,10 +22,13 @@ function BodyHistoryView() {
 
 export const bodyModule: RecordModule<MeasurementRecord> = {
   data: bodyData,
-  labelKey: "module_body_label",
-  descriptionKey: "module_body_description",
-  editTitleKey: "body_edit_title",
-  icon: Scale,
+  naming: {
+    kind: "keys",
+    labelKey: "module_body_label",
+    descriptionKey: "module_body_description",
+    editTitleKey: "body_edit_title",
+    icon: Scale,
+  },
   color: "#7a4fb0",
   Form: BodyForm,
   TimelineCard: BodyTimelineCard,

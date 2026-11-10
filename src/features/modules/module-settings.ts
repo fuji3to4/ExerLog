@@ -15,24 +15,33 @@ export function resolveModuleSettings(
   return resolveWithKnownCount(stored, registryIds, defaultOffIds).settings;
 }
 
+/**
+ * Custom record types load from IndexedDB after the first render (and may arrive later by sync),
+ * so a stored "custom:" id is kept, in place, even while it is not in the registry.
+ */
+function isCustomId(id: string): boolean {
+  return id.startsWith("custom:");
+}
+
 function resolveWithKnownCount(
   stored: unknown,
   registryIds: readonly string[],
   defaultOffIds: readonly string[],
 ): { settings: ModuleSettings; knownCount: number } {
   const known = new Set(registryIds);
+  const keep = (id: string) => known.has(id) || isCustomId(id);
   const record =
     stored !== null && typeof stored === "object" ? (stored as Record<string, unknown>) : {};
-  const storedOrder = new Set(stringArray(record.order).filter((id) => known.has(id)));
+  const storedOrder = new Set(stringArray(record.order).filter(keep));
   const order: string[] = [];
   const seen = new Set<string>();
   for (const id of [...stringArray(record.order), ...registryIds]) {
-    if (known.has(id) && !seen.has(id)) {
+    if (keep(id) && !seen.has(id)) {
       seen.add(id);
       order.push(id);
     }
   }
-  const disabled = [...new Set(stringArray(record.disabled))].filter((id) => known.has(id));
+  const disabled = [...new Set(stringArray(record.disabled))].filter(keep);
   const off = new Set(defaultOffIds);
   for (const id of registryIds) {
     if (!storedOrder.has(id) && off.has(id) && !disabled.includes(id)) disabled.push(id);

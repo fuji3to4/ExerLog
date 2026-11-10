@@ -7,14 +7,16 @@ import { recordTombstones } from "./tombstones.repository";
 
 /**
  * Deletes every exercise log, watch event and record of every module (also
- * modules that are switched off) in one transaction and records a tombstone
+ * modules that are switched off and deleted custom record types, whose
+ * definitions are kept) in one transaction and records a tombstone
  * for each deleted id so sync can propagate the deletion.
  */
 export async function clearAllRecords(): Promise<void> {
   const modules = recordModuleData();
   await appDb.transaction(
     "rw",
-    [appDb.exerciseLogs, appDb.watchEvents, appDb.tombstones, ...modules.flatMap((m) => m.tables())],
+    // Deduped: every custom record type shares one table.
+    [...new Set([appDb.exerciseLogs, appDb.watchEvents, appDb.tombstones, ...modules.flatMap((m) => m.tables())])],
     async () => {
       const exerciseIds = await appDb.exerciseLogs.toCollection().primaryKeys();
       const watchIds = await appDb.watchEvents.toCollection().primaryKeys();

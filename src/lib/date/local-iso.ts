@@ -1,4 +1,5 @@
-function formatLocalIso(date: Date): string {
+/** Local ISO 8601 string with UTC offset for `date` (the format of localIsoNow). */
+export function formatLocalIso(date: Date): string {
   const offsetMinutes = -date.getTimezoneOffset();
   const sign = offsetMinutes >= 0 ? "+" : "-";
   const absMinutes = Math.abs(offsetMinutes);

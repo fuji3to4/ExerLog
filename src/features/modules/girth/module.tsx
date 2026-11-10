@@ -22,10 +22,13 @@ function GirthHistoryView() {
 
 export const girthModule: RecordModule<MeasurementRecord> = {
   data: girthData,
-  labelKey: "module_girth_label",
-  descriptionKey: "module_girth_description",
-  editTitleKey: "girth_edit_title",
-  icon: Shrink,
+  naming: {
+    kind: "keys",
+    labelKey: "module_girth_label",
+    descriptionKey: "module_girth_description",
+    editTitleKey: "girth_edit_title",
+    icon: Shrink,
+  },
   color: "#8a6d1f",
   Form: GirthForm,
   TimelineCard: GirthTimelineCard,

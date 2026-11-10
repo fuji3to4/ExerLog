@@ -50,10 +50,13 @@ function CompressionHistoryView() {
 
 export const compressionModule: RecordModule<CompressionRecord> = {
   data: compressionData,
-  labelKey: "module_compression_label",
-  descriptionKey: "module_compression_description",
-  editTitleKey: "compression_edit_title",
-  icon: Shirt,
+  naming: {
+    kind: "keys",
+    labelKey: "module_compression_label",
+    descriptionKey: "module_compression_description",
+    editTitleKey: "compression_edit_title",
+    icon: Shirt,
+  },
   tags: ["lymphedema"],
   color: "#5b7fd6",
   Form: CompressionForm,

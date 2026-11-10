@@ -39,6 +39,7 @@ describe("recordModuleData", () => {
   it("feeds sync tabs in the documented order", () => {
     expect(sheetTabs()).toEqual([
       "ExerciseLogs",
+      "RecordTypes",
       "WellnessEntries",
       "BodyMeasurements",
       "Girth",

@@ -126,7 +126,7 @@ export const compressionData: RecordModuleData<CompressionRecord> = {
   count: () => appDb.compressionRecords.count(),
   csv: {
     fileName: "compression.csv",
-    exportLabelKey: "settings_export_compression",
+    exportLabel: { key: "settings_export_compression" },
     generate: async () => generateCompressionCsv(await appDb.compressionRecords.orderBy("recordedAt").toArray()),
   },
 };
