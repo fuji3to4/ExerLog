@@ -6,6 +6,7 @@ import type { Messages } from "@/features/i18n/messages";
 import type { TableSyncConfig } from "@/features/sync/sync-config";
 import type { SyncTableResult } from "@/features/sync/sync-engine";
 import type { WellnessLabel } from "@/features/timeline/build-timeline";
+import type { LocalizedText } from "./custom/definition";
 import type { ModuleTag } from "./module-tags";
 import type { Period } from "./period";
 
@@ -29,7 +30,7 @@ export type RecordModuleData<R extends ModuleRecord = ModuleRecord> = {
   /** Deletes everything and records tombstones. Must run inside the caller's transaction. */
   clearAll(): Promise<void>;
   count(): Promise<number>;
-  csv: { fileName: string; exportLabelKey: keyof Messages; generate(): Promise<string> };
+  csv: { fileName: string; exportLabel: { key: keyof Messages } | { text: LocalizedText }; generate(): Promise<string> };
   /** 表の同期とは別のファイル同期。Tombstones のマージ直後、ほかのタブより前に呼ばれる。 */
   syncFiles?(accessToken: string): Promise<SyncTableResult>;
 };
@@ -44,14 +45,26 @@ export type RecordFormProps<R> = {
   onDeleted?(): void;
 };
 
+/** How a module names itself: i18n keys (code modules) or literal text (custom modules). */
+export type ModuleNaming =
+  | {
+      kind: "keys";
+      labelKey: keyof Messages;
+      /** Short description for the settings screen. */
+      descriptionKey: keyof Messages;
+      editTitleKey: keyof Messages;
+      icon: LucideIcon;
+    }
+  | { kind: "text"; label: LocalizedText; description?: LocalizedText; emoji: string };
+
 /** A record module: its data layer plus the screens that show and edit its records. */
 export type RecordModule<R extends ModuleRecord = ModuleRecord> = {
   data: RecordModuleData<R>;
-  labelKey: keyof Messages;
-  /** Short description for the settings screen. */
-  descriptionKey: keyof Messages;
-  editTitleKey: keyof Messages;
-  icon: LucideIcon;
+  naming: ModuleNaming;
+  /** Shown as "custom" in settings; set only for modules built from an imported definition. */
+  isCustom?: boolean;
+  /** Logically deleted: left out of every screen's list. */
+  hidden?: boolean;
   /** Audience tags shown in settings; tagged modules start OFF unless a tag is in NEXT_PUBLIC_DEFAULT_ON_MODULE_TAGS. */
   tags?: readonly ModuleTag[];
   /** Colour of the module's point on the timeline. */

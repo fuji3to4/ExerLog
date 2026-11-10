@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Dumbbell } from "lucide-react";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
@@ -96,7 +97,7 @@ describe("HistoryModuleTabs", () => {
 
   it("puts leading tabs between すべて and the modules, and starts on them without すべて", async () => {
     const user = userEvent.setup();
-    const exerciseTab = { id: "exercise", labelKey: "history_chip_exercise" as const, icon: bodyModule.icon, View: () => <p>運動の見返し</p> };
+    const exerciseTab = { id: "exercise", labelKey: "history_chip_exercise" as const, icon: Dumbbell, View: () => <p>運動の見返し</p> };
     renderWithLanguage(
       <HistoryModuleTabs modules={[wellness]} includeAll={false} leadingTabs={[exerciseTab]} />,
       { initialLanguage: "ja" },

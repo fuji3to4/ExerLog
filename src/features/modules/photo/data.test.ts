@@ -30,7 +30,7 @@ describe("photoData", () => {
     expect(photoData.tables()).toEqual([appDb.photoRecords, appDb.photoBlobs, appDb.photoFiles, appDb.photoTrash]);
     expect(photoData.syncFiles).toBe(syncPhotoFiles);
     expect(photoData.csv.fileName).toBe("photos.csv");
-    expect(photoData.csv.exportLabelKey).toBe("settings_export_photos");
+    expect(photoData.csv.exportLabel).toEqual({ key: "settings_export_photos" });
   });
 
   it("lists by day, by period and by month", async () => {

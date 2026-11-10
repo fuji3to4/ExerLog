@@ -22,7 +22,9 @@ export type GraphSeries = {
 /** One selectable item of a module's graph. */
 export type GraphMetric = {
   key: string;
-  labelKey: keyof Messages;
+  /** One of labelKey / label is always set: a key for code modules, literal text for custom ones. */
+  labelKey?: keyof Messages;
+  label?: string;
   load(range: DayRange): Promise<GraphSeries>;
 };
 
@@ -74,7 +76,7 @@ export function MetricGraphView({ metrics }: { metrics: readonly GraphMetric[] }
             <select id={selectorId} className="metric-selector" value={metric?.key ?? ""} onChange={(e) => setSelectedKey(e.currentTarget.value)}>
               {metrics.map((option) => (
                 <option key={option.key} value={option.key}>
-                  {t(option.labelKey)}
+                  {option.label ?? (option.labelKey ? t(option.labelKey) : option.key)}
                 </option>
               ))}
             </select>

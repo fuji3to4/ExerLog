@@ -75,10 +75,13 @@ function PhotoHistoryView() {
 
 export const photoModule: RecordModule<PhotoRecord> = {
   data: photoData,
-  labelKey: "module_photo_label",
-  descriptionKey: "module_photo_description",
-  editTitleKey: "photo_edit_title",
-  icon: Camera,
+  naming: {
+    kind: "keys",
+    labelKey: "module_photo_label",
+    descriptionKey: "module_photo_description",
+    editTitleKey: "photo_edit_title",
+    icon: Camera,
+  },
   color: "#3b8ea5",
   Form: PhotoForm,
   TimelineCard: PhotoTimelineCard,

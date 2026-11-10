@@ -113,7 +113,7 @@ export const symptomsData: RecordModuleData<SymptomRecord> = {
   count: () => appDb.symptomRecords.count(),
   csv: {
     fileName: "symptoms.csv",
-    exportLabelKey: "settings_export_symptoms",
+    exportLabel: { key: "settings_export_symptoms" },
     generate: async () => generateSymptomsCsv(await appDb.symptomRecords.orderBy("recordedAt").toArray()),
   },
 };

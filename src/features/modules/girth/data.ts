@@ -10,5 +10,5 @@ export const girthData = createMeasurementModuleData({
   id: "girth",
   repository: girthRepository,
   items: GIRTH_ITEMS,
-  csv: { fileName: "girth.csv", exportLabelKey: "settings_export_girth" },
+  csv: { fileName: "girth.csv", exportLabel: { key: "settings_export_girth" } },
 });

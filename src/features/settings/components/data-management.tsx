@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "@/features/i18n/use-translation";
 import { recordModuleData } from "@/features/modules/data-registry";
+import { csvExportLabel } from "@/features/modules/module-text";
 import type { RecordModuleData } from "@/features/modules/types";
 import { appDb } from "@/features/storage/app-db";
 import {
@@ -101,7 +102,7 @@ function BulkDeleteButton({
 }
 
 export function DataManagement() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [exerciseCount, setExerciseCount] = useState(0);
@@ -249,7 +250,7 @@ export function DataManagement() {
               },
               ...recordModuleData().map((module) => ({
                 key: module.id,
-                label: t(module.csv.exportLabelKey),
+                label: csvExportLabel(module, t, language),
                 onSelect: () => void handleExportModule(module),
               })),
             ]}

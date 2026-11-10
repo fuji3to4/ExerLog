@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { cn } from "@/lib/utils";
+import { ModuleIcon, moduleLabel } from "../module-text";
 import type { RecordModule } from "../types";
 
 export type AddRecordMenuProps = {
@@ -21,7 +22,7 @@ const ITEM_CLASS =
 
 /** "＋ 記録する" button that drops down the list of modules to add a record for. */
 export function AddRecordMenu({ modules, onChoose, className }: AddRecordMenuProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   return (
     // Non-modal so the record dialog opened from an item takes over focus and pointer events cleanly.
@@ -40,11 +41,10 @@ export function AddRecordMenu({ modules, onChoose, className }: AddRecordMenuPro
           </DropdownMenu.Label>
           {modules.length > 0 ? (
             modules.map((module) => {
-              const Icon = module.icon;
               return (
                 <DropdownMenu.Item key={module.data.id} className={ITEM_CLASS} onSelect={() => onChoose(module)}>
-                  <Icon aria-hidden className="h-5 w-5" style={{ color: module.color }} />
-                  {t(module.labelKey)}
+                  <ModuleIcon module={module} className="h-5 w-5" />
+                  {moduleLabel(module, t, language)}
                 </DropdownMenu.Item>
               );
             })

@@ -30,10 +30,13 @@ function CircumferenceHistoryView() {
 
 export const circumferenceModule: RecordModule<MeasurementRecord> = {
   data: circumferenceData,
-  labelKey: "module_circumference_label",
-  descriptionKey: "module_circumference_description",
-  editTitleKey: "circumference_edit_title",
-  icon: Ruler,
+  naming: {
+    kind: "keys",
+    labelKey: "module_circumference_label",
+    descriptionKey: "module_circumference_description",
+    editTitleKey: "circumference_edit_title",
+    icon: Ruler,
+  },
   color: "#c25b8c",
   Form: CircumferenceForm,
   TimelineCard: CircumferenceTimelineCard,

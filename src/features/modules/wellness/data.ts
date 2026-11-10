@@ -124,7 +124,7 @@ export const wellnessData: RecordModuleData<WellnessEntry> = {
   count: () => appDb.wellnessEntries.count(),
   csv: {
     fileName: "wellness-entries.csv",
-    exportLabelKey: "settings_export_wellness_entries",
+    exportLabel: { key: "settings_export_wellness_entries" },
     generate: async () => generateWellnessEntriesCsv(await appDb.wellnessEntries.orderBy("recordedAt").toArray()),
   },
 };

@@ -112,7 +112,7 @@ export const selfCareData: RecordModuleData<SelfCareRecord> = {
   count: () => appDb.selfCareRecords.count(),
   csv: {
     fileName: "selfcare.csv",
-    exportLabelKey: "settings_export_selfcare",
+    exportLabel: { key: "settings_export_selfcare" },
     generate: async () => generateSelfCareCsv(await appDb.selfCareRecords.orderBy("recordedAt").toArray()),
   },
 };

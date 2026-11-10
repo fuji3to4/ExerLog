@@ -169,6 +169,7 @@
   settings_theme_section_heading: "テーマ",
   settings_modules_section_heading: "記録する項目",
   settings_modules_hint: "この順に「＋記録する」や履歴に並びます",
+  custom_edit_title: "「{name}」を編集",
   settings_module_reorder: "並べ替え",
   settings_module_move_up: "上へ",
   settings_module_move_down: "下へ",

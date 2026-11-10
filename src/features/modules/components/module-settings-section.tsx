@@ -23,6 +23,7 @@ import { badgeVariants } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { cn } from "@/lib/utils";
+import { ModuleIcon, moduleDescription, moduleLabel } from "../module-text";
 import type { RecordModule } from "../types";
 import { useModuleSettings } from "../use-module-settings";
 
@@ -36,11 +37,10 @@ type RowProps = {
 };
 
 function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: module.data.id });
-  const Icon = module.icon;
-  const label = t(module.labelKey);
+  const label = moduleLabel(module, t, language);
   const iconButton =
     "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent";
 
@@ -61,7 +61,7 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
       >
         <GripVertical aria-hidden className="h-4 w-4" />
       </button>
-      <Icon aria-hidden className="h-5 w-5 shrink-0" style={{ color: module.color }} />
+      <ModuleIcon module={module} className="h-5 w-5 shrink-0" />
       <span className="min-w-0 flex-1 text-sm">
         <span className="block font-medium">
           {label}
@@ -74,7 +74,7 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
             </span>
           ))}
         </span>
-        <span className="block text-xs text-muted-foreground">{t(module.descriptionKey)}</span>
+        <span className="block text-xs text-muted-foreground">{moduleDescription(module, t, language)}</span>
       </span>
       <button
         type="button"
