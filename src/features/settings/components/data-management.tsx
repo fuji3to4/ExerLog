@@ -14,6 +14,7 @@ import {
   replaceAllExercises,
 } from "@/features/storage/exercise-catalog.repository";
 import { clearAllRecords, countAllRecords } from "@/features/storage/clear-all-records";
+import { downloadTextFile } from "@/lib/download";
 import { generateExerciseCsv, parseExerciseCsv } from "../csv/exercise-csv";
 import { generateExerciseLogsCsv, generateWatchEventsCsv } from "../csv/history-csv";
 import { ExportMenu } from "./export-menu";
@@ -23,13 +24,7 @@ type DeleteState = "idle" | "confirming";
 const UTF8_BOM = "\uFEFF";
 
 function downloadCsv(filename: string, content: string) {
-  const blob = new Blob([UTF8_BOM + content], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadTextFile(filename, UTF8_BOM + content, "text/csv;charset=utf-8;");
 }
 
 function BulkDeleteButton({

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 
+import { CustomTypesSettings } from "@/features/modules/custom/components/custom-types-settings";
 import { ModuleSettingsSection } from "@/features/modules/components/module-settings-section";
 
 import { DataManagement } from "./data-management";
@@ -35,6 +36,7 @@ export function SettingsScreen() {
         </CardHeader>
         <CardContent>
           <ModuleSettingsSection />
+          <CustomTypesSettings />
         </CardContent>
       </Card>
 

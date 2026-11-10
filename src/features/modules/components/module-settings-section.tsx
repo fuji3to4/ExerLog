@@ -17,15 +17,63 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { ChevronDown, ChevronUp, GripVertical, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 
 import { badgeVariants } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "@/features/i18n/use-translation";
+import { downloadTextFile } from "@/lib/download";
 import { cn } from "@/lib/utils";
+import { customModuleId } from "../custom/data";
+import { getCustomTypes, markTypeDeleted } from "../custom/type-store";
 import { ModuleIcon, moduleDescription, moduleLabel } from "../module-text";
 import type { RecordModule } from "../types";
 import { useModuleSettings } from "../use-module-settings";
+
+const MENU_ITEM_CLASS =
+  "flex cursor-pointer select-none items-center rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-secondary";
+
+/** The "⋯" drop-down of a custom row: export the definition as JSON, or start deleting it. */
+function CustomRowMenu({ module, label, onDelete }: { module: RecordModule; label: string; onDelete(): void }) {
+  const { t } = useTranslation();
+
+  function exportDefinition() {
+    const type = getCustomTypes().find((candidate) => customModuleId(candidate.id) === module.data.id);
+    if (!type) return;
+    downloadTextFile(`exerlog-${type.id}.json`, JSON.stringify(type.definition, null, 2), "application/json");
+  }
+
+  return (
+    <DropdownMenu.Root modal={false}>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          aria-label={t("custom_menu_aria", { name: label })}
+          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <MoreHorizontal aria-hidden className="h-4 w-4" />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={6}
+          className="z-50 min-w-40 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+        >
+          <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={exportDefinition}>
+            {t("custom_export")}
+          </DropdownMenu.Item>
+          <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={onDelete}>
+            {t("custom_delete")}
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
+}
 
 type RowProps = {
   module: RecordModule;
@@ -41,6 +89,7 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: module.data.id });
   const label = moduleLabel(module, t, language);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const iconButton =
     "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent";
 
@@ -49,7 +98,7 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
       ref={setNodeRef}
       data-testid="module-row"
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-2 rounded-lg border bg-card px-2 py-2 ${isDragging ? "relative z-10 shadow-md" : ""}`}
+      className={`flex flex-wrap items-center gap-2 rounded-lg border bg-card px-2 py-2 ${isDragging ? "relative z-10 shadow-md" : ""}`}
     >
       <button
         type="button"
@@ -73,6 +122,13 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
               {t(`module_tag_${tag}` as const)}
             </span>
           ))}
+          {module.isCustom ? (
+            <span
+              className={cn(badgeVariants({ variant: "secondary" }), "ml-2 px-1.5 py-0 align-middle text-[10px] font-medium")}
+            >
+              {t("custom_badge")}
+            </span>
+          ) : null}
         </span>
         <span className="block text-xs text-muted-foreground">{moduleDescription(module, t, language)}</span>
       </span>
@@ -94,7 +150,26 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
       >
         <ChevronDown aria-hidden className="h-4 w-4" />
       </button>
+      {module.isCustom ? (
+        <CustomRowMenu module={module} label={label} onDelete={() => setConfirmingDelete(true)} />
+      ) : null}
       <Switch checked={enabled} onCheckedChange={onToggle} aria-label={label} />
+      {confirmingDelete ? (
+        <div className="bulk-delete-confirm w-full">
+          <p className="bulk-delete-confirm__message">{t("custom_delete_confirm")}</p>
+          <div className="bulk-delete-confirm__actions">
+            <Button variant="secondary" onClick={() => setConfirmingDelete(false)}>
+              {t("settings_delete_cancel_btn")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void markTypeDeleted(module.data.id.slice("custom:".length), true)}
+            >
+              {t("settings_delete_confirm_btn")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </li>
   );
 }
