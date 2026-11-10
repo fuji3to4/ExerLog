@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
@@ -48,6 +48,16 @@ describe("CustomTypesSettings", () => {
     fireEvent.click(screen.getByRole("button", { name: "元に戻す" }));
 
     await waitFor(async () => expect((await appDb.customRecordTypes.get("protein"))?.deleted).toBe(false));
+  });
+
+  it("explains how to add a record type from the ? button", async () => {
+    renderWithLanguage(<CustomTypesSettings />, { initialLanguage: "ja" });
+
+    fireEvent.click(screen.getByRole("button", { name: "記録の種類の足し方" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("記録の種類を足すには")).toBeTruthy();
+    expect(within(dialog).getByText(/AI に渡す説明をコピー/)).toBeTruthy();
   });
 
   it("hides the deleted section when nothing is deleted", () => {
