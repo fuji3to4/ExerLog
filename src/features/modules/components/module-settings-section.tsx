@@ -155,6 +155,12 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
         </span>
         <span className="block text-xs text-muted-foreground">{moduleDescription(module, t, language)}</span>
       </span>
+      {/* Left of the arrows, so the arrows and the switch line up on every row. */}
+      {module.isCustom ? (
+        <RowMenu module={module} label={label} onDelete={() => setConfirmingDelete(true)} />
+      ) : builtInTemplate(module.data.id) ? (
+        <RowMenu module={module} label={label} />
+      ) : null}
       <button
         type="button"
         className={iconButton}
@@ -173,11 +179,6 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
       >
         <ChevronDown aria-hidden className="h-4 w-4" />
       </button>
-      {module.isCustom ? (
-        <RowMenu module={module} label={label} onDelete={() => setConfirmingDelete(true)} />
-      ) : builtInTemplate(module.data.id) ? (
-        <RowMenu module={module} label={label} />
-      ) : null}
       <Switch checked={enabled} onCheckedChange={onToggle} aria-label={label} />
       {confirmingDelete ? (
         <div className="bulk-delete-confirm w-full">
