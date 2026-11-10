@@ -71,8 +71,8 @@ function readDraft(
         }
         break;
       case "boolean":
-        // Off is the same as not recorded, and never counts as missing.
-        if (value === true) values[field.id] = true;
+        // Always saves the switch state (an explicit "no" is a value), so required is always met.
+        values[field.id] = value === true;
         present = true;
         break;
       case "multiChoice":

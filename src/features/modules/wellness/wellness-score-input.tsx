@@ -38,7 +38,7 @@ export function WellnessScoreInput<T extends number = WellnessScore>({
           <Button
             key={score}
             variant={value === score ? "default" : "outline"}
-            className={cn("w-full px-0", value === score && "border border-[var(--tonal-border)]")}
+            className={cn("w-full", levels !== 5 && "px-0", value === score && "border border-[var(--tonal-border)]")}
             aria-pressed={value === score}
             onClick={() => onChange(score)}
           >

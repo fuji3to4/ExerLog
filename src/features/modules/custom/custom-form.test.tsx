@@ -77,7 +77,7 @@ describe("CustomRecordForm", () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
     const records = await appDb.customRecords.toArray();
     expect(records).toHaveLength(1);
-    expect(records[0].values).toEqual({ amount: 30, kind: "whey" });
+    expect(records[0].values).toEqual({ amount: 30, kind: "whey", fasted: false });
   });
 
   it("keeps values of fields not in the definition when editing", async () => {
@@ -97,6 +97,33 @@ describe("CustomRecordForm", () => {
     fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "25" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
-    expect((await appDb.customRecords.get("r1"))?.values).toEqual({ amount: 25, legacy: "x" });
+    expect((await appDb.customRecords.get("r1"))?.values).toEqual({ amount: 25, fasted: false, legacy: "x" });
+  });
+
+  it("saves true when the switch is toggled on", async () => {
+    const { onSaved } = renderForm();
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "30" } });
+    fireEvent.click(screen.getByRole("switch"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    expect((await appDb.customRecords.toArray())[0].values.fasted).toBe(true);
+  });
+
+  it("keeps an explicit false when editing", async () => {
+    const record: CustomRecord = {
+      id: "r2",
+      typeId: "protein",
+      date: DATE,
+      recordedAt: `${DATE}T08:00:00+09:00`,
+      values: { amount: 20, fasted: false },
+      note: "",
+      updatedAt: "",
+    };
+    await appDb.customRecords.add(record);
+    const { onSaved } = renderForm(record);
+    expect(screen.getByRole("switch")).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    expect((await appDb.customRecords.get("r2"))?.values.fasted).toBe(false);
   });
 });
