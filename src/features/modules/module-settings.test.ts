@@ -63,6 +63,19 @@ describe("module settings", () => {
     expect(s).toEqual({ order: IDS, disabled: [] });
   });
 
+  it("setModuleEnabled moves a module turned back ON to the end of the ON modules", () => {
+    const s = { order: ["wellness", "body", "circumference", "photo"], disabled: ["wellness", "photo"] };
+    expect(setModuleEnabled(s, "wellness", true)).toEqual({
+      order: ["body", "circumference", "wellness", "photo"],
+      disabled: ["photo"],
+    });
+    // Turning OFF keeps the place; enabling an already-ON module changes nothing.
+    expect(setModuleEnabled(s, "body", false).order).toEqual(s.order);
+    expect(setModuleEnabled(s, "body", true)).toEqual(s);
+    // With nothing else ON, it goes first.
+    expect(setModuleEnabled({ order: ["a", "b"], disabled: ["a", "b"] }, "b", true).order).toEqual(["b", "a"]);
+  });
+
   it("read falls back when localStorage throws", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("blocked");
