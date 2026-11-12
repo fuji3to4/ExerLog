@@ -170,6 +170,7 @@ export const en = {
   settings_modules_section_heading: "Items to record",
   settings_modules_hint: "Items appear in this order under \"+ Add record\" and in History",
   custom_edit_title: "Edit {name}",
+  settings_modules_off_heading: "Hidden ({count})",
   settings_module_reorder: "Reorder",
   settings_module_move_up: "Move up",
   settings_module_move_down: "Move down",

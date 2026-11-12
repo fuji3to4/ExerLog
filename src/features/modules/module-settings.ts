@@ -120,12 +120,22 @@ export function writeModuleSettings(settings: ModuleSettings): void {
   for (const listener of [...listeners]) listener();
 }
 
+/**
+ * Turning a module OFF keeps its place in the order. Turning one back ON moves it right after
+ * the last ON module, so it shows up at the end of the ON list.
+ */
 export function setModuleEnabled(s: ModuleSettings, id: string, enabled: boolean): ModuleSettings {
   const rest = s.disabled.filter((d) => d !== id);
-  return {
-    order: [...s.order],
-    disabled: enabled ? rest : [...rest, id],
-  };
+  if (!enabled) return { order: [...s.order], disabled: [...rest, id] };
+  if (!s.disabled.includes(id) || !s.order.includes(id)) return { order: [...s.order], disabled: rest };
+  const off = new Set(rest);
+  const order = s.order.filter((o) => o !== id);
+  let lastOn = -1;
+  order.forEach((o, index) => {
+    if (!off.has(o)) lastOn = index;
+  });
+  order.splice(lastOn + 1, 0, id);
+  return { order, disabled: rest };
 }
 
 export function moveModule(s: ModuleSettings, id: string, toIndex: number): ModuleSettings {

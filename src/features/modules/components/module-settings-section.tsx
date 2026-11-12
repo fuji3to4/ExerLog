@@ -18,8 +18,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChevronDown, ChevronUp, GripVertical, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, ChevronRight, ChevronUp, GripVertical, MoreHorizontal } from "lucide-react";
+import { useState, type ReactNode } from "react";
 
 import { badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,19 +88,20 @@ function RowMenu({ module, label, onDelete }: { module: RecordModule; label: str
   );
 }
 
-type RowProps = {
+const ICON_BUTTON =
+  "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent";
+
+type RowBodyProps = {
   module: RecordModule;
   enabled: boolean;
-  isFirst: boolean;
-  isLast: boolean;
   onToggle(enabled: boolean): void;
-  onMove(delta: -1 | 1): void;
+  /** Up/down buttons, only on ON rows. */
+  moveButtons?: ReactNode;
 };
 
-function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowProps) {
+/** A row after its drag handle: name and badges, the "⋯" menu, the arrows (ON rows), the switch and the delete confirm. */
+function RowBody({ module, enabled, onToggle, moveButtons }: RowBodyProps) {
   const { t, language } = useTranslation();
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: module.data.id });
   const label = moduleLabel(module, t, language);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
@@ -113,26 +114,9 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
       setDeleteFailed(true);
     }
   }
-  const iconButton =
-    "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent";
 
   return (
-    <li
-      ref={setNodeRef}
-      data-testid="module-row"
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex flex-wrap items-center gap-2 rounded-lg border bg-card px-2 py-2 ${isDragging ? "relative z-10 shadow-md" : ""}`}
-    >
-      <button
-        type="button"
-        ref={setActivatorNodeRef}
-        aria-label={t("settings_module_reorder")}
-        className={`${iconButton} cursor-grab touch-none`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical aria-hidden className="h-4 w-4" />
-      </button>
+    <>
       <ModuleIcon module={module} className="h-5 w-5 shrink-0" />
       <span className="min-w-0 flex-1 text-sm">
         <span className="block font-medium">
@@ -161,24 +145,7 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
       ) : builtInTemplate(module.data.id) ? (
         <RowMenu module={module} label={label} />
       ) : null}
-      <button
-        type="button"
-        className={iconButton}
-        aria-label={t("settings_module_move_up")}
-        disabled={isFirst}
-        onClick={() => onMove(-1)}
-      >
-        <ChevronUp aria-hidden className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        className={iconButton}
-        aria-label={t("settings_module_move_down")}
-        disabled={isLast}
-        onClick={() => onMove(1)}
-      >
-        <ChevronDown aria-hidden className="h-4 w-4" />
-      </button>
+      {moveButtons}
       <Switch checked={enabled} onCheckedChange={onToggle} aria-label={label} />
       {confirmingDelete ? (
         <div className="bulk-delete-confirm w-full">
@@ -198,25 +165,94 @@ function ModuleRow({ module, enabled, isFirst, isLast, onToggle, onMove }: RowPr
           ) : null}
         </div>
       ) : null}
+    </>
+  );
+}
+
+type OnRowProps = {
+  module: RecordModule;
+  isFirst: boolean;
+  isLast: boolean;
+  onToggle(enabled: boolean): void;
+  onMove(delta: -1 | 1): void;
+};
+
+/** An ON row: drag handle, up/down buttons and the switch. */
+function OnModuleRow({ module, isFirst, isLast, onToggle, onMove }: OnRowProps) {
+  const { t } = useTranslation();
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({ id: module.data.id });
+
+  return (
+    <li
+      ref={setNodeRef}
+      data-testid="module-row"
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex flex-wrap items-center gap-2 rounded-lg border bg-card px-2 py-2 ${isDragging ? "relative z-10 shadow-md" : ""}`}
+    >
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        aria-label={t("settings_module_reorder")}
+        className={`${ICON_BUTTON} cursor-grab touch-none`}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical aria-hidden className="h-4 w-4" />
+      </button>
+      <RowBody
+        module={module}
+        enabled
+        onToggle={onToggle}
+        moveButtons={
+          <>
+            <button
+              type="button"
+              className={ICON_BUTTON}
+              aria-label={t("settings_module_move_up")}
+              disabled={isFirst}
+              onClick={() => onMove(-1)}
+            >
+              <ChevronUp aria-hidden className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              className={ICON_BUTTON}
+              aria-label={t("settings_module_move_down")}
+              disabled={isLast}
+              onClick={() => onMove(1)}
+            >
+              <ChevronDown aria-hidden className="h-4 w-4" />
+            </button>
+          </>
+        }
+      />
     </li>
   );
 }
 
-/** Settings card body: switch each record module on/off and set the order of the ON ones. */
+/** Settings card body: the ON modules in order (sortable), then the OFF ones folded away. */
 export function ModuleSettingsSection() {
   const { t } = useTranslation();
-  const { entries, setEnabled, move } = useModuleSettings();
+  const { settings, entries, setEnabled, move } = useModuleSettings();
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-  const ids = entries.map((entry) => entry.module.data.id);
+  const onModules = entries.filter((entry) => entry.enabled).map((entry) => entry.module);
+  const offModules = entries.filter((entry) => !entry.enabled).map((entry) => entry.module);
+  const ids = onModules.map((module) => module.data.id);
+
+  // The ON list skips OFF (and hidden) modules, so move to the target's place in the full order.
+  function moveTo(id: string, targetId: string) {
+    const index = settings.order.indexOf(targetId);
+    if (index >= 0) move(id, index);
+  }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (!over || active.id === over.id) return;
-    const newIndex = ids.indexOf(String(over.id));
-    if (newIndex >= 0) move(String(active.id), newIndex);
+    moveTo(String(active.id), String(over.id));
   }
 
   return (
@@ -225,20 +261,39 @@ export function ModuleSettingsSection() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
           <ul className="space-y-2">
-            {entries.map(({ module, enabled }, index) => (
-              <ModuleRow
+            {onModules.map((module, index) => (
+              <OnModuleRow
                 key={module.data.id}
                 module={module}
-                enabled={enabled}
                 isFirst={index === 0}
-                isLast={index === entries.length - 1}
+                isLast={index === onModules.length - 1}
                 onToggle={(next) => setEnabled(module.data.id, next)}
-                onMove={(delta) => move(module.data.id, index + delta)}
+                onMove={(delta) => moveTo(module.data.id, ids[index + delta])}
               />
             ))}
           </ul>
         </SortableContext>
       </DndContext>
+
+      {offModules.length > 0 ? (
+        <details className="group rounded-xl border border-border px-3 py-2">
+          <summary className="flex cursor-pointer list-none items-center gap-1 text-sm font-medium">
+            <ChevronRight aria-hidden className="h-4 w-4 transition-transform group-open:rotate-90" />
+            {t("settings_modules_off_heading", { count: offModules.length })}
+          </summary>
+          <ul className="mt-2 space-y-2">
+            {offModules.map((module) => (
+              <li
+                key={module.data.id}
+                data-testid="off-module-row"
+                className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-2 py-2"
+              >
+                <RowBody module={module} enabled={false} onToggle={(next) => setEnabled(module.data.id, next)} />
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </div>
   );
 }
