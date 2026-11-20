@@ -230,7 +230,7 @@ describe("ModuleSettingsSection", () => {
       fireEvent.click(screen.getByRole("menuitem", { name: "初期の定義に戻す" }));
       expect(await screen.findByText("体調の定義を初期の形に戻します。記録は消えません")).toBeTruthy();
       expect(screen.queryByText(/種類が合わない値/)).toBeNull();
-      fireEvent.click(screen.getByRole("button", { name: "削除する" }));
+      fireEvent.click(screen.getByRole("button", { name: "初期の定義に戻す" }));
 
       await waitFor(() => expect(isBuiltinCustomized("wellness")).toBe(false));
       expect(getCustomTypes().find((t) => t.id === "wellness")?.definition).toEqual(builtinDefinition("wellness"));

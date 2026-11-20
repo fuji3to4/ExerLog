@@ -47,21 +47,7 @@ test("formatMeasurementValue uses the item's decimals", () => {
   expect(formatMeasurementValue(PLAIN[0], 60.25)).toBe("60.3");
 });
 
-test("formatMeasurementSummary joins known items in list order and omits unknown ones", () => {
-  const record: MeasurementRecord = {
-    id: "1",
-    date: "2026-10-22",
-    recordedAt: "2026-10-22T07:12:00+09:00",
-    values: { bodyFat: 22, weight: 60.2, waist: 80 },
-    note: "",
-    updatedAt: "2026-10-22T07:12:00+09:00",
-  };
-  const messages = getMessages("ja");
-  const t = (key: keyof typeof messages) => messages[key];
-  expect(formatMeasurementSummary(record, PLAIN, t)).toBe("体重 60.2kg・体脂肪率 22.0%");
-});
-
-test("formatMeasurementSummary lists only the given items: plain values, or arm and leg circumference counts", () => {
+test("formatMeasurementSummary counts the recorded arm and leg circumference sites among the given items", () => {
   const baseRecord: MeasurementRecord = {
     id: "1",
     date: "2026-10-22",
@@ -75,9 +61,9 @@ test("formatMeasurementSummary lists only the given items: plain values, or arm 
     messages[key].replace(/\{(\w+)\}/g, (_, name) => String(params?.[name]));
   const values = { weight: 60.2, legAnkleLeft: 21, armPalmLeft: 18, armPalmRight: 19 };
   expect(formatMeasurementSummary({ ...baseRecord, values }, [...PLAIN, ...CIRCUMFERENCE_ITEMS], t)).toBe(
-    "体重 60.2kg・腕の周径 2か所・脚の周径 1か所",
+    "腕の周径 2か所・脚の周径 1か所",
   );
-  expect(formatMeasurementSummary({ ...baseRecord, values }, PLAIN, t)).toBe("体重 60.2kg");
+  expect(formatMeasurementSummary({ ...baseRecord, values }, PLAIN, t)).toBe("");
   expect(formatMeasurementSummary({ ...baseRecord, values }, CIRCUMFERENCE_ITEMS, t)).toBe("腕の周径 2か所・脚の周径 1か所");
   expect(formatMeasurementSummary({ ...baseRecord, values: { legGroinRight: 53.4 } }, CIRCUMFERENCE_ITEMS, t)).toBe(
     "脚の周径 1か所",

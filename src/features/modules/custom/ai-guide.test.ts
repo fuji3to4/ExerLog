@@ -22,6 +22,13 @@ describe("buildAiGuide", () => {
     }
   });
 
+  it.each(["ja", "en"] as const)("explains the built-in ids and locked body fields (%s)", (lang) => {
+    const guide = buildAiGuide(lang);
+    for (const word of ["wellness", "body", "selfcare", "girth", "weight", "height"]) {
+      expect(guide).toContain(word);
+    }
+  });
+
   it("ends with the prompt line", () => {
     expect(buildAiGuide("ja").trimEnd().endsWith("記録したいもの:")).toBe(true);
     expect(buildAiGuide("en").trimEnd().endsWith("What I want to record:")).toBe(true);

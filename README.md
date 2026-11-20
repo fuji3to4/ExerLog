@@ -9,7 +9,7 @@ A local-first exercise and wellness tracking PWA. Record how you feel, body meas
 ## Features
 
 - **Today** — Review a time-stamped daily timeline, get recommended exercises, and log them with one tap. Add and edit records from **+ Add record**.
-- **Record items** — Condition (physical and mental scores), Body (weight, body fat, height, BMI), Chest & waist, Arm & leg circumference, Photos, Self-care, Compression and Symptoms. Switch each on or off and reorder them in Settings. Self-care, Compression and Symptoms are tagged for lymphedema and start off unless the build enables them (see [Build-time defaults](#build-time-defaults)).
+- **Record items** — Condition (physical and mental scores), Body (weight, body fat, height, BMI), Chest & waist, Arm & leg circumference, Photos, Self-care, Compression and Symptoms. Switch each on or off and reorder them in Settings. Condition, Body, Self-care and Chest & waist can be exported, customized and re-imported in place (they cannot be deleted, but can be reset to default). Self-care, Compression and Symptoms are tagged for lymphedema and start off unless the build enables them (see [Build-time defaults](#build-time-defaults)).
 - **Library and my lists** — Search, filter, sort or shuffle the exercise catalog, and add, edit and delete your own exercises. Group videos into lists (a video can appear more than once) and reorder the library or a list by dragging.
 - **Video player** — Watch an exercise video, log it as done or partly done, and play a list continuously with loop, shuffle and repeat-one. The screen stays on while playing.
 - **History** — Browse recorded days on a calendar, review and edit a day's timeline, see each record item's graphs or summaries, and summarize any period across all items.
@@ -31,7 +31,7 @@ If ExerLog does not have a field for something you want to record, you can add a
 Notes:
 
 - Fields can be numbers, 1–N scores, single choice, multiple choice, yes/no and short text. Every record also gets a time and a note. Calculations, photos, videos and custom screens are not supported.
-- Definitions can be exported from the **⋯** menu and shared as files. Condition and Self-care can also be exported as templates to customize.
+- Definitions can be exported from the **⋯** menu and shared as files. Condition, Body, Self-care and Chest & waist can be exported, customized and re-imported with the same `id` to change them in place. They cannot be deleted, but can be reset to default. In Body, `weight` and `height` (used for BMI) cannot be removed or change type or unit.
 - Re-importing a definition with the same `id` updates it. Removed fields keep their data; changing a field's type is rejected (use a new field id).
 - Deleting a definition hides it and keeps its records; it can be restored or deleted permanently from **Deleted definitions**.
 - Definitions sync to the `RecordTypes` sheet tab, and each type's records to a `Custom_<id>` tab.
@@ -106,10 +106,7 @@ npm run test
 
 ## Add a body-measurement item
 
-1. Add an entry to `BODY_ITEMS` (Body) or `GIRTH_ITEMS` (Chest & waist) in `src/features/measurements/measurement-items.ts` with `id`, `labelKey`, `unit`, `decimals`, `min`, `max`, and `showInGraph`. The `id` must not collide with `id`, `date`, `recordedAt`, `note`, or `updatedAt`.
-2. Add the display name for `labelKey` to `src/features/i18n/messages/en.ts` and `ja.ts`.
-
-The input field, history, graph, CSV export, and spreadsheet column follow from these changes.
+Body and Chest & waist items are built-in record types. To add one, export the definition (`body` or `girth`) from the **⋯** menu in Settings, add a number field, and import it again with the same `id`. In Body, `weight` and `height` are locked because BMI uses them. Arm and leg circumference items are separate: add them to `CIRCUMFERENCE_ITEMS` in `src/features/measurements/measurement-items.ts` (see `circumference-sites.ts`) and add the display name for each `labelKey` to `src/features/i18n/messages/en.ts` and `ja.ts`.
 
 ## Exercise catalog data
 
@@ -134,7 +131,7 @@ ExerLogは、運動とコンディションを記録するローカルファー�
 ## 主な機能
 
 - **今日** — 時刻付きの1日のタイムラインと今日のおすすめ運動を表示し、ワンタップで記録できます。「＋ 記録する」から各記録を追加・編集できます。
-- **記録する項目** — 体調（からだ・こころのスコア）、身体（体重・体脂肪・身長・BMI）、胸囲・腹囲、腕・脚周径、写真、セルフケア、着用、症状。設定で項目ごとに ON/OFF と並べ替えができます。セルフケア・着用・症状はリンパ浮腫向けのタグ付きで、ビルドで有効にしない限り最初は OFF です（[ビルド時の初期設定](#ビルド時の初期設定)を参照）。
+- **記録する項目** — 体調（からだ・こころのスコア）、身体（体重・体脂肪・身長・BMI）、胸囲・腹囲、腕・脚周径、写真、セルフケア、着用、症状。設定で項目ごとに ON/OFF と並べ替えができます。体調・身体・セルフケア・胸囲・腹囲は、書き出して作り変え、同じ ID で読み込むとその場で変わります（削除はできず、初期の定義に戻せます）。セルフケア・着用・症状はリンパ浮腫向けのタグ付きで、ビルドで有効にしない限り最初は OFF です（[ビルド時の初期設定](#ビルド時の初期設定)を参照）。
 - **ライブラリとマイリスト** — 運動カタログを検索・絞り込み・並べ替え・シャッフルでき、自分の運動の追加・編集・削除もできます。動画をリストにまとめられ（同じ動画を複数回入れることも可能）、ライブラリやリストの順番はドラッグで変えられます。
 - **動画プレイヤー** — 運動の動画を見て「できた」「一部できた」を記録できます。リストの連続再生、ループ、シャッフル、1本リピートができ、再生中は画面が消えません。
 - **履歴** — カレンダーから記録日を選び、その日のタイムラインを確認・編集できます。記録する項目ごとのグラフやまとめ、項目をまたいだ期間のまとめを表示します。
@@ -156,7 +153,7 @@ ExerLog に記録したい項目がないときは、コードを変えずに記
 補足:
 
 - 使える項目は、数値・段階スコア・1つ選ぶ・いくつでも選ぶ・はい／いいえ・短いテキストです。どの記録にも日時とメモが付きます。計算、写真、動画、専用の画面は使えません。
-- 定義は「**⋯**」から書き出して、ファイルでほかの人に渡せます。体調とセルフケアも、ひな形として書き出して作り変えられます。
+- 定義は「**⋯**」から書き出して、ファイルでほかの人に渡せます。体調・身体・セルフケア・胸囲・腹囲は、書き出して作り変え、同じ `id` で読み込むとその場で変わります。削除はできず、初期の定義に戻せます。身体の `weight` と `height` は BMI の計算に使うので、消したり種類・単位を変えたりできません。
 - 同じ `id` の定義を読み込み直すと更新になります。消した項目のデータは残ります。項目の種類を変えることはできません（別の項目 ID にしてください）。
 - 定義を削除すると画面から消えますが、記録は残ります。「**削除した定義**」から元に戻すことも、完全に削除することもできます。
 - 定義はスプレッドシートの `RecordTypes` タブに、各種類の記録は `Custom_<id>` タブに同期されます。
@@ -231,10 +228,7 @@ npm run test
 
 ## 身体測定項目を追加する
 
-1. `src/features/measurements/measurement-items.ts` の `BODY_ITEMS`（身体）または `GIRTH_ITEMS`（胸囲・腹囲）に、`id`・`labelKey`・`unit`・`decimals`・`min`・`max`・`showInGraph` を設定した項目を追加します。`id` は `id`・`date`・`recordedAt`・`note`・`updatedAt` と重複させないでください。
-2. `src/features/i18n/messages/en.ts` と `ja.ts` に `labelKey` の表示名を追加します。
-
-入力項目・履歴・グラフ・CSV・スプレッドシートの列は、これらの変更に連動します。
+身体・胸囲・腹囲の項目は、標準の記録の種類です。足すときは、設定の「**⋯**」から定義（`body` または `girth`）を書き出し、数値の項目を足して、同じ `id` で読み込み直します。身体の `weight` と `height` は BMI の計算に使うので、固定されています。腕・脚の周径は別で、`src/features/measurements/measurement-items.ts` の `CIRCUMFERENCE_ITEMS`（`circumference-sites.ts` を参照）に足し、各 `labelKey` の表示名を `src/features/i18n/messages/en.ts` と `ja.ts` に追加します。
 
 ## 運動カタログデータ
 

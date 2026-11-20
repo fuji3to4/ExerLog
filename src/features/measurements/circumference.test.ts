@@ -11,7 +11,6 @@ import {
   countCircumferenceValues,
   findCircumferenceItem,
   formatDelta,
-  isCircumferenceItem,
   readCircumferenceLimb,
   sideDifference,
   writeCircumferenceLimb,
@@ -30,7 +29,7 @@ test("defines 20 circumference items, arm before leg, left before right", () => 
 });
 
 test("every circumference item is cm, 1 decimal, 5–150, not in the plain graph list", () => {
-  const items = CIRCUMFERENCE_ITEMS.filter(isCircumferenceItem);
+  const items = CIRCUMFERENCE_ITEMS;
   expect(items).toHaveLength(20);
   for (const item of items) {
     expect(item).toMatchObject({ unit: "cm", decimals: 1, min: 5, max: 150, showInGraph: false });

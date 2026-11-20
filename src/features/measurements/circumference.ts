@@ -12,10 +12,6 @@ export function findCircumferenceItem(limb: Limb, site: CircumferenceSite, side:
   return item;
 }
 
-export function isCircumferenceItem(item: MeasurementItem): boolean {
-  return item.circumference !== undefined;
-}
-
 export function countCircumferenceValues(values: Record<string, number>, limb: Limb): number {
   return CIRCUMFERENCE_ITEMS.filter((item) => item.circumference?.limb === limb && item.id in values).length;
 }

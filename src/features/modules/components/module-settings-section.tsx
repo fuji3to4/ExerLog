@@ -211,7 +211,7 @@ function RowBody({ module, enabled, onToggle, moveButtons }: RowBodyProps) {
               {t("settings_delete_cancel_btn")}
             </Button>
             <Button variant="destructive" onClick={() => void reset()}>
-              {t("settings_delete_confirm_btn")}
+              {t("custom_reset")}
             </Button>
           </div>
           {resetFailed ? (
