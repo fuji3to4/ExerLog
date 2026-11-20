@@ -38,12 +38,9 @@ describe("registry with custom record types", () => {
     await saveImportedDefinition(protein);
     const modules = recordModules();
     const data = recordModuleData();
-    // The 4 seeded built-in types are custom types too, sorted by id with the import,
-    // so the import is among the last 5 (after every code module).
-    const imported = modules.find((m) => m.data.id === "custom:protein");
-    expect(modules.indexOf(imported!)).toBeGreaterThanOrEqual(modules.length - 5);
-    expect(imported?.data).toBe(data[modules.indexOf(imported!)]);
-    expect(getModuleData("custom:protein")).toBe(imported?.data);
+    expect(modules.at(-1)?.data.id).toBe("custom:protein");
+    expect(modules.at(-1)?.data).toBe(data.at(-1));
+    expect(getModuleData("custom:protein")).toBe(data.at(-1));
     // Stable while the types are unchanged.
     expect(recordModules()).toBe(modules);
     expect(recordModuleData()).toBe(data);
@@ -80,7 +77,7 @@ describe("registry with custom record types", () => {
     const tabs = tableSyncConfigs().map((c) => c.tabName);
     expect(tabs).toContain("Custom_protein");
     expect(tabs).toContain("RecordTypes");
-    expect(tabs.indexOf("RecordTypes")).toBeLessThan(tabs.indexOf("WellnessEntries"));
+    expect(tabs.indexOf("RecordTypes")).toBeLessThan(tabs.indexOf("Custom_wellness"));
   });
 
   it("does not list the same table twice in syncedDbTables()", async () => {

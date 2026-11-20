@@ -1,23 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { BODY_ITEMS, formatMeasurementSummary } from "@/features/measurements/measurement-items";
-import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
+import type { CustomRecord, ExerciseLog, MeasurementRecord, WatchEvent } from "@/lib/types";
 
 import { buildTimeline, labelAt } from "./build-timeline";
 
-const labelWellness = (entry: WellnessEntry, watches: WatchEvent[], logs: ExerciseLog[]) =>
+const labelWellness = (entry: CustomRecord, watches: WatchEvent[], logs: ExerciseLog[]) =>
   labelAt(entry.recordedAt, watches, logs);
 
 const D = "2026-10-20";
 const iso = (hhmm: string) => `${D}T${hhmm}:00+09:00`;
 
-function wellness(hhmm: string, id = `w-${hhmm}`): WellnessEntry {
+function wellness(hhmm: string, id = `w-${hhmm}`): CustomRecord {
   return {
     id,
     date: D,
+    typeId: "wellness",
     recordedAt: iso(hhmm),
-    physicalScore: 3,
-    mentalScore: 3,
+    values: { physical: 3, mental: 3 },
     note: "",
     updatedAt: iso(hhmm),
   };
@@ -79,7 +78,7 @@ describe("labelWellness", () => {
 
 describe("buildTimeline", () => {
   const titles = new Map([["ex1", "Stretch"]]);
-  const mods = (wellnessRecords: WellnessEntry[], body: MeasurementRecord[] = [], circumference: MeasurementRecord[] = []) => [
+  const mods = (wellnessRecords: CustomRecord[], body: MeasurementRecord[] = [], circumference: MeasurementRecord[] = []) => [
     { moduleId: "wellness", records: wellnessRecords },
     { moduleId: "body", records: body },
     { moduleId: "circumference", records: circumference },
@@ -142,13 +141,5 @@ describe("buildTimeline", () => {
       titles,
     });
     expect(items[1]).toMatchObject({ kind: "module", moduleId: "circumference", label: "afterVideo" });
-  });
-});
-
-describe("formatMeasurementSummary", () => {
-  it("lists known items in list order and skips unknown ones", () => {
-    const t = (key: string) => (key === "measurement_item_weight" ? "体重" : "体脂肪率");
-    const record = { ...measurement("07:12"), values: { bodyFat: 22, weight: 60.2, waist: 80 } };
-    expect(formatMeasurementSummary(record, BODY_ITEMS, t)).toBe("体重 60.2kg・体脂肪率 22.0%");
   });
 });

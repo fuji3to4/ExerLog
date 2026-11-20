@@ -4,14 +4,14 @@ import { expect, test, vi } from "vitest";
 
 import { renderWithLanguage } from "@/test/render-with-language";
 
-import { WellnessScoreInput } from "./wellness-score-input";
+import { ScaleInput } from "./scale-input";
 
 function renderInput(
   value: 1 | 2 | 3 | 4 | 5 = 3,
   onChange: (s: 1 | 2 | 3 | 4 | 5) => void = () => {},
 ) {
   return renderWithLanguage(
-    <WellnessScoreInput label="Physical" value={value} onChange={onChange} />,
+    <ScaleInput label="Physical" value={value} onChange={onChange} />,
     { initialLanguage: "en" },
   );
 }

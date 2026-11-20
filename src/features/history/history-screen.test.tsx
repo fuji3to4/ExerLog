@@ -8,10 +8,9 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog.default";
 import { appDb } from "@/features/storage/app-db";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
-import { bodyRepository } from "@/features/modules/body/data";
 import { circumferenceRepository } from "@/features/modules/circumference/data";
 import { recordWatchEvent } from "@/features/storage/watch-events.repository";
-import { addWellnessEntry } from "@/features/modules/wellness/data";
+import { addBuiltinRecord } from "@/test/builtin-records";
 import { renderWithLanguage } from "@/test/render-with-language";
 
 import { HistoryScreen } from "./components/history-screen";
@@ -22,10 +21,9 @@ beforeEach(async () => {
   window.localStorage.removeItem("lymly-record-modules");
   await Promise.all([
     appDb.exerciseLogs.clear(),
-    appDb.wellnessEntries.clear(),
+    appDb.customRecords.clear(),
     appDb.watchEvents.clear(),
     appDb.exercises.clear(),
-    appDb.bodyRecords.clear(),
     appDb.circumferenceRecords.clear(),
   ]);
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
@@ -46,20 +44,17 @@ async function seedHistory() {
     durationSeconds: 300,
     performedAt: "2026-03-23T09:00:00+09:00",
   });
-  await bodyRepository.add({
+  await addBuiltinRecord("body", {
     date: "2026-03-23",
     recordedAt: "2026-03-23T07:00:00+09:00",
     values: { height: 171, weight: 62 },
-    note: "",
   });
 
   // 3/24: wellness only
-  await addWellnessEntry({
+  await addBuiltinRecord("wellness", {
     date: "2026-03-24",
     recordedAt: "2026-03-24T08:00:00+09:00",
-    physicalScore: 4,
-    mentalScore: 3,
-    note: "",
+    values: { physical: 4, mental: 3 },
   });
 
   // 3/25: watched only
@@ -70,11 +65,10 @@ async function seedHistory() {
   });
 
   // 3/27: body measurement only
-  await bodyRepository.add({
+  await addBuiltinRecord("body", {
     date: "2026-03-27",
     recordedAt: "2026-03-27T07:30:00+09:00",
     values: { weight: 61.5 },
-    note: "",
   });
 
   // 3/28: circumference only
@@ -139,7 +133,7 @@ test("shows the selected day's timeline without a day summary card", async () =>
   expect(screen.queryByRole("heading", { name: /metrics/i })).toBeNull();
 
   await user.click(screen.getByRole("button", { name: "March 24 (recorded)" }));
-  expect(await screen.findByRole("button", { name: /body 4/ })).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: /Physical condition 4\/5/ })).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Shoulder Rolls/ })).toBeNull();
 });
 
@@ -153,13 +147,14 @@ test("adds a wellness entry to a past day's timeline and refreshes the calendar 
   fireEvent.keyDown(await screen.findByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
   fireEvent.click(await screen.findByRole("menuitem", { name: "体調" }));
   const dialog = await screen.findByRole("dialog", { name: "体調を記録" });
-  fireEvent.click(within(within(dialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "4" }));
+  fireEvent.click(within(within(dialog).getByRole("group", { name: "からだの調子" })).getByRole("button", { name: "4" }));
+  fireEvent.click(within(within(dialog).getByRole("group", { name: "こころの調子" })).getByRole("button", { name: "3" }));
   fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
 
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 3000 });
 
-  expect(await screen.findByRole("button", { name: /からだ4/ })).toBeInTheDocument();
-  const entries = await appDb.wellnessEntries.where("date").equals("2026-03-10").toArray();
+  expect(await screen.findByRole("button", { name: /からだの調子 4\/5/ })).toBeInTheDocument();
+  const entries = await appDb.customRecords.where("[typeId+date]").equals(["wellness", "2026-03-10"]).toArray();
   expect(entries).toHaveLength(1);
 
   const markedDay = await screen.findByRole("button", { name: "3月10日（記録あり）" });
@@ -188,7 +183,7 @@ test("has no summary/graph toggle and starts on the すべて chip", async () =>
   expect(screen.queryByRole("button", { name: "まとめ" })).toBeNull();
   expect(screen.queryByRole("button", { name: "グラフ" })).toBeNull();
   const chips = within(screen.getByRole("tablist", { name: "表示する記録" })).getAllByRole("tab");
-  expect(chips.map((chip) => chip.textContent)).toEqual(["すべて", "運動", "体調", "身体", "胸囲・腹囲", "腕・脚周径", "写真", "セルフケア", "着用", "症状"]);
+  expect(chips.map((chip) => chip.textContent)).toEqual(["すべて", "運動", "🙂体調", "⚖️身体", "📏胸囲・腹囲", "腕・脚周径", "写真", "🧴セルフケア", "着用", "症状"]);
   expect(screen.getByRole("tab", { name: "すべて" })).toHaveAttribute("aria-selected", "true");
 });
 
@@ -202,7 +197,8 @@ test("pressing a module chip shows its graph controls instead of the calendar", 
 
   expect(screen.queryByRole("heading", { name: "カレンダー" })).toBeNull();
   expect(await screen.findByText("表示する項目")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "7日" })).toBeInTheDocument();
+  // The graph and the record list each have their own period buttons.
+  expect(screen.getAllByRole("button", { name: "7日" }).length).toBeGreaterThan(0);
 
   await user.click(screen.getByRole("tab", { name: "すべて" }));
   expect(await screen.findByRole("heading", { name: "カレンダー" })).toBeInTheDocument();

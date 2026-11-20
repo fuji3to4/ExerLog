@@ -5,9 +5,8 @@ import { Dumbbell } from "lucide-react";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
-import { bodyModule } from "@/features/modules/body/module";
 import { circumferenceModule } from "@/features/modules/circumference/module";
-import { wellnessModule } from "@/features/modules/wellness/module";
+import { getRecordModule } from "@/features/modules/registry";
 import type { RecordModule } from "@/features/modules/types";
 import { renderWithLanguage } from "@/test/render-with-language";
 
@@ -17,8 +16,8 @@ function withView(module: unknown, text: string): RecordModule {
   return { ...(module as RecordModule), HistoryView: () => <p>{text}</p> };
 }
 
-const wellness = withView(wellnessModule, "体調の見返し");
-const body = withView(bodyModule, "身体の見返し");
+const wellness = withView(getRecordModule("wellness"), "体調の見返し");
+const body = withView(getRecordModule("body"), "身体の見返し");
 const circumference = withView(circumferenceModule, "周径の見返し");
 
 describe("HistoryModuleTabs", () => {
@@ -28,7 +27,7 @@ describe("HistoryModuleTabs", () => {
       { initialLanguage: "ja" },
     );
     const tabs = within(screen.getByRole("tablist", { name: "表示する記録" })).getAllByRole("tab");
-    expect(tabs.map((tab) => tab.textContent)).toEqual(["すべて", "体調", "身体", "腕・脚周径"]);
+    expect(tabs.map((tab) => tab.textContent)).toEqual(["すべて", "🙂体調", "⚖️身体", "腕・脚周径"]);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("まとめの中身")).toBeInTheDocument();
   });
@@ -103,7 +102,7 @@ describe("HistoryModuleTabs", () => {
       { initialLanguage: "ja" },
     );
     const tabs = within(screen.getByRole("tablist", { name: "表示する記録" })).getAllByRole("tab");
-    expect(tabs.map((tab) => tab.textContent)).toEqual(["運動", "体調"]);
+    expect(tabs.map((tab) => tab.textContent)).toEqual(["運動", "🙂体調"]);
     expect(screen.getByText("運動の見返し")).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "体調" }));
     expect(screen.getByText("体調の見返し")).toBeInTheDocument();

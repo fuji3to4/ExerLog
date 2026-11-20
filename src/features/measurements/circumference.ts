@@ -1,13 +1,13 @@
 import type { MeasurementRecord } from "@/lib/types";
 
-import { MEASUREMENT_ITEMS, type MeasurementItem } from "./measurement-items";
+import { CIRCUMFERENCE_ITEMS, type MeasurementItem } from "./measurement-items";
 import { circumferenceItemId, type Limb, type Side, type CircumferenceSite } from "./circumference-sites";
 
 export * from "./circumference-sites";
 
 export function findCircumferenceItem(limb: Limb, site: CircumferenceSite, side: Side): MeasurementItem {
   const id = circumferenceItemId(limb, site, side);
-  const item = MEASUREMENT_ITEMS.find((candidate) => candidate.id === id);
+  const item = CIRCUMFERENCE_ITEMS.find((candidate) => candidate.id === id);
   if (!item) throw new Error(`Unknown circumference item: ${id}`);
   return item;
 }
@@ -17,7 +17,7 @@ export function isCircumferenceItem(item: MeasurementItem): boolean {
 }
 
 export function countCircumferenceValues(values: Record<string, number>, limb: Limb): number {
-  return MEASUREMENT_ITEMS.filter((item) => item.circumference?.limb === limb && item.id in values).length;
+  return CIRCUMFERENCE_ITEMS.filter((item) => item.circumference?.limb === limb && item.id in values).length;
 }
 
 export const CIRCUMFERENCE_LIMB_STORAGE_KEY = "exerlog-circumference-limb";

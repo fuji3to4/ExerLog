@@ -2,10 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
-import { generateWellnessEntriesCsv } from "@/features/modules/wellness/data";
 import { generateExerciseLogsCsv, generateMeasurementsCsv, generateWatchEventsCsv } from "./history-csv";
-import { BODY_ITEMS, CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
-import type { ExerciseLog, MeasurementRecord, WatchEvent, WellnessEntry } from "@/lib/types";
+import { CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
+import type { ExerciseLog, MeasurementRecord, WatchEvent } from "@/lib/types";
 
 const makeLog = (overrides: Partial<ExerciseLog> = {}): ExerciseLog => ({
   id: "log1",
@@ -15,17 +14,6 @@ const makeLog = (overrides: Partial<ExerciseLog> = {}): ExerciseLog => ({
   performedAt: "2024-01-15T09:00:00+09:00",
   durationSeconds: 330,
   updatedAt: "2024-01-15T09:00:00+09:00",
-  ...overrides,
-});
-
-const makeWellness = (overrides: Partial<WellnessEntry> = {}): WellnessEntry => ({
-  id: "w1",
-  date: "2024-01-15",
-  recordedAt: "2024-01-15T09:30:00+09:00",
-  physicalScore: 4,
-  mentalScore: 3,
-  note: "Slept well",
-  updatedAt: "2024-01-15T09:30:00+09:00",
   ...overrides,
 });
 
@@ -42,7 +30,7 @@ const makeMeasurement = (overrides: Partial<MeasurementRecord> = {}): Measuremen
   id: "m1",
   date: "2024-01-15",
   recordedAt: "2024-01-15T07:10:00+09:00",
-  values: { weight: 60.25, waist: 80 },
+  values: { armPalmLeft: 15.25, waist: 80 },
   note: "",
   updatedAt: "2024-01-15T07:10:00+09:00",
   ...overrides,
@@ -65,22 +53,6 @@ describe("generateExerciseLogsCsv", () => {
   });
 });
 
-describe("generateWellnessEntriesCsv", () => {
-  it("has the expected headers", () => {
-    expect(generateWellnessEntriesCsv([makeWellness()]).split("\n")[0]).toBe(
-      "date,recordedAt,physicalScore,mentalScore,note",
-    );
-  });
-
-  it("formats recordedAt as YYYY-MM-DD HH:MM", () => {
-    expect(generateWellnessEntriesCsv([makeWellness()])).toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
-  });
-
-  it("handles empty recordedAt gracefully", () => {
-    expect(generateWellnessEntriesCsv([makeWellness({ recordedAt: "" })])).toContain("Slept well");
-  });
-});
-
 describe("generateWatchEventsCsv", () => {
   it("has the expected headers and falls back to the id for unknown titles", () => {
     const lines = generateWatchEventsCsv([makeWatch()], new Map()).split("\n");
@@ -95,9 +67,10 @@ describe("generateWatchEventsCsv", () => {
 
 describe("generateMeasurementsCsv", () => {
   it("writes the given items' columns with raw values, blanks for missing, none for unknown ids", () => {
-    const [header, row] = generateMeasurementsCsv([makeMeasurement()], BODY_ITEMS).split("\n");
-    expect(header).toBe("date,recordedAt,note,weight,bodyFat,height");
-    expect(row).toMatch(/^2024-01-15,\d{4}-\d{2}-\d{2} \d{2}:\d{2},,60\.25,,$/);
+    const items = CIRCUMFERENCE_ITEMS.slice(0, 3);
+    const [header, row] = generateMeasurementsCsv([makeMeasurement()], items).split("\n");
+    expect(header).toBe("date,recordedAt,note,armPalmLeft,armPalmRight,armWristLeft");
+    expect(row).toMatch(/^2024-01-15,\d{4}-\d{2}-\d{2} \d{2}:\d{2},,15\.25,,$/);
   });
 
   it("writes one column per circumference item, in order", () => {

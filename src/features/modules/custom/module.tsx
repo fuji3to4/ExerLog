@@ -1,16 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ComponentType } from "react";
 
 import { MetricGraphView, sortByTime, type GraphMetric } from "@/features/history/components/metric-graph-view";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { TimeLabelTag } from "@/features/timeline/components/time-label-tag";
-import type { CustomRecord, CustomRecordType } from "@/lib/types";
+import type { CustomRecord, CustomRecordType, CustomValue } from "@/lib/types";
 import { RangeSummaryView } from "../components/range-summary-view";
 import { SummaryCardFrame, SummaryEmpty, usePeriodSummary } from "../components/summary-card";
+import type { ModuleTag } from "../module-tags";
 import type { Period } from "../period";
 import type { RecordFormProps, RecordModule, RecordModuleData, TimeLabel } from "../types";
-import { CustomRecordForm } from "./custom-form";
+import { CustomRecordForm, type CustomFormExtraProps } from "./custom-form";
 import { createCustomModuleData, listCustomInRange } from "./data";
 import { resolveText, type CustomRecordDefinition } from "./definition";
 import { summarizeCustomRecords, type CustomSummary } from "./summary";
@@ -94,27 +95,49 @@ function SummaryBody({ definition, summary }: { definition: CustomRecordDefiniti
   );
 }
 
+/** Definition-specific additions to the generic screens (filled for body's BMI). */
+export type CustomModuleExtras = {
+  /** Metrics added after the field metrics in the history graph. */
+  graphMetrics?(data: RecordModuleData<CustomRecord>): GraphMetric[];
+  /** Shown in the form below the fields. */
+  FormExtra?: ComponentType<{ values: Record<string, CustomValue>; recordedAt: string; recordId?: string }>;
+  /** Shown in the period summary card below the generic summary. */
+  SummaryExtra?: ComponentType<{ records: CustomRecord[] }>;
+};
+
+export type CustomModuleOptions = {
+  /** false for built-in types (no "custom" badge). Defaults to true. */
+  isCustom?: boolean;
+  tags?: readonly ModuleTag[];
+  extras?: CustomModuleExtras;
+};
+
 const NO_RECORDS: CustomRecord[] = [];
-const NO_SUMMARY = { summary: null as CustomSummary | null };
+const NO_SUMMARY = { summary: null as CustomSummary | null, records: NO_RECORDS };
 
 /**
- * Builds the screens of one imported record type. `data` defaults to a new data object;
- * the registry passes the one it already lists in `recordModuleData()`.
+ * Builds the screens of one record type (imported or built-in). `data` defaults to a new
+ * data object; the registry passes the one it already lists in `recordModuleData()`.
  */
 export function createCustomModule(
   type: CustomRecordType,
   data: RecordModuleData<CustomRecord> = createCustomModuleData(type),
+  options: CustomModuleOptions = {},
 ): RecordModule<CustomRecord> {
   const definition = type.definition;
+  const extras = options.extras ?? {};
+  const FormExtra: ComponentType<CustomFormExtraProps> | undefined = extras.FormExtra;
+  const SummaryExtra = extras.SummaryExtra;
 
-  const loadSummary = async (period: Period) => ({
-    summary: summarizeCustomRecords(definition, await data.listInPeriod(period)),
-  });
+  const loadSummary = async (period: Period) => {
+    const records = await data.listInPeriod(period);
+    return { summary: summarizeCustomRecords(definition, records), records };
+  };
   // Newest first.
   const loadList = async (period: Period) => (await data.listInPeriod(period)).slice().reverse();
 
   function Form(props: RecordFormProps<CustomRecord>) {
-    return <CustomRecordForm definition={definition} {...props} />;
+    return <CustomRecordForm definition={definition} FormExtra={FormExtra} {...props} />;
   }
 
   function TimelineCard({ record, label }: { record: CustomRecord; label: TimeLabel | null }) {
@@ -149,7 +172,10 @@ export function createCustomModule(
 
   function HistoryView() {
     const { language } = useTranslation();
-    const metrics = useMemo(() => graphMetrics(definition, language), [language]);
+    const metrics = useMemo(
+      () => [...graphMetrics(definition, language), ...(extras.graphMetrics?.(data) ?? [])],
+      [language],
+    );
     return (
       <div className="space-y-4">
         {metrics.length > 0 ? <MetricGraphView metrics={metrics} /> : null}
@@ -163,7 +189,12 @@ export function createCustomModule(
     const loaded = usePeriodSummary(period, loadSummary, NO_SUMMARY);
     return (
       <SummaryCardFrame title={resolveText(definition.name, language)}>
-        {loaded === undefined ? null : <SummaryBody definition={definition} summary={loaded.summary} />}
+        {loaded === undefined ? null : (
+          <>
+            <SummaryBody definition={definition} summary={loaded.summary} />
+            {SummaryExtra && loaded.summary ? <SummaryExtra records={loaded.records} /> : null}
+          </>
+        )}
       </SummaryCardFrame>
     );
   }
@@ -171,8 +202,9 @@ export function createCustomModule(
   return {
     data,
     naming: { kind: "text", label: definition.name, description: definition.description, emoji: definition.icon },
-    isCustom: true,
+    isCustom: options.isCustom ?? true,
     hidden: type.deleted,
+    ...(options.tags ? { tags: options.tags } : {}),
     color: definition.color,
     Form,
     TimelineCard,

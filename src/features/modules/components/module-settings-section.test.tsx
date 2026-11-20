@@ -128,7 +128,7 @@ describe("ModuleSettingsSection", () => {
     expect(offRowNames()).toEqual(["身体"]);
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent);
-    expect(items).toEqual(["体調", "胸囲・腹囲", "腕・脚周径", "写真", "セルフケア", "着用", "症状"]);
+    expect(items).toEqual(["🙂体調", "📏胸囲・腹囲", "腕・脚周径", "写真", "🧴セルフケア", "着用", "症状"]);
   });
 
   it("turning a module back ON puts it at the end of the ON list", () => {

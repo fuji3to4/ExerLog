@@ -13,18 +13,13 @@ import type {
   PhotoFile,
   PhotoRecord,
   PhotoTrashItem,
-  SelfCareRecord,
   SymptomRecord,
   Tombstone,
   WatchEvent,
-  WellnessEntry,
 } from "@/lib/types";
 
 export class AppDb extends Dexie {
   exerciseLogs!: EntityTable<ExerciseLog, "id">;
-  wellnessEntries!: EntityTable<WellnessEntry, "id">;
-  bodyRecords!: Table<MeasurementRecord, string>;
-  girthRecords!: Table<MeasurementRecord, string>;
   circumferenceRecords!: Table<MeasurementRecord, string>;
   watchEvents!: EntityTable<WatchEvent, "id">;
   photoRecords!: EntityTable<PhotoRecord, "id">;
@@ -35,7 +30,6 @@ export class AppDb extends Dexie {
   exercises!: EntityTable<ExerciseVideo, "id">;
   exerciseSets!: Table<ExerciseSet, string>;
   listOrders!: Table<ListOrder, string>;
-  selfCareRecords!: EntityTable<SelfCareRecord, "id">;
   compressionRecords!: EntityTable<CompressionRecord, "id">;
   symptomRecords!: EntityTable<SymptomRecord, "id">;
   customRecords!: Table<CustomRecord, string>;
@@ -323,6 +317,31 @@ export class AppDb extends Dexie {
       photoFiles: "id, recordId",
       photoTrash: "driveFileId",
       selfCareRecords: "id, date, recordedAt",
+      compressionRecords: "id, date, recordedAt, kind",
+      symptomRecords: "id, date, recordedAt",
+      exerciseSets: "id, createdAt",
+      listOrders: "id",
+      customRecords: "id, typeId, date, recordedAt, [typeId+date]",
+      customRecordTypes: "id",
+    });
+
+    // v18: condition, body, self-care and chest & waist records move to customRecords as
+    // built-in record types. No data migration: the old tables are dropped.
+    this.version(18).stores({
+      googleAuth: "key",
+      exerciseLogs: "id, date, exerciseId, performedAt",
+      wellnessEntries: null,
+      watchEvents: "id, date, exerciseId, watchedAt",
+      tombstones: "id, table",
+      exercises: "id, title, bodyArea, purpose, durationSeconds, intensity",
+      bodyRecords: null,
+      girthRecords: null,
+      circumferenceRecords: "id, date, recordedAt",
+      photoRecords: "id, date, recordedAt",
+      photoBlobs: "id, recordId",
+      photoFiles: "id, recordId",
+      photoTrash: "driveFileId",
+      selfCareRecords: null,
       compressionRecords: "id, date, recordedAt, kind",
       symptomRecords: "id, date, recordedAt",
       exerciseSets: "id, createdAt",

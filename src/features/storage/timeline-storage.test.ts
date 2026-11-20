@@ -14,17 +14,10 @@ import {
 } from "./exercise-logs.repository";
 import { listTombstones, recordTombstones } from "./tombstones.repository";
 import { recordWatchEvent, listWatchEventsForDay, WATCH_DEDUPE_MS } from "./watch-events.repository";
-import {
-  addWellnessEntry,
-  deleteWellnessEntry,
-  getLatestWellnessEntry,
-  listWellnessEntriesForDay,
-} from "@/features/modules/wellness/data";
 
 beforeEach(async () => {
   await Promise.all([
     appDb.exerciseLogs.clear(),
-    appDb.wellnessEntries.clear(),
     appDb.watchEvents.clear(),
     appDb.tombstones.clear(),
     appDb.exercises.clear(),
@@ -69,38 +62,6 @@ test("deleteExerciseLog removes the log and records a tombstone", async () => {
   ]);
 });
 
-test("wellness entries are listed in time order and the latest one is returned", async () => {
-  await addWellnessEntry({
-    date: "2026-10-20",
-    physicalScore: 4,
-    mentalScore: 3,
-    note: "  evening  ",
-    recordedAt: "2026-10-20T22:30:00+09:00",
-  });
-  await addWellnessEntry({
-    date: "2026-10-20",
-    physicalScore: 2,
-    mentalScore: 2,
-    note: "morning",
-    recordedAt: "2026-10-20T07:10:00+09:00",
-  });
-
-  const entries = await listWellnessEntriesForDay("2026-10-20");
-  expect(entries.map((entry) => entry.recordedAt)).toEqual([
-    "2026-10-20T07:10:00+09:00",
-    "2026-10-20T22:30:00+09:00",
-  ]);
-  expect(entries[1]?.note).toBe("evening");
-
-  const latest = await getLatestWellnessEntry("2026-10-20");
-  expect(latest?.recordedAt).toBe("2026-10-20T22:30:00+09:00");
-});
-
-test("addWellnessEntry defaults recordedAt to the entry date", async () => {
-  const entry = await addWellnessEntry({ date: "2026-10-01", physicalScore: 3, mentalScore: 3, note: "" });
-  expect(entry.recordedAt.startsWith("2026-10-01T")).toBe(true);
-});
-
 test("recordWatchEvent skips watches of the same exercise within 10 minutes", async () => {
   expect(WATCH_DEDUPE_MS).toBe(600_000);
 
@@ -133,17 +94,6 @@ test("recordWatchEvent skips watches of the same exercise within 10 minutes", as
   expect(later).toEqual(expect.objectContaining({ exerciseId: "neck-mobility-5", watchedAt: "2026-10-20T18:14:00+09:00" }));
 
   expect(await listWatchEventsForDay("2026-10-20")).toHaveLength(3);
-});
-
-test("deleteWellnessEntry records a tombstone", async () => {
-  const entry = await addWellnessEntry({ date: "2026-10-20", physicalScore: 3, mentalScore: 3, note: "" });
-
-  await deleteWellnessEntry(entry.id);
-
-  expect(await listWellnessEntriesForDay("2026-10-20")).toHaveLength(0);
-  expect(await listTombstones()).toContainEqual(
-    expect.objectContaining({ id: `WellnessEntries:${entry.id}`, table: "WellnessEntries", recordId: entry.id }),
-  );
 });
 
 test("recordTombstones overwrites an existing tombstone and schedules sync", async () => {

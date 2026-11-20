@@ -8,6 +8,9 @@ import {
   subscribeModuleSettings,
   writeModuleSettings,
 } from "./module-settings";
+import { recordModules } from "./registry";
+
+vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
 const IDS = ["wellness", "body", "circumference"];
 
@@ -162,5 +165,13 @@ describe("module settings", () => {
     const first = readModuleSettings(IDS, ["circumference"]);
     expect(first).toEqual({ order: IDS, disabled: ["circumference"] });
     expect(readModuleSettings(IDS, ["circumference"])).toBe(first);
+  });
+
+  it("keeps built-in ids before custom types load", () => {
+    // The custom type store is never loaded in this file: built-in modules come from the shipped definitions.
+    const registryIds = recordModules().map((m) => m.data.id);
+    const order = ["girth", "wellness", "body", "circumference", "photo", "selfcare", "compression", "symptoms"];
+    window.localStorage.setItem(MODULE_SETTINGS_STORAGE_KEY, JSON.stringify({ order, disabled: ["girth"] }));
+    expect(readModuleSettings(registryIds)).toEqual({ order, disabled: ["girth"] });
   });
 });

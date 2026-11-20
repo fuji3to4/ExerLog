@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { onRefreshSignedOut, trySilentRefresh, requestSignIn, signOut } from "./google-auth";
 import { isMessageKey } from "@/features/i18n/messages";
+import { BUILTIN_IDS, builtinDefinition } from "@/features/modules/custom/builtin";
 import { customTabName } from "@/features/modules/custom/data";
 import { resolveText } from "@/features/modules/custom/definition";
 import { getCustomTypes } from "@/features/modules/custom/type-store";
@@ -46,8 +47,9 @@ export function useSync(): SyncContextValue {
 export { SyncContext };
 
 /**
- * Translated label for a sync result's table name: a custom type's tab shows the
- * type's name in the display language; anything unknown falls back to the raw name.
+ * Translated label for a sync result's table name: a record type's tab (built-in or
+ * imported) shows the type's name in the display language; anything unknown falls back
+ * to the raw name.
  */
 function tabLabel(
   tableName: string,
@@ -56,6 +58,8 @@ function tabLabel(
 ): string {
   const customType = getCustomTypes().find((type) => customTabName(type.id) === tableName);
   if (customType) return resolveText(customType.definition.name, language) || tableName;
+  const builtinId = BUILTIN_IDS.find((id) => customTabName(id) === tableName);
+  if (builtinId) return resolveText(builtinDefinition(builtinId).name, language);
   const key = `sync_tab_${tableName}`;
   return isMessageKey(key) ? t(key) : tableName;
 }

@@ -6,7 +6,7 @@ import { appDb } from "./app-db";
 
 /**
  * Records that `recordIds` were deleted from `table` (a sheet tab name such as
- * "WellnessEntries") so the merge-based sync can propagate the deletion.
+ * "ExerciseLogs") so the merge-based sync can propagate the deletion.
  * Recording the same record again overwrites the previous tombstone.
  */
 export async function recordTombstones(table: string, recordIds: string[]): Promise<void> {

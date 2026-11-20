@@ -244,7 +244,9 @@ describe("SyncProvider", () => {
 
   test.each([
     ["Unknown", "Unknown"],
-    ["WellnessEntries", "体調記録"],
+    ["Circumference", "腕・脚周径"],
+    // A built-in type's tab shows its name even before the type store has loaded.
+    ["Custom_wellness", "体調"],
     // A custom type's tab shows its name in the display language.
     ["Custom_protein", "プロテイン"],
     // A tab of an unknown custom type falls back to the raw tab name.
