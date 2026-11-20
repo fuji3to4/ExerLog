@@ -8,7 +8,8 @@ vi.mock("@/lib/download", () => ({ downloadTextFile: downloadMock }));
 import { appDb } from "@/features/storage/app-db";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { SAMPLE_DEFINITION } from "../custom/ai-guide";
-import { loadCustomTypes, saveImportedDefinition } from "../custom/type-store";
+import { builtinDefinition } from "../custom/builtin";
+import { getCustomTypes, isBuiltinCustomized, loadCustomTypes, saveImportedDefinition } from "../custom/type-store";
 import { useModuleSettings } from "../use-module-settings";
 import { AddRecordMenu } from "./add-record-menu";
 import { ModuleSettingsSection } from "./module-settings-section";
@@ -177,13 +178,24 @@ describe("ModuleSettingsSection", () => {
     });
   });
 
-  describe("built-in templates", () => {
-    it("exports wellness as a definition, without a delete item", () => {
+  describe("built-in records", () => {
+    beforeEach(async () => {
+      await Promise.all([appDb.customRecordTypes.clear(), appDb.customRecords.clear()]);
+      await loadCustomTypes();
       downloadMock.mockClear();
+    });
+
+    function openMenu(name: string) {
+      fireEvent.keyDown(within(row(name)).getByRole("button", { name: `「${name}」の操作` }), { key: "Enter" });
+    }
+
+    it("shows no custom badge and offers only export on an untouched built-in", () => {
       renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
 
-      fireEvent.keyDown(within(row("体調")).getByRole("button", { name: "「体調」の操作" }), { key: "Enter" });
+      expect(within(row("体調")).queryByText("カスタム")).toBeNull();
+      openMenu("体調");
       expect(screen.queryByRole("menuitem", { name: "定義を削除" })).toBeNull();
+      expect(screen.queryByRole("menuitem", { name: "初期の定義に戻す" })).toBeNull();
       fireEvent.click(screen.getByRole("menuitem", { name: "定義を書き出す" }));
 
       expect(downloadMock).toHaveBeenCalledTimes(1);
@@ -193,9 +205,56 @@ describe("ModuleSettingsSection", () => {
       expect(JSON.parse(content).fields.map((f: { id: string }) => f.id)).toEqual(["physical", "mental"]);
     });
 
-    it("gives modules without a template no menu", () => {
+    it("gives every built-in a menu", () => {
       renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
-      expect(within(row("身体")).queryByRole("button", { name: "「身体」の操作" })).toBeNull();
+      for (const name of ["体調", "身体", "胸囲・腹囲", "セルフケア"]) {
+        expect(within(row(name)).getByRole("button", { name: `「${name}」の操作` })).toBeTruthy();
+      }
+    });
+
+    async function customizeWellness() {
+      await saveImportedDefinition({
+        ...builtinDefinition("wellness"),
+        fields: [
+          ...builtinDefinition("wellness").fields,
+          { id: "appetite", label: "食欲", type: "number", required: false },
+        ],
+      });
+    }
+
+    it("resets a customized built-in to the shipped definition after confirming", async () => {
+      await customizeWellness();
+      renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
+
+      openMenu("体調");
+      fireEvent.click(screen.getByRole("menuitem", { name: "初期の定義に戻す" }));
+      expect(await screen.findByText("体調の定義を初期の形に戻します。記録は消えません")).toBeTruthy();
+      expect(screen.queryByText(/種類が合わない値/)).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "削除する" }));
+
+      await waitFor(() => expect(isBuiltinCustomized("wellness")).toBe(false));
+      expect(getCustomTypes().find((t) => t.id === "wellness")?.definition).toEqual(builtinDefinition("wellness"));
+      await waitFor(() => expect(screen.queryByText(/初期の形に戻します/)).toBeNull());
+      openMenu("体調");
+      expect(screen.queryByRole("menuitem", { name: "初期の定義に戻す" })).toBeNull();
+    });
+
+    it("warns when records hold values the default would hide", async () => {
+      await customizeWellness();
+      await appDb.customRecords.put({
+        id: "r1",
+        typeId: "wellness",
+        date: "2026-10-20",
+        recordedAt: "2026-10-20T08:00:00+09:00",
+        values: { physical: "abc" },
+        note: "",
+        updatedAt: "",
+      });
+      renderWithLanguage(<ModuleSettingsSection />, { initialLanguage: "ja" });
+
+      openMenu("体調");
+      fireEvent.click(screen.getByRole("menuitem", { name: "初期の定義に戻す" }));
+      expect(await screen.findByText("種類が合わない値は表示されなくなります（データは残ります）")).toBeTruthy();
     });
   });
 });

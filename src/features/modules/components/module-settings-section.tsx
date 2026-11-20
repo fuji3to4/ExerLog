@@ -29,8 +29,14 @@ import { downloadTextFile } from "@/lib/download";
 import { cn } from "@/lib/utils";
 import { customModuleId } from "../custom/data";
 import type { CustomRecordDefinition } from "../custom/definition";
-import { builtinDefinition } from "../custom/builtin";
-import { getCustomTypes, markTypeDeleted } from "../custom/type-store";
+import { builtinDefinition, isBuiltinId } from "../custom/builtin";
+import {
+  countRecordsUnfitForDefault,
+  getCustomTypes,
+  isBuiltinCustomized,
+  markTypeDeleted,
+  resetBuiltin,
+} from "../custom/type-store";
 import { ModuleIcon, moduleDescription, moduleLabel } from "../module-text";
 import type { RecordModule } from "../types";
 import { useModuleSettings } from "../use-module-settings";
@@ -38,22 +44,21 @@ import { useModuleSettings } from "../use-module-settings";
 const MENU_ITEM_CLASS =
   "flex cursor-pointer select-none items-center rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-secondary";
 
-/** Until the settings UI covers every built-in (later task), only these two rows offer an export. */
-function hasExportableBuiltin(id: string): id is "wellness" | "selfcare" {
-  return id === "wellness" || id === "selfcare";
+/** The definition a row can export: the stored one of a custom type or of a built-in record type. */
+function exportableDefinition(module: RecordModule): CustomRecordDefinition | undefined {
+  const id = module.data.id;
+  if (module.isCustom) return getCustomTypes().find((candidate) => customModuleId(candidate.id) === id)?.definition;
+  if (!isBuiltinId(id)) return undefined;
+  return getCustomTypes().find((candidate) => candidate.id === id)?.definition ?? builtinDefinition(id);
 }
 
-/** The definition a row can export: a custom type's own, or a code module's built-in template. */
-function exportableDefinition(module: RecordModule): CustomRecordDefinition | undefined {
-  if (!module.isCustom) return hasExportableBuiltin(module.data.id) ? builtinDefinition(module.data.id) : undefined;
-  return getCustomTypes().find((candidate) => customModuleId(candidate.id) === module.data.id)?.definition;
-}
+type RowMenuProps = { module: RecordModule; label: string; onDelete?(): void; onReset?(): void };
 
 /**
- * The "⋯" drop-down of a row: export the definition as JSON, and for custom rows start deleting it.
- * Code modules with a built-in template only export, so the template can be copied and customized.
+ * The "⋯" drop-down of a row: export the definition as JSON; custom rows can start deleting it,
+ * and customized built-in rows can start resetting it to the shipped definition.
  */
-function RowMenu({ module, label, onDelete }: { module: RecordModule; label: string; onDelete?(): void }) {
+function RowMenu({ module, label, onDelete, onReset }: RowMenuProps) {
   const { t } = useTranslation();
 
   function exportDefinition() {
@@ -82,6 +87,11 @@ function RowMenu({ module, label, onDelete }: { module: RecordModule; label: str
           <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={exportDefinition}>
             {t("custom_export")}
           </DropdownMenu.Item>
+          {onReset ? (
+            <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={onReset}>
+              {t("custom_reset")}
+            </DropdownMenu.Item>
+          ) : null}
           {onDelete ? (
             <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={onDelete}>
               {t("custom_delete")}
@@ -110,6 +120,28 @@ function RowBody({ module, enabled, onToggle, moveButtons }: RowBodyProps) {
   const label = moduleLabel(module, t, language);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
+  const [resetUnfit, setResetUnfit] = useState<number | null>(null); // null: not confirming a reset
+  const [resetFailed, setResetFailed] = useState(false);
+  const builtinId = !module.isCustom && isBuiltinId(module.data.id) ? module.data.id : undefined;
+  // Read from the store on every render; the settings rows re-render when it changes.
+  const canReset = builtinId !== undefined && isBuiltinCustomized(builtinId);
+
+  async function startReset() {
+    if (!builtinId) return;
+    setResetFailed(false);
+    setResetUnfit(await countRecordsUnfitForDefault(builtinId).catch(() => 0));
+  }
+
+  async function reset() {
+    if (!builtinId) return;
+    setResetFailed(false);
+    try {
+      await resetBuiltin(builtinId);
+      setResetUnfit(null);
+    } catch {
+      setResetFailed(true);
+    }
+  }
 
   async function deleteType() {
     setDeleteFailed(false);
@@ -147,8 +179,8 @@ function RowBody({ module, enabled, onToggle, moveButtons }: RowBodyProps) {
       {/* Left of the arrows, so the arrows and the switch line up on every row. */}
       {module.isCustom ? (
         <RowMenu module={module} label={label} onDelete={() => setConfirmingDelete(true)} />
-      ) : hasExportableBuiltin(module.data.id) ? (
-        <RowMenu module={module} label={label} />
+      ) : builtinId ? (
+        <RowMenu module={module} label={label} onReset={canReset ? () => void startReset() : undefined} />
       ) : null}
       {moveButtons}
       <Switch checked={enabled} onCheckedChange={onToggle} aria-label={label} />
@@ -164,6 +196,25 @@ function RowBody({ module, enabled, onToggle, moveButtons }: RowBodyProps) {
             </Button>
           </div>
           {deleteFailed ? (
+            <p role="alert" className="text-sm text-[var(--danger-text)]">
+              {t("custom_save_failed")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {resetUnfit !== null && canReset ? (
+        <div className="bulk-delete-confirm w-full">
+          <p className="bulk-delete-confirm__message">{t("custom_reset_confirm", { name: label })}</p>
+          {resetUnfit > 0 ? <p className="bulk-delete-confirm__message">{t("custom_reset_unfit_note")}</p> : null}
+          <div className="bulk-delete-confirm__actions">
+            <Button variant="secondary" onClick={() => setResetUnfit(null)}>
+              {t("settings_delete_cancel_btn")}
+            </Button>
+            <Button variant="destructive" onClick={() => void reset()}>
+              {t("settings_delete_confirm_btn")}
+            </Button>
+          </div>
+          {resetFailed ? (
             <p role="alert" className="text-sm text-[var(--danger-text)]">
               {t("custom_save_failed")}
             </p>
