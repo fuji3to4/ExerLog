@@ -1,5 +1,6 @@
 import { builtinDefinition } from "@/features/modules/custom/builtin";
 import type { CustomField } from "@/features/modules/custom/definition";
+import { coerceValue } from "@/features/modules/custom/values";
 import { getCustomTypes } from "@/features/modules/custom/type-store";
 import { appDb } from "@/features/storage/app-db";
 import type { WellnessScore } from "@/lib/types";
@@ -33,10 +34,11 @@ export async function getLatestConditionScores(dayKey: string): Promise<Conditio
 
   const rows = await appDb.customRecords.where("[typeId+date]").equals(["wellness", dayKey]).toArray();
   if (rows.length === 0) return null;
-  const latest = rows.reduce((a, b) => (b.recordedAt >= a.recordedAt ? b : a));
+  const latest = rows.reduce((a, b) => (Date.parse(b.recordedAt) >= Date.parse(a.recordedAt) ? b : a));
 
-  const p = latest.values.physical;
-  const m = latest.values.mental;
+  // Sheet-synced values can arrive as strings, so decode them like the form does.
+  const p = coerceValue(physical, latest.values.physical);
+  const m = coerceValue(mental, latest.values.mental);
   if (typeof p !== "number" || typeof m !== "number") return null;
   return { physicalScore: toFiveScale(p, physical.levels), mentalScore: toFiveScale(m, mental.levels) };
 }

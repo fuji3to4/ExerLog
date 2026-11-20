@@ -77,3 +77,17 @@ test("still returns scores when only an extra field was added", async () => {
 
   expect(await getLatestConditionScores("2026-10-20")).toEqual({ physicalScore: 3, mentalScore: 4 });
 });
+
+test("reads values that arrived as strings from the sheet", async () => {
+  await seedWellness("2026-10-20T07:00:00+09:00", { physical: "4", mental: "2" } as unknown as Record<string, CustomValue>);
+
+  expect(await getLatestConditionScores("2026-10-20")).toEqual({ physicalScore: 4, mentalScore: 2 });
+});
+
+test("orders records by instant when offsets differ", async () => {
+  // 10:00Z is later than 09:30+09:00 (00:30Z) although it sorts earlier as a string.
+  await seedWellness("2026-10-20T09:30:00+09:00", { physical: 1, mental: 1 }, "a");
+  await seedWellness("2026-10-20T10:00:00Z", { physical: 5, mental: 5 }, "b");
+
+  expect(await getLatestConditionScores("2026-10-20")).toEqual({ physicalScore: 5, mentalScore: 5 });
+});
