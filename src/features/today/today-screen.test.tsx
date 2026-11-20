@@ -12,7 +12,6 @@ import { replaceAllExercises } from "@/features/storage/exercise-catalog.reposit
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
 import { createExerciseSet, listExerciseSets } from "@/features/storage/exercise-sets.repository";
 import { writeSelectedSetId } from "@/features/exercise-sets/selected-set-store";
-import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { RESHUFFLE_STORAGE_KEY } from "@/features/recommendations/reshuffle-store";
 import { PLAY_QUEUE_STORAGE_KEY, readPlayQueue } from "@/features/playlist/play-queue-store";
 import type { ExerciseDraft } from "@/lib/types";
@@ -58,7 +57,7 @@ beforeEach(async () => {
   vi.setSystemTime(new Date(2026, 9, 20, 20, 0, 0));
   await Promise.all([
     appDb.exerciseLogs.clear(),
-    appDb.wellnessEntries.clear(),
+    appDb.customRecords.clear(),
     appDb.watchEvents.clear(),
     appDb.tombstones.clear(),
     appDb.exercises.clear(),
@@ -73,6 +72,10 @@ afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
+
+async function seedWellness(recordedAt: string, values: Record<string, number>) {
+  await appDb.customRecords.put({ id: recordedAt, typeId: "wellness", date: recordedAt.slice(0, 10), recordedAt, values, note: "", updatedAt: recordedAt });
+}
 
 async function seedLog(date: string, exerciseId: string) {
   await addExerciseLog({ date, exerciseId, result: "did", durationSeconds: 300 });
@@ -114,8 +117,8 @@ test("labels the usual pick from earlier watches", async () => {
 
 test("uses the latest wellness entry of the day for recommendations", async () => {
   await replaceAllExercises(largeCatalog);
-  await addWellnessEntry({ date: "2026-10-20", recordedAt: "2026-10-20T07:00:00+09:00", physicalScore: 5, mentalScore: 5, note: "" });
-  await addWellnessEntry({ date: "2026-10-20", recordedAt: "2026-10-20T19:00:00+09:00", physicalScore: 1, mentalScore: 2, note: "" });
+  await seedWellness("2026-10-20T07:00:00+09:00", { physical: 5, mental: 5 });
+  await seedWellness("2026-10-20T19:00:00+09:00", { physical: 1, mental: 2 });
 
   renderWithLanguage(<TodayScreen date="2026-10-20" />, { initialLanguage: "en" });
 
@@ -128,7 +131,7 @@ test("ignores wellness and uses the standard recommendations when the wellness m
   const expected = await recommendedTitles();
   standard.unmount();
 
-  await addWellnessEntry({ date: "2026-10-20", recordedAt: "2026-10-20T19:00:00+09:00", physicalScore: 1, mentalScore: 1, note: "" });
+  await seedWellness("2026-10-20T19:00:00+09:00", { physical: 1, mental: 1 });
   window.localStorage.setItem(
     "lymly-record-modules",
     JSON.stringify({ order: ["wellness", "body", "circumference"], disabled: ["wellness"] }),

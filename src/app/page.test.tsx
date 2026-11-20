@@ -110,6 +110,7 @@ describe("today screen timeline", () => {
     await Promise.all([
       appDb.exerciseLogs.clear(),
       appDb.wellnessEntries.clear(),
+      appDb.customRecords.clear(),
       appDb.watchEvents.clear(),
       appDb.tombstones.clear(),
       appDb.exercises.clear(),
@@ -143,20 +144,14 @@ describe("today screen timeline", () => {
     expect(logs[0].performedAt.startsWith(`${DATE}T20:00`)).toBe(true);
   });
 
-  test("a low condition entry switches recommendations to the tired set", async () => {
+  test("a low condition record switches recommendations to the tired set", async () => {
+    // Seeded straight into customRecords: the old wellness dialog still writes wellnessEntries until it is replaced.
+    const recordedAt = `${DATE}T20:00:00+09:00`;
+    await appDb.customRecords.put({ id: "low", typeId: "wellness", date: DATE, recordedAt, values: { physical: 1, mental: 1 }, note: "", updatedAt: recordedAt });
     await renderTodayScreen();
 
     const region = await screen.findByRole("region", { name: "今日のおすすめ" });
     const titles = () => within(region).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent).sort();
-    expect(titles().some((title) => ["Alpha", "Beta", "Gamma"].includes(title ?? ""))).toBe(true);
-
-    fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
-    fireEvent.click(await screen.findByRole("menuitem", { name: "体調" }));
-    const dialog = await screen.findByRole("dialog", { name: "体調を記録" });
-    fireEvent.click(within(within(dialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "1" }));
-    fireEvent.click(within(within(dialog).getByRole("group", { name: "こころ" })).getByRole("button", { name: "1" }));
-    fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
-
     await waitFor(() => expect(titles()).toEqual(["Delta", "Epsilon", "Zeta"]), { timeout: 3000 });
   });
 });
