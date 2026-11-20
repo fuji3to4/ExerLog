@@ -38,9 +38,12 @@ describe("registry with custom record types", () => {
     await saveImportedDefinition(protein);
     const modules = recordModules();
     const data = recordModuleData();
-    expect(modules.at(-1)?.data.id).toBe("custom:protein");
-    expect(modules.at(-1)?.data).toBe(data.at(-1));
-    expect(getModuleData("custom:protein")).toBe(data.at(-1));
+    // The 4 seeded built-in types are custom types too, sorted by id with the import,
+    // so the import is among the last 5 (after every code module).
+    const imported = modules.find((m) => m.data.id === "custom:protein");
+    expect(modules.indexOf(imported!)).toBeGreaterThanOrEqual(modules.length - 5);
+    expect(imported?.data).toBe(data[modules.indexOf(imported!)]);
+    expect(getModuleData("custom:protein")).toBe(imported?.data);
     // Stable while the types are unchanged.
     expect(recordModules()).toBe(modules);
     expect(recordModuleData()).toBe(data);

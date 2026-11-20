@@ -1,5 +1,6 @@
 import type { Tombstone } from "@/lib/types";
 import { appDb } from "@/features/storage/app-db";
+import { isBuiltinId } from "@/features/modules/custom/builtin";
 import { customTabName, recordTypesSyncConfig } from "@/features/modules/custom/data";
 import { deleteOrphanRecords, loadCustomTypes } from "@/features/modules/custom/type-store";
 import { recordModuleData } from "@/features/modules/data-registry";
@@ -96,7 +97,7 @@ async function doSyncAll(
   const deletedIdsByTab = groupDeletedIds(await appDb.tombstones.toArray());
   const deletedIdsFor = (config: TableSyncConfig) =>
     config.deletable
-      ? (deletedIdsByTab.get(config.tabName) ?? new Map<string, string>())
+      ? withoutBuiltinTypes(config, deletedIdsByTab.get(config.tabName) ?? new Map<string, string>())
       : new Map<string, string>();
 
   // 3. Record-type definitions, so the types pulled here sync their records in this same run.
@@ -262,7 +263,7 @@ async function syncTable(
     const stored = await appDb.transaction("rw", syncedDbTables(), async () => {
       const local = await config.readFromDb();
       const tombstoned = config.deletable
-        ? withLocalTombstones(deletedIds, await localDeletedIds(config.tabName))
+        ? withoutBuiltinTypes(config, withLocalTombstones(deletedIds, await localDeletedIds(config.tabName)))
         : deletedIds;
       const merged = mergeRecords({
         local,
@@ -293,6 +294,16 @@ async function syncTable(
   }
 
   return result;
+}
+
+/**
+ * Built-in types cannot be deleted: RecordTypes tombstones for their ids (left
+ * from purged copies of old templates) are ignored. ensureBuiltinTypes removes
+ * the local ones, but the Tombstones tab can bring them back in step 1 of a run.
+ */
+function withoutBuiltinTypes(config: TableSyncConfig, deletedIds: Map<string, string>): Map<string, string> {
+  if (config.tabName !== recordTypesSyncConfig.tabName) return deletedIds;
+  return new Map([...deletedIds].filter(([id]) => !isBuiltinId(id)));
 }
 
 /** Remote rows whose key is tombstoned and that the merge left out. */

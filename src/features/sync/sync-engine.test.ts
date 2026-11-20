@@ -26,6 +26,7 @@ import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
 import { clearAllExercises, importStarterExercises } from "@/features/storage/exercise-catalog.repository";
 import { CIRCUMFERENCE_ITEMS } from "@/features/measurements/measurement-items";
+import { builtinDefinition, isBuiltinId } from "@/features/modules/custom/builtin";
 import { parseDefinition } from "@/features/modules/custom/definition";
 import { addCustomRecord } from "@/features/modules/custom/data";
 import {
@@ -822,6 +823,16 @@ function makeProteinRecord(overrides: Partial<CustomRecord> = {}): CustomRecord 
   };
 }
 
+/** Local type rows without the seeded built-ins. */
+async function userTypeRows() {
+  return (await appDb.customRecordTypes.toArray()).filter((row) => !isBuiltinId(row.id));
+}
+
+/** RecordTypes tab rows (header first) without the seeded built-ins. */
+function userRecordTypesTab(): string[][] | undefined {
+  return sheets.tabs.get("RecordTypes")?.filter((row) => !isBuiltinId(row[0]));
+}
+
 function proteinRow(record: CustomRecord): string[] {
   return [record.id, record.date, record.recordedAt, record.note, record.updatedAt, String(record.values.amount)];
 }
@@ -840,7 +851,7 @@ describe("syncAll: custom record types", () => {
     const result = await syncAll(TOKEN, (r) => progress.push(r.tableName));
 
     expect(result.success).toBe(true);
-    expect(await appDb.customRecordTypes.toArray()).toEqual([
+    expect(await userTypeRows()).toEqual([
       { id: "protein", definition, deleted: false, updatedAt: "2026-11-01T07:00:00+09:00" },
     ]);
     expect(await appDb.customRecords.toArray()).toEqual([record]);
@@ -897,7 +908,7 @@ describe("syncAll: custom record types", () => {
     expect(sheets.tabs.get("ExerciseLogs")).toHaveLength(2);
     // The tab that could not be added is skipped, not reported as a failed read.
     expect(result.results.map((r) => r.tableName)).not.toContain("Custom_protein");
-    expect(await appDb.customRecordTypes.count()).toBe(1);
+    expect(await userTypeRows()).toHaveLength(1);
   });
 
   test("does not ensure tabs again when no new tab appeared", async () => {
@@ -934,7 +945,7 @@ describe("syncAll: custom record types", () => {
 
     expect(result.success).toBe(true);
     expect(sheets.tabs.get("Custom_protein")).toEqual([PROTEIN_HEADERS, proteinRow(record)]);
-    expect(sheets.tabs.get("RecordTypes")).toEqual([
+    expect(userRecordTypesTab()).toEqual([
       RECORD_TYPES_HEADERS,
       ["protein", JSON.stringify(definition), "1", "2026-11-02T07:00:00+09:00"],
     ]);
@@ -957,7 +968,7 @@ describe("syncAll: custom record types", () => {
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect(sheets.tabs.get("RecordTypes")).toEqual([RECORD_TYPES_HEADERS]);
+    expect(userRecordTypesTab()).toEqual([RECORD_TYPES_HEADERS]);
     expect(sheets.tabs.get("Custom_protein")).toEqual([PROTEIN_HEADERS, proteinRow(other)]);
     expect(await appDb.customRecords.count()).toBe(0);
   });
@@ -996,7 +1007,7 @@ describe("syncAll: custom record types", () => {
     const result = await syncAll(TOKEN);
 
     expect(result.success).toBe(true);
-    expect(await appDb.customRecordTypes.count()).toBe(0);
+    expect(await userTypeRows()).toHaveLength(0);
     expect(await appDb.customRecords.count()).toBe(0);
   });
 
@@ -1041,5 +1052,47 @@ describe("syncAll: custom record types", () => {
     expect((await appDb.customRecordTypes.get("protein"))?.deleted).toBe(false);
     expect(await appDb.customRecords.toArray()).toEqual([fresh]);
     expect(sheets.tabs.get("Custom_protein")).toEqual([PROTEIN_HEADERS, proteinRow(fresh)]);
+  });
+
+  test("a customized remote definition beats the seeded one", async () => {
+    const base = structuredClone(builtinDefinition("wellness"));
+    const parsed = parseDefinition({ ...base, fields: [...base.fields, { id: "appetite", label: "Appetite", type: "number" }] });
+    if (!parsed.ok) throw new Error("bad fixture");
+    sheets.tabs.set("RecordTypes", [
+      RECORD_TYPES_HEADERS,
+      ["wellness", JSON.stringify(parsed.definition), "", "2026-11-20T07:00:00+09:00"],
+    ]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    const row = await appDb.customRecordTypes.get("wellness");
+    expect(row?.definition.fields.map((f) => f.id)).toContain("appetite");
+    expect(row?.updatedAt).toBe("2026-11-20T07:00:00+09:00");
+  });
+
+  test("RecordTypes tombstones for built-in ids are ignored", async () => {
+    const record: CustomRecord = {
+      id: "w-1",
+      typeId: "wellness",
+      date: "2026-11-01",
+      recordedAt: "2026-11-01T08:00:00+09:00",
+      values: { physical: 3, mental: 4 },
+      note: "",
+      updatedAt: "2026-11-01T08:00:00+09:00",
+    };
+    await appDb.customRecords.put(record);
+    sheets.tabs.set("Tombstones", [
+      ["id", "table", "recordId", "deletedAt"],
+      ["RecordTypes:wellness", "RecordTypes", "wellness", "2026-11-03T07:00:00+09:00"],
+    ]);
+
+    const result = await syncAll(TOKEN);
+
+    expect(result.success).toBe(true);
+    expect((await appDb.customRecordTypes.get("wellness"))?.deleted).toBe(false);
+    expect(await appDb.customRecords.get("w-1")).toEqual(record);
+    // The seeded row is not dropped from the sheet either.
+    expect(sheets.tabs.get("RecordTypes")!.map((row) => row[0])).toContain("wellness");
   });
 });
