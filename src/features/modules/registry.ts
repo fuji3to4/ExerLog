@@ -12,6 +12,7 @@ import type { CustomRecord } from "@/lib/types";
 import { circumferenceModule } from "./circumference/module";
 import { compressionModule } from "./compression/module";
 import { builtinTags, type BuiltinId } from "./custom/builtin";
+import { bodyExtras } from "./custom/builtin-body";
 import { createCustomModule, type CustomModuleExtras } from "./custom/module";
 import { recordModuleData, recordModuleEntries } from "./data-registry";
 import { photoModule } from "./photo/module";
@@ -27,8 +28,8 @@ const CODE_MODULES: readonly RecordModule[] = [
   symptomsModule,
 ] as unknown as readonly RecordModule[];
 
-/** Additions to the generic screens per built-in type (filled by later work, e.g. body's BMI). */
-const BUILTIN_EXTRAS: Partial<Record<BuiltinId, CustomModuleExtras>> = {};
+/** Additions to the generic screens per built-in type. */
+const BUILTIN_EXTRAS: Partial<Record<BuiltinId, CustomModuleExtras>> = { body: bodyExtras };
 
 let cached: { data: readonly RecordModuleData[]; value: readonly RecordModule[] } | undefined;
 // Record type module objects hold their own React components, so they are reused while the
