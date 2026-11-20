@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { cn } from "@/lib/utils";
-import type { WellnessScore } from "@/lib/types";
 
-type WellnessScoreInputProps<T extends number = WellnessScore> = {
+type ScaleInputProps<T extends number = number> = {
   label: string;
   /** null shows nothing selected (a custom scale that is still empty). */
   value: T | null;
@@ -15,14 +14,14 @@ type WellnessScoreInputProps<T extends number = WellnessScore> = {
   highLabel?: string;
 };
 
-export function WellnessScoreInput<T extends number = WellnessScore>({
+export function ScaleInput<T extends number = number>({
   label,
   value,
   onChange,
   levels = 5,
   lowLabel,
   highLabel,
-}: WellnessScoreInputProps<T>) {
+}: ScaleInputProps<T>) {
   const { t } = useTranslation();
   const scores = Array.from({ length: levels }, (_, i) => (i + 1) as T);
 

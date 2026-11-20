@@ -9,16 +9,16 @@ import { listTombstones } from "@/features/storage/tombstones.repository";
 import { clearAllRecords } from "@/features/storage/clear-all-records";
 import { createMeasurementRepository } from "./measurement-repository";
 
-const repository = createMeasurementRepository(appDb.bodyRecords, "BodyMeasurements");
+const repository = createMeasurementRepository(appDb.circumferenceRecords, "Circumference");
 
 beforeEach(async () => {
-  await Promise.all([appDb.bodyRecords.clear(), appDb.circumferenceRecords.clear(), appDb.tombstones.clear()]);
+  await Promise.all([appDb.circumferenceRecords.clear(), appDb.tombstones.clear()]);
   vi.mocked(scheduleSync).mockClear();
 });
 
 test("exposes its table and tombstone table name", () => {
-  expect(repository.table).toBe(appDb.bodyRecords);
-  expect(repository.tombstoneTable).toBe("BodyMeasurements");
+  expect(repository.table).toBe(appDb.circumferenceRecords);
+  expect(repository.tombstoneTable).toBe("Circumference");
 });
 
 test("add rejects empty values", async () => {
@@ -30,8 +30,7 @@ test("add trims note, defaults recordedAt and schedules sync", async () => {
   expect(record.note).toBe("hi");
   expect(record.recordedAt.startsWith("2026-10-22T")).toBe(true);
   expect(scheduleSync).toHaveBeenCalled();
-  expect(await appDb.bodyRecords.get(record.id)).toEqual(record);
-  expect(await appDb.circumferenceRecords.count()).toBe(0);
+  expect(await appDb.circumferenceRecords.get(record.id)).toEqual(record);
 });
 
 async function seed() {
@@ -140,17 +139,17 @@ test("update keeps values outside the item list", async () => {
 test("remove records a tombstone under the repository's tab name", async () => {
   const { a } = await seed();
   await repository.remove(a.id);
-  expect(await appDb.bodyRecords.get(a.id)).toBeUndefined();
+  expect(await appDb.circumferenceRecords.get(a.id)).toBeUndefined();
   expect(await listTombstones()).toContainEqual(
-    expect.objectContaining({ id: `BodyMeasurements:${a.id}`, table: "BodyMeasurements", recordId: a.id }),
+    expect.objectContaining({ id: `Circumference:${a.id}`, table: "Circumference", recordId: a.id }),
   );
 });
 
-test("clearAllRecords empties body records and keeps tombstones", async () => {
+test("clearAllRecords empties the records and keeps tombstones", async () => {
   const { a } = await seed();
   await clearAllRecords();
-  expect(await appDb.bodyRecords.count()).toBe(0);
+  expect(await appDb.circumferenceRecords.count()).toBe(0);
   expect(await listTombstones()).toContainEqual(
-    expect.objectContaining({ table: "BodyMeasurements", recordId: a.id }),
+    expect.objectContaining({ table: "Circumference", recordId: a.id }),
   );
 });

@@ -11,27 +11,25 @@ import {
   countCircumferenceValues,
   findCircumferenceItem,
   formatDelta,
-  isCircumferenceItem,
   readCircumferenceLimb,
   sideDifference,
   writeCircumferenceLimb,
 } from "./circumference";
-import { CIRCUMFERENCE_ITEMS, MEASUREMENT_ITEMS } from "./measurement-items";
+import { CIRCUMFERENCE_ITEMS } from "./measurement-items";
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-test("defines 20 circumference items after the basic ones, arm before leg, left before right", () => {
-  const ids = MEASUREMENT_ITEMS.map((item) => item.id);
-  expect(ids.slice(0, 3)).toEqual(["weight", "bodyFat", "height"]);
-  expect(ids.slice(3, 7)).toEqual(["armPalmLeft", "armPalmRight", "armWristLeft", "armWristRight"]);
+test("defines 20 circumference items, arm before leg, left before right", () => {
+  const ids = CIRCUMFERENCE_ITEMS.map((item) => item.id);
+  expect(ids.slice(0, 4)).toEqual(["armPalmLeft", "armPalmRight", "armWristLeft", "armWristRight"]);
   expect(ids.slice(-2)).toEqual(["legGroinLeft", "legGroinRight"]);
-  expect(ids).toHaveLength(23);
+  expect(ids).toHaveLength(20);
 });
 
 test("every circumference item is cm, 1 decimal, 5–150, not in the plain graph list", () => {
-  const items = MEASUREMENT_ITEMS.filter(isCircumferenceItem);
+  const items = CIRCUMFERENCE_ITEMS;
   expect(items).toHaveLength(20);
   for (const item of items) {
     expect(item).toMatchObject({ unit: "cm", decimals: 1, min: 5, max: 150, showInGraph: false });

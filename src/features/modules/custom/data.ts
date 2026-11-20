@@ -10,6 +10,7 @@ import type { TableSyncConfig } from "@/features/sync/sync-config";
 import { cell, replaceTable } from "@/features/sync/sync-helpers";
 import { isWithinPeriod, periodDayKeys } from "../period";
 import type { RecordModuleData } from "../types";
+import { isBuiltinId } from "./builtin";
 import { FIXED_COLUMNS, parseDefinition, type CustomRecordDefinition } from "./definition";
 import { decodeCell, encodeCell, normalizeValues } from "./values";
 
@@ -142,13 +143,20 @@ function createRecordsSyncConfig(definition: CustomRecordDefinition): TableSyncC
   };
 }
 
-export function createCustomModuleData(type: CustomRecordType): RecordModuleData<CustomRecord> {
+/**
+ * Data operations of one record type. `moduleId` defaults to `custom:<id>`; built-in
+ * types pass their own id. The sheet tab is `Custom_<id>` either way.
+ */
+export function createCustomModuleData(
+  type: CustomRecordType,
+  options: { moduleId?: string } = {},
+): RecordModuleData<CustomRecord> {
   const definition = type.definition;
   const typeId = definition.id;
   const tabName = customTabName(typeId);
   const own = () => appDb.customRecords.where("typeId").equals(typeId);
   return {
-    id: customModuleId(typeId),
+    id: options.moduleId ?? customModuleId(typeId),
     syncConfigs: [createRecordsSyncConfig(definition)],
     tables: () => [appDb.customRecords],
     listForDay: (date) => appDb.customRecords.where("[typeId+date]").equals([typeId, date]).sortBy("recordedAt"),
@@ -171,7 +179,7 @@ export function createCustomModuleData(type: CustomRecordType): RecordModuleData
     },
     count: () => own().count(),
     csv: {
-      fileName: `custom-${definition.id}.csv`,
+      fileName: isBuiltinId(definition.id) ? `${definition.id}.csv` : `custom-${definition.id}.csv`,
       exportLabel: { text: definition.name },
       generate: async () => {
         const records = await own().sortBy("recordedAt");

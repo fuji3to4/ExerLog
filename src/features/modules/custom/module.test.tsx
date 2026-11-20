@@ -44,6 +44,14 @@ describe("createCustomModule", () => {
     expect(m.data.id).toBe("custom:protein");
   });
 
+  it("takes isCustom and tags from the options", () => {
+    expect(createCustomModule(type).isCustom).toBe(true);
+    expect(createCustomModule(type).tags).toBeUndefined();
+    const builtin = createCustomModule(type, undefined, { isCustom: false, tags: ["lymphedema"] });
+    expect(builtin.isCustom).toBe(false);
+    expect(builtin.tags).toEqual(["lymphedema"]);
+  });
+
   it("marks deleted types hidden", () => {
     expect(createCustomModule({ ...type, deleted: true }).hidden).toBe(true);
   });

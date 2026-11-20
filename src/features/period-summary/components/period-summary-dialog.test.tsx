@@ -3,12 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
-import { bodyRepository } from "@/features/modules/body/data";
 import { circumferenceRepository } from "@/features/modules/circumference/data";
-import { addWellnessEntry } from "@/features/modules/wellness/data";
 import { exerciseCatalog } from "@/features/catalog/exercise-catalog";
 import { appDb } from "@/features/storage/app-db";
 import { addExerciseLog } from "@/features/storage/exercise-logs.repository";
+import { addBuiltinRecord } from "@/test/builtin-records";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { defaultPeriod, PeriodSummaryDialog } from "./period-summary-dialog";
 
@@ -20,9 +19,8 @@ beforeEach(async () => {
   window.localStorage.removeItem("lymly-record-modules");
   await Promise.all([
     appDb.exerciseLogs.clear(),
-    appDb.wellnessEntries.clear(),
+    appDb.customRecords.clear(),
     appDb.exercises.clear(),
-    appDb.bodyRecords.clear(),
     appDb.circumferenceRecords.clear(),
   ]);
   await appDb.exercises.bulkAdd(exerciseCatalog.map((exercise) => ({ ...exercise, updatedAt: "2026-10-20T00:00:00+09:00" })));
@@ -53,24 +51,20 @@ describe("PeriodSummaryDialog", () => {
   });
 
   it("shows 記録なし for a module without records and the summary for one with records", async () => {
-    await addWellnessEntry({
+    await addBuiltinRecord("wellness", {
       date: "2026-10-20",
       recordedAt: "2026-10-20T09:00:00+09:00",
-      physicalScore: 4,
-      mentalScore: 2,
-      note: "",
+      values: { physical: 4, mental: 2 },
     });
-    await bodyRepository.add({
+    await addBuiltinRecord("body", {
       date: "2026-10-02",
       recordedAt: "2026-10-02T08:00:00+09:00",
       values: { weight: 61, height: 160 },
-      note: "",
     });
-    await bodyRepository.add({
+    await addBuiltinRecord("body", {
       date: "2026-10-20",
       recordedAt: "2026-10-20T08:00:00+09:00",
       values: { weight: 60.2 },
-      note: "",
     });
     // Outside the period: must not be counted.
     await circumferenceRepository.add({
@@ -88,38 +82,20 @@ describe("PeriodSummaryDialog", () => {
     });
     renderDialog();
 
-    expect(await screen.findByText("61.0kg → 60.2kg（−0.8）")).toBeTruthy();
-    expect(screen.getByText("BMI 23.5")).toBeTruthy();
-    expect(screen.getByText("合計 2:05")).toBeTruthy();
+    const body = screen.getByRole("heading", { name: "身体" }).closest("section")!;
+    expect(await within(body).findByText("2件")).toBeTruthy();
+    expect(within(body).getByText("平均 60.6・最小 60.2・最大 61")).toBeTruthy();
+    expect(await screen.findByText("合計 2:05")).toBeTruthy();
     expect(screen.getByText(exerciseCatalog[0].title)).toBeTruthy();
     const circumference = screen.getByRole("heading", { name: "腕・脚周径" }).closest("section")!;
     await waitFor(() => expect(within(circumference).getByText("記録なし")).toBeTruthy());
   });
 
-  it("shows BMI when the only height record is before the period", async () => {
-    await bodyRepository.add({
-      date: "2026-09-15",
-      recordedAt: "2026-09-15T08:00:00+09:00",
-      values: { height: 160 },
-      note: "",
-    });
-    await bodyRepository.add({
-      date: "2026-10-20",
-      recordedAt: "2026-10-20T08:00:00+09:00",
-      values: { weight: 60.2 },
-      note: "",
-    });
-    renderDialog();
-    expect(await screen.findByText("BMI 23.5")).toBeTruthy();
-  });
-
   it("includes a record from the final minute of an edited end time", async () => {
-    await addWellnessEntry({
+    await addBuiltinRecord("wellness", {
       date: "2026-10-27",
       recordedAt: "2026-10-27T10:30:20+09:00",
-      physicalScore: 4,
-      mentalScore: 2,
-      note: "",
+      values: { physical: 4, mental: 2 },
     });
     renderDialog();
     fireEvent.change(screen.getByLabelText("終了"), { target: { value: "2026-10-27T10:30" } });

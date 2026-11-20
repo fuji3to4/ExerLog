@@ -89,6 +89,7 @@ const JA = `あなたは、記録アプリ「ExerLog」に記録の種類を足�
 - 消した項目の ID を、前と違う種類でもう一度使うこともできません（その項目の記録が残っているため）。
 - 項目や選択肢を減らすのはかまいません。消した項目の記録は残ります。
 - 同じ \`id\` の定義を読み込むと、その定義が置き換わります。
+- \`wellness\`（体調）・\`body\`（身体）・\`selfcare\`（セルフケア）・\`girth\`（胸囲・腹囲）の ID で読み込むと、標準の項目そのものが変わります。身体の \`weight\` と \`height\` は、消したり種類・単位を変えたりできません。
 
 ## サンプル
 \`\`\`json
@@ -154,6 +155,7 @@ Field types and their settings:
 - You also cannot re-use the id of a removed field with a different type (its saved records still hold the old values).
 - Removing fields or options is fine. Records already saved for a removed field are kept.
 - Loading a definition with the same \`id\` replaces that definition.
+- Loading a definition with the id \`wellness\` (Condition), \`body\` (Body), \`selfcare\` (Self-care) or \`girth\` (Chest & waist) changes the built-in record type itself. In \`body\`, \`weight\` and \`height\` cannot be removed or change their type or unit.
 
 ## Sample
 \`\`\`json

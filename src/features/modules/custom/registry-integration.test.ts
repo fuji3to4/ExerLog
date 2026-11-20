@@ -77,7 +77,7 @@ describe("registry with custom record types", () => {
     const tabs = tableSyncConfigs().map((c) => c.tabName);
     expect(tabs).toContain("Custom_protein");
     expect(tabs).toContain("RecordTypes");
-    expect(tabs.indexOf("RecordTypes")).toBeLessThan(tabs.indexOf("WellnessEntries"));
+    expect(tabs.indexOf("RecordTypes")).toBeLessThan(tabs.indexOf("Custom_wellness"));
   });
 
   it("does not list the same table twice in syncedDbTables()", async () => {

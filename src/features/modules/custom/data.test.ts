@@ -5,6 +5,7 @@ vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 import { localIsoAt } from "@/lib/date/local-iso";
 import { appDb } from "@/features/storage/app-db";
 import type { CustomRecordType } from "@/lib/types";
+import { builtinDefinition } from "./builtin";
 import { parseDefinition, type CustomRecordDefinition } from "./definition";
 import {
   addCustomRecord,
@@ -126,6 +127,12 @@ describe("custom record data", () => {
     await createCustomModuleData(typeOf(protein)).clearAll();
     expect((await appDb.customRecords.toArray()).map((r) => r.id)).toEqual([m.id]);
     expect((await appDb.tombstones.toArray()).map((t) => [t.table, t.id])).toEqual([["Custom_protein", `Custom_protein:${p.id}`]]);
+  });
+
+  it("names the csv of a built-in type after its id", () => {
+    const body = builtinDefinition("body");
+    const data = createCustomModuleData({ id: "body", definition: body, deleted: false, updatedAt: "" });
+    expect(data.csv.fileName).toBe("body.csv");
   });
 
   it("exports csv without updatedAt", async () => {

@@ -42,6 +42,27 @@ beforeEach(async () => {
 });
 
 describe("CustomRecordForm", () => {
+  it("renders a FormExtra with the values that would be saved and the record time", () => {
+    const seen: unknown[] = [];
+    function Extra(props: { values: Record<string, unknown>; recordedAt: string; recordId?: string }) {
+      seen.push(props);
+      return <p>extra {String(props.values.amount ?? "-")}</p>;
+    }
+    renderWithLanguage(
+      <CustomRecordForm definition={type.definition} FormExtra={Extra} onOpenChange={vi.fn()} date={DATE} onSaved={vi.fn()} />,
+      { initialLanguage: "ja" },
+    );
+    expect(screen.getByText("extra -")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "30" } });
+    expect(screen.getByText("extra 30")).toBeInTheDocument();
+    // An out-of-range value is not passed on.
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "500" } });
+    expect(screen.getByText("extra -")).toBeInTheDocument();
+    const last = seen.at(-1) as { recordedAt: string; recordId?: string };
+    expect(last.recordedAt.startsWith(`${DATE}T`)).toBe(true);
+    expect(last.recordId).toBeUndefined();
+  });
+
   it("renders an input per field type", () => {
     renderForm();
     expect(screen.getByRole("spinbutton")).toBeInTheDocument();

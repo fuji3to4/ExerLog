@@ -56,16 +56,6 @@ export type ExerciseLog = {
   updatedAt: string;
 };
 
-export type WellnessEntry = {
-  id: string;
-  date: string;
-  recordedAt: string;
-  physicalScore: WellnessScore;
-  mentalScore: WellnessScore;
-  note: string;
-  updatedAt: string;
-};
-
 export type MeasurementRecord = {
   id: string;
   date: string;
@@ -89,18 +79,6 @@ export type Tombstone = {
   table: string;
   recordId: string;
   deletedAt: string;
-};
-
-export type SelfCareItemId = "skincare" | "exercise" | "other";
-
-export type SelfCareRecord = {
-  id: string;
-  date: string;
-  recordedAt: string;
-  item: SelfCareItemId;
-  minutes: number | null;
-  note: string;
-  updatedAt: string;
 };
 
 export type CompressionKind = "garment" | "bandage";

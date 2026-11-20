@@ -27,7 +27,7 @@ describe("AddRecordMenu", () => {
 
     const menu = screen.getByRole("menu");
     expect(menu).toHaveTextContent("何を記録しますか？");
-    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["腕・脚周径", "体調"]);
+    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["腕・脚周径", "🙂体調"]);
   });
 
   it("closes and reports the chosen module", () => {

@@ -36,7 +36,8 @@ export type DefinitionErrorCode =
   | "duplicate_option_id"
   | "bad_number"
   | "bad_levels"
-  | "type_changed";
+  | "type_changed"
+  | "locked_field";
 
 export type DefinitionError = { code: DefinitionErrorCode; path: string; value?: string };
 export type ParseResult =

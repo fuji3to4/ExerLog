@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ComponentType, type ReactNode } from "react";
 
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "@/features/i18n/use-translation";
@@ -13,7 +13,7 @@ import {
 import { localIsoAt, timeOfIso, withLocalTime } from "@/lib/date/local-iso";
 import type { CustomRecord, CustomValue } from "@/lib/types";
 import type { RecordFormProps } from "../types";
-import { WellnessScoreInput } from "../wellness/wellness-score-input";
+import { ScaleInput } from "./scale-input";
 import { addCustomRecord, deleteCustomRecord, updateCustomRecord } from "./data";
 import { resolveText, type CustomField, type CustomRecordDefinition } from "./definition";
 import { coerceValue } from "./values";
@@ -139,7 +139,7 @@ function FieldRow({
       break;
     case "scale":
       control = (
-        <WellnessScoreInput<number>
+        <ScaleInput<number>
           label={label}
           value={typeof draft === "number" ? draft : null}
           onChange={onChange}
@@ -219,15 +219,31 @@ function FieldRow({
   );
 }
 
-/** Time, one input per defined field and a note. Mount it only while its dialog is open. */
+/** What a definition-specific extra (e.g. BMI for body) sees of the form while it is edited. */
+export type CustomFormExtraProps = {
+  /** The values that would be saved now (valid entries only). */
+  values: Record<string, CustomValue>;
+  recordedAt: string;
+  /** Set while editing a stored record. */
+  recordId?: string;
+};
+
+/**
+ * Time, one input per defined field, an optional extra below the fields and a note.
+ * Mount it only while its dialog is open.
+ */
 export function CustomRecordForm({
   definition,
+  FormExtra,
   onOpenChange,
   date,
   record,
   onSaved,
   onDeleted,
-}: RecordFormProps<CustomRecord> & { definition: CustomRecordDefinition }) {
+}: RecordFormProps<CustomRecord> & {
+  definition: CustomRecordDefinition;
+  FormExtra?: ComponentType<CustomFormExtraProps>;
+}) {
   const { t } = useTranslation();
   const noteId = useId();
   const [baseAt] = useState(() => record?.recordedAt ?? localIsoAt(date));
@@ -236,6 +252,7 @@ export function CustomRecordForm({
   const [note, setNote] = useState(record?.note ?? "");
   const [errors, setErrors] = useState<Record<string, FieldError>>({});
   const { isSaved, isBusy, hasError, run } = useSaveAndClose();
+  const extraValues = useMemo(() => (FormExtra ? readDraft(definition, draft).values : {}), [FormExtra, definition, draft]);
 
   function setValue(id: string, value: CustomValue | undefined) {
     setDraft((current) => {
@@ -284,6 +301,9 @@ export function CustomRecordForm({
           onChange={(value) => setValue(field.id, value)}
         />
       ))}
+      {FormExtra ? (
+        <FormExtra values={extraValues} recordedAt={time === "" ? baseAt : withLocalTime(baseAt, time)} recordId={record?.id} />
+      ) : null}
       <div className="space-y-1.5">
         <label htmlFor={noteId} className="text-sm font-medium">
           {t("timeline_note")}

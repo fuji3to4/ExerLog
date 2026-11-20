@@ -19,7 +19,7 @@ const keysModule = {
     kind: "keys",
     labelKey: "module_body_label",
     descriptionKey: "module_body_description",
-    editTitleKey: "body_edit_title",
+    editTitleKey: "module_body_label",
     icon: Scale,
   },
 } as unknown as RecordModule;
@@ -46,7 +46,7 @@ describe("moduleEditTitle", () => {
   });
 
   it("uses the editTitleKey of a keys module", () => {
-    expect(moduleEditTitle(keysModule, t, "ja")).toBe(ja.body_edit_title);
+    expect(moduleEditTitle(keysModule, t, "ja")).toBe(ja.module_body_label);
   });
 });
 

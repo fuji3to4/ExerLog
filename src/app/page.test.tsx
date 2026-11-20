@@ -109,7 +109,7 @@ describe("today screen timeline", () => {
     vi.setSystemTime(new Date(2026, 9, 20, 20, 0, 0));
     await Promise.all([
       appDb.exerciseLogs.clear(),
-      appDb.wellnessEntries.clear(),
+      appDb.customRecords.clear(),
       appDb.watchEvents.clear(),
       appDb.tombstones.clear(),
       appDb.exercises.clear(),
@@ -143,7 +143,7 @@ describe("today screen timeline", () => {
     expect(logs[0].performedAt.startsWith(`${DATE}T20:00`)).toBe(true);
   });
 
-  test("a low condition entry switches recommendations to the tired set", async () => {
+  test("a low condition record switches recommendations to the tired set", async () => {
     await renderTodayScreen();
 
     const region = await screen.findByRole("region", { name: "今日のおすすめ" });
@@ -151,10 +151,10 @@ describe("today screen timeline", () => {
     expect(titles().some((title) => ["Alpha", "Beta", "Gamma"].includes(title ?? ""))).toBe(true);
 
     fireEvent.keyDown(screen.getByRole("button", { name: "＋ 記録する" }), { key: "Enter" });
-    fireEvent.click(await screen.findByRole("menuitem", { name: "体調" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: /体調/ }));
     const dialog = await screen.findByRole("dialog", { name: "体調を記録" });
-    fireEvent.click(within(within(dialog).getByRole("group", { name: "からだ" })).getByRole("button", { name: "1" }));
-    fireEvent.click(within(within(dialog).getByRole("group", { name: "こころ" })).getByRole("button", { name: "1" }));
+    fireEvent.click(within(within(dialog).getByRole("group", { name: "からだの調子" })).getByRole("button", { name: "1" }));
+    fireEvent.click(within(within(dialog).getByRole("group", { name: "こころの調子" })).getByRole("button", { name: "1" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
 
     await waitFor(() => expect(titles()).toEqual(["Delta", "Epsilon", "Zeta"]), { timeout: 3000 });

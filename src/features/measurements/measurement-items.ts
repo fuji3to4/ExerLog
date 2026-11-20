@@ -17,22 +17,9 @@ export type MeasurementItem = {
   min: number;
   max: number;
   showInGraph: boolean;
-  /** Set only for the left/right arm and leg circumference items. */
+  /** The left/right arm and leg circumference site. */
   circumference?: CircumferencePlace;
 };
-
-/** Body items. Display order = array order. "weight" and "height" ids are also used for BMI. */
-export const BODY_ITEMS: readonly MeasurementItem[] = [
-  { id: "weight", labelKey: "measurement_item_weight", unit: "kg", decimals: 1, min: 1, max: 500, showInGraph: true },
-  { id: "bodyFat", labelKey: "measurement_item_body_fat", unit: "%", decimals: 1, min: 1, max: 99, showInGraph: true },
-  { id: "height", labelKey: "measurement_item_height", unit: "cm", decimals: 1, min: 30, max: 300, showInGraph: true },
-];
-
-/** Chest and waist girth items. Display order = array order. */
-export const GIRTH_ITEMS: readonly MeasurementItem[] = [
-  { id: "chest", labelKey: "measurement_item_chest", unit: "cm", decimals: 1, min: 30, max: 250, showInGraph: true },
-  { id: "waist", labelKey: "measurement_item_waist", unit: "cm", decimals: 1, min: 30, max: 250, showInGraph: true },
-];
 
 /** Circumference items: arm then leg, sites in order, left then right. */
 export const CIRCUMFERENCE_ITEMS: readonly MeasurementItem[] = LIMBS.flatMap((limb) =>
@@ -53,18 +40,11 @@ export const CIRCUMFERENCE_ITEMS: readonly MeasurementItem[] = LIMBS.flatMap((li
   ),
 );
 
-/** Body then circumference items. Kept for older callers; new code uses BODY_ITEMS / CIRCUMFERENCE_ITEMS. */
-export const MEASUREMENT_ITEMS: readonly MeasurementItem[] = [...BODY_ITEMS, ...CIRCUMFERENCE_ITEMS];
-
 /** Sheet columns that item ids must never collide with. */
 export const MEASUREMENT_FIXED_COLUMNS = ["id", "date", "recordedAt", "note", "updatedAt"] as const;
 
 export function getMeasurementItem(id: string): MeasurementItem | undefined {
-  return (
-    BODY_ITEMS.find((item) => item.id === id) ??
-    GIRTH_ITEMS.find((item) => item.id === id) ??
-    CIRCUMFERENCE_ITEMS.find((item) => item.id === id)
-  );
+  return CIRCUMFERENCE_ITEMS.find((item) => item.id === id);
 }
 
 export function formatMeasurementValue(item: MeasurementItem, value: number): string {
@@ -72,18 +52,15 @@ export function formatMeasurementValue(item: MeasurementItem, value: number): st
 }
 
 /**
- * "体重 60.2kg・体脂肪率 22.0%・腕の周径 2か所": the non-circumference ones of `items` in list order,
- * then a per-limb count of the recorded circumference sites among `items` (arm, then leg).
- * Values for ids not in `items` are left out.
+ * "腕の周径 2か所・脚の周径 1か所": a per-limb count of the recorded circumference sites among `items`
+ * (arm, then leg). Values for ids not in `items` are left out.
  */
 export function formatMeasurementSummary(
   record: MeasurementRecord,
   items: readonly MeasurementItem[],
   t: (key: keyof Messages, params?: Record<string, string | number>) => string,
 ): string {
-  const parts = items.filter((item) => !item.circumference && item.id in record.values).map(
-    (item) => `${t(item.labelKey)} ${formatMeasurementValue(item, record.values[item.id])}${item.unit}`,
-  );
+  const parts: string[] = [];
   for (const limb of LIMBS) {
     const count = items.filter((item) => item.circumference?.limb === limb && item.id in record.values).length;
     if (count > 0) parts.push(t(`circumference_summary_${limb}`, { count }));

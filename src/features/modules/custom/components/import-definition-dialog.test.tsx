@@ -31,7 +31,8 @@ describe("ImportDefinitionDialog", () => {
       expect(screen.getByText(name)).toBeTruthy();
     }
     fireEvent.click(screen.getByRole("button", { name: "読み込む" }));
-    await waitFor(() => expect(getCustomTypes().map((t) => t.id)).toEqual(["protein"]));
+    // Built-in types are seeded alongside; only the imported one is new.
+    await waitFor(() => expect(getCustomTypes().map((t) => t.id)).toContain("protein"));
   });
 
   it("lists every error and offers no 読み込む", async () => {
