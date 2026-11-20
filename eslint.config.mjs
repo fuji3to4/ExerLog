@@ -9,4 +9,13 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-export default [...compat.extends("next/core-web-vitals")];
+export default [
+  ...compat.extends("next/core-web-vitals"),
+  {
+    rules: {
+      // The app is a static export with `images.unoptimized: true` (next.config.ts), so
+      // next/image cannot optimize anything; plain <img> for thumbnails is intended.
+      "@next/next/no-img-element": "off",
+    },
+  },
+];

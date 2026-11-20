@@ -24,7 +24,6 @@ function ViewerImage({ photoId, recordId }: { photoId: string; recordId: string 
   const { t } = useTranslation();
   const state = usePhotoUrl(photoId, recordId);
   if (state.status === "ready") {
-    // eslint-disable-next-line @next/next/no-img-element -- local blob URL
     return <img src={state.url} alt="" className="max-h-full max-w-full object-contain" />;
   }
   return <p className="text-sm text-white">{t(STATUS_KEYS[state.status])}</p>;
