@@ -85,9 +85,9 @@ test("reads values that arrived as strings from the sheet", async () => {
 });
 
 test("orders records by instant when offsets differ", async () => {
-  // 10:00Z is later than 09:30+09:00 (00:30Z) although it sorts earlier as a string.
-  await seedWellness("2026-10-20T09:30:00+09:00", { physical: 1, mental: 1 }, "a");
-  await seedWellness("2026-10-20T10:00:00Z", { physical: 5, mental: 5 }, "b");
+  // 09:30Z is later than 10:00+09:00 (01:00Z) although it sorts earlier as a string.
+  await seedWellness("2026-10-20T10:00:00+09:00", { physical: 1, mental: 1 }, "a");
+  await seedWellness("2026-10-20T09:30:00Z", { physical: 5, mental: 5 }, "b");
 
   expect(await getLatestConditionScores("2026-10-20")).toEqual({ physicalScore: 5, mentalScore: 5 });
 });
