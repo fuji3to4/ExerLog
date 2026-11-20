@@ -91,7 +91,6 @@ function EditRow({ exercise, removeKind, onEdit, onRemove }: EditRowProps) {
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
       {thumbnailUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img className="reorder-list__thumb" src={thumbnailUrl} alt="" />
       ) : (
         <span className="reorder-list__thumb" aria-hidden="true" />

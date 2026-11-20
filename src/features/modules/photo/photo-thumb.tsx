@@ -29,7 +29,6 @@ export function PhotoThumb({
   const state = usePhotoUrl(photoId, recordId);
   const body =
     state.status === "ready" ? (
-      // eslint-disable-next-line @next/next/no-img-element -- local blob URL
       <img src={state.url} alt={onClick ? "" : (label ?? "")} className="size-full object-cover" />
     ) : (
       <span className="flex size-full items-center justify-center p-0.5 text-center text-[9px] leading-tight text-muted-foreground">

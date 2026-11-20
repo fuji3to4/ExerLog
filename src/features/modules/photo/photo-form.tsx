@@ -135,7 +135,6 @@ export function PhotoForm({ onOpenChange, date, record, onSaved, onDeleted }: Re
                 {item.kind === "existing" ? (
                   <PhotoThumb photoId={item.photoId} recordId={record?.id ?? ""} size={64} label={String(index + 1)} />
                 ) : url ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- local blob URL
                   <img src={url} alt={String(index + 1)} className="size-full rounded-lg object-cover" />
                 ) : (
                   <span className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
