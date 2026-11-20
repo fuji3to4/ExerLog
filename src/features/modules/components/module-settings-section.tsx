@@ -29,7 +29,7 @@ import { downloadTextFile } from "@/lib/download";
 import { cn } from "@/lib/utils";
 import { customModuleId } from "../custom/data";
 import type { CustomRecordDefinition } from "../custom/definition";
-import { builtInTemplate } from "../custom/templates";
+import { builtinDefinition } from "../custom/builtin";
 import { getCustomTypes, markTypeDeleted } from "../custom/type-store";
 import { ModuleIcon, moduleDescription, moduleLabel } from "../module-text";
 import type { RecordModule } from "../types";
@@ -38,9 +38,14 @@ import { useModuleSettings } from "../use-module-settings";
 const MENU_ITEM_CLASS =
   "flex cursor-pointer select-none items-center rounded-lg px-3 py-2.5 text-sm font-medium outline-none data-[highlighted]:bg-secondary";
 
+/** Until the settings UI covers every built-in (later task), only these two rows offer an export. */
+function hasExportableBuiltin(id: string): id is "wellness" | "selfcare" {
+  return id === "wellness" || id === "selfcare";
+}
+
 /** The definition a row can export: a custom type's own, or a code module's built-in template. */
 function exportableDefinition(module: RecordModule): CustomRecordDefinition | undefined {
-  if (!module.isCustom) return builtInTemplate(module.data.id);
+  if (!module.isCustom) return hasExportableBuiltin(module.data.id) ? builtinDefinition(module.data.id) : undefined;
   return getCustomTypes().find((candidate) => customModuleId(candidate.id) === module.data.id)?.definition;
 }
 
@@ -142,7 +147,7 @@ function RowBody({ module, enabled, onToggle, moveButtons }: RowBodyProps) {
       {/* Left of the arrows, so the arrows and the switch line up on every row. */}
       {module.isCustom ? (
         <RowMenu module={module} label={label} onDelete={() => setConfirmingDelete(true)} />
-      ) : builtInTemplate(module.data.id) ? (
+      ) : hasExportableBuiltin(module.data.id) ? (
         <RowMenu module={module} label={label} />
       ) : null}
       {moveButtons}

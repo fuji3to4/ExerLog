@@ -581,4 +581,5 @@ export const en = {
   custom_def_error_bad_number: "{path}: the number is not valid. Use a number; min must not exceed max and step must be above 0",
   custom_def_error_bad_levels: "{path}: levels must be a whole number from 2 to 10",
   custom_def_error_type_changed: "{path}: the type differs from the imported definition. A field with the same id cannot change type. Use a new id",
+  custom_def_error_locked_field: "{path}: weight and height are used for BMI, so they cannot be removed or change their type or unit",
 } as const;

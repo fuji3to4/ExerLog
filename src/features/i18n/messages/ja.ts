@@ -581,4 +581,5 @@
   custom_def_error_bad_number: "{path}: 数値が正しくありません。数字で書き、min は max 以下、step は 0 より大きくしてください",
   custom_def_error_bad_levels: "{path}: 段階の数は 2〜10 の整数にしてください",
   custom_def_error_type_changed: "{path}: 読み込み済みの定義と種類が違います。同じ ID の項目は種類を変えられません。別の ID にしてください",
+  custom_def_error_locked_field: "{path}: 体重（weight）と身長（height）は BMI の計算に使うので、消したり種類や単位を変えたりできません",
 } as const;
