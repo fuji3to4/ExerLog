@@ -10,6 +10,7 @@ import type { TableSyncConfig } from "@/features/sync/sync-config";
 import { cell, replaceTable } from "@/features/sync/sync-helpers";
 import { isWithinPeriod, periodDayKeys } from "../period";
 import type { RecordModuleData } from "../types";
+import { isBuiltinId } from "./builtin";
 import { FIXED_COLUMNS, parseDefinition, type CustomRecordDefinition } from "./definition";
 import { decodeCell, encodeCell, normalizeValues } from "./values";
 
@@ -178,7 +179,7 @@ export function createCustomModuleData(
     },
     count: () => own().count(),
     csv: {
-      fileName: `custom-${definition.id}.csv`,
+      fileName: isBuiltinId(definition.id) ? `${definition.id}.csv` : `custom-${definition.id}.csv`,
       exportLabel: { text: definition.name },
       generate: async () => {
         const records = await own().sortBy("recordedAt");

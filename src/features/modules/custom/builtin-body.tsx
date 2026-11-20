@@ -7,9 +7,10 @@ import { useTranslation } from "@/features/i18n/use-translation";
 import { calculateBmi } from "@/features/metrics/bmi";
 import { appDb } from "@/features/storage/app-db";
 import type { CustomRecord, CustomValue } from "@/lib/types";
-import { builtinDefinition } from "./builtin";
+import { builtinDefinition, lockedFieldErrors } from "./builtin";
 import type { CustomFormExtraProps } from "./custom-form";
 import type { CustomModuleExtras } from "./module";
+import { getCustomTypes } from "./type-store";
 import { coerceValue } from "./values";
 
 const definition = builtinDefinition("body");
@@ -19,6 +20,15 @@ function numberOf(fieldId: "weight" | "height", value: CustomValue | undefined):
   if (!field) return undefined;
   const coerced = coerceValue(field, value);
   return typeof coerced === "number" ? coerced : undefined;
+}
+
+/**
+ * A synced or hand-edited body definition may lack the kg/cm weight and height the BMI
+ * assumes; then no BMI is shown rather than a wrong one.
+ */
+function bmiAvailable(): boolean {
+  const current = getCustomTypes().find((t) => t.id === "body")?.definition ?? definition;
+  return lockedFieldErrors(current).length === 0;
 }
 
 /** Every stored body record, oldest instant first. */
@@ -75,7 +85,7 @@ function BmiLine({ weight, height, recordedAt, recordId }: {
     };
   }, [needsLookup, recordedAt, recordId]);
 
-  if (weight === undefined) return null;
+  if (weight === undefined || !bmiAvailable()) return null;
   const resolved = height ?? (stored === null ? undefined : stored);
   if (height === undefined && stored === null) return null; // still looking up
   const bmi = resolved === undefined ? null : calculateBmi(weight, resolved);
@@ -108,7 +118,7 @@ function BodySummaryExtra({ records }: { records: CustomRecord[] }) {
         .filter((r) => numberOf("weight", r.values.weight) !== undefined)
         .sort((a, b) => Date.parse(a.recordedAt) - Date.parse(b.recordedAt));
       const last = withWeight[withWeight.length - 1];
-      if (isActive) setBmi(last ? bmiOf(last, history) : null);
+      if (isActive) setBmi(last && bmiAvailable() ? bmiOf(last, history) : null);
     });
     return () => {
       isActive = false;
@@ -124,6 +134,7 @@ export const bodyExtras: CustomModuleExtras = {
       key: "bmi",
       labelKey: "history_graph_metric_bmi",
       async load(range) {
+        if (!bmiAvailable()) return { unit: "", decimals: 1, points: [] };
         const history = await loadBodyRecords();
         const points = history
           .filter((r) => r.date >= range.start && r.date <= range.end)

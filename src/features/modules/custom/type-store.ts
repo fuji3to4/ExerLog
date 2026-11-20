@@ -282,7 +282,12 @@ let latestLoad: Promise<void> = Promise.resolve();
 export function loadCustomTypes(): Promise<void> {
   const generation = ++loadGeneration;
   const load = (async () => {
-    await ensureBuiltinTypes();
+    try {
+      await ensureBuiltinTypes();
+    } catch (error) {
+      // Built-ins still render from the shipped fallback; user types must not vanish.
+      console.error(error);
+    }
     const rows = await appDb.customRecordTypes.toArray();
     if (generation !== loadGeneration) return latestLoad;
     applyRows(rows);

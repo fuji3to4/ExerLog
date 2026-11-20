@@ -91,3 +91,9 @@ test("orders records by instant when offsets differ", async () => {
 
   expect(await getLatestConditionScores("2026-10-20")).toEqual({ physicalScore: 5, mentalScore: 5 });
 });
+
+test("rounds a non-integer value on a 5-level scale", async () => {
+  await seedWellness("2026-10-20T07:00:00+09:00", { physical: 2.6, mental: 1.2 });
+
+  expect(await getLatestConditionScores("2026-10-20")).toEqual({ physicalScore: 3, mentalScore: 1 });
+});

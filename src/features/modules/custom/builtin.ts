@@ -13,7 +13,11 @@ const SCORE_HINTS = { lowLabel: both("wellness_score_hint_low"), highLabel: both
 
 const MEASURE = { type: "number", required: false, step: 0.1 } as const;
 
-/** Definitions shipped with the app. Their ids double as module ids (no "custom:" prefix). */
+/**
+ * Definitions shipped with the app. Their ids double as module ids (no "custom:" prefix).
+ * They are built from i18n messages, so editing those message texts changes the shipped
+ * definition: add the new seed date to KNOWN_SEED_UPDATED_ATS / bump BUILTIN_SEED_UPDATED_AT.
+ */
 const DEFINITIONS = {
   wellness: {
     exerlogRecordType: 1,

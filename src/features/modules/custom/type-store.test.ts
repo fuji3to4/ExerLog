@@ -426,3 +426,19 @@ describe("built-in types", () => {
     expect(await countRecordsUnfitForDefault("wellness")).toBe(1);
   });
 });
+
+describe("loadCustomTypes when seeding fails", () => {
+  it("still loads user types", async () => {
+    await saveImportedDefinition(def());
+    const spy = vi.spyOn(appDb, "transaction").mockRejectedValueOnce(new Error("quota"));
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await loadCustomTypes();
+      expect(userTypes().map((t) => t.id)).toEqual(["protein"]);
+      expect(log).toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+      log.mockRestore();
+    }
+  });
+});

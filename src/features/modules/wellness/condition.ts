@@ -16,7 +16,7 @@ function scaleField(fields: readonly CustomField[], id: string): ScaleField | nu
 
 /** Maps a 1..levels step onto the 1..5 range the recommendations use. */
 function toFiveScale(value: number, levels: number): WellnessScore {
-  const scaled = levels === 5 ? value : Math.round(1 + ((value - 1) * 4) / (levels - 1));
+  const scaled = levels === 5 ? Math.round(value) : Math.round(1 + ((value - 1) * 4) / (levels - 1));
   return Math.min(5, Math.max(1, scaled)) as WellnessScore;
 }
 

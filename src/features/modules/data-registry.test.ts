@@ -96,7 +96,7 @@ describe("recordModuleData", () => {
     const body = getModuleData("body")!;
     const csv = await body.csv.generate();
     expect(csv.split("\n")[0]).toMatch(/^id,date,recordedAt,note,weight/);
-    expect(body.csv.fileName).toBe("custom-body.csv");
+    expect(body.csv.fileName).toBe("body.csv");
   });
 });
 

@@ -8,6 +8,8 @@ import type { CustomRecord } from "@/lib/types";
 import { renderWithLanguage } from "@/test/render-with-language";
 import { getRecordModule } from "../registry";
 import { bodyExtras } from "./builtin-body";
+import { builtinDefinition } from "./builtin";
+import { loadCustomTypes } from "./type-store";
 
 const DATE = "2026-10-20";
 
@@ -66,5 +68,36 @@ describe("body BMI", () => {
     const SummaryExtra = bodyExtras.SummaryExtra!;
     renderWithLanguage(<SummaryExtra records={[FIRST, SECOND]} />, { initialLanguage: "ja" });
     expect(await screen.findByText("BMI 22.5")).toBeInTheDocument();
+  });
+
+  it("shows no BMI while the body definition lost its locked weight unit", async () => {
+    const def = builtinDefinition("body");
+    const fields = def.fields.map((f) => (f.id === "weight" && f.type === "number" ? { ...f, unit: "lb" } : f));
+    await appDb.customRecordTypes.put({
+      id: "body",
+      definition: { ...def, fields },
+      deleted: false,
+      updatedAt: "2026-01-01T00:00:00+09:00",
+    });
+    await loadCustomTypes();
+    try {
+      await appDb.customRecords.bulkAdd([FIRST, SECOND]);
+      const metric = bodyExtras.graphMetrics!(getRecordModule("body")!.data as never).find((m) => m.labelKey === "history_graph_metric_bmi")!;
+      expect((await metric.load({ start: "2026-10-01", end: "2026-10-31" })).points).toEqual([]);
+
+      const SummaryExtra = bodyExtras.SummaryExtra!;
+      const { container } = renderWithLanguage(<SummaryExtra records={[FIRST, SECOND]} />, { initialLanguage: "ja" });
+      await new Promise((r) => setTimeout(r, 50));
+      expect(container.textContent).toBe("");
+
+      renderForm();
+      fireEvent.change(screen.getByLabelText(/体重/), { target: { value: "60" } });
+      fireEvent.change(screen.getByLabelText(/身長/), { target: { value: "170" } });
+      await new Promise((r) => setTimeout(r, 50));
+      expect(screen.queryByText(/BMI/)).toBeNull();
+    } finally {
+      await appDb.customRecordTypes.clear();
+      await loadCustomTypes();
+    }
   });
 });
