@@ -107,7 +107,7 @@ export function ExerciseSetMenu({ exercise, sets, onChanged, variant = "icon", e
           <DropdownMenu.Content
             align="end"
             sideOffset={6}
-            className="z-50 min-w-48 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+            className="z-50 min-w-48 rounded-[var(--radius-inner)] bg-popover p-1.5 text-popover-foreground shadow-[var(--shadow-lift)]"
           >
             <DropdownMenu.Label className="px-3 pb-1 pt-2 text-xs text-muted-foreground">
               {t("set_menu_title")}

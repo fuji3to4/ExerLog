@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { buttonVariants } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { AddRecordMenu } from "@/features/modules/components/add-record-menu";
 import { ModuleRecordDialog } from "@/features/modules/components/module-record-dialog";
@@ -11,6 +10,7 @@ import { getRecordModule } from "@/features/modules/registry";
 import type { RecordModule } from "@/features/modules/types";
 import { useModuleSettings } from "@/features/modules/use-module-settings";
 import { withLogDate } from "@/features/logging/log-date";
+import { toDayKey } from "@/lib/date/day-key";
 import { cn } from "@/lib/utils";
 import type { TimelineItem } from "../build-timeline";
 import type { DayTimelineState } from "../use-day-timeline";
@@ -23,6 +23,11 @@ export type TimelineSectionProps = {
   timeline: DayTimelineState;
   onChanged?(): void;
 };
+
+function nowHours(): number {
+  const now = new Date();
+  return now.getHours() + now.getMinutes() / 60;
+}
 
 export function TimelineSection({ date, timeline, onChanged }: TimelineSectionProps) {
   const { t } = useTranslation();
@@ -41,17 +46,24 @@ export function TimelineSection({ date, timeline, onChanged }: TimelineSectionPr
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex gap-2">
-        <AddRecordMenu className="flex-1" modules={enabledModules} onChoose={setAdding} />
+    <section className="grid gap-3">
+      <div className="today-screen__actions">
+        <AddRecordMenu className="w-full" modules={enabledModules} onChoose={setAdding} />
         {/* The library files the log under this day, today or past. */}
-        <Link href={withLogDate("/library", date)} className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}>
+        <Link href={withLogDate("/library", date)} className={cn("rubber-pill rubber-pill--plain", "w-full")}>
           {t("timeline_choose_video")}
         </Link>
       </div>
 
       {timeline.isLoaded ? (
-        <DayTimeline items={timeline.items} highlightId={timeline.highlightId} onSelect={setSelected} />
+        <div className="day-panel">
+          <DayTimeline
+            items={timeline.items}
+            highlightId={timeline.highlightId}
+            onSelect={setSelected}
+            nowHours={date === toDayKey(new Date()) ? nowHours() : undefined}
+          />
+        </div>
       ) : null}
 
       {adding ? (

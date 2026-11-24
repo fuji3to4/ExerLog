@@ -14,7 +14,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
-import { Home, BookOpen, LineChart, Settings, LogIn, LogOut, Languages } from "lucide-react";
+import { Home, BookOpen, LineChart, Settings, LogIn, LogOut, Languages, RefreshCw } from "lucide-react";
 import { LanguageSwitcher } from "./language-switcher";
 import { useSync } from "@/features/sync/SyncProvider";
 import { useTranslation } from "@/features/i18n/use-translation";
@@ -98,7 +98,7 @@ export function AppSidebar({ currentPath }: AppSidebarProps) {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="px-2 py-2 border-t border-border space-y-3">
+        <div className="space-y-3 border-t border-sidebar-border px-2 py-3">
           {/* Language Selection */}
           <div className="flex items-center gap-2">
             <Languages className="size-4 text-muted-foreground" />
@@ -111,10 +111,10 @@ export function AppSidebar({ currentPath }: AppSidebarProps) {
               type="button"
               onClick={handleToggle}
               disabled={status.type === "syncing"}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              className="flex min-h-9 w-full items-center gap-2 rounded-[var(--radius-inner)] px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px disabled:opacity-50"
             >
               {status.type === "syncing" ? (
-                <span className="animate-spin">🔄</span>
+                <RefreshCw className="size-4 animate-spin" aria-hidden="true" />
               ) : isConnected ? (
                 <LogOut className="size-4" />
               ) : (
@@ -132,7 +132,7 @@ export function AppSidebar({ currentPath }: AppSidebarProps) {
             {open && isConnected && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-                <div className="absolute bottom-full left-0 right-0 mb-2 z-50 rounded-lg border border-border bg-card p-2 shadow-lg">
+                <div className="absolute bottom-full left-0 right-0 mb-2 z-50 rounded-[var(--radius-inner)] bg-popover p-2 shadow-[var(--shadow-lift)]">
                   {status.type === "error" && (
                     <p className="px-2 py-1 text-xs text-destructive">
                       {status.message}

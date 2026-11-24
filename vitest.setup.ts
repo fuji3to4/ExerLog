@@ -5,7 +5,10 @@ import "@testing-library/jest-dom";
 // Mock next/font/google to provide a minimal Sofia_Sans implementation during tests
 // so layout imports that call Sofia_Sans("...") won't throw in jsdom.
 vi.mock("next/font/google", () => ({
-  Sofia_Sans: (options?: { variable?: string }) => ({ variable: options?.variable ?? "--font-sans" }),
+  Geist_Mono: (options?: { variable?: string }) => ({ variable: options?.variable ?? "--font-geist-mono" }),
+}));
+vi.mock("next/font/local", () => ({
+  default: (options?: { variable?: string }) => ({ variable: options?.variable ?? "--font-ranade" }),
 }));
 
 // jsdom has no matchMedia; the sidebar's mobile check needs it. Tests may override it.

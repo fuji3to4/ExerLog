@@ -36,7 +36,7 @@ export function writeCircumferenceLimb(limb: Limb): void {
 }
 
 /** Shared by the input headings and the graphs. */
-export const SIDE_COLORS: Record<Side, string> = { left: "#2f7fc1", right: "#d9534f" };
+export const SIDE_COLORS: Record<Side, string> = { left: "var(--series-left)", right: "var(--series-right)" };
 
 /** delta: difference from the previous record of the same site and side; null when there is none. */
 export type SideReading = { value: number; delta: number | null };

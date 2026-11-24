@@ -5,7 +5,6 @@ import { useState } from "react";
 import { RotateCw } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { SetSwitcher } from "@/features/exercise-sets/components/set-switcher";
 import { playerHref, type ListEntry } from "@/features/exercise-sets/list-entries";
@@ -82,36 +81,26 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
   }
 
   return (
-    <>
-      <Card className="page-header">
-        <CardHeader className="gap-2">
-          <p className="text-sm font-bold uppercase tracking-[0.04em] text-[#31507d]">
-            {formatDate(date)}
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight">{t("today_heading")}</h1>
-          <CardDescription>{t("today_subheading")}</CardDescription>
-        </CardHeader>
-      </Card>
+    <div className="today-screen">
+      <header className="page-header">
+        <p className="page-header__date">{formatDate(date)}</p>
+        <h1 className="text-[1.75rem] font-semibold">{t("today_heading")}</h1>
+        <p className="text-sm">{t("today_subheading")}</p>
+      </header>
 
       <TimelineSection date={date} timeline={timeline} onChanged={() => void refresh()} />
 
       {!isHydrated ? (
-        <Card className="grid gap-4" aria-live="polite">
-          <CardHeader>
-            <h2 className="text-xl font-semibold">{t("today_loading_heading")}</h2>
-            <CardDescription>{t("today_loading_text")}</CardDescription>
-          </CardHeader>
-        </Card>
+        <section className="grid gap-1" aria-live="polite">
+          <h2 className="text-lg font-semibold">{t("today_loading_heading")}</h2>
+          <p className="text-sm text-muted-foreground">{t("today_loading_text")}</p>
+        </section>
       ) : (
         <>
-          <Card
-            role="region"
-            aria-labelledby={recommendedHeadingId}
-            className="grid gap-4"
-          >
-            <CardHeader className="gap-3">
+          <section role="region" aria-labelledby={recommendedHeadingId} className="grid gap-4">
+            <div className="grid gap-3">
               <div className="today-screen__heading-row">
-                <h2 id={recommendedHeadingId} className="text-xl font-semibold">
+                <h2 id={recommendedHeadingId} className="text-lg font-semibold">
                   {selectedSet?.name ?? t("today_recommended_heading")}
                 </h2>
                 {selectedSet || isLibraryEmpty ? null : (
@@ -128,66 +117,57 @@ export function TodayScreen({ date: dateProp }: TodayScreenProps) {
                 selectedId={selectedSet?.id ?? null}
                 onSelect={selectSet}
               />
-            </CardHeader>
-            <CardContent>
-              {isLibraryEmpty ? (
-                <StarterImportHint onImported={reloadExercises} />
-              ) : selectedSet && selectedSetExercises.length === 0 ? (
-                <div className="grid gap-3">
-                  <p className="text-sm text-muted-foreground">{t("today_set_empty")}</p>
-                  <div className="button-row">
-                    <Link href="/library" className={cn(buttonVariants({ variant: "secondary" }), "w-full sm:w-auto")}>
-                      {t("today_library_button")}
-                    </Link>
+            </div>
+            {isLibraryEmpty ? (
+              <StarterImportHint onImported={reloadExercises} />
+            ) : selectedSet && selectedSetExercises.length === 0 ? (
+              <div className="grid gap-3">
+                <p className="text-sm text-muted-foreground">{t("today_set_empty")}</p>
+                <div className="button-row">
+                  <Link href="/library" className={cn(buttonVariants({ variant: "secondary" }), "w-full sm:w-auto")}>
+                    {t("today_library_button")}
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="today-screen__recommendations">
+                {cards.map(({ exercise, slot }) => (
+                  <div key={exercise.entryKey} className="grid gap-2">
+                    <RecommendedExerciseCard
+                      exercise={exercise}
+                      slot={slot}
+                      todayCount={logCounts[exercise.id] ?? 0}
+                      totalCount={totalLogCounts.get(exercise.id) ?? 0}
+                      sets={sets}
+                      onSetsChanged={() => void reloadSets()}
+                      watchHref={playerHref(exercise)}
+                      entry={selectedSet ? { setId: selectedSet.id, entryKey: exercise.entryKey } : undefined}
+                      onLog={(result) => void handleLog(exercise, result)}
+                    />
+                    {logErrorExerciseId === exercise.id ? (
+                      <p role="alert" className="text-sm text-[var(--danger-text)]">
+                        {t("log_save_error")}
+                      </p>
+                    ) : null}
                   </div>
-                </div>
-              ) : (
-                <div className="today-screen__recommendations">
-                  {cards.map(({ exercise, slot }) => (
-                    <div key={exercise.entryKey} className="grid gap-2">
-                      <RecommendedExerciseCard
-                        exercise={exercise}
-                        slot={slot}
-                        todayCount={logCounts[exercise.id] ?? 0}
-                        totalCount={totalLogCounts.get(exercise.id) ?? 0}
-                        sets={sets}
-                        onSetsChanged={() => void reloadSets()}
-                        watchHref={playerHref(exercise)}
-                        entry={selectedSet ? { setId: selectedSet.id, entryKey: exercise.entryKey } : undefined}
-                        onLog={(result) => void handleLog(exercise, result)}
-                      />
-                      {logErrorExerciseId === exercise.id ? (
-                        <p role="alert" className="text-sm text-destructive">
-                          {t("log_save_error")}
-                        </p>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ))}
+              </div>
+            )}
+          </section>
 
-          <Card role="region" aria-labelledby={libraryHeadingId} className="today-screen__library-card">
-            <CardHeader>
-              <h2 id={libraryHeadingId} className="text-xl font-semibold">
+          <section role="region" aria-labelledby={libraryHeadingId} className="today-screen__library-card">
+            <div className="grid gap-0.5">
+              <h2 id={libraryHeadingId} className="text-[0.9375rem] font-semibold text-foreground">
                 {t("today_library_card_heading")}
               </h2>
-              <CardDescription>{t("today_library_card_text")}</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="button-row">
-                <Link
-                  href="/library"
-                  className={cn(buttonVariants({ variant: "secondary" }), "w-full sm:w-auto")}
-                >
-                  {t("today_library_button")}
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+              <p>{t("today_library_card_text")}</p>
+            </div>
+            <Link href="/library" className={cn(buttonVariants({ variant: "secondary" }))}>
+              {t("today_library_button")}
+            </Link>
+          </section>
         </>
       )}
-    </>
+    </div>
   );
 }

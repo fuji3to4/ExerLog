@@ -20,10 +20,10 @@ export function AppShell({ children, currentPath }: AppShellProps) {
         <AppSidebar currentPath={currentPath} />
       </div>
 
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <div className="min-h-dvh bg-background text-foreground">
           {/* Mobile: Header */}
-          <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur lg:hidden">
+          <header className="sticky top-0 z-30 border-b border-border bg-background lg:hidden">
             <div className="mx-auto flex w-full max-w-screen-sm items-center justify-between px-4 py-3">
               <h1 className="text-lg font-semibold tracking-tight">ExerLog</h1>
               <div className="flex items-center gap-1">
@@ -39,7 +39,7 @@ export function AppShell({ children, currentPath }: AppShellProps) {
           </div>
 
           {/* Main Content */}
-          <main className="mx-auto w-full max-w-screen-sm gap-4 px-4 pb-28 pt-4 lg:max-w-screen-xl lg:px-8 lg:pb-8">
+          <main className="mx-auto w-full max-w-screen-sm gap-4 px-4 pb-28 pt-4 lg:max-w-screen-xl lg:px-8 lg:pb-10 lg:pt-8">
             {children}
           </main>
         </div>

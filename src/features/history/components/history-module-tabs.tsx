@@ -86,7 +86,7 @@ export function HistoryModuleTabs({ modules, includeAll, allContent, leadingTabs
       <div
         role="tablist"
         aria-label={t("history_chips_label")}
-        className="flex gap-2 overflow-x-auto pb-1"
+        className="flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] lg:flex-wrap lg:overflow-visible lg:[mask-image:none]"
         onKeyDown={onKeyDown}
       >
         {chips.map((chip) => {

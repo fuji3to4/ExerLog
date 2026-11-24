@@ -8,15 +8,18 @@ import { formatDuration } from "@/lib/date/duration";
 import { timeOfIso } from "@/lib/date/local-iso";
 import { cn } from "@/lib/utils";
 import type { TimelineItem } from "../build-timeline";
+import { DayRuler } from "./day-ruler";
 
 export type DayTimelineProps = {
   items: TimelineItem[];
   highlightId: string | null;
   onSelect(item: TimelineItem): void;
+  /** Wall-clock hours for the ruler's "now" line; only today passes it. */
+  nowHours?: number;
 };
 
-const WATCH_COLOR = "#4a7bd0";
-const EXERCISE_COLOR = "#3aa76d";
+const WATCH_COLOR = "var(--lane-watch)";
+const EXERCISE_COLOR = "var(--lane-exercise)";
 
 function pointColor(item: TimelineItem): string | undefined {
   switch (item.kind) {
@@ -33,7 +36,7 @@ function itemKey(item: TimelineItem): string {
   return item.kind === "module" ? `module:${item.moduleId}:${item.id}` : `${item.kind}:${item.id}`;
 }
 
-export function DayTimeline({ items, highlightId, onSelect }: DayTimelineProps) {
+export function DayTimeline({ items, highlightId, onSelect, nowHours }: DayTimelineProps) {
   const { t } = useTranslation();
   // Continuous play can leave many watches; they stay folded unless asked for (not remembered).
   const [showWatches, setShowWatches] = useState(false);
@@ -50,7 +53,8 @@ export function DayTimeline({ items, highlightId, onSelect }: DayTimelineProps) 
   if (visible.length === 0) {
     return (
       <>
-        <p className="py-6 text-center text-sm text-muted-foreground">{t("timeline_empty")}</p>
+        <DayRuler items={visible} highlightId={highlightId} colorOf={pointColor} keyOf={itemKey} nowHours={nowHours} />
+        <p className="day-timeline__empty">{t("timeline_empty")}</p>
         {toggle}
       </>
     );
@@ -58,6 +62,7 @@ export function DayTimeline({ items, highlightId, onSelect }: DayTimelineProps) 
 
   return (
     <>
+      <DayRuler items={visible} highlightId={highlightId} colorOf={pointColor} keyOf={itemKey} nowHours={nowHours} />
       <ol className="day-timeline">
         {visible.map((item) => (
           <li key={itemKey(item)} className="day-timeline__row">

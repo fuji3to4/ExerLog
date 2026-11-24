@@ -16,8 +16,10 @@ function getCssBlock(
 ) {
   const rulePattern = /(^|\n)\s*([^{}]+?)\s*\{\s*([^{}]*?)\s*\}/gms;
   let lastBlock: string | undefined;
+  // Comments sit above rules; drop them so they are not read as part of a selector.
+  const source = css.replace(/\/\*[\s\S]*?\*\//g, "");
 
-  for (const match of css.matchAll(rulePattern)) {
+  for (const match of source.matchAll(rulePattern)) {
     const selectors = match[2]
       .split(",")
       .map((entry) => entry.split(";").at(-1)?.trim() ?? "")
@@ -76,23 +78,23 @@ function getRootBlock() {
   return getCssBlock(getGlobalsCss(), ":root");
 }
 
-describe("globals.css warm theme contract", () => {
+describe("globals.css Bloom theme contract", () => {
   test("defines shadcn-compatible warm tokens in :root", () => {
     const rootBlock = getRootBlock();
 
-    expectDeclaration(rootBlock, "--background", "26 14% 95%");
-    expectDeclaration(rootBlock, "--foreground", "22 17% 20%");
-    expectDeclaration(rootBlock, "--card", "24 33% 97%");
-    expectDeclaration(rootBlock, "--card-foreground", "22 17% 20%");
-    expectDeclaration(rootBlock, "--primary", "16 36% 44%");
-    expectDeclaration(rootBlock, "--primary-foreground", "0 0% 100%");
-    expectDeclaration(rootBlock, "--secondary", "18 44% 89%");
-    expectDeclaration(rootBlock, "--secondary-foreground", "16 36% 44%");
-    expectDeclaration(rootBlock, "--muted", "23 35% 92%");
-    expectDeclaration(rootBlock, "--muted-foreground", "20 12% 39%");
-    expectDeclaration(rootBlock, "--border", "30 39% 86%");
-    expectDeclaration(rootBlock, "--ring", "16 38% 55%");
-    expectDeclaration(rootBlock, "--font-sans", "\"Sofia Sans\", \"Noto Sans JP\", sans-serif");
+    expectDeclaration(rootBlock, "--background", "32 51% 96%");
+    expectDeclaration(rootBlock, "--foreground", "15 36% 10%");
+    expectDeclaration(rootBlock, "--card", "36 71% 98%");
+    expectDeclaration(rootBlock, "--card-foreground", "15 36% 10%");
+    expectDeclaration(rootBlock, "--primary", "13 62% 42%");
+    expectDeclaration(rootBlock, "--primary-foreground", "36 71% 98%");
+    expectDeclaration(rootBlock, "--secondary", "31 38% 92%");
+    expectDeclaration(rootBlock, "--secondary-foreground", "19 20% 19%");
+    expectDeclaration(rootBlock, "--muted", "31 38% 92%");
+    expectDeclaration(rootBlock, "--muted-foreground", "24 10% 38%");
+    expectDeclaration(rootBlock, "--border", "28 20% 84%");
+    expectDeclaration(rootBlock, "--ring", "13 62% 42%");
+    expectDeclaration(rootBlock, "--font-sans", "var(--font-body)");
   });
 
   test("keeps compatibility aliases mapped from shadcn tokens", () => {
@@ -106,6 +108,14 @@ describe("globals.css warm theme contract", () => {
     expectDeclaration(rootBlock, "--accent-soft", "hsl(var(--secondary))");
     expectDeclaration(rootBlock, "--border-soft", "hsl(var(--border))");
     expectDeclaration(rootBlock, "--focus-ring", "hsl(var(--ring))");
+  });
+
+  test("defines the sidebar tokens the shadcn sidebar reads", () => {
+    const rootBlock = getRootBlock();
+
+    for (const name of ["background", "foreground", "accent", "accent-foreground", "border", "ring"]) {
+      expect(getDeclarationValue(rootBlock, `--sidebar-${name}`)).toBeTruthy();
+    }
   });
 
   test("does not include legacy dark nav hard-coded colors", () => {
@@ -123,7 +133,7 @@ describe("globals.css warm theme contract", () => {
         matches: (block) => block.includes("background:"),
       }),
       "background",
-      "linear-gradient(180deg, var(--bg-top) 0%, var(--bg-soft) 100%)",
+      "var(--bg-top)",
     );
     expectDeclaration(
       getCssBlock(globalsCss, "body", {
@@ -198,48 +208,6 @@ describe("globals.css warm theme contract", () => {
     expectDeclaration(settingsDanger, "background", "var(--danger-bg)");
     expectDeclaration(settingsDanger, "color", "var(--danger-text)");
     expectDeclaration(
-      getCssBlock(globalsCss, ".bottom-nav", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "background",
-      "var(--nav-surface)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".bottom-nav", {
-        matches: (block) => block.includes("box-shadow:"),
-      }),
-      "box-shadow",
-      "0 18px 36px hsl(var(--foreground) / 0.12)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".bottom-nav", {
-        matches: (block) => block.includes("border:"),
-      }),
-      "border",
-      "1px solid var(--border-soft)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".bottom-nav__link", {
-        matches: (block) => block.includes("color:"),
-      }),
-      "color",
-      "var(--nav-text)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".bottom-nav__link[aria-current=\"page\"]", {
-        matches: (block) => block.includes("background:"),
-      }),
-      "background",
-      "var(--accent-soft)",
-    );
-    expectDeclaration(
-      getCssBlock(globalsCss, ".bottom-nav__link[aria-current=\"page\"]", {
-        matches: (block) => block.includes("color:"),
-      }),
-      "color",
-      "var(--text-strong)",
-    );
-    expectDeclaration(
       getCssBlock(globalsCss, ".data-management__status", {
         matches: (block) => block.includes("background:"),
       }),
@@ -311,20 +279,25 @@ describe("globals.css warm theme contract", () => {
     );
   });
 
-  test("wires Sofia Sans and warm theme color in layout", () => {
+  test("wires self-hosted Ranade, Geist Mono and the warm theme color in layout", () => {
     const layoutTsx = readLayoutTsx();
 
-    expect(layoutTsx).toContain("Sofia_Sans");
-    expect(layoutTsx).toContain("variable: \"--font-sans\"");
-    expect(layoutTsx).toContain("themeColor: \"#f3f0ee\"");
+    expect(layoutTsx).toContain("./fonts/ranade-400.woff2");
+    expect(layoutTsx).toContain("variable: \"--font-ranade\"");
+    expect(layoutTsx).toContain("variable: \"--font-geist-mono\"");
+    expect(layoutTsx).toContain("themeColor: \"#f9f4ee\"");
+  });
+
+  test("drops the unused bottom-nav class rules (the nav is styled in bottom-nav.tsx)", () => {
+    expect(getGlobalsCss()).not.toMatch(/^\.bottom-nav/m);
   });
 
   test("defines a cool theme override block", () => {
     const globalsCss = getGlobalsCss();
     const coolBlock = getCssBlock(globalsCss, "[data-theme=\"cool\"]");
 
-    expectDeclaration(coolBlock, "--background", "210 30% 96%");
-    expectDeclaration(coolBlock, "--primary", "200 45% 42%");
+    expectDeclaration(coolBlock, "--background", "210 28% 96%");
+    expectDeclaration(coolBlock, "--primary", "200 52% 36%");
     expectDeclaration(coolBlock, "color-scheme", "light");
   });
 
@@ -332,8 +305,8 @@ describe("globals.css warm theme contract", () => {
     const globalsCss = getGlobalsCss();
     const darkBlock = getCssBlock(globalsCss, "[data-theme=\"dark\"]");
 
-    expectDeclaration(darkBlock, "--background", "222 30% 12%");
-    expectDeclaration(darkBlock, "--foreground", "210 20% 92%");
+    expectDeclaration(darkBlock, "--background", "20 14% 9%");
+    expectDeclaration(darkBlock, "--foreground", "30 25% 92%");
     expectDeclaration(darkBlock, "color-scheme", "dark");
   });
 

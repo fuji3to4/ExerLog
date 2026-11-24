@@ -1,0 +1,36 @@
+/* Bloom, adapted for ExerLog: the shared scale and the material.
+   Colours live in globals.css (warm / cool / dark) as shadcn HSL triplets;
+   the material tokens here derive from them so every theme follows. */
+:root {
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px;
+  --text-xs: 0.75rem; --text-sm: 0.8125rem; --text-md: 0.9375rem; --text-lg: 1.125rem; --text-xl: 1.375rem; --text-2xl: 1.75rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms; --dur-short: 220ms;
+  --z-raised: 10; --z-sticky: 30; --z-nav: 40; --z-overlay: 200; --z-toast: 60;
+
+  --font-display: var(--font-ranade), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+  --font-body: var(--font-display);
+  --font-code: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+  --tracking-display: -0.022em; --display-weight: 600;
+
+  --radius-card: 18px; --radius-inner: 10px; --radius-clip: 6px; --radius-pill: 999px;
+
+  --color-paper: hsl(var(--background));
+  --color-paper-2: hsl(var(--muted));
+  --color-sheet: hsl(var(--card));
+  --color-ink: hsl(var(--foreground));
+  --color-muted: hsl(var(--muted-foreground));
+  --color-rule: hsl(var(--border));
+  --color-accent: hsl(var(--primary));
+  --color-accent-soft: var(--tonal-bg);
+  --color-accent-ink: var(--tonal-text);
+  --color-focus: hsl(var(--ring));
+
+  --shadow-card: 0 1px 2px var(--shade-1), 0 18px 36px -20px var(--shade-2);
+  --shadow-lift: 0 2px 4px var(--shade-1), 0 32px 64px -28px var(--shade-3);
+  --shadow-pill: 0 0 0 1px var(--shade-1), 0 8px 18px -10px var(--shade-2), inset 0 1px 0 var(--sheet-hi);
+  --shadow-pill-hover: 0 0 0 1px var(--shade-2), 0 10px 20px -10px var(--shade-2), inset 0 1px 0 var(--sheet-hi);
+
+  --grid-hour: hsl(var(--foreground) / 0.13);
+  --grid-quarter: hsl(var(--foreground) / 0.045);
+}

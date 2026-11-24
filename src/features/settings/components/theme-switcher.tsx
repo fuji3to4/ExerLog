@@ -9,7 +9,7 @@ import { THEME_ORDER } from "@/features/settings/theme";
 import { useTranslation } from "@/features/i18n/use-translation";
 
 const themeOptionVariants = cva(
-  "block cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold transition-colors peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2",
+  "block cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition-colors",
   {
     variants: {
       active: {
@@ -45,7 +45,7 @@ export function ThemeSwitcher() {
         const isActive = theme === option.value;
 
         return (
-          <label key={option.value}>
+          <label key={option.value} className="rounded-full has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-background">
             <input
               checked={isActive}
               className="peer sr-only"

@@ -192,25 +192,25 @@ export function CircumferenceGraph({ range }: { range: DayRange }) {
             >
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#e5e7eb" strokeDasharray="3 3" />
+                  <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 3" />
                   <XAxis
                     dataKey="timestamp"
                     type="number"
                     domain={["dataMin", "dataMax"]}
                     tickFormatter={formatTimestampToMD}
-                    tick={{ fontSize: 12, fill: "#6b7280" }}
+                    tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
                     tickLine={false}
                     axisLine={false}
                     dy={10}
                   />
                   <YAxis
                     domain={["auto", "auto"]}
-                    tick={{ fontSize: 12, fill: "#6b7280" }}
+                    tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
                     tickLine={false}
                     axisLine={false}
                     dx={-5}
                   />
-                  <Tooltip content={<CircumferenceTooltip t={t} />} cursor={{ stroke: "#9ca3af", strokeWidth: 1 }} />
+                  <Tooltip content={<CircumferenceTooltip t={t} />} cursor={{ stroke: "var(--chart-tick)", strokeWidth: 1 }} />
                   <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 16, fontSize: 12 }} />
                   {/* Left first: the legend reads 左｜右 like the inputs. */}
                   <Line
@@ -223,7 +223,7 @@ export function CircumferenceGraph({ range }: { range: DayRange }) {
                     strokeWidth={2.5}
                     connectNulls
                     dot={{ r: 3, fill: SIDE_COLORS.left, strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: SIDE_COLORS.left, strokeWidth: 2, stroke: "#fff" }}
+                    activeDot={{ r: 5, fill: SIDE_COLORS.left, strokeWidth: 2, stroke: "var(--chart-dot-ring)" }}
                   />
                   <Line
                     isAnimationActive={false}

@@ -3,7 +3,6 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { cn } from "@/lib/utils";
 import { ModuleIcon, moduleLabel } from "../module-text";
@@ -28,13 +27,16 @@ export function AddRecordMenu({ modules, onChoose, className }: AddRecordMenuPro
     // Non-modal so the record dialog opened from an item takes over focus and pointer events cleanly.
     <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger asChild>
-        <Button className={className}>{t("timeline_add_record")}</Button>
+        <button type="button" className={cn("rubber-pill", className)}>
+          <span className="rubber-pill__cap" aria-hidden="true" />
+          {t("timeline_add_record")}
+        </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="start"
           sideOffset={6}
-          className="z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+          className="z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] rounded-[var(--radius-inner)] bg-popover p-1.5 text-popover-foreground shadow-[var(--shadow-lift)]"
         >
           <DropdownMenu.Label className="px-3 pb-1 pt-2 text-xs text-muted-foreground">
             {t("record_menu_title")}

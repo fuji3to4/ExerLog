@@ -28,11 +28,11 @@ export function ExerciseRankingChart({ items, unit }: { items: { title: string; 
     <div className="rounded-xl border bg-popover p-4 shadow-sm" style={{ height: 40 + items.length * ROW_HEIGHT }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={items} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-          <CartesianGrid horizontal={false} stroke="#e5e7eb" strokeDasharray="3 3" />
+          <CartesianGrid horizontal={false} stroke="var(--chart-grid)" strokeDasharray="3 3" />
           <XAxis
             type="number"
             allowDecimals={false}
-            tick={{ fontSize: 12, fill: "#6b7280" }}
+            tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
             tickLine={false}
             axisLine={false}
           />
@@ -41,12 +41,12 @@ export function ExerciseRankingChart({ items, unit }: { items: { title: string; 
             dataKey="title"
             width={120}
             tickFormatter={shorten}
-            tick={{ fontSize: 12, fill: "#374151" }}
+            tick={{ fontSize: 12, fill: "var(--chart-ink)" }}
             tickLine={false}
             axisLine={false}
           />
-          <Tooltip content={<RankingTooltip unit={unit} />} cursor={{ fill: "#2563eb", fillOpacity: 0.08 }} />
-          <Bar isAnimationActive={false} dataKey="value" fill="#2563eb" radius={[0, 4, 4, 0]} maxBarSize={20} />
+          <Tooltip content={<RankingTooltip unit={unit} />} cursor={{ fill: "var(--chart-1)", fillOpacity: 0.08 }} />
+          <Bar isAnimationActive={false} dataKey="value" fill="var(--chart-1)" radius={[0, 4, 4, 0]} maxBarSize={20} />
         </BarChart>
       </ResponsiveContainer>
     </div>

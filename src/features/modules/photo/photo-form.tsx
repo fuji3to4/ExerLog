@@ -137,7 +137,7 @@ export function PhotoForm({ onOpenChange, date, record, onSaved, onDeleted }: Re
                 ) : url ? (
                   <img src={url} alt={String(index + 1)} className="size-full rounded-lg object-cover" />
                 ) : (
-                  <span className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
+                  <span className="flex size-full items-center justify-center text-xs text-muted-foreground">
                     {t("photo_processing")}
                   </span>
                 )}
@@ -155,7 +155,7 @@ export function PhotoForm({ onOpenChange, date, record, onSaved, onDeleted }: Re
           {items.length < MAX_PHOTOS_PER_RECORD ? (
             <button
               type="button"
-              className="flex size-16 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 text-[10px] text-muted-foreground"
+              className="flex size-16 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 text-xs text-muted-foreground"
               onClick={() => chooseRef.current?.click()}
             >
               {t("photo_add")}

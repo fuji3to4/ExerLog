@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Sofia_Sans } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { CelebrationProvider } from "@/features/feedback/celebration";
@@ -13,9 +14,19 @@ type RootLayoutProps = {
 };
 
 const base = process.env.GITHUB_ACTIONS === "true" ? "/ExerLog" : "/ExerLog";
-const sofiaSans = Sofia_Sans({
+// Ranade (Indian Type Foundry, ITF Free Font License), self-hosted so the PWA keeps it offline.
+// Japanese falls through to the system's Japanese sans (see --font-display in tokens.css).
+const ranade = localFont({
+  src: [
+    { path: "./fonts/ranade-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/ranade-500.woff2", weight: "500", style: "normal" },
+  ],
+  variable: "--font-ranade",
+  display: "swap",
+});
+const geistMono = Geist_Mono({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
@@ -42,19 +53,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f3f0ee",
+  themeColor: "#f9f4ee",
 };
 
 const THEME_COLORS: Record<string, string> = {
-  warm: "#f3f0ee",
-  cool: "#eef3f7",
-  dark: "#161b22",
+  warm: "#f9f4ee",
+  cool: "#f2f5f8",
+  dark: "#1a1614",
 };
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="ja" suppressHydrationWarning>
-      <body className={`${sofiaSans.variable} antialiased`}>
+    <html lang="ja" className={`${ranade.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <body className="antialiased">
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -69,7 +80,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 document.documentElement.dataset.theme = theme;
                 var meta = document.querySelector('meta[name="theme-color"]');
                 if (meta) {
-                  meta.setAttribute("content", ${JSON.stringify(THEME_COLORS)}[theme] || "#f3f0ee");
+                  meta.setAttribute("content", ${JSON.stringify(THEME_COLORS)}[theme] || "#f9f4ee");
                 }
               })();
             `,

@@ -21,7 +21,7 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
   const { t } = useTranslation();
 
   return (
-    <>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <Card className="page-header">
         <CardHeader>
           <CardTitle>{t("history_heading")}</CardTitle>
@@ -34,7 +34,7 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
         includeAll
         leadingTabs={EXERCISE_HISTORY_TABS}
         allContent={
-          <>
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 [&>*:first-child]:justify-self-start">
             <PeriodSummaryButton />
             <HistoryCalendar
               month={history.currentMonth}
@@ -52,9 +52,9 @@ export function HistoryScreen({ month: initialMonth }: HistoryScreenProps = {}) 
                 onChanged={history.handleTimelineChanged}
               />
             ) : null}
-          </>
+          </div>
         }
       />
-    </>
+    </div>
   );
 }

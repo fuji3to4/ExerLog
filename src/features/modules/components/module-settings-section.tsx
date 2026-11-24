@@ -82,7 +82,7 @@ function RowMenu({ module, label, onDelete, onReset }: RowMenuProps) {
         <DropdownMenu.Content
           align="end"
           sideOffset={6}
-          className="z-50 min-w-40 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+          className="z-50 min-w-40 rounded-[var(--radius-inner)] bg-popover p-1.5 text-popover-foreground shadow-[var(--shadow-lift)]"
         >
           <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={exportDefinition}>
             {t("custom_export")}
@@ -161,14 +161,14 @@ function RowBody({ module, enabled, onToggle, moveButtons }: RowBodyProps) {
           {module.tags?.map((tag) => (
             <span
               key={tag}
-              className={cn(badgeVariants({ variant: "secondary" }), "ml-2 px-1.5 py-0 align-middle text-[10px] font-medium")}
+              className={cn(badgeVariants({ variant: "secondary" }), "ml-2 px-1.5 py-0 align-middle text-[11px] font-medium")}
             >
               {t(`module_tag_${tag}` as const)}
             </span>
           ))}
           {module.isCustom ? (
             <span
-              className={cn(badgeVariants({ variant: "secondary" }), "ml-2 px-1.5 py-0 align-middle text-[10px] font-medium")}
+              className={cn(badgeVariants({ variant: "secondary" }), "ml-2 px-1.5 py-0 align-middle text-[11px] font-medium")}
             >
               {t("custom_badge")}
             </span>

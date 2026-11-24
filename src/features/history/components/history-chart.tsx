@@ -74,30 +74,30 @@ export function HistoryChart({ series }: HistoryChartProps) {
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke="#e5e7eb" strokeDasharray="3 3" />
+            <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 3" />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTimestampToMD}
-              tick={{ fontSize: 12, fill: "#6b7280" }}
+              tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
               tickLine={false}
               axisLine={false}
               dy={10}
             />
             <YAxis
               allowDecimals={series.decimals > 0}
-              tick={{ fontSize: 12, fill: "#6b7280" }}
+              tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
               tickLine={false}
               axisLine={false}
               dx={-5}
             />
             <Tooltip
               content={<CustomTooltip series={series} />}
-              cursor={{ fill: "#2563eb", fillOpacity: 0.08 }}
+              cursor={{ fill: "var(--chart-1)", fillOpacity: 0.08 }}
             />
             <Bar
               isAnimationActive={false}
               dataKey="value"
-              fill="#2563eb"
+              fill="var(--chart-1)"
               radius={[4, 4, 0, 0]}
               maxBarSize={32}
             />
@@ -119,42 +119,42 @@ export function HistoryChart({ series }: HistoryChartProps) {
         >
           <defs>
             <linearGradient id="historyGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1} />
-              <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+              <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.1} />
+              <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid vertical={false} stroke="#e5e7eb" strokeDasharray="3 3" />
+          <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 3" />
           <XAxis
             dataKey="timestamp"
             type="number"
             domain={["dataMin", "dataMax"]}
             tickFormatter={formatTimestampToMD}
-            tick={{ fontSize: 12, fill: "#6b7280" }}
+            tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
             tickLine={false}
             axisLine={false}
             dy={10}
           />
           <YAxis
             allowDecimals={series.decimals > 0}
-            tick={{ fontSize: 12, fill: "#6b7280" }}
+            tick={{ fontSize: 12, fill: "var(--chart-tick)" }}
             tickLine={false}
             axisLine={false}
             dx={-5}
           />
           <Tooltip
             content={<CustomTooltip series={series} />}
-            cursor={{ stroke: "#2563eb", strokeWidth: 1 }}
+            cursor={{ stroke: "var(--chart-1)", strokeWidth: 1 }}
           />
           <Area
             isAnimationActive={false}
             type="monotone"
             dataKey="value"
-            stroke="#2563eb"
+            stroke="var(--chart-1)"
             strokeWidth={2.5}
             fillOpacity={1}
             fill="url(#historyGradient)"
-            dot={{ r: 3, fill: "#2563eb", strokeWidth: 0 }}
-            activeDot={{ r: 5, fill: "#2563eb", strokeWidth: 2, stroke: "#fff" }}
+            dot={{ r: 3, fill: "var(--chart-1)", strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: "var(--chart-1)", strokeWidth: 2, stroke: "var(--chart-dot-ring)" }}
           />
         </AreaChart>
       </ResponsiveContainer>

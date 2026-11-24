@@ -437,7 +437,7 @@ ${t("library_delete_confirm")}`
                   <DropdownMenu.Content
                     align="end"
                     sideOffset={6}
-                    className="z-50 min-w-48 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                    className="z-50 min-w-48 rounded-[var(--radius-inner)] bg-popover p-1.5 text-popover-foreground shadow-[var(--shadow-lift)]"
                   >
                     <DropdownMenu.Item className={MENU_ITEM_CLASS} onSelect={() => setRenamingSet(selectedSet)}>
                       {t("library_set_rename")}

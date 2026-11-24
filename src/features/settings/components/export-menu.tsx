@@ -22,7 +22,7 @@ export function ExportMenu({ label, items }: { label: string; items: readonly Ex
         <DropdownMenu.Content
           align="start"
           sideOffset={6}
-          className="z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+          className="z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] rounded-[var(--radius-inner)] bg-popover p-1.5 text-popover-foreground shadow-[var(--shadow-lift)]"
         >
           {items.map((item) => (
             <DropdownMenu.Item key={item.key} className={ITEM_CLASS} onSelect={item.onSelect}>
