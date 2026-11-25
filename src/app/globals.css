@@ -1202,7 +1202,7 @@
   font-weight: 500;
 }
 
-/* Same size as the sort select (.library-screen__sort select). */
+/* Shared field look; the sort select is then made a little shorter below. */
 .library-filters__field input,
 .library-filters__field select,
 .library-screen__search input,
@@ -1670,6 +1670,13 @@
 
 /* ── Library ───────────────────────────────────────────────────────── */
 
+/* Same section rhythm as .today-screen and the history screen. */
+.library-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-md);
+}
+
 .library-screen__edit-toggle {
   display: inline-flex;
   flex-shrink: 0;
@@ -1713,8 +1720,10 @@
   padding-inline: var(--space-md);
 }
 
+/* A touch shorter than the search field: it sits on the quieter count line. */
 .library-screen__sort select {
   width: auto;
+  min-height: 2.125rem;
 }
 
 .library-screen__filters-toggle {
