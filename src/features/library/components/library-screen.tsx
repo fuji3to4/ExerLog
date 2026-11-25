@@ -402,7 +402,7 @@ ${t("library_delete_confirm")}`
   }
 
   return (
-    <>
+    <div className="library-screen">
       <Card className="page-header">
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
@@ -603,6 +603,6 @@ ${t("library_delete_confirm")}`
           onCancel={handleFormCancel}
         />
       )}
-    </>
+    </div>
   );
 }
