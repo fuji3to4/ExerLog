@@ -79,7 +79,7 @@
 
 - [ ] **Step 3: Implement `ruler-layout.ts`**
 
-  Length in hours: exercise → `durationSeconds / 3600`; module with `endedAt` → `(Date.parse(endedAt) - Date.parse(at)) / 3_600_000`; module with `endedAt === null`/absent → `nowHours - hoursOf(at)` when `nowHours` is defined, else 0; watch → 0. A length `<= 0` makes a point. Clip `width` to `1 - x`.
+  Length in hours: exercise → `durationSeconds / 3600`; module with `endedAt` → `(Date.parse(endedAt) - Date.parse(at)) / 3_600_000`; module with `endedAt === null` (ongoing) → `nowHours - hoursOf(at)` when `nowHours` is defined, else 0; module with `endedAt` absent (undefined) → 0 (point); watch → 0. A length `<= 0` makes a point. Clip `width` to `1 - x`.
 
   Rows: per lane (kind order), each row keeps its placed intervals with their group. A clip goes into the first row where no clip of a *different* group overlaps it; otherwise a new row. Overlap test:
   ```ts
