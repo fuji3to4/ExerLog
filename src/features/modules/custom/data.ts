@@ -24,7 +24,7 @@ export function customTabName(typeId: string): string {
   return `Custom_${typeId}`;
 }
 
-export type CustomRecordInput = Pick<CustomRecord, "date" | "recordedAt" | "values" | "note">;
+export type CustomRecordInput = Pick<CustomRecord, "date" | "recordedAt" | "values" | "note"> & Pick<Partial<CustomRecord>, "endedAt">;
 
 export async function addCustomRecord(
   definition: CustomRecordDefinition,
@@ -39,6 +39,7 @@ export async function addCustomRecord(
     note: input.note.trim(),
     updatedAt: localIsoNow(),
   };
+  if (input.endedAt !== undefined) record.endedAt = input.endedAt;
   await appDb.customRecords.add(record);
   scheduleSync();
   return record;
@@ -81,12 +82,14 @@ export function listCustomInRange(typeId: string, start: string, end: string): P
 function sheetHeaders(definition: CustomRecordDefinition, records: CustomRecord[]): string[] {
   const listed = definition.fields.map((f) => f.id);
   const unknown = new Set<string>();
+  const withEnd = definition.hasEnd === true || records.some((r) => r.endedAt);
   for (const record of records) {
     for (const id of Object.keys(record.values)) {
-      if (!listed.includes(id) && !FIXED.includes(id)) unknown.add(id);
+      if (!listed.includes(id) && !FIXED.includes(id) && id !== "endedAt") unknown.add(id);
     }
   }
-  return [...FIXED, ...listed, ...[...unknown].sort()];
+  const fixed = withEnd ? [...FIXED.slice(0, 3), "endedAt", ...FIXED.slice(3)] : [...FIXED];
+  return [...fixed, ...listed, ...[...unknown].sort()];
 }
 
 function createRecordsSyncConfig(definition: CustomRecordDefinition): TableSyncConfig {
@@ -109,6 +112,8 @@ function createRecordsSyncConfig(definition: CustomRecordDefinition): TableSyncC
             return r.date;
           case "recordedAt":
             return r.recordedAt;
+          case "endedAt":
+            return r.endedAt ?? "";
           case "note":
             return r.note ?? "";
           case "updatedAt":
@@ -120,11 +125,11 @@ function createRecordsSyncConfig(definition: CustomRecordDefinition): TableSyncC
     fromRow: (row, headers): CustomRecord => {
       const values: Record<string, CustomValue> = {};
       headers.forEach((column, index) => {
-        if (column === "" || FIXED.includes(column)) return;
+        if (column === "" || column === "endedAt" || FIXED.includes(column)) return;
         const value = decodeCell(fields.get(column), (row[index] ?? "").trim());
         if (value !== undefined) values[column] = value;
       });
-      return {
+      const record: CustomRecord = {
         id: cell(row, headers, "id"),
         typeId,
         date: cell(row, headers, "date"),
@@ -133,6 +138,9 @@ function createRecordsSyncConfig(definition: CustomRecordDefinition): TableSyncC
         note: cell(row, headers, "note"),
         updatedAt: cell(row, headers, "updatedAt"),
       };
+      const endedAt = cell(row, headers, "endedAt").trim();
+      if (endedAt !== "") record.endedAt = endedAt;
+      return record;
     },
     readFromDb: () => appDb.customRecords.where("typeId").equals(typeId).toArray(),
     // The table is shared by every type: replace only this type's rows.
@@ -195,6 +203,8 @@ export function createCustomModuleData(
                   return r.date;
                 case "recordedAt":
                   return formatTimestampForCsv(r.recordedAt);
+                case "endedAt":
+                  return r.endedAt ? formatTimestampForCsv(r.endedAt) : "";
                 case "note":
                   return r.note ?? "";
                 default:

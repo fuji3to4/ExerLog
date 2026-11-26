@@ -29,6 +29,12 @@ describe("buildAiGuide", () => {
     }
   });
 
+  it.each(["ja", "en"] as const)("documents hasEnd and the reserved endedAt (%s)", (lang) => {
+    const guide = buildAiGuide(lang);
+    expect(guide).toContain("`hasEnd`");
+    expect(guide).toMatch(/`recordedAt`[^\n]*`endedAt`[^\n]*`updatedAt`/);
+  });
+
   it("ends with the prompt line", () => {
     expect(buildAiGuide("ja").trimEnd().endsWith("記録したいもの:")).toBe(true);
     expect(buildAiGuide("en").trimEnd().endsWith("What I want to record:")).toBe(true);

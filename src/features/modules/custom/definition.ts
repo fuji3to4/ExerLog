@@ -17,6 +17,8 @@ export type CustomRecordDefinition = {
   color: string;
   description?: LocalizedText;
   fields: CustomField[];
+  /** Records may carry an optional end time. */
+  hasEnd?: boolean;
 };
 
 export type DefinitionErrorCode =
@@ -45,6 +47,8 @@ export type ParseResult =
   | { ok: false; errors: DefinitionError[] };
 
 export const FIXED_COLUMNS = ["id", "date", "recordedAt", "note", "updatedAt"] as const;
+/** Ids a field may not use: the fixed sheet columns plus the optional end time. */
+export const RESERVED_FIELD_IDS = [...FIXED_COLUMNS, "endedAt"] as const;
 export const DEFAULT_ICON = "📝";
 
 const DEFINITION_ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
@@ -167,6 +171,7 @@ export function parseDefinition(input: unknown): ParseResult {
   };
   const description = readText(input.description);
   if (description !== undefined) definition.description = description;
+  if (input.hasEnd === true) definition.hasEnd = true;
   return { ok: true, definition };
 }
 
@@ -183,7 +188,7 @@ function parseField(raw: unknown, path: string, seen: Set<string>, fail: Fail): 
 
   const id = typeof raw.id === "string" ? raw.id : "";
   if (!FIELD_ID.test(id)) bad("bad_field_id", `${path}.id`, typeof raw.id === "string" ? raw.id : undefined);
-  else if ((FIXED_COLUMNS as readonly string[]).includes(id)) bad("reserved_field_id", `${path}.id`);
+  else if ((RESERVED_FIELD_IDS as readonly string[]).includes(id)) bad("reserved_field_id", `${path}.id`);
   else if (seen.has(id)) bad("duplicate_field_id", `${path}.id`, id);
   else seen.add(id);
 
