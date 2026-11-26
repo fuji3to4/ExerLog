@@ -51,8 +51,8 @@ describe("builtin definitions", () => {
   });
 
   it("exposes the seed timestamp", () => {
-    expect(BUILTIN_SEED_UPDATED_AT).toBe("2000-01-01T00:00:00+00:00");
-    expect(KNOWN_SEED_UPDATED_ATS).toEqual([BUILTIN_SEED_UPDATED_AT]);
+    expect(BUILTIN_SEED_UPDATED_AT).toBe("2000-01-02T00:00:00+00:00");
+    expect(KNOWN_SEED_UPDATED_ATS).toEqual(["2000-01-01T00:00:00+00:00", "2000-01-02T00:00:00+00:00"]);
   });
 
   describe("lockedFieldErrors", () => {
@@ -114,13 +114,16 @@ describe("builtin definitions", () => {
     });
   });
 
-  it("describes selfcare as a required item choice and optional minutes", () => {
+  it("selfcare has hasEnd and no minutes field", () => {
+    const template = builtinDefinition("selfcare");
+    expect(template.hasEnd).toBe(true);
+    expect(template.fields.some((f) => f.id === "minutes")).toBe(false);
+  });
+
+  it("describes selfcare as a required item choice", () => {
     const template = builtinDefinition("selfcare");
     expect(template.id).toBe("selfcare");
-    expect(template.fields.map((f) => [f.id, f.type, f.required])).toEqual([
-      ["item", "choice", true],
-      ["minutes", "number", false],
-    ]);
+    expect(template.fields.map((f) => [f.id, f.type, f.required])).toEqual([["item", "choice", true]]);
     const item = template.fields[0];
     expect(item.type === "choice" && item.options.map((o) => o.id)).toEqual(["skincare", "exercise", "other"]);
     expect(item.type === "choice" && item.options[1].label).toEqual({

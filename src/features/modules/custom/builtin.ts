@@ -63,8 +63,8 @@ const DEFINITIONS = {
           { id: "other", label: both("selfcare_item_other") },
         ],
       },
-      { id: "minutes", label: { ja: "時間", en: "Duration" }, type: "number", required: false, unit: "分", min: 1, step: 1 },
     ],
+    hasEnd: true,
   },
   girth: {
     exerlogRecordType: 1,
@@ -99,9 +99,9 @@ export function builtinTags(id: BuiltinId): readonly ModuleTag[] | undefined {
 }
 
 /** Fixed timestamp for seeded definitions, so any real edit always sorts newer. */
-export const BUILTIN_SEED_UPDATED_AT = "2000-01-01T00:00:00+00:00";
+export const BUILTIN_SEED_UPDATED_AT = "2000-01-02T00:00:00+00:00";
 /** Every seed timestamp ever shipped; a definition carrying one is an untouched seed. */
-export const KNOWN_SEED_UPDATED_ATS: readonly string[] = [BUILTIN_SEED_UPDATED_AT];
+export const KNOWN_SEED_UPDATED_ATS: readonly string[] = ["2000-01-01T00:00:00+00:00", BUILTIN_SEED_UPDATED_AT];
 
 /** Fields of the body definition that BMI depends on: id -> required unit. */
 const LOCKED_BODY_FIELDS: Record<string, string> = { weight: "kg", height: "cm" };
