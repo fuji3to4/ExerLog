@@ -488,16 +488,21 @@
   top: calc(var(--space-xs) + var(--row) * 32px);
   left: var(--x);
   width: var(--w);
-  min-width: 14px;
+  min-width: 3px;
   height: 24px;
   border-radius: var(--radius-clip);
-  background: linear-gradient(
-    color-mix(in oklab, var(--c) 24%, hsl(var(--card))),
-    color-mix(in oklab, var(--c) 40%, hsl(var(--card)))
-  );
+  /* Translucent so overlapping clips darken where they cross. */
+  background: color-mix(in oklab, var(--c) 35%, transparent);
   box-shadow:
     inset 0 0 0 1px color-mix(in oklab, var(--c) 60%, transparent),
     inset 0 1px 0 var(--sheet-hi);
+}
+
+.day-ruler__clip.is-point {
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--c);
 }
 
 .day-ruler__clip.is-new {
