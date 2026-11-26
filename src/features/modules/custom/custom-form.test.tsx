@@ -219,7 +219,7 @@ describe("CustomRecordForm end time", () => {
 
   it("saving with End 09:30 stores endedAt", async () => {
     const { onSaved } = renderEnd();
-    fireEvent.change(screen.getByLabelText("時刻"), { target: { value: "09:00" } });
+    fireEvent.change(screen.getByLabelText("開始"), { target: { value: "09:00" } });
     fireEvent.change(screen.getByLabelText("終了"), { target: { value: "09:30" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
@@ -243,9 +243,25 @@ describe("CustomRecordForm end time", () => {
   it("changing start after end recomputes end", async () => {
     await appDb.customRecords.add(base);
     const { onSaved } = renderEnd(endDef, base);
-    fireEvent.change(screen.getByLabelText("時刻"), { target: { value: "10:00" } });
+    fireEvent.change(screen.getByLabelText("開始"), { target: { value: "10:00" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
     expect((await appDb.customRecords.get("w1"))?.endedAt).toBe("2026-10-21T09:30:00+09:00");
+  });
+
+  it("hasEnd form labels the inputs 開始 and 終了", () => {
+    renderEnd();
+    expect(screen.getByLabelText("開始")).toBeInTheDocument();
+    expect(screen.getByLabelText("終了")).toBeInTheDocument();
+  });
+
+  it("editing a record with endedAt in a module without hasEnd keeps endedAt", async () => {
+    const stray: CustomRecord = { ...base, id: "w2", typeId: "protein", values: { amount: 20 } };
+    await appDb.customRecords.add(stray);
+    const { onSaved } = renderForm(stray);
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    expect(onSaved.mock.calls[0][0].endedAt).toBe(stray.endedAt);
+    expect((await appDb.customRecords.get("w2"))?.endedAt).toBe(stray.endedAt);
   });
 });

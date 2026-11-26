@@ -508,6 +508,7 @@ export const en = {
   library_count_all: "{total} videos",
   library_count_filtered: "{shown} / {total} videos",
   library_set_count_filtered: "{name}: {shown} / {total} videos",
+  custom_start_time: "Start",
   custom_end_time: "End",
   custom_end_suffix: "– {time}",
   custom_required: "Required",

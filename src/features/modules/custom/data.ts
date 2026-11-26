@@ -88,7 +88,8 @@ function sheetHeaders(definition: CustomRecordDefinition, records: CustomRecord[
       if (!listed.includes(id) && !FIXED.includes(id) && id !== "endedAt") unknown.add(id);
     }
   }
-  const fixed = withEnd ? [...FIXED.slice(0, 3), "endedAt", ...FIXED.slice(3)] : [...FIXED];
+  const at = FIXED.indexOf("recordedAt") + 1;
+  const fixed = withEnd ? [...FIXED.slice(0, at), "endedAt", ...FIXED.slice(at)] : [...FIXED];
   return [...fixed, ...listed, ...[...unknown].sort()];
 }
 
@@ -113,7 +114,7 @@ function createRecordsSyncConfig(definition: CustomRecordDefinition): TableSyncC
           case "recordedAt":
             return r.recordedAt;
           case "endedAt":
-            return r.endedAt ?? "";
+            return r.endedAt ?? (typeof r.values.endedAt === "string" ? r.values.endedAt : "");
           case "note":
             return r.note ?? "";
           case "updatedAt":

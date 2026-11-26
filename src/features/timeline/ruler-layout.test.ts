@@ -42,7 +42,7 @@ describe("layoutRuler", () => {
     expect(c.isPoint).toBe(false);
   });
 
-  it("exercise ending at performedAt does not run past now", () => {
+  it("exercise ends at performedAt", () => {
     const c = only([ex("12:00", 1800)]);
     expect(c.x + c.width).toBeCloseTo(6 / 18);
   });

@@ -168,6 +168,14 @@ describe("endedAt", () => {
     expect(cfg(meal).fromRow(cfg(meal).toRow(rec, headers), headers)).toEqual({ ...rec, typeId: "meal" });
   });
 
+  it("toRow falls back to a string values.endedAt when the record has no endedAt", async () => {
+    const rec = await addCustomRecord(bath, input({ amount: 1 }));
+    const stray = { ...rec, values: { ...rec.values, endedAt: endIso } };
+    const c = cfg(bath);
+    const headers = c.buildHeaders!([stray]);
+    expect(c.toRow(stray, headers)[headers.indexOf("endedAt")]).toBe(endIso);
+  });
+
   it("fromRow reads endedAt", async () => {
     const rec = await addCustomRecord(bath, { ...input({ amount: 1 }), endedAt: endIso });
     expect(rec.endedAt).toBe(endIso);

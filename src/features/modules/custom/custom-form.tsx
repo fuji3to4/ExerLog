@@ -270,12 +270,14 @@ export function CustomRecordForm({
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     const recordedAt = withLocalTime(baseAt, time);
-    const endedAt = definition.hasEnd ? endIsoFor(recordedAt, endTime) : undefined;
+    // Without hasEnd the End input is hidden: an end time already on the record must survive.
+    const endedAt = definition.hasEnd ? endIsoFor(recordedAt, endTime) : record?.endedAt;
     void run(
       async () => {
         if (!record) return addCustomRecord(definition, { date, recordedAt, values, note, endedAt });
-        const { endedAt: _previousEnd, ...rest } = record;
-        const updated: CustomRecord = { ...rest, recordedAt, values, note, ...(endedAt ? { endedAt } : {}) };
+        const updated: CustomRecord = { ...record, recordedAt, values, note };
+        if (endedAt) updated.endedAt = endedAt;
+        else delete updated.endedAt;
         await updateCustomRecord(definition, updated);
         return updated;
       },
@@ -295,7 +297,7 @@ export function CustomRecordForm({
 
   return (
     <div className="space-y-4">
-      <TimeField value={time} onChange={setTime} />
+      <TimeField value={time} onChange={setTime} label={definition.hasEnd ? t("custom_start_time") : undefined} />
       {definition.hasEnd ? <TimeField value={endTime} onChange={setEndTime} label={t("custom_end_time")} required={false} /> : null}
       {definition.fields.map((field) => (
         <FieldRow
