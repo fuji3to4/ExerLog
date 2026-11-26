@@ -13,6 +13,7 @@ import {
 import { localIsoAt, timeOfIso, withLocalTime } from "@/lib/date/local-iso";
 import type { CustomRecord, CustomValue } from "@/lib/types";
 import type { RecordFormProps } from "../types";
+import { endIsoFor } from "./end-time";
 import { ScaleInput } from "./scale-input";
 import { addCustomRecord, deleteCustomRecord, updateCustomRecord } from "./data";
 import { resolveText, type CustomField, type CustomRecordDefinition } from "./definition";
@@ -248,6 +249,7 @@ export function CustomRecordForm({
   const noteId = useId();
   const [baseAt] = useState(() => record?.recordedAt ?? localIsoAt(date));
   const [time, setTime] = useState(() => timeOfIso(baseAt));
+  const [endTime, setEndTime] = useState(() => (record?.endedAt ? timeOfIso(record.endedAt) : ""));
   const [draft, setDraft] = useState<Draft>(() => initialDraft(definition, record));
   const [note, setNote] = useState(record?.note ?? "");
   const [errors, setErrors] = useState<Record<string, FieldError>>({});
@@ -268,10 +270,14 @@ export function CustomRecordForm({
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     const recordedAt = withLocalTime(baseAt, time);
+    // Without hasEnd the End input is hidden: an end time already on the record must survive.
+    const endedAt = definition.hasEnd ? endIsoFor(recordedAt, endTime) : record?.endedAt;
     void run(
       async () => {
-        if (!record) return addCustomRecord(definition, { date, recordedAt, values, note });
+        if (!record) return addCustomRecord(definition, { date, recordedAt, values, note, endedAt });
         const updated: CustomRecord = { ...record, recordedAt, values, note };
+        if (endedAt) updated.endedAt = endedAt;
+        else delete updated.endedAt;
         await updateCustomRecord(definition, updated);
         return updated;
       },
@@ -291,7 +297,8 @@ export function CustomRecordForm({
 
   return (
     <div className="space-y-4">
-      <TimeField value={time} onChange={setTime} />
+      <TimeField value={time} onChange={setTime} label={definition.hasEnd ? t("custom_start_time") : undefined} />
+      {definition.hasEnd ? <TimeField value={endTime} onChange={setEndTime} label={t("custom_end_time")} required={false} /> : null}
       {definition.fields.map((field) => (
         <FieldRow
           key={field.id}

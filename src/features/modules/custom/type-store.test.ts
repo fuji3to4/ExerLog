@@ -335,6 +335,30 @@ describe("built-in types", () => {
     expect((await appDb.customRecordTypes.get("girth"))!.definition).toEqual(builtinDefinition("girth"));
   });
 
+  it("an untouched old selfcare seed is replaced by the new one", async () => {
+    const old = builtinWith("selfcare", (f) => [
+      ...f,
+      { id: "minutes", label: { ja: "時間", en: "Duration" }, type: "number", required: false, unit: "分", min: 1, step: 1 },
+    ]);
+    delete old.hasEnd;
+    await appDb.customRecordTypes.put({ id: "selfcare", definition: old, deleted: false, updatedAt: "2000-01-01T00:00:00+00:00" });
+    await loadCustomTypes();
+    const row = (await appDb.customRecordTypes.get("selfcare"))!;
+    expect(row.definition.hasEnd).toBe(true);
+    expect(row.definition.fields.some((f) => f.id === "minutes")).toBe(false);
+    expect(row.updatedAt).toBe(BUILTIN_SEED_UPDATED_AT);
+  });
+
+  it("a user-edited selfcare definition is left alone", async () => {
+    const edited = builtinWith("selfcare", (f) => f);
+    delete edited.hasEnd;
+    await appDb.customRecordTypes.put({ id: "selfcare", definition: edited, deleted: false, updatedAt: "2026-11-20T10:00:00+09:00" });
+    await loadCustomTypes();
+    const row = (await appDb.customRecordTypes.get("selfcare"))!;
+    expect(row.definition).toEqual(edited);
+    expect(row.updatedAt).toBe("2026-11-20T10:00:00+09:00");
+  });
+
   it("keeps an untouched seed whose records do not fit the shipped definition", async () => {
     const stale = builtinWith("girth", (f) => f.map((x) => ((x as { id: string }).id === "chest" ? { id: "chest", label: "Chest", type: "text" } : x)));
     await appDb.customRecordTypes.put({ id: "girth", definition: stale, deleted: true, updatedAt: BUILTIN_SEED_UPDATED_AT });

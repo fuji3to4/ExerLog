@@ -52,6 +52,7 @@ const JA = `あなたは、記録アプリ「ExerLog」に記録の種類を足�
 - \`icon\`: 絵文字1つ。省略できます（省略すると 📝）。
 - \`color\`: \`#rrggbb\` の形の色。省略できます。形が違うときは、ID から決まる色になります。
 - \`description\`: ひとこと説明。省略できます。
+- \`hasEnd\`: \`true\` にすると、記録に終了時刻を入れられるようになります（入れなくてもかまいません）。続けた時間を残したいもの（セルフケア、入浴など）向けです。省略できます。
 - \`fields\`: 項目の配列。必須。1つ以上。
 
 ## 項目（fields の中身）
@@ -81,7 +82,7 @@ const JA = `あなたは、記録アプリ「ExerLog」に記録の種類を足�
 ## ID の決まり
 - 定義の \`id\`: 半角の小文字・数字・ハイフン。先頭は小文字か数字。40文字まで。
 - 項目の \`id\`: 半角英数字とアンダースコア。先頭は英字。40文字まで。
-- 使えない項目の ID: \`id\`、\`date\`、\`recordedAt\`、\`note\`、\`updatedAt\`。
+- 使えない項目の ID: \`id\`、\`date\`、\`recordedAt\`、\`endedAt\`、\`note\`、\`updatedAt\`。
 - 記録には、時刻とメモが自動で付きます。時刻やメモの項目は作らないでください。
 
 ## あとから定義を変えるとき
@@ -118,6 +119,7 @@ Follow the rules below and write one definition as JSON.
 - \`icon\`: one emoji. Optional (defaults to 📝).
 - \`color\`: a color like \`#rrggbb\`. Optional. If the form is wrong, a color chosen from the id is used.
 - \`description\`: a short description. Optional.
+- \`hasEnd\`: set to \`true\` to let records carry an optional end time. Use it for things whose duration matters (self-care, a bath). Optional.
 - \`fields\`: an array of fields. Required. At least one.
 
 ## Fields (the contents of fields)
@@ -147,7 +149,7 @@ Field types and their settings:
 ## Id rules
 - Definition \`id\`: lowercase letters, digits and hyphens. Starts with a lowercase letter or digit. Up to 40 characters.
 - Field \`id\`: letters, digits and underscores. Starts with a letter. Up to 40 characters.
-- Field ids you cannot use: \`id\`, \`date\`, \`recordedAt\`, \`note\`, \`updatedAt\`.
+- Field ids you cannot use: \`id\`, \`date\`, \`recordedAt\`, \`endedAt\`, \`note\`, \`updatedAt\`.
 - Every record automatically gets a time and a note. Do not add fields for time or note.
 
 ## When changing a definition later

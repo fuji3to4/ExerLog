@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/sync/auto-sync", () => ({ scheduleSync: vi.fn() }));
 
+import { formatTimestampForCsv } from "@/lib/date/format-timestamp";
 import { localIsoAt } from "@/lib/date/local-iso";
 import { appDb } from "@/features/storage/app-db";
 import type { CustomRecordType } from "@/lib/types";
@@ -142,6 +143,79 @@ describe("custom record data", () => {
     const csv = await data.csv.generate();
     expect(csv.split("\n")[0]).toContain("id,date,recordedAt,note,amount,kind,timing,fasted,brand,taste");
     expect(csv).toContain(",30,");
+  });
+});
+
+describe("endedAt", () => {
+  const bath = { ...def("bath"), hasEnd: true as const };
+  const endIso = "2026-11-26T10:30:00+09:00";
+  const cfg = (d: CustomRecordDefinition) => createCustomModuleData(typeOf(d)).syncConfigs[0];
+
+  it("endedAt column appears for hasEnd definitions", () => {
+    const headers = cfg(bath).buildHeaders!([]);
+    expect(headers[headers.indexOf("recordedAt") + 1]).toBe("endedAt");
+  });
+
+  it("no endedAt column without hasEnd and without stored endedAt", async () => {
+    const rec = await addCustomRecord(meal, input({ amount: 1 }));
+    expect(cfg(meal).buildHeaders!([rec])).not.toContain("endedAt");
+  });
+
+  it("endedAt column kept when a record has endedAt but the definition dropped hasEnd", async () => {
+    const rec = await addCustomRecord(bath, { ...input({ amount: 1 }), endedAt: endIso });
+    const headers = cfg(meal).buildHeaders!([rec]);
+    expect(headers[headers.indexOf("recordedAt") + 1]).toBe("endedAt");
+    expect(cfg(meal).fromRow(cfg(meal).toRow(rec, headers), headers)).toEqual({ ...rec, typeId: "meal" });
+  });
+
+  it("toRow falls back to a string values.endedAt when the record has no endedAt", async () => {
+    const rec = await addCustomRecord(bath, input({ amount: 1 }));
+    const stray = { ...rec, values: { ...rec.values, endedAt: endIso } };
+    const c = cfg(bath);
+    const headers = c.buildHeaders!([stray]);
+    expect(c.toRow(stray, headers)[headers.indexOf("endedAt")]).toBe(endIso);
+  });
+
+  it("fromRow reads endedAt", async () => {
+    const rec = await addCustomRecord(bath, { ...input({ amount: 1 }), endedAt: endIso });
+    expect(rec.endedAt).toBe(endIso);
+    const c = cfg(bath);
+    const headers = c.buildHeaders!([rec]);
+    expect(c.fromRow(c.toRow(rec, headers), headers)).toEqual(rec);
+  });
+
+  it("empty endedAt cell gives no property", async () => {
+    const rec = await addCustomRecord(bath, input({ amount: 1 }));
+    expect("endedAt" in rec).toBe(false);
+    const c = cfg(bath);
+    const headers = c.buildHeaders!([rec]);
+    const back = c.fromRow(c.toRow(rec, headers), headers) as typeof rec;
+    expect("endedAt" in back).toBe(false);
+  });
+
+  it("sheet without endedAt column gives no property", () => {
+    const c = cfg(bath);
+    const headers = ["id", "date", "recordedAt", "note", "updatedAt"];
+    const back = c.fromRow(["a", day, at, "", ""], headers) as { endedAt?: string };
+    expect("endedAt" in back).toBe(false);
+  });
+
+  it("endedAt never lands in values", async () => {
+    const rec = await addCustomRecord(bath, { ...input({ amount: 1 }), endedAt: endIso });
+    const c = cfg(meal);
+    const headers = c.buildHeaders!([rec]);
+    const back = c.fromRow(c.toRow(rec, headers), headers) as typeof rec;
+    expect(Object.keys(back.values)).not.toContain("endedAt");
+  });
+
+  it("csv has endedAt column formatted like recordedAt for hasEnd", async () => {
+    await addCustomRecord(bath, { ...input({ amount: 1 }), endedAt: endIso });
+    await addCustomRecord(bath, input({ amount: 2 }));
+    const csv = await createCustomModuleData(typeOf(bath)).csv.generate();
+    const lines = csv.split("\n");
+    expect(lines[0]).toContain("recordedAt,endedAt,note");
+    expect(csv).toContain(formatTimestampForCsv(endIso));
+    expect(csv).toContain(formatTimestampForCsv(at) + ",,");
   });
 });
 

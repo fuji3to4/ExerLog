@@ -42,8 +42,8 @@ describe("layoutRuler", () => {
     expect(c.isPoint).toBe(false);
   });
 
-  it("exercise ending at performedAt does not run past now", () => {
-    const c = only([ex("12:00", 1800)], { ...opts, nowHours: 12 });
+  it("exercise ends at performedAt", () => {
+    const c = only([ex("12:00", 1800)]);
     expect(c.x + c.width).toBeCloseTo(6 / 18);
   });
 
@@ -57,8 +57,12 @@ describe("layoutRuler", () => {
     expect(only([mod("compression", "08:00", iso("18:00"))]).width).toBeCloseTo(10 / 18);
   });
 
-  it("open-ended module runs to now on today", () => {
-    expect(only([mod("compression", "08:00", null)], { ...opts, nowHours: 12 }).width).toBeCloseTo(4 / 18);
+  it("module with endedAt null is a point even on today", () => {
+    // A stale nowHours from the old signature must be ignored: the record never runs to now.
+    const staleNow = { ...opts, nowHours: 12 } as typeof opts;
+    const c = only([mod("compression", "08:00", null)], staleNow);
+    expect(c.width).toBe(0);
+    expect(c.isPoint).toBe(true);
   });
 
   it("open-ended module is a point on a past day", () => {
@@ -67,12 +71,8 @@ describe("layoutRuler", () => {
     expect(c.isPoint).toBe(true);
   });
 
-  it("open-ended module started after now is a point", () => {
-    expect(only([mod("compression", "13:00", null)], { ...opts, nowHours: 12 }).isPoint).toBe(true);
-  });
-
   it("module without an endedAt property is a point even on today", () => {
-    const c = only([mod("wellness", "08:00")], { ...opts, nowHours: 12 });
+    const c = only([mod("wellness", "08:00")]);
     expect(c.isPoint).toBe(true);
     expect(c.width).toBe(0);
   });

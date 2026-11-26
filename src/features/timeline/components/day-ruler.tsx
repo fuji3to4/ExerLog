@@ -22,7 +22,7 @@ export function DayRuler({ items, highlightId, colorOf, keyOf, nowHours }: DayRu
   const earliest = Math.min(DEFAULT_START, earliestHour(items));
   const start = Math.floor(earliest / 3) * 3;
   const span = 24 - start;
-  const { clips, rows } = layoutRuler(items, { start, span, nowHours });
+  const { clips, rows } = layoutRuler(items, { start, span });
   const ticks = Array.from({ length: span / 3 + 1 }, (_, i) => start + i * 3);
 
   const percent = (share: number) => `${Math.min(share, 1) * 100}%`;

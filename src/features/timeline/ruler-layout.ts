@@ -35,12 +35,11 @@ export function earliestHour(items: TimelineItem[]): number {
   return Math.min(...items.map((item) => Math.max(0, startHourOf(item))));
 }
 
-function lengthHours(item: TimelineItem, nowHours: number | undefined): number {
+function lengthHours(item: TimelineItem): number {
   if (item.kind === "exercise") return item.log.durationSeconds / 3600;
   if (item.kind === "module") {
     const { endedAt } = item.record;
     if (endedAt) return (Date.parse(endedAt) - Date.parse(item.at)) / 3_600_000;
-    if (endedAt === null && nowHours !== undefined) return nowHours - hoursOf(item.at);
     return 0;
   }
   return 0;
@@ -58,9 +57,9 @@ const overlaps = (a: Span, b: Span) =>
  */
 export function layoutRuler(
   items: TimelineItem[],
-  opts: { start: number; span: number; nowHours?: number },
+  opts: { start: number; span: number },
 ): { clips: RulerClip[]; rows: number } {
-  const { start, span, nowHours } = opts;
+  const { start, span } = opts;
   const clips: RulerClip[] = [];
   let rowBase = 0;
 
@@ -75,7 +74,7 @@ export function layoutRuler(
       const isExercise = item.kind === "exercise";
       // Exercises end at `at`; keep only the part at or after the ruler start.
       const from = isExercise ? Math.max(start, startHourOf(item)) : hoursOf(item.at);
-      const length = isExercise ? hoursOf(item.at) - from : lengthHours(item, nowHours);
+      const length = isExercise ? hoursOf(item.at) - from : lengthHours(item);
       const isPoint = !(length > 0) || (isExercise && item.log.durationSeconds <= 0);
       const candidate: Span = { from, to: isPoint ? from : from + length, isPoint, group: rulerGroupOf(item) };
 

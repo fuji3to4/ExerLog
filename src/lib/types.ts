@@ -162,6 +162,7 @@ export type CustomRecord = {
   id: string;
   date: string;
   recordedAt: string;
+  endedAt?: string;
   typeId: string;
   values: Record<string, CustomValue>;
   note: string;

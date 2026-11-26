@@ -5,6 +5,7 @@ import { useMemo, type ComponentType } from "react";
 import { MetricGraphView, sortByTime, type GraphMetric } from "@/features/history/components/metric-graph-view";
 import { useTranslation } from "@/features/i18n/use-translation";
 import { TimeLabelTag } from "@/features/timeline/components/time-label-tag";
+import { timeOfIso } from "@/lib/date/local-iso";
 import type { CustomRecord, CustomRecordType, CustomValue } from "@/lib/types";
 import { RangeSummaryView } from "../components/range-summary-view";
 import { SummaryCardFrame, SummaryEmpty, usePeriodSummary } from "../components/summary-card";
@@ -146,6 +147,9 @@ export function createCustomModule(
       <>
         <span className="block">
           {formatRecordLine(definition, record, language, t("sep_dot"))}
+          {record.endedAt ? (
+            <span className="ml-1 text-muted-foreground">{t("custom_end_suffix", { time: timeOfIso(record.endedAt) })}</span>
+          ) : null}
           <TimeLabelTag label={label} />
         </span>
         {record.note ? <span className="block text-muted-foreground">{record.note}</span> : null}

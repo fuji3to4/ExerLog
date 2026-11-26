@@ -17,7 +17,7 @@ export type ModuleRecord = {
   id: string;
   date: string;
   recordedAt: string;
-  /** When set, the record spans recordedAt → endedAt; null while still ongoing. */
+  /** When set, the record spans recordedAt → endedAt; otherwise it is a moment. */
   endedAt?: string | null;
 };
 

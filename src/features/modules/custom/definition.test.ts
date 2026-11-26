@@ -87,6 +87,26 @@ describe("parseDefinitionText", () => {
 });
 
 describe("parseDefinition", () => {
+  const valid = { id: "bath", name: "Bath", fields: [{ id: "temp", label: "t", type: "number" }] };
+
+  it("hasEnd: true is kept", () => {
+    const r = parseDefinition({ ...valid, hasEnd: true });
+    expect(r.ok && r.definition.hasEnd).toBe(true);
+  });
+
+  it("hasEnd other than true is dropped", () => {
+    for (const hasEnd of ["yes", false]) {
+      const r = parseDefinition({ ...valid, hasEnd });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect("hasEnd" in r.definition).toBe(false);
+    }
+  });
+
+  it("endedAt is a reserved field id", () => {
+    const errors = errorsOf({ ...valid, fields: [{ id: "endedAt", label: "e", type: "text" }] });
+    expect(errors).toContainEqual({ code: "reserved_field_id", path: "fields[0].id" });
+  });
+
   it("reports every problem with a path", () => {
     const errors = errorsOf({
       id: "Protein!",
