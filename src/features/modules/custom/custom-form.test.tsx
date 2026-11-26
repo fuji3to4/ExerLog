@@ -174,3 +174,78 @@ describe("CustomRecordForm", () => {
     });
   });
 });
+
+describe("CustomRecordForm end time", () => {
+  const withEnd = parseDefinition({
+    exerlogRecordType: 1,
+    id: "walk",
+    name: "散歩",
+    icon: "🚶",
+    color: "#5f9e7a",
+    hasEnd: true,
+    fields: [{ id: "steps", label: "歩数", type: "number" }],
+  });
+  if (!withEnd.ok) throw new Error("fixture");
+  const endDef = withEnd.definition;
+
+  function renderEnd(definition = endDef, record?: CustomRecord) {
+    const onSaved = vi.fn();
+    renderWithLanguage(
+      <CustomRecordForm definition={definition} onOpenChange={vi.fn()} date={DATE} record={record} onSaved={onSaved} />,
+      { initialLanguage: "ja" },
+    );
+    return { onSaved };
+  }
+  const base: CustomRecord = {
+    id: "w1",
+    typeId: "walk",
+    date: DATE,
+    recordedAt: `${DATE}T09:00:00+09:00`,
+    endedAt: `${DATE}T09:30:00+09:00`,
+    values: {},
+    note: "",
+    updatedAt: "",
+  };
+
+  it("hasEnd form shows an empty End input", () => {
+    renderEnd();
+    expect(screen.getByLabelText("終了")).toHaveValue("");
+  });
+
+  it("no End input without hasEnd", () => {
+    renderForm();
+    expect(screen.queryByLabelText("終了")).toBeNull();
+  });
+
+  it("saving with End 09:30 stores endedAt", async () => {
+    const { onSaved } = renderEnd();
+    fireEvent.change(screen.getByLabelText("時刻"), { target: { value: "09:00" } });
+    fireEvent.change(screen.getByLabelText("終了"), { target: { value: "09:30" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    const [stored] = await appDb.customRecords.toArray();
+    expect(stored.endedAt?.slice(0, 16)).toBe(`${DATE}T09:30`);
+  });
+
+  it("clearing End on edit removes endedAt", async () => {
+    await appDb.customRecords.add(base);
+    const { onSaved } = renderEnd(endDef, base);
+    expect(screen.getByLabelText("終了")).toHaveValue("09:30");
+    fireEvent.change(screen.getByLabelText("終了"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    const stored = await appDb.customRecords.get("w1");
+    expect(stored).toBeDefined();
+    expect("endedAt" in stored!).toBe(false);
+    expect("endedAt" in onSaved.mock.calls[0][0]).toBe(false);
+  });
+
+  it("changing start after end recomputes end", async () => {
+    await appDb.customRecords.add(base);
+    const { onSaved } = renderEnd(endDef, base);
+    fireEvent.change(screen.getByLabelText("時刻"), { target: { value: "10:00" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled(), { timeout: 3000 });
+    expect((await appDb.customRecords.get("w1"))?.endedAt).toBe("2026-10-21T09:30:00+09:00");
+  });
+});

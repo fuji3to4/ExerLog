@@ -508,6 +508,8 @@
   library_count_all: "{total}件",
   library_count_filtered: "{shown}件 / {total}件",
   library_set_count_filtered: "{name}：{shown}本 / {total}本",
+  custom_end_time: "終了",
+  custom_end_suffix: "〜{time}",
   custom_required: "必須です",
   custom_out_of_range: "{min}〜{max} で入れてください",
   custom_summary_count: "{count}件",

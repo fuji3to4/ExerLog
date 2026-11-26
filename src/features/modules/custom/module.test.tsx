@@ -63,6 +63,20 @@ describe("createCustomModule", () => {
     expect(screen.getByText("ふつう")).toBeInTheDocument();
   });
 
+  it("shows the end time on the card when the record has endedAt", () => {
+    const { TimelineCard } = createCustomModule(type);
+    renderWithLanguage(<TimelineCard record={{ ...record, endedAt: "2026-10-20T09:30:00+09:00" }} label={null} />, {
+      initialLanguage: "ja",
+    });
+    expect(screen.getByText(/〜09:30/)).toBeInTheDocument();
+  });
+
+  it("leaves the card unchanged without endedAt", () => {
+    const { TimelineCard } = createCustomModule(type);
+    renderWithLanguage(<TimelineCard record={record} label={null} />, { initialLanguage: "ja" });
+    expect(screen.queryByText(/〜/)).toBeNull();
+  });
+
   it("offers a graph metric named after the numeric field", () => {
     const { HistoryView } = createCustomModule(type);
     renderWithLanguage(<HistoryView />, { initialLanguage: "ja" });

@@ -60,19 +60,29 @@ export function useSaveAndClose() {
   return { isSaved, isBusy, hasError, run };
 }
 
-export function TimeField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+export function TimeField({
+  value,
+  onChange,
+  label,
+  required = true,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  label?: string;
+  required?: boolean;
+}) {
   const { t } = useTranslation();
   const id = useId();
 
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className="text-sm font-medium">
-        {t("timeline_edit_time")}
+        {label ?? t("timeline_edit_time")}
       </label>
       <input
         id={id}
         type="time"
-        required
+        required={required}
         className={FIELD_CLASS}
         value={value}
         onChange={(event) => onChange(event.target.value)}
