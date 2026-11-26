@@ -13,7 +13,13 @@ import type { Period } from "./period";
 /** The time-of-day / around-a-video tag a timeline row may carry. */
 export type TimeLabel = WellnessLabel;
 
-export type ModuleRecord = { id: string; date: string; recordedAt: string };
+export type ModuleRecord = {
+  id: string;
+  date: string;
+  recordedAt: string;
+  /** When set, the record spans recordedAt → endedAt; null while still ongoing. */
+  endedAt?: string | null;
+};
 
 /** Data-layer contract of one record module. The UI side is added separately. */
 export type RecordModuleData<R extends ModuleRecord = ModuleRecord> = {
