@@ -18,7 +18,7 @@ export function hoursOf(iso: string): number {
   return h + m / 60;
 }
 
-/** Clips of one group never push each other apart; different groups may not overlap in a row. */
+/** Group key: `module:<moduleId>` for module records, otherwise the kind (`exercise` / `watch`). */
 export function rulerGroupOf(item: TimelineItem): string {
   if (item.kind === "module") return `module:${item.moduleId}`;
   return item.kind;
@@ -29,7 +29,8 @@ function lengthHours(item: TimelineItem, nowHours: number | undefined): number {
   if (item.kind === "module") {
     const { endedAt } = item.record;
     if (endedAt) return (Date.parse(endedAt) - Date.parse(item.at)) / 3_600_000;
-    return nowHours === undefined ? 0 : nowHours - hoursOf(item.at);
+    if (endedAt === null && nowHours !== undefined) return nowHours - hoursOf(item.at);
+    return 0;
   }
   return 0;
 }
@@ -63,14 +64,14 @@ export function layoutRuler(
       const from = hoursOf(item.at);
       const length = lengthHours(item, nowHours);
       const isPoint = !(length > 0);
-      const span_: Span = { from, to: isPoint ? from : from + length, isPoint, group: rulerGroupOf(item) };
+      const candidate: Span = { from, to: isPoint ? from : from + length, isPoint, group: rulerGroupOf(item) };
 
-      let row = rows.findIndex((placed) => !placed.some((p) => p.group !== span_.group && overlaps(p, span_)));
+      let row = rows.findIndex((placed) => !placed.some((p) => p.group !== candidate.group && overlaps(p, candidate)));
       if (row === -1) {
         row = rows.length;
         rows.push([]);
       }
-      rows[row].push(span_);
+      rows[row].push(candidate);
 
       const x = (from - start) / span;
       clips.push({ item, x, width: isPoint ? 0 : Math.min(length / span, 1 - x), row: rowBase + row, isPoint });

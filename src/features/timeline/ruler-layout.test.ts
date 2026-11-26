@@ -60,6 +60,12 @@ describe("layoutRuler", () => {
     expect(only([mod("compression", "13:00", null)], { ...opts, nowHours: 12 }).isPoint).toBe(true);
   });
 
+  it("module without an endedAt property is a point even on today", () => {
+    const c = only([mod("wellness", "08:00")], { ...opts, nowHours: 12 });
+    expect(c.isPoint).toBe(true);
+    expect(c.width).toBe(0);
+  });
+
   it("endedAt before recordedAt is a point", () => {
     expect(only([mod("compression", "10:00", iso("09:00"))]).isPoint).toBe(true);
   });
