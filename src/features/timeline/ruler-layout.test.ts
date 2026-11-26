@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { TimelineItem } from "./build-timeline";
-import { layoutRuler } from "./ruler-layout";
+import { earliestHour, layoutRuler } from "./ruler-layout";
 
 const D = "2026-10-20";
 const iso = (hhmm: string) => `${D}T${hhmm}:00+09:00`;
@@ -37,9 +37,20 @@ const only = (items: TimelineItem[], o: Parameters<typeof layoutRuler>[1] = opts
 describe("layoutRuler", () => {
   it("exercise width comes from durationSeconds", () => {
     const c = only([ex("09:00", 1800)]);
-    expect(c.x).toBeCloseTo(3 / 18);
+    expect(c.x).toBeCloseTo(2.5 / 18);
     expect(c.width).toBeCloseTo(0.5 / 18);
     expect(c.isPoint).toBe(false);
+  });
+
+  it("exercise ending at performedAt does not run past now", () => {
+    const c = only([ex("12:00", 1800)], { ...opts, nowHours: 12 });
+    expect(c.x + c.width).toBeCloseTo(6 / 18);
+  });
+
+  it("exercise starting before the ruler start is clamped", () => {
+    const c = only([ex("06:30", 3600)]);
+    expect(c.x).toBe(0);
+    expect(c.width).toBeCloseTo(0.5 / 18);
   });
 
   it("module with endedAt is a band", () => {
@@ -111,5 +122,33 @@ describe("layoutRuler", () => {
     const rowOf = (kind: string) => r.clips.find((c) => c.item.kind === kind)?.row;
     expect([rowOf("module"), rowOf("exercise"), rowOf("watch")]).toEqual([0, 1, 2]);
     expect(r.rows).toBe(3);
+  });
+
+  it("different-group bands whose ends touch share a row", () => {
+    const r = layoutRuler([mod("compression", "08:00", iso("10:00")), mod("wellness", "10:00", iso("12:00"))], opts);
+    expect(r.clips.map((c) => c.row)).toEqual([0, 0]);
+  });
+
+  it("same-group clip returns to row 0 after a different group pushed an earlier clip down", () => {
+    const r = layoutRuler(
+      [mod("compression", "08:00", iso("18:00")), mod("wellness", "10:00"), mod("wellness", "19:00")],
+      opts,
+    );
+    expect(r.clips.map((c) => c.row)).toEqual([0, 1, 0]);
+  });
+
+  it("overlap uses the shifted exercise interval", () => {
+    const r = layoutRuler([ex("09:00", 3600), ex("10:30", 3600)], opts);
+    expect(r.clips.map((c) => c.row)).toEqual([0, 0]);
+  });
+});
+
+describe("earliestHour", () => {
+  it("uses at minus duration for exercises", () => {
+    expect(earliestHour([ex("09:00", 7200), mod("wellness", "08:00")])).toBeCloseTo(7);
+  });
+
+  it("is Infinity for an empty list", () => {
+    expect(earliestHour([])).toBe(Infinity);
   });
 });

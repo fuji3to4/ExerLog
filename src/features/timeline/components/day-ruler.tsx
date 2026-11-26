@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
 import type { TimelineItem } from "../build-timeline";
-import { hoursOf, layoutRuler } from "../ruler-layout";
+import { earliestHour, layoutRuler } from "../ruler-layout";
 
 export type DayRulerProps = {
   items: TimelineItem[];
@@ -19,7 +19,7 @@ const DEFAULT_START = 6;
  * A picture of the list below it, so it is hidden from assistive tech.
  */
 export function DayRuler({ items, highlightId, colorOf, keyOf, nowHours }: DayRulerProps) {
-  const earliest = Math.min(DEFAULT_START, ...items.map((item) => hoursOf(item.at)));
+  const earliest = Math.min(DEFAULT_START, earliestHour(items));
   const start = Math.floor(earliest / 3) * 3;
   const span = 24 - start;
   const { clips, rows } = layoutRuler(items, { start, span, nowHours });

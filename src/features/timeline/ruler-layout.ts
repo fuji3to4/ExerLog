@@ -24,6 +24,17 @@ export function rulerGroupOf(item: TimelineItem): string {
   return item.kind;
 }
 
+/** Hour a clip begins: exercises end at `at` (performedAt), so they begin one duration earlier. */
+function startHourOf(item: TimelineItem): number {
+  const at = hoursOf(item.at);
+  return item.kind === "exercise" ? at - item.log.durationSeconds / 3600 : at;
+}
+
+/** Earliest clip start hour across items (floored at midnight); Infinity for an empty list. */
+export function earliestHour(items: TimelineItem[]): number {
+  return Math.min(...items.map((item) => Math.max(0, startHourOf(item))));
+}
+
 function lengthHours(item: TimelineItem, nowHours: number | undefined): number {
   if (item.kind === "exercise") return item.log.durationSeconds / 3600;
   if (item.kind === "module") {
@@ -56,14 +67,16 @@ export function layoutRuler(
   for (const kind of LANE_ORDER) {
     const ofKind = items
       .filter((item) => item.kind === kind)
-      .sort((a, b) => hoursOf(a.at) - hoursOf(b.at));
+      .sort((a, b) => startHourOf(a) - startHourOf(b));
     if (ofKind.length === 0) continue;
 
     const rows: Span[][] = [];
     for (const item of ofKind) {
-      const from = hoursOf(item.at);
-      const length = lengthHours(item, nowHours);
-      const isPoint = !(length > 0);
+      const isExercise = item.kind === "exercise";
+      // Exercises end at `at`; keep only the part at or after the ruler start.
+      const from = isExercise ? Math.max(start, startHourOf(item)) : hoursOf(item.at);
+      const length = isExercise ? hoursOf(item.at) - from : lengthHours(item, nowHours);
+      const isPoint = !(length > 0) || (isExercise && item.log.durationSeconds <= 0);
       const candidate: Span = { from, to: isPoint ? from : from + length, isPoint, group: rulerGroupOf(item) };
 
       let row = rows.findIndex((placed) => !placed.some((p) => p.group !== candidate.group && overlaps(p, candidate)));
